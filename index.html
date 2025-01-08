@@ -75,7 +75,7 @@
             font-size: 1.5rem;
             font-weight: 700;
             color: #fff;
-            background: linear-gradient(135deg, #0088cc, #005f9e);
+            background: #0D6EFD;
             border: none;
             border-radius: 50px;
             cursor: pointer;
@@ -86,7 +86,7 @@
 
         .cta-button:hover {
             transform: scale(1.1);
-            box-shadow: 0px 15px 30px rgba(0, 136, 204, 0.7);
+            box-shadow: 0px 15px 30px rgba(13, 110, 253, 0.7);
         }
 
         .social-icons {
@@ -118,6 +118,12 @@
             color: #b5b5b5;
             position: relative;
             z-index: 4;
+        }
+
+        .footer-container {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
         }
 
         @keyframes fadeIn {
@@ -159,13 +165,15 @@
 <body>
     <div class="hero">
         <video autoplay loop muted playsinline>
-            <iframe src="https://drive.google.com/file/d/13-oqLYmRHD7mCCvDrWdLpPJvle233maN/preview" width="640" height="480" allow="autoplay"></iframe>
+            <source src="https://drive.google.com/uc?export=download&id=13-oqLYmRHD7mCCvDrWdLpPJvle233maN" type="video/mp4">
         </video>
         <div class="hero-content">
             <h1>Top 1% Club</h1>
             <h2>Your Path to Unstoppable Success</h2>
             <a href="https://t.me/toponeinsiderbot" class="cta-button">Telegram</a>
         </div>
+    </div>
+    <div class="footer-container">
         <div class="social-icons">
             <a href="https://www.instagram.com/alishan.youtube/" target="_blank" title="Instagram">
                 <i class="fab fa-instagram"></i>
