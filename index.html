@@ -1,116 +1,98 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Топ 1 Клуб — Путь к Успеху</title>
+    <title>Top 1 Club</title>
     <style>
+        /* General Reset */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
             font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(120deg, #2e2e2e, #1f1f1f);
+            background-color: #111;
             color: #fff;
-            overflow-x: hidden;
+            line-height: 1.5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             height: 100vh;
+            margin: 0;
         }
 
-        h1, h2 {
-            margin: 0;
-            font-weight: bold;
-            letter-spacing: 1px;
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 20px;
         }
 
         h1 {
-            font-size: 4rem;
-            color: #ff6600;
-            text-align: center;
-            padding-top: 50px;
-            opacity: 0;
-            animation: fadeIn 2s forwards;
+            font-size: 48px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-transform: uppercase;
         }
 
         p {
-            text-align: center;
-            font-size: 1.5rem;
-            margin-top: 20px;
-            opacity: 0;
-            animation: fadeIn 2s forwards 1s;
+            font-size: 20px;
+            margin-bottom: 25px;
+            color: #aaa;
         }
 
-        .cta-button {
-            display: block;
-            width: 200px;
-            height: 50px;
-            background-color: #ff6600;
-            color: #fff;
-            font-size: 1.5rem;
-            font-weight: bold;
+        .cta-btn {
+            padding: 15px 30px;
+            background-color: #ff6000;
             border: none;
-            border-radius: 25px;
-            margin: 50px auto;
-            text-align: center;
-            text-decoration: none;
-            line-height: 50px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease;
-            opacity: 0;
-            animation: fadeIn 2s forwards 2s;
-        }
-
-        .cta-button:hover {
-            transform: scale(1.1);
-        }
-
-        .cta-button:active {
-            transform: scale(1.05);
-        }
-
-        @keyframes fadeIn {
-            0% { opacity: 0; }
-            100% { opacity: 1; }
-        }
-
-        .main-content {
-            text-align: center;
-            margin-top: 100px;
-        }
-
-        .cta-second {
-            background: none;
-            border: 2px solid #ff6600;
-            color: #ff6600;
-            width: 250px;
-            margin: 30px auto;
-            font-size: 1.3rem;
-            height: 50px;
-            line-height: 50px;
-            text-align: center;
-            border-radius: 25px;
-            font-weight: bold;
+            color: white;
+            font-size: 20px;
+            text-transform: uppercase;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: 0.3s;
+            border-radius: 5px;
         }
 
-        .cta-second:hover {
-            background-color: #ff6600;
-            color: #fff;
+        .cta-btn:hover {
+            background-color: #ff8c00;
+            transform: translateY(-5px);
         }
 
-        .cta-second:active {
-            transform: scale(1.05);
+        .telegram-btn {
+            margin-top: 25px;
+            padding: 12px 25px;
+            background-color: #0088cc;
+            color: white;
+            font-size: 20px;
+            text-transform: uppercase;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            border-radius: 5px;
+        }
+
+        .telegram-btn:hover {
+            background-color: #33b5e5;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #bbb;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-
-    <div class="main-content">
-        <h1>Присоединяйтесь к Топ 1 Клубу — путь к успеху для амбициозных людей.</h1>
-        <p>20,000+ людей уже на пути к успеху с нами.</p>
-        <a href="https://t.me/toponeinsiderbot" class="cta-button">Присоединиться к клубу</a>
-        <p>Получите доступ к эксклюзивному Telegram-каналу, где вы найдете лучшие стратегии, ресурсы и поддержку для успеха.</p>
-        <a href="https://t.me/toponeinsiderbot" class="cta-second">Присоединить к Telegram</a>
+    <div class="container">
+        <h1>Join the Top 1 Club</h1>
+        <p>Your Path to Success — 20,000+ People Already on the Path to Success with Us.</p>
+        <button class="cta-btn" onclick="window.location.href='https://t.me/toponeinsiderbot'">Join the Club</button>
+        <p style="margin-top: 20px;">Get exclusive access to the best strategies, resources, and support for your success.</p>
+        <button class="telegram-btn" onclick="window.location.href='https://t.me/toponeinsiderbot'">Access Telegram Channel</button>
     </div>
-
+    <footer>
+        <p>&copy; 2025 Top 1 Club. All rights reserved.</p>
+    </footer>
 </body>
 </html>
