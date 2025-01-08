@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Top 1% Club</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             margin: 0;
@@ -22,7 +23,6 @@
             align-items: center;
             text-align: center;
             position: relative;
-            background: black;
         }
 
         .hero video {
@@ -32,7 +32,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            opacity: 0.15;
+            opacity: 0.3;
             z-index: 1;
         }
 
@@ -59,7 +59,7 @@
             margin: 0;
             color: #f3f3f3;
             animation: textGlow 2s infinite alternate;
-            text-shadow: 0 0 8px rgba(243, 243, 243, 0.4);
+            text-shadow: 0 0 4px rgba(243, 243, 243, 0.2);
         }
 
         .hero h2 {
@@ -89,6 +89,33 @@
             box-shadow: 0px 15px 30px rgba(243, 156, 18, 0.7);
         }
 
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .social-icons a {
+            color: #ffffff;
+            font-size: 24px;
+            transition: transform 0.2s ease, color 0.2s ease;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+
+        .social-icons a:hover {
+            color: #0D6EFD;
+            transform: translateY(-2px) scale(1.1);
+        }
+
+        footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #b5b5b5;
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -105,7 +132,7 @@
                 text-shadow: 0 0 5px #f39c12, 0 0 10px #e67e22;
             }
             100% {
-                text-shadow: 0 0 10px #f39c12, 0 0 15px #e67e22;
+                text-shadow: 0 0 8px #f39c12, 0 0 12px #e67e22;
             }
         }
 
@@ -132,9 +159,26 @@
         </video>
         <div class="hero-content">
             <h1>Top 1% Club</h1>
-            <h2>20,000+ on their way to success</h2>
-            <a href="https://t.me/yourgroup" class="cta-button">Telegram</a>
+            <h2>Your Path to Unstoppable Success</h2>
+            <a href="https://t.me/toponeinsiderbot" class="cta-button">Telegram</a>
         </div>
+        <div class="social-icons">
+            <a href="https://www.instagram.com/alishan.youtube/" target="_blank" title="Instagram">
+                <i class="fab fa-instagram"></i>
+            </a>
+            <a href="https://x.com/AlishanYoutube" target="_blank" title="X">
+                <i class="fab fa-twitter"></i>
+            </a>
+            <a href="https://www.youtube.com/@alishan.youtube" target="_blank" title="YouTube">
+                <i class="fab fa-youtube"></i>
+            </a>
+            <a href="https://www.tiktok.com/@alishan.youtube" target="_blank" title="TikTok">
+                <i class="fab fa-tiktok"></i>
+            </a>
+        </div>
+        <footer>
+            &copy; 2023 All rights reserved.
+        </footer>
     </div>
 </body>
 </html>
