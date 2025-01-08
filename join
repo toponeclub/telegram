@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Топ 1 Клуб — Путь к Успеху</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(120deg, #2e2e2e, #1f1f1f);
+            color: #fff;
+            overflow-x: hidden;
+            height: 100vh;
+        }
+
+        h1, h2 {
+            margin: 0;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        h1 {
+            font-size: 4rem;
+            color: #ff6600;
+            text-align: center;
+            padding-top: 50px;
+            opacity: 0;
+            animation: fadeIn 2s forwards;
+        }
+
+        p {
+            text-align: center;
+            font-size: 1.5rem;
+            margin-top: 20px;
+            opacity: 0;
+            animation: fadeIn 2s forwards 1s;
+        }
+
+        .cta-button {
+            display: block;
+            width: 200px;
+            height: 50px;
+            background-color: #ff6600;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 25px;
+            margin: 50px auto;
+            text-align: center;
+            text-decoration: none;
+            line-height: 50px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 2s forwards 2s;
+        }
+
+        .cta-button:hover {
+            transform: scale(1.1);
+        }
+
+        .cta-button:active {
+            transform: scale(1.05);
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .main-content {
+            text-align: center;
+            margin-top: 100px;
+        }
+
+        .cta-second {
+            background: none;
+            border: 2px solid #ff6600;
+            color: #ff6600;
+            width: 250px;
+            margin: 30px auto;
+            font-size: 1.3rem;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cta-second:hover {
+            background-color: #ff6600;
+            color: #fff;
+        }
+
+        .cta-second:active {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-content">
+        <h1>Присоединяйтесь к Топ 1 Клубу — путь к успеху для амбициозных людей.</h1>
+        <p>20,000+ людей уже на пути к успеху с нами.</p>
+        <a href="https://t.me/toponeinsiderbot" class="cta-button">Присоединиться к клубу</a>
+        <p>Получите доступ к эксклюзивному Telegram-каналу, где вы найдете лучшие стратегии, ресурсы и поддержку для успеха.</p>
+        <a href="https://t.me/toponeinsiderbot" class="cta-second">Присоединить к Telegram</a>
+    </div>
+
+</body>
+</html>
