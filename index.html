@@ -42,23 +42,28 @@
             position: relative;
             z-index: 3;
             animation: fadeIn 2s ease-in-out;
-            padding-top: 15vh; /* Moved higher by 20% */
+        }
+
+        .hero h1, .hero h2, .cta-button {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transform: translateY(0); /* Ensures initial position is aligned */
         }
 
         .hero h1 {
-            font-size: 4.5rem;
+            font-size: 5rem; /* Slightly larger for better impact */
             font-weight: 700;
-            margin: 0 0 0.5rem 0;
+            margin: 0 0 1rem 0; /* Add spacing between title and subtitle */
             color: #f3f3f3;
             animation: textGlow 2s infinite alternate;
             text-shadow: 0 0 1px rgba(13, 110, 253, 0.2), 0 0 3px rgba(13, 110, 253, 0.3);
         }
 
         .hero h2 {
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 400;
-            margin: 0 0 1.5rem 0;
+            margin: 0 0 2rem 0; /* Add spacing between subtitle and button */
             color: #e0e0e0;
+            animation: textGlow 2s infinite alternate; /* Ensure subtitle has the same animation */
         }
 
         .cta-button {
@@ -72,12 +77,12 @@
             border-radius: 50px;
             cursor: pointer;
             text-decoration: none;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
             animation: pulse 1.5s infinite;
         }
 
-        .cta-button:hover {
-            transform: scale(1.1);
+        /* Hover effect for all three elements */
+        .hero h1:hover, .hero h2:hover, .cta-button:hover {
+            transform: scale(1.05); /* Uniform scaling */
             box-shadow: 0px 15px 30px rgba(13, 110, 253, 0.7);
         }
 
