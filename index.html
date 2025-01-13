@@ -46,28 +46,26 @@
 
         .hero h1, .hero h2, .cta-button {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            transform: translateY(0); /* Ensures initial position is aligned */
+            transform: translateY(0);
         }
 
-.hero h1 {
-    font-size: 5rem;
-    font-weight: 700;
-    margin: 0 0 1rem 0;
-    color: #f3f3f3;
-    animation: textGlow 2s infinite alternate;
-    text-shadow: 0 0 15px rgba(13, 110, 253, 1), 0 0 30px rgba(13, 110, 253, 1); /* Full opacity glow */
-}
+        .hero h1 {
+            font-size: 5rem;
+            font-weight: 700;
+            margin: 0 0 1rem 0;
+            color: #f3f3f3;
+            animation: textGlow 2s infinite alternate;
+            text-shadow: 0 0 15px rgba(13, 110, 253, 1), 0 0 30px rgba(13, 110, 253, 1);
+        }
 
-.hero h2 {
-    font-size: 2rem;
-    font-weight: 400;
-    margin: 0 0 2rem 0;
-    color: #e0e0e0;
-    animation: textGlow 2s infinite alternate;
-    text-shadow: 0 0 15px rgba(13, 110, 253, 1), 0 0 30px rgba(13, 110, 253, 1); /* Full opacity glow */
-}
-
-
+        .hero h2 {
+            font-size: 2rem;
+            font-weight: 400;
+            margin: 0 0 2rem 0;
+            color: #e0e0e0;
+            animation: textGlow 2s infinite alternate;
+            text-shadow: 0 0 15px rgba(13, 110, 253, 1), 0 0 30px rgba(13, 110, 253, 1);
+        }
 
         .cta-button {
             display: inline-block;
@@ -83,9 +81,8 @@
             animation: pulse 1.5s infinite;
         }
 
-        /* Hover effect for all three elements */
         .hero h1:hover, .hero h2:hover, .cta-button:hover {
-            transform: scale(1.05); /* Uniform scaling */
+            transform: scale(1.05);
             box-shadow: 0px 15px 30px rgba(13, 110, 253, 0.7);
         }
 
@@ -158,6 +155,52 @@
             100% {
                 transform: scale(1);
                 box-shadow: 0px 0px 10px rgba(0, 136, 204, 0.4);
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .hero h1 {
+                font-size: 3.5rem;
+            }
+
+            .hero h2 {
+                font-size: 1.5rem;
+            }
+
+            .cta-button {
+                padding: 1rem 2rem;
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero h2 {
+                font-size: 1.2rem;
+            }
+
+            .cta-button {
+                padding: 0.8rem 1.5rem;
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero h2 {
+                font-size: 1rem;
+            }
+
+            .cta-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
             }
         }
     </style>
