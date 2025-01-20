@@ -110,7 +110,7 @@
                     document.getElementById("answer").value = "";  // Clear input field
                 } else {
                     // Show final message with the link
-                    document.querySelector(".container").innerHTML = "<h1>Congratulations! You did it!</h1><div class='link'><a href='https://next-page.com'>Go to the next page</a></div>";
+                    document.querySelector(".container").innerHTML = "<h1>Congratulations! You did it!</h1><div class='link'><a href='https://toponeclub.github.io/telegram/init.txt'>Go to the next page</a></div>";
                 }
             } else {
                 // Incorrect answer message
