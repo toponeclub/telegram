@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Quiz</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1f4037, #99f2c8);
+            font-family: 'Arial', sans-serif;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 30px;
+            width: 400px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        .question {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 90%;
+            padding: 10px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        button {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            border: none;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #ff4b2b, #ff416c);
+        }
+        .message {
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+        .link {
+            margin-top: 20px;
+        }
+        .link a {
+            color: #00ffcc;
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: color 0.3s;
+        }
+        .link a:hover {
+            color: #ffffff;
+        }
+        .incorrect {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="question" id="question">What do you want?</div>
+        <input type="text" id="answer" placeholder="Type your answer here..." oninput="clearErrorMessage()">
+        <button onclick="checkAnswer()">Submit</button>
+        <div class="message" id="message"></div>
+        <div class="link" id="link" style="display: none;">
+            <a href="https://next-page.com">Go to the next page</a>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { question: "What do you want?", answer: "top1%club" },
+            { question: "Why do you want it?", answer: "to get rich" }
+        ];
+
+        let currentQuestionIndex = 0;
+
+        function checkAnswer() {
+            const userAnswer = document.getElementById("answer").value.trim();
+            const message = document.getElementById("message");
+
+            // Check if answer is correct
+            if (userAnswer === questions[currentQuestionIndex].answer) {
+                currentQuestionIndex++;
+
+                // If all questions are answered correctly
+                if (currentQuestionIndex < questions.length) {
+                    // Show next question
+                    document.getElementById("question").textContent = questions[currentQuestionIndex].question;
+                    document.getElementById("answer").value = "";  // Clear input field
+                } else {
+                    // Show final message with the link
+                    document.querySelector(".container").innerHTML = "<h1>Congratulations! You did it!</h1><div class='link'><a href='https://next-page.com'>Go to the next page</a></div>";
+                }
+            } else {
+                // Incorrect answer message
+                message.textContent = "Incorrect answer";
+                message.classList.add("incorrect");
+            }
+        }
+
+        function clearErrorMessage() {
+            const message = document.getElementById("message");
+            message.textContent = "";  // Clear error message when the user starts typing again
+            message.classList.remove("incorrect");
+        }
+    </script>
+</body>
+</html>
