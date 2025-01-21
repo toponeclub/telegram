@@ -1,2 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Step</title>
+    <style>
+        body {
+            background-color: black; /* Black background */
+            color: white; /* White text */
+            text-align: center; /* Center the content */
+            padding-top: 20%;
+        }
+        a {
+            color: cyan; /* Highlighted link color */
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline; /* Underline on hover */
+        }
+    </style>
+</head>
+<body>
 dm.me.the.code."*****".and.get.the.access  
 you're.the.1%
+</body>
+</html>
