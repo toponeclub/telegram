@@ -1,0 +1,346 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title><h1 class="main-headline">Top 1% Club – Elevate Everything</h1></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fonts and Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: #0d0d0d;
+      color: #f4f4f4;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+    h1, h2, h3 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 3rem;
+      font-weight: 900;
+      background: linear-gradient(to right, #00ffd5, #00aaff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+    }
+    h2 {
+      font-size: 2.25rem;
+      color: #fff;
+    }
+
+    .hero {
+      position: relative;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+      z-index: 2;
+    }
+    
+    .hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('https://api.lava.top/cs/products/17399162-dbe8-4c07-91de-56027bb19581/thumbnail/cf63b562-1e6b-40a0-9972-e144bcb4ad0c');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.20;
+  z-index: -1;
+}
+
+    
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      top: 0;
+      left: 0;
+    }
+    .hero p {
+      font-size: 1.25rem;
+      margin: 1rem 0 2.5rem;
+      max-width: 800px;
+    }
+    
+    .main-headline {
+  text-transform: uppercase;
+}
+
+    .cta-btn {
+      background-color: #00ffd5;
+      color: #000;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: 0.4s ease;
+      display: inline-block;
+      margin-top: 1.5rem;
+    }
+    .cta-btn:hover {
+      background-color: #00aaff;
+      color: #fff;
+    }
+
+    .page-wrapper::before,
+    .page-wrapper::after {
+      content: '';
+      position: fixed;
+      width: 100%;
+      height: 15px;
+      left: 0;
+      z-index: 999;
+      pointer-events: none;
+      opacity: 0.15;
+    }
+    .page-wrapper::before {
+      top: 0;
+      background: linear-gradient(to right, #00f0ff, transparent, #00f0ff);
+      box-shadow: 0 0 20px #00f0ff;
+    }
+    .page-wrapper::after {
+      bottom: 0;
+      background: linear-gradient(to right, #00f0ff, transparent, #00f0ff);
+      box-shadow: 0 0 20px #00f0ff;
+    }
+
+    .section {
+      padding: 6rem 2rem;
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .feature-box {
+      position: relative;
+      background: #0e0e0e;
+      border-radius: 16px;
+      padding: 2rem;
+      margin: 1.5rem auto;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+      animation: glowing-border 6s ease-in-out infinite alternate;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .feature-box .light-sweep {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 300%;
+      height: 300%;
+      background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
+      animation: sweep 3.5s infinite linear;
+      transform: rotate(25deg);
+      opacity: 0.25;
+    }
+
+    @keyframes sweep {
+      0% { transform: translateX(-100%) rotate(25deg); }
+      100% { transform: translateX(100%) rotate(25deg); }
+    }
+
+    @keyframes glowing-border {
+      0% {
+        border-color: #0ff;
+        box-shadow: 0 0 10px #0ff;
+      }
+      50% {
+        border-color: #f0f;
+        box-shadow: 0 0 25px #f0f;
+      }
+      100% {
+        border-color: #0ff;
+        box-shadow: 0 0 10px #0ff;
+      }
+    }
+    
+    .main-headline {
+  text-transform: uppercase;
+}
+
+    .features-list {
+      list-style: none;
+      padding: 0;
+      margin: 2rem auto;
+      max-width: 700px;
+      text-align: left;
+    }
+
+    .features-list li {
+      margin-bottom: 1rem;
+      padding-left: 2.2rem;
+      position: relative;
+      font-size: 1.1rem;
+    }
+
+    .features-list li::before {
+      content: "✓";
+      color: #00ffd5;
+      position: absolute;
+      left: 0;
+      font-size: 1.2rem;
+    }
+
+    .features-list.dot-style li::before {
+      content: "●";
+      color: #ffffff99;
+      font-size: 1.1rem;
+      margin-right: 8px;
+      display: inline-block;
+      width: 1em;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 2.2rem; }
+      .hero p, .section p {
+        font-size: 1rem;
+        padding: 0 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <div class="hero">
+      <div id="particles-js"></div>
+      <h1 data-aos="fade-up">Top 1% Club – Elevate Everything</h1>
+      <p data-aos="fade-up" data-aos-delay="300">
+        Health, wealth, influence, confidence, YouTube, energy, discipline — no more piecing it together<br><br>We’ve got it all
+      </p>
+      <div class="cta-container" data-aos="fade-up" data-aos-delay="600">
+        <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">JOIN ONLY FOR $25</a>
+      </div>
+    </div>
+
+    <div class="section" data-aos="fade-up">
+      <h2>What You Get Inside?</h2>
+      <h3 style="margin-top: 0.5rem; font-weight: 400;">One Subscription. Infinite Value.</h3>
+      <div class="feature-box">
+        <div class="light-sweep"></div>
+        <ul class="features-list">
+          <li>Step-by-step biohacking guides and energy optimization</li>
+          <li>Resources for health, testosterone, sleep, and focus</li>
+          <li>Financial strategies and your path to your first $10k online</li>
+          <li>How to become confident and commanding — inside and out</li>
+          <li>Framework for YouTube and SM success (even without a camera)</li>
+          <li>Philosophy of strength and control: your life, your rules</li>
+          <li>30-day challenges: build discipline, power, and victory</li>
+          <li>No ads. No fluff. Only what works.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section" data-aos="fade-up">
+      <h2>Why This Is the Only Thing You’ll Ever Need</h2>
+      <div class="feature-box">
+        <div class="light-sweep"></div>
+        <p>You’ve tried it all: motivation videos, PDFs, TikTok hacks, YouTube tips.</p>
+        <br>
+        <p>But progress doesn’t last...</p>
+        <br>
+        <p>Top 1% Club is a proven system best for health, wealth, and influence — made for real results.</p>
+      </div>
+    </div>
+
+    <div class="section" data-aos="fade-up">
+      <h2>You Won’t Find This Anywhere Else</h2>
+      <div class="feature-box">
+        <div class="light-sweep"></div>
+        <ul class="features-list">
+          <li>No gurus</li>
+          <li>Not an online school</li>
+          <li>Not just another motivation group</li>
+          <li>Access a real system of strength, growth, and performance — from day one</li>
+        </ul>
+        <br>
+        <p>Not someday. Not after "learning". Right now</p>
+      </div>
+    </div>
+
+    <div class="section" data-aos="fade-up">
+      <h2>Works Wherever You Are</h2>
+      <div class="feature-box">
+        <div class="light-sweep"></div>
+        <ul class="features-list dot-style">
+          <li>Not about nationality or gender</li>
+          <li>Made for those ready to rise</li>
+          <li>Wake up sharp, train smart, earn online, and command respect</li>
+          <li>We don’t build motivation — we build strength</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section" data-aos="fade-up">
+      <h2>No Traps. No Sticky Subscriptions</h2>
+      <div class="feature-box">
+        <div class="light-sweep"></div>
+        <ul class="features-list dot-style">
+          <li>Cancel anytime</li>
+          <li>No tricks — just power and performance</li>
+          <li>1 day here is enough to see why you’ll never look back</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section" data-aos="fade-up">
+      <h2>You Can’t Become the Best in the Same Environment</h2>
+      <div class="feature-box">
+        <div class="light-sweep"></div>
+        <ul class="features-list">
+          <li>Top 1% Club is the environment built to elevate you — no compromise</li>
+          <li>Private access through our secured Telegram platform</li>
+          <li>100+ exclusive resources, unlocked instantly</li>
+          <li>You don’t need to show your face</li>
+          <li>You won’t find this on the free web</li>
+          <li>Join. Transform. Win.</li>
+        </ul>
+      </div>
+      <div class="cta-container">
+        <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">GET ACCESS NOW</a>
+        <p style="margin-top: 1rem; font-size: 0.95rem;">You’ll be redirected to checkout to complete payment.</p>
+            </div>
+    </div>
+
+    <footer>
+      &copy; 2025 Top 1% Club. All rights reserved.
+    </footer>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+  <script>
+    AOS.init();
+    particlesJS.load('particles-js', 'https://cdn.jsdelivr.net/gh/VincentGarreau/particles.js/particles.json', function() {
+      console.log('particles.js config loaded');
+    });
+  </script>
+</body>
+</html>
