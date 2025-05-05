@@ -192,7 +192,7 @@
       background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%);
       animation: sweep 3.5s infinite linear;
       transform: rotate(25deg);
-      opacity: 0.25;
+      opacity: 0.2;
     }
 
     @keyframes sweep {
@@ -212,20 +212,24 @@
 }
 
 
-    @keyframes glowing-border {
-      0% {
-        border-color: #0ff;
-        box-shadow: 0 0 10px #0ff;
-      }
-      50% {
-        border-color: #f0f;
-        box-shadow: 0 0 25px #f0f;
-      }
-      100% {
-        border-color: #0ff;
-        box-shadow: 0 0 10px #0ff;
-      }
-    }
+@keyframes glowing-border {
+  0% {
+    border-color: rgba(0, 255, 255, 0.6);
+    box-shadow: 0 0 13px rgba(0, 255, 255, 0.4);
+  }
+  50% {
+    border-color: rgba(255, 0, 255, 0.1);
+    box-shadow: 0 0 22px rgba(255, 0, 255, 0.2);
+  }
+  100% {
+    border-color: rgba(0, 255, 255, 0.6);
+    box-shadow: 0 0 13px rgba(0, 255, 255, 0.4);
+  }
+}
+
+.feature-box {
+  animation: glowing-border 15s ease-in-out infinite; /* Adjust 4s to a slower or faster value */
+}
     
     .main-headline {
   text-transform: uppercase;
