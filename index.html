@@ -146,13 +146,14 @@
 }
 
 @keyframes subtlePulse {
-  30%, 100% {
-    opacity: 0.5;
+  0%, 100% {
+    opacity: 0.4;  /* lower threshold */
   }
   50% {
-    opacity: 0.9;
+    opacity: 1.0;  /* peak */
   }
 }
+
 
 .dotted-background {
   width: 100%;
