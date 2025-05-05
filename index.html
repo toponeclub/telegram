@@ -66,7 +66,7 @@
   background-position: center;
   opacity: 0.20;
   z-index: -1;
-  animation: fadeInBackground 2s ease-in-out 0.5s forwards;
+  animation: fadeInBackground 2s ease-in-out 0s forwards;
 }
 
     
@@ -182,7 +182,7 @@
 @keyframes fadeInBackground {
   from {
     opacity: 0;
-    transform: scale(1.05);
+    transform: scale(1.09);
   }
   to {
     opacity: 0.2;
@@ -280,6 +280,52 @@
   right: 10%;
 }
 
+.connector {
+  display: block;
+  width: 100%;
+  height: 80px;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+}
+
+.connector svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.connector path {
+  stroke: #00f0ff;
+  stroke-width: 2;
+  fill: none;
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawLine 2s ease forwards;
+}
+
+@keyframes drawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.vertical-line-fixed {
+  position: absolute;
+  width: 3px;
+  height: 100px; /* You can change this */
+  background: linear-gradient(to bottom, #00ffe7, transparent);
+  left: 50%;
+  margin-top: 0px;
+  margin-bottom: 0px;
+
+  transform: translateX(-50%);
+  opacity: 0.3;
+  z-index: 1;
+}
+
+
+
 
     footer {
       text-align: center;
@@ -338,6 +384,13 @@
         <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">JOIN ONLY FOR $25</a>
       </div>
     </div>
+
+
+
+<div style="position: relative; padding-bottom: 50px;"> <!-- creates space under the line -->
+  <div class="vertical-line-fixed" style="top: 15px;"></div>
+</div>
+
 
 
 
@@ -420,7 +473,15 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
     </div>
 
   </div>
+
+
+
 </section>
+
+<div style="position: relative; padding-bottom: 50px;"> <!-- creates space under the line -->
+  <div class="vertical-line-fixed" style="top: 15px;"></div>
+</div>
+
 
     <div class="section" data-aos="fade-up">
       <h2>You Won’t Find This Anywhere Else</h2>
@@ -449,6 +510,8 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
         </ul>
       </div>
     </div>
+
+
 
 
     <div class="section" data-aos="fade-up">
