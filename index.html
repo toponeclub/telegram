@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title><h1 class="main-headline">Top 1% Club – Elevate Everything</h1></title>
+  <title><h1 class="main-headline">Top 1% Club</h1></title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 
@@ -22,16 +22,19 @@
       font-family: 'Montserrat', sans-serif;
       background: #0d0d0d;
       color: #f4f4f4;
+
       overflow-x: hidden;
       line-height: 1.6;
     }
     h1, h2, h3 {
       text-align: center;
+padding-top: 4rem; /* or try margin-top */
       margin-bottom: 1rem;
     }
     h1 {
-      font-size: 3rem;
-      font-weight: 900;
+      font-size: 4.5rem;
+      font-weight: 1000;
+      margin-top: 1.5rem;
       background: linear-gradient(to right, #00ffd5, #00aaff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -44,13 +47,14 @@
 
     .hero {
       position: relative;
-      height: 100vh;
+     
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       text-align: center;
-      padding: 2rem;
+      padding: 2rem;                       
+      padding-top: 6rem; /* or try margin-top */
       z-index: 2;
     }
     
@@ -69,7 +73,54 @@
   animation: fadeInBackground 8s ease-in-out 0s forwards;
 }
 
-    
+.video-wrapper {
+  margin: 2rem auto 0 auto;
+margin-top: 6rem;
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* height: auto ensures it wraps the iframe naturally */
+  height: auto;
+}
+
+.video-wrapper iframe {
+  width: 100%;
+  height: 360px; /* matches standard YouTube aspect */
+  border-radius: 12px;
+}
+
+/* Responsive tweaks for small viewports */
+@media (max-width: 768px) {
+  .video-wrapper {
+    margin-top: 1.5rem;
+    padding: 0 1rem;
+  }
+
+  .video-wrapper iframe {
+    height: 260px;
+  }
+}
+
+@media (max-height: 800px) {
+.hero {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  padding-top: 6vh;
+  padding-bottom: 14vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+  color: white;
+}
+
+
+
+
     #particles-js {
       position: absolute;
       width: 100%;
@@ -79,8 +130,8 @@
       left: 0;
     }
     .hero p {
-      font-size: 1.25rem;
-      margin: 1rem 0 2.5rem;
+      font-size: 1.4rem;
+      margin: 1rem 0 0.5rem;
       max-width: 800px;
     }
     
@@ -88,21 +139,27 @@
   text-transform: uppercase;
 }
 
-    .cta-btn {
-      background-color: #00ffd5;
-      color: #000;
-      padding: 1rem 2rem;
-      border-radius: 50px;
-      font-weight: 700;
-      text-decoration: none;
-      transition: 0.4s ease;
-      display: inline-block;
-      margin-top: 1.5rem;
-    }
-    .cta-btn:hover {
-      background-color: #00aaff;
-      color: #fff;
-    }
+   .cta-btn {
+  background-color: #00ffd5;
+  color: #000;
+  padding: 1rem 3rem;         /* wider */
+  border-radius: 16px;        /* less roundy */
+  font-weight: 700;
+  font-size: 1.125rem;
+  text-decoration: none;
+  transition: 0.4s ease;
+  display: inline-block;
+  text-align: center;
+  margin: 2rem 0;
+  margin: 2rem 0;
+  margin-top: 1rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.cta-btn:hover {
+  background-color: #00aaff;
+  color: #fff;
+}
+
 
     .page-wrapper::before,
     .page-wrapper::after {
@@ -127,7 +184,7 @@
     }
 
     .section {
-      padding: 6rem 2rem;
+      padding: 3rem 2rem;
       max-width: 960px;
       margin: 0 auto;
       display: flex;
@@ -165,8 +222,8 @@
     scrollDots 20s linear infinite,
     subtlePulse 6s ease-in-out infinite;
   position: relative;
-  margin-bottom: 40px;
-  padding-top: 20px;
+  margin-bottom: 30px;
+  padding-top: 0px;
   z-index: 0;
 }
     
@@ -399,33 +456,46 @@
 
 </head>
 <body>
-  <div class="page-wrapper">
-    <div class="hero" style="padding-top: 0px;">
-      <div id="particles-js"></div>
-      <h1 data-aos="fade-up">Top 1% Club – Elevate Everything</h1>
-      <p data-aos="fade-up" data-aos-delay="300">
-        Health, wealth, influence, confidence, YouTube, energy, discipline
- <br>
-        No more piecing it together. We’ve got it all
-      </p>
-      <div class="cta-container" data-aos="fade-up" data-aos-delay="600">
-        <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">JOIN ONLY FOR $25</a>
-      </div>
-    </div>
+<section class="hero">
+  <div id="particles-js"></div>
 
+  <h1 class="main-headline">Top 1% Club</h1>
+  <p>Where Mindset, Strategy & Action Meet</p>
 
-<!-- Video Embed Below Hero -->
- <div style="max-width: 800px; margin: 0px auto; text-align: center;">
-  <iframe width="100%" height="415" src="https://www.youtube.com/embed/5M5RnM9GXDM?si=WFaWNnWM55BRPzGi&amp;controls=0"
-    title="YouTube video player" frameborder="0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-    referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-  <p style="font-size: 1.1rem; color: #ccc; margin-top: 0px; ">
-    This video is your first step toward the top 1%. Don’t skip it.
-  </p>
+  <div class="cta-container;">
+  <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
 </div>
 
 
+<div id="particles-js"></div>
+<script>
+  particlesJS.load('particles-js', 'https://toponeclub.github.io/telegram/particles-config.json', function() {
+    console.log('particles.js loaded');
+  });
+</script>
+
+<section class="section" style="padding-top: 0rem;">
+  <div class="video-wrapper">
+
+  <div class="feature-box" style="padding: 0; display: flex; flex-direction: column; align-items: center;">
+    <div style="width: 100%; style="height: 100%; aspect-ratio: 16 / 9;">
+    <iframe
+      width="100%"
+      height="100%"
+      src="https://www.youtube.com/embed/5M5RnM9GXDM?si=WFaWNnWM55BRPzGi&amp;controls=0"
+      title="YouTube video player"
+      frameborder="0"
+      allowfullscreen
+      style="border-radius: 12px;"
+</section>
+    ></iframe>
+  </div>
+<p style="font-size: 0.9rem; color: #ccc; margin-bottom: 1rem; text-align: center;">
+ The Real Game Begins Here - Watch This First
+</p>
+
+</div>
+</section>
 
 <div style="position: relative; padding-bottom: 50px;"> <!-- creates space under the line -->
   <div class="vertical-line-fixed" style="top: 15px; padding-top: 150px;"></div>
@@ -438,6 +508,7 @@
       <div class="feature-box">
         <div class="light-sweep"></div>
         <ul class="features-list">
+<li>Improve Your Business, Mindset & Health</li>
           <li>Step-by-step biohacking guides and energy optimization</li>
           <li>Resources for health, testosterone, sleep, and focus</li>
           <li>Financial strategies and your path to your first $10k online</li>
@@ -445,7 +516,8 @@
           <li>Framework for YouTube and SM success (even without a camera)</li>
           <li>Philosophy of strength and control: your life, your rules</li>
           <li>30-day challenges: build discipline, power, and victory</li>
-          <li>No ads. No fluff. Only what works.</li>
+          <li>No ads. No fluff. Only what works</li>
+<li>All in One Private System Built for Top Performance</li>
         </ul>
       </div>
     </div>
@@ -455,13 +527,37 @@
     <div class="section" data-aos="fade-up">
       <h2>Why This Is the Only Thing You’ll Ever Need</h2>
       <div class="feature-box">
+           <ul class="features-list dot-style">
+
         <div class="light-sweep"></div>
-        <p>You’ve tried it all: motivation videos, PDFs, TikTok hacks, YouTube tips.</p>
+        <p>You’ve tried it all: Motivational videos. Productivity hacks and routines. Youtube tips.</p>
         <br>
         <p>But progress doesn’t last...</p>
         <br>
-        <p>Top 1% Club is a proven system best for health, wealth, and influence — made for real results.</p>
-      </div>
+        <p>You’re still not earning what you deserve.</p>
+ <br>
+        <p>You’re still not in the shape you promised yourself.</p>
+
+ <br>
+        <p>You’re still waking up with stress, doubt, and no clear direction.</p>
+
+ <br>
+        <p>You still feel like life is passing — and you're not where you should be.</p>
+
+      
+<br>
+        <p>Not because you’re lazy. Not because you don’t want it.
+</p>
+<br>
+<br>
+        <p>But because no one told you how...<br>
+</div>
+
+
+<div style="text-align: center; margin: 2rem 0;">
+  <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
+</div>
+
     </div>
 
 <div class="dotted-background"></div>
@@ -510,7 +606,13 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
       <p>I quit bad habits, got my life in order, and now earning $4,700/mo working from home.</p>
     </div>
 
+<div style="text-align: center; margin: 2rem 0;">
+  <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
+</div>
+
   </div>
+
+
 
 
 
@@ -551,7 +653,16 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
 <br>Or you're stuck googling free advice while others print results.</p>
        
       </div>
+
+<div style="text-align: center; margin: 2rem 0;">
+  <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
+</div>
+
     </div>
+
+<div style="position: relative; padding-bottom: 50px;"> <!-- creates space under the line -->
+  <div class="vertical-line-fixed" style="top: 15px;"></div>
+</div>
 
 
 
@@ -572,18 +683,29 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
     <div class="section" data-aos="fade-up">
       <h2>You Can’t Become the Best in the Same Environment</h2>
       <div class="feature-box">
+
         <ul class="features-list">
-<img src="https://toponeclub.github.io/telegram/guaranteed.png" alt="Guaranteed" style="display: block; margin: 20px auto; max-width: 220px; margin-bottom: 40px; margin-top: -30px;">
-          <li>Top 1% Club is the environment built to elevate you — no compromise</li>
-          <li>Private access through our secured Telegram platform</li>
+<div style="text-align: center; padding-left: 55px; padding-right: 85px;"> 
+ 
+
+ 
+
+<img src="https://toponeclub.github.io/telegram/guaranteed.png" alt="Guaranteed" style="display: block; margin: 20px auto; max-width: 220px;">
+
+
+          <li>Top 1% Club is the environment built to push you forward</li>
+          <li>Private access through secured Telegram platform</li>
           <li>100+ exclusive resources, unlocked instantly</li>
-          <li>You don’t need to show your face</li>
           <li>You won’t find this on the free web</li>
+          <li>You don’t need to show your face</li>
           <li>Join. Transform. Win.</li>
         </ul>
         <div class="light-sweep" style="pointer-events: none; z-index: 1; position: absolute;"></div>
-     <div class="cta-container">
-        <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">GET ACCESS NOW</a>
+   <div class="cta-container"> 
+  <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
+
+
+
         <p style="margin-top: 1rem; font-size: 0.95rem;">You’ll be redirected to secure checkout to complete payment and instantly get private access.</p>
             </div>
 <img src="https://toponeclub.github.io/telegram/Daco_1774077.png" alt="Secure Checkout Logos" style="display: block; margin: 20px auto; max-width: 220px;">
