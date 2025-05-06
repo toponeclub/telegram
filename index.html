@@ -70,14 +70,13 @@ padding-top: 4rem; /* or try margin-top */
   background-position: center;
   opacity: 0.20;
   z-index: -1;
-  animation: fadeInBackground 8s ease-in-out 0s forwards;
+  animation: fadeInBackground 6s ease-in-out 0s forwards;
 }
 
 .video-wrapper {
-  margin: 2rem auto 0 auto;
-margin-top: 6rem;
+  margin: 0rem auto 0 auto;
+margin-top: 3.1rem;
   width: 100%;
-  max-width: 720px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -87,7 +86,6 @@ margin-top: 6rem;
 
 .video-wrapper iframe {
   width: 100%;
-  height: 360px; /* matches standard YouTube aspect */
   border-radius: 12px;
 }
 
@@ -174,17 +172,17 @@ margin-top: 6rem;
     }
     .page-wrapper::before {
       top: 0;
-      background: linear-gradient(to right, #00f0ff, transparent, #00f0ff);
+      background: linear-gradient(#00f0ff, transparent, #00f0ff);
       box-shadow: 0 0 20px #00f0ff;
     }
     .page-wrapper::after {
       bottom: 0;
-      background: linear-gradient(to right, #00f0ff, transparent, #00f0ff);
+      background: linear-gradient(#00f0ff, transparent, #00f0ff);
       box-shadow: 0 0 20px #00f0ff;
     }
 
     .section {
-      padding: 3rem 2rem;
+      padding: 3.5rem 2rem;
       max-width: 960px;
       margin: 0 auto;
       display: flex;
@@ -222,7 +220,7 @@ margin-top: 6rem;
     scrollDots 20s linear infinite,
     subtlePulse 6s ease-in-out infinite;
   position: relative;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
   padding-top: 0px;
   z-index: 0;
 }
@@ -261,10 +259,10 @@ margin-top: 6rem;
 @keyframes fadeInBackground {
   from {
     opacity: 0;
-    transform: scale(1.09);
+    transform: scale(1.05);
   }
   to {
-    opacity: 0.2;
+    opacity: 0.18;
     transform: scale(1);
   }
 }
@@ -466,19 +464,11 @@ margin-top: 6rem;
   <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
 </div>
 
-
-<div id="particles-js"></div>
-<script>
-  particlesJS.load('particles-js', 'https://toponeclub.github.io/telegram/particles-config.json', function() {
-    console.log('particles.js loaded');
-  });
-</script>
-
-<section class="section" style="padding-top: 0rem;">
   <div class="video-wrapper">
-
   <div class="feature-box" style="padding: 0; display: flex; flex-direction: column; align-items: center;">
-    <div style="width: 100%; style="height: 100%; aspect-ratio: 16 / 9;">
+
+  <!-- Responsive iframe video embed -->
+  <div style="width: 100%; max-width: 1900px; aspect-ratio: 16 / 9;">
     <iframe
       width="100%"
       height="100%"
@@ -490,14 +480,13 @@ margin-top: 6rem;
 </section>
     ></iframe>
   </div>
-<p style="font-size: 0.9rem; color: #ccc; margin-bottom: 1rem; text-align: center;">
+<p style="font-size: 1rem; color: #ccc; margin-bottom: 1rem; text-align: center;">
  The Real Game Begins Here - Watch This First
 </p>
 
 </div>
 </section>
-
-<div style="position: relative; padding-bottom: 50px;"> <!-- creates space under the line -->
+<div style="position: relative; padding-bottom: 50px; margin-top: 300px;"> <!-- creates space under the line -->
   <div class="vertical-line-fixed" style="top: 15px; padding-top: 150px;"></div>
 </div>
 
@@ -712,10 +701,6 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
     </div>
 
  </div>
-
-<div class="blurred-circle" style="top: -100px; left: -100px;"></div>
-<div class="blurred-circle" style="bottom: -150px; right: -100px;"></div>
-<div class="blurred-circle" style="top: 200px; right: 50px;"></div>
 
 
     <footer>
