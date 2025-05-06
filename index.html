@@ -77,7 +77,7 @@ padding-top: 4rem; /* or try margin-top */
 .video-wrapper {
     max-width: 100%;
   margin: 0rem auto 0 auto;
-margin-top: 3.1rem;
+  margin-top: 3.1rem;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -95,12 +95,12 @@ margin-top: 3.1rem;
 @media (max-width: 768px) {
   .video-wrapper {
     margin-top: 1.5rem;
-	height: 260px;
+	height: auto;
     padding: 0 1rem;
   }
 
   .video-wrapper iframe {
-    height: 260px;
+    height: auto;
   }
 }
 
@@ -117,6 +117,12 @@ margin-top: 3.1rem;
   align-items: center;
   text-align: center;
   color: white;
+}
+
+@media (min-width: 992px) {
+  .spacer-desktop {
+    margin-top: 310px;
+  }
 }
 
 
@@ -207,8 +213,8 @@ margin-top: 3.1rem;
 
 .dotted-background {
   width: 100%;
-  height: 160px;
-  background-image: radial-gradient(circle, rgba(0, 255, 213, 0.15) 1.2px, transparent 1.2px);
+  height: 180px;
+  background-image: radial-gradient(circle, rgba(0, 255, 213, 0.35) 1.2px, transparent 1.2px);
   background-size: 22px 22px;
   background-repeat: repeat;
   animation:
@@ -454,28 +460,17 @@ margin-top: 3.1rem;
 <section class="hero">
   <div id="particles-js"></div>
 
-  <h1 class="main-headline">Top 1% Club</h1>
-  <p>Where Mindset, Strategy & Action Meet</p>
+  <h1 class="main-headline" data-aos="fade-up" data-aos-delay="100">Top 1% Club</h1>
+  <p data-aos="fade-up" data-aos-delay="300">Where Mindset, Strategy & Action Meet</p>
 
-  <div class="cta-container;">
+  <div class="cta-container" data-aos="fade-up" data-aos-delay="500">
   <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
 </div>
 
-  <div class="video-wrapper">
+  <div class="video-wrapper" data-aos="fade-up" data-aos-delay="700">
   <div class="feature-box" style="padding: 0; display: flex; flex-direction: column; align-items: center;">
-
-  <!-- Responsive iframe video embed -->
-  <div style="width: 100%; max-width: 1900px; aspect-ratio: 16 / 9;">
-    <iframe
-      width="100%"
-      height="100%"
-      src="https://www.youtube.com/embed/5M5RnM9GXDM?si=WFaWNnWM55BRPzGi&amp;controls=0"
-      title="YouTube video player"
-      frameborder="0"
-      allowfullscreen
-      style="border-radius: 12px;"
-    ></iframe>
-	  </div>
+	 <iframe width="560" height="375" src="https://www.youtube.com/embed/5M5RnM9GXDM?si=TtGrsk2h8JxLur7n" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+	
 	  <p style="font-size: 1rem; color: #ccc; margin-bottom: 1rem; text-align: center;">
  The Real Game Begins Here - Watch This First
 </p>
@@ -486,7 +481,7 @@ margin-top: 3.1rem;
 
 </div>
 </section>
-<div style="position: relative; padding-bottom: 80px; margin-top: 310px;"> <!-- creates space under the line -->
+<div style="position: relative; padding-bottom: 80px; margin-top: 210px;"> <!-- creates space under the line -->
   <div class="vertical-line-fixed" style="top: 15px; padding-top: 150px;"></div>
 </div>
 
@@ -545,7 +540,7 @@ margin-top: 3.1rem;
 <div class="dotted-background"></div>
 
 <section style="background-color: #0e0e0e; padding: 40px 20px; font-family: 'Montserrat', sans-serif; color: #fff;">
-  <h1 style="text-align: center; font-size: 38px; margin-bottom: 70px; color: #00ffd5;">Every Day You Wait, Someone Else Moves Ahead</h1>
+  <h1 style="text-align: center; font-size: 32px; margin-bottom: 70px; color: #00ffd5;">Every Day You Wait, Someone Else Moves Ahead</h1>
   <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 25px;">
 
        <div style="background: #1a1a1a; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,255,255,0.1); border: 1px solid rgba(255,255,255,0.05);">
