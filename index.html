@@ -84,6 +84,10 @@ padding-top: 4rem; /* or try margin-top */
   align-items: center;
   /* height: auto ensures it wraps the iframe naturally */
   height: auto;
+  rel=0
+  modestbranding=1
+  showinfo=0
+  controls=1
 }
 
 .video-wrapper iframe {
@@ -221,7 +225,7 @@ padding-top: 4rem; /* or try margin-top */
     scrollDots 20s linear infinite,
     subtlePulse 6s ease-in-out infinite;
   position: relative;
-  margin-bottom: 40px;
+  margin-bottom: 10px;
   padding-top: 0px;
   z-index: 0;
 }
@@ -454,6 +458,19 @@ padding-top: 4rem; /* or try margin-top */
   window.addEventListener("resize", initBlurs);
 </script>
 
+<script>
+  const player = new Plyr('#player', {
+    controls: ['play', 'progress', 'mute', 'volume'],
+    youtube: {
+      noCookie: true,
+      rel: 0,
+      showinfo: 0,
+      modestbranding: 1
+    }
+  });
+</script>
+
+
 
 </head>
 <body>
@@ -469,7 +486,7 @@ padding-top: 4rem; /* or try margin-top */
 
   <div class="video-wrapper" data-aos="fade-up" data-aos-delay="700">
   <div class="feature-box" style="padding: 0; display: flex; flex-direction: column; align-items: center;">
-	 <iframe width="560" height="375" src="https://www.youtube.com/embed/5M5RnM9GXDM?si=TtGrsk2h8JxLur7n" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+	 <iframe width="560" height="375" src="https://www.youtube.com/embed/5M5RnM9GXDM?si=TtGrsk2h8JxLur7n" title="Top 1 Club" frameborder="0" allow="accelerometer; rel=0; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture;" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 	
 	  <p style="font-size: 1rem; color: #ccc; margin-bottom: 1rem; text-align: center;">
  The Real Game Begins Here - Watch This First
@@ -539,7 +556,7 @@ padding-top: 4rem; /* or try margin-top */
 
 <div class="dotted-background"></div>
 
-<section style="background-color: #0e0e0e; padding: 40px 20px; font-family: 'Montserrat', sans-serif; color: #fff;">
+<section style="background-color: #0d0d0d; padding: 40px 20px; font-family: 'Montserrat', sans-serif; color: #fff;">
   <h1 style="text-align: center; font-size: 32px; margin-bottom: 70px; color: #00ffd5;">Every Day You Wait, Someone Else Moves Ahead</h1>
   <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 25px;">
 
