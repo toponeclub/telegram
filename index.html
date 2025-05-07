@@ -145,7 +145,7 @@ padding-top: 4rem; /* or try margin-top */
    .cta-btn {
   background-color: #00ffd5;
   color: #000;
-  padding: 1.2rem 4.1rem;         /* wider */
+  padding: 1.2rem 4.3rem;         /* wider */
   border-radius: 12px;        /* less roundy */
   font-weight: 700;
   font-size: 1.225rem;
@@ -412,6 +412,14 @@ padding-top: 4rem; /* or try margin-top */
   z-index: 1;
 }
 
+@media (max-width: 768px) {
+  .cta-btn {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    width: auto;
+    white-space: nowrap; /* prevents text wrap */
+  }
+}
 
 
 
