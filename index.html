@@ -109,19 +109,25 @@ padding-top: 4rem; /* or try margin-top */
 }
 
 @media (max-height: 800px) {
-.hero {
-  position: relative;
-  z-index: 1;
-  height: 100vh;
-  padding-top: 6vh;
-  padding-bottom: 14vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  text-align: center;
-  color: white;
+  .hero {
+    padding-top: 6vh;
+    padding-bottom: 14vh;
+
+    /* Remove: height: 100vh; — it causes problems on mobile, especially iPhones */
+    /* Remove: position, z-index — unnecessary unless overlapping elements exist */
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    text-align: center;
+    color: white;
+
+    /* Optional: Let height grow naturally with content */
+    min-height: 100vh; /* safer than height: 100vh on mobile browsers */
+  }
 }
+
 
 @media (min-width: 992px) {
   .spacer-desktop {
