@@ -125,7 +125,7 @@ padding-top: 4rem; /* or try margin-top */
 
 @media (min-width: 992px) {
   .spacer-desktop {
-    margin-top: 310px;
+    margin-top: 240px;
   }
 }
 
@@ -177,12 +177,12 @@ padding-top: 4rem; /* or try margin-top */
     }
     .page-wrapper::before {
       top: 0;
-      background: linear-gradient(#00f0ff, transparent, #00f0ff);
+      background: linear-gradient(to right, #00f0ff, transparent, #00f0ff);
       box-shadow: 0 0 20px #00f0ff;
     }
     .page-wrapper::after {
       bottom: 0;
-      background: linear-gradient(#00f0ff, transparent, #00f0ff);
+      background: linear-gradient(to right, #00f0ff, transparent, #00f0ff);
       box-shadow: 0 0 20px #00f0ff;
     }
 
@@ -414,7 +414,7 @@ padding-top: 4rem; /* or try margin-top */
 
 @media (max-width: 768px) {
   .cta-btn {
-    padding: 1rem 2rem;
+    padding: 1rem 4rem;
     font-size: 1rem;
     width: auto;
     white-space: nowrap; /* prevents text wrap */
@@ -482,6 +482,7 @@ padding-top: 4rem; /* or try margin-top */
 
 </head>
 <body>
+<div class="page-wrapper">
 <section class="hero">
   <div id="particles-js"></div>
 
@@ -489,6 +490,7 @@ padding-top: 4rem; /* or try margin-top */
   <p data-aos="fade-up" data-aos-delay="300">Where Mindset, Strategy & Action Meet</p>
 
   <div class="cta-container" data-aos="fade-up" data-aos-delay="500"; style="margin-top: 20px; margin-bottom: -25px;">
+
   <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
 </div>
 
@@ -506,14 +508,16 @@ padding-top: 4rem; /* or try margin-top */
 
 </div>
 </section>
-<div style="position: relative; padding-bottom: 80px; margin-top: 210px;"> <!-- creates space under the line -->
-  <div class="vertical-line-fixed" style="top: 15px; padding-top: 150px;"></div>
+
+<div style="position: relative; padding-bottom: 80px; margin-top: 50px;"> <!-- creates space under the line -->
+  <div class="vertical-line-fixed" style="top: 15px; padding-top: 10px; "></div>
+<div class="spacer-desktop">
 </div>
 
 
-    <div class="section" data-aos="fade-up">
-      <h2>Improve Your Business, Mindset & Health</h2>
-      <h3 style="margin-top: 0.5rem; font-weight: 400;">One Subscription. Infinite Value</h3>
+    <div class="section"; data-aos="fade-up" >
+	      <h2 style="margin-top: 2.5rem;">Improve Your Business, Mindset & Health</h2>
+      <h3 style="margin-top: 0rem; font-weight: 400;">One Subscription. Infinite Value</h3>
       <div class="feature-box">
         <div class="light-sweep"></div>
         <ul class="features-list">
@@ -538,7 +542,7 @@ padding-top: 4rem; /* or try margin-top */
            <ul class="features-list dot-style">
 
         <div class="light-sweep"></div>
-        <div style="font-size: 1.1rem; padding-left: 2.2rem; text-align: left; margin-bottom: 1rem;">
+        <div style="font-size: 1.2rem; padding-left: 2.2rem; text-align: left; margin-bottom: 1rem;">
     <p>You’ve tried it all: Motivational videos. Productivity hacks and routines. Youtube tips.</p>
     <br>
     <p>But progress doesn’t last...</p>
