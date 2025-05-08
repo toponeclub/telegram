@@ -274,7 +274,7 @@ padding-top: 4rem; /* or try margin-top */
 @keyframes fadeInBackground {
   from {
     opacity: 0;
-    transform: scale(1.05);
+    transform: scale(1.005);
   }
   to {
     opacity: 0.18;
@@ -373,18 +373,32 @@ padding-top: 4rem; /* or try margin-top */
   flex-wrap: wrap;
 }
 
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    
+  }
+  100% {
+    opacity: 1;
+   
+  }
+}
+
 .footer-exclusive {
   color: #00ffd5;
   font-size: 0.75rem;
   transform: translateY(5rem); /* shifts down by 15rem */
-  text-decoration: none;
   padding: 0.50rem 0.8rem;
   border: 1px solid rgba(0,255,255,0.3);
   border-radius: 10px;
   transition: all 0.3s ease;
+  animation: fadeIn 4s;
   background: rgba(0, 255, 255, 0.05);
   box-shadow: 0 0 10px rgba(0,255,255,0.1);
+  
 }
+
+
 
 .footer-link-btn {
   color: #00ffd5;
@@ -469,8 +483,6 @@ padding-top: 4rem; /* or try margin-top */
   }
 }
 
-
-
     footer {
       text-align: center;
       padding: 1rem;
@@ -526,13 +538,23 @@ padding-top: 4rem; /* or try margin-top */
   });
 </script>
 
+<script>
+  function openModal(url) {
+    document.getElementById('docFrame').src = url;
+    document.getElementById('docModal').style.display = 'flex';
+  }
+  function closeModal() {
+    document.getElementById('docModal').style.display = 'none';
+    document.getElementById('docFrame').src = '';
+  }
+</script>
 
 
 </head>
 <body>
 <div class="page-wrapper">
 <section class="hero">
-    <div href="/privacy-policy" class="footer-exclusive">ЕXCLUSIVE CONTENT</a>
+    <div href="/privacy-policy" class="footer-exclusive" >ЕXCLUSIVE CONTENT</a>
   </div>
 
   <h1 class="main-headline" data-aos="fade-up" data-aos-delay="100">Top 1% Club</h1>
@@ -701,7 +723,7 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
       <h2>Works Wherever You Are</h2>
       <div class="feature-box">
         <div class="light-sweep"></div>
-        <ul class="features-list dot-style">
+        <ul class="features-list dot-style" >
           <li>Not about nationality or gender</li>
           <li>Made for ambitious people ready to rise and dominate</li>
           <li>Wake up sharp, train smart, earn online, and command respect</li>
@@ -744,14 +766,15 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
       <div class="feature-box">
 
         <ul class="features-list">
-<div style="text-align: center;"> 
+
  
 
  
 
 <img src="https://toponeclub.github.io/telegram/guaranteed.png" alt="Guaranteed" style="display: block; margin: 20px auto; max-width: 220px;">
-
-
+  </ul>
+<ul class="features-list" style="max-width: 680px; margin-left: 1rem; text-align: center;">
+  <br>
           <li>Top 1% Club is the environment built to push you forward</li>
           <li>Private access through secured Telegram platform</li>
           <li>100+ exclusive resources, unlocked instantly</li>
@@ -759,6 +782,8 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
           <li>You don’t need to show your face</li>
           <li>Join. Transform. Win.</li>
         </ul>
+		  <br>
+		
         <div class="light-sweep" style="pointer-events: none; z-index: 1; position: absolute;"></div>
    <div class="cta-container"> 
   <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
@@ -805,20 +830,23 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
 	<div style="text-align: center; font-size: 0.75rem; color: #777; padding: 1rem 1.5rem; max-width: 900px; margin: 2rem auto 0 auto;">
   Not affiliated with Meta, Google, YouTube, or any mentioned platform.
 <br>
-Disclaimer: Educational use only. No results are guaranteed. This is not financial or medical advice. Your decisions are your own responsibility. 
+Disclaimer: Educational use only. No results are guaranteed. 
+<br>
+This is not financial or medical advice. Your decisions are your own responsibility. 
 </div>
 
 
 	<div class="footer-buttons">
-  <a href="/privacy-policy" class="footer-link-btn">Privacy Policy</a>
-  <a href="/terms" class="footer-link-btn">Terms & Conditions</a>
+  <a href="javascript:void(0);" class="footer-link-btn" onclick="openModal('https://toponeclub.github.io/telegram/Privacy.html')">Privacy Policy</a>
+  <a href="javascript:void(0);" class="footer-link-btn" onclick="openModal('https://toponeclub.github.io/telegram/Terms.html')">Terms & Conditions</a>
 </div>
+
 <div style="text-align:center; font-size:0.9rem; color:#aaa; margin-top: 1.5rem;">
   Have questions? <a href="https://t.me/t1admin" style="color:#00ffd5;">Contact support</a>
 </div>
 
 <div class="social-icons">
-    <a href="https://www.instagram.com/alishan.youtube/" target="_blank" title="Instagram">
+    <a href="https://www.instagram.com/toponeprime/" target="_blank" title="Instagram">
         <i class="fab fa-instagram"></i>
     </a>
     <a href="https://x.com/AlishanYoutube" target="_blank" title="X">
@@ -833,12 +861,17 @@ Disclaimer: Educational use only. No results are guaranteed. This is not financi
 </div>
 
 </body>
-
     <footer>
       &copy; 2025 Top 1% Club. All rights reserved.
     </footer>
-
   </div>
+<div id="docModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100vh; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+  <div style="position:relative; width:90%; height:90%; background:#111; border-radius:8px; box-shadow:0 0 20px rgba(0,255,255,0.2);">
+    <button onclick="closeModal()" style="position:absolute; top:10px; right:15px; background:#00ffd5; color:#000; border:none; padding:0.5rem 1rem; font-weight:bold; border-radius:5px; cursor:pointer;">Close</button>
+    <iframe id="docFrame" src="" style="width:100%; height:100%; border:none; border-radius:0 0 8px 8px;"></iframe>
+  </div>
+</div>
+
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
   <script>
