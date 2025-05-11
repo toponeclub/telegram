@@ -9,7 +9,7 @@
 
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="icon" type="image/x-icon" href="https://toponeclub.github.io/telegram/pyramid.png">
+
 
   <!-- Fonts and Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet" />
@@ -489,6 +489,7 @@ padding-top: 4rem; /* or try margin-top */
       font-size: 0.9rem;
       color: #888;
     }
+	
 
     @media (max-width: 768px) {
       h1 { font-size: 2.9rem; }
@@ -498,6 +499,254 @@ padding-top: 4rem; /* or try margin-top */
       }
     }
   </style>
+  
+
+<!-- PRICING MODAL BACKGROUND -->
+<div id="plansModal" style="
+  display: none;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.88);
+  z-index: 9999;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 3rem 1rem;
+  box-sizing: border-box;
+">
+	
+  <div style="max-width:1400px; width:100%; background:#0e0e0e; border-radius:16px; padding:2.5rem; border:2px solid rgba(0,255,255,0.15); box-shadow:0 0 20px rgba(0,255,255,0.1); position:relative;">
+
+    <h2 style="text-align:center; color:#00ffd5; font-size:2.2rem; margin-bottom:2rem;">Choose Your Access</h2>
+
+    <!-- CLOSE BUTTON -->
+    <button onclick="closePlansModal()" style="position:absolute; top:20px; right:25px; background:none; color:#aaa; font-size:1.5rem; border:none; cursor:pointer;">✕</button>
+
+    <!-- PLANS GRID -->
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-around; gap: 2rem;">
+
+      <!-- PLAN BOX -->
+	  <a href="https://whop.com/checkout/plan_uQnx1jlOafllT?d2c=true" class="plan-link">
+      <div class="plan-box">
+        <h3>1-Day Trial</h3>
+        <p>$5</p>
+		 <ul class="features-list">
+        <ul>
+          <li>Full content access</li>
+          <li>No commitment</li>
+          <li>Instant access</li>
+        </ul>
+       </div>
+
+      <a href="https://whop.com/checkout/plan_2dx6K333gwdxF?d2c=true" class="plan-link">
+      <div class="plan-box">
+        <h3>New Blood</h3>
+        <p>$25 / 1 Month</p>
+		 <ul class="features-list">
+        <ul>
+          <li>All content unlocked</li>
+          <li>Beginner-level access</li>
+          <li>Digital badge</li>
+        </ul>
+            </div>
+
+      <a href="https://whop.com/checkout/plan_DMfpgTh4GysbN?d2c=true" class="plan-link">
+      <div class="plan-box">
+        <h3>Warlord</h3>
+        <p>$105 / 6 Months <br>(save 30%)</p>
+		 <ul class="features-list">
+        <ul>
+          <li>Elite chat access</li>
+          <li>Affiliate program</li>
+          <li>Monthly audios</li>
+          <li>Bonuses (incl. NFT)</li>
+        </ul>
+              </div>
+
+      <a href="https://whop.com/checkout/plan_gwk37uPrYigXo?d2c=true" class="plan-link">
+      <div class="plan-box">
+        <h3>Legend</h3>
+        <p>$180 / 12 Months <br>(save 40%)</p>
+		 <ul class="features-list">
+        <ul>
+          <li>Everything in Warlord</li>
+          <li>Hidden Vault unlocked</li>
+          <li>Founders Q Access</li>
+          <li>1-Year Trophy & Gift</li>
+        </ul>
+              </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL STYLES -->
+<style>
+.close-modal {
+  position: sticky;
+  top: 0;
+  z-index: 10000;
+  background: #0d0d0d;
+  padding: 1rem;
+  text-align: right;
+}
+
+.modal-inner {
+  width: 100%;
+  max-width: 1280px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  box-sizing: border-box;
+}
+
+.plan-link {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: auto;
+  max-width: auto;
+  justify-content: center;
+}
+
+
+
+
+  .plan-box {
+  background: #111;
+  border-radius: 14px;
+  padding: 1.5rem;
+  flex: 1 1 250px;
+  min-width: 250px;
+  max-width: 320px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 0 20px rgba(0,255,255,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin: 1rem;
+}
+
+
+
+#plansModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: auto;
+  min-height: 100vh;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.88);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 3rem 1rem;
+  z-index: 9999;
+}
+
+
+
+.plan-box:hover {
+  transform: scale(1.03);
+  background: #00aaf;
+  background-opacity: 10%;
+   transform: scale(1.0715);
+  box-shadow: 0 0 25px rgba(0,255,255,0.25);
+   transition: all 0.3s ease-in-out;
+}
+
+.plan-box h3 {
+  font-size: 1.7rem;
+  color: #00ffd5;
+  margin-bottom: 0.5rem;
+}
+
+.plan-box p {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.plan-box ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1rem;
+  color: #ccc;
+}
+
+.plan-box ul li {
+  margin-bottom: 0.5rem;
+  font-size: 1.02rem;
+}
+
+/* 🔧 MODAL FIXED HEIGHT FOR MOBILE */
+.pricing-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+
+
+/* ✨ Smooth close button area and spacing on top */
+.pricing-modal .close-btn {
+  align-self: flex-end;
+  font-size: 1.5rem;
+  color: #00ffd5;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  margin-right: 0.5rem;
+}
+
+/* 🧠 Responsive adjustments */
+@media (max-width: 768px) {
+  .pricing-modal {
+    padding-top: 3rem;
+    padding-bottom: rem;
+  }
+  
+  body {
+  position: relative;
+  overflow: hidden;
+  height: 100vh;
+}
+
+
+  .plan-box {
+    max-width: 100%;
+  }
+}
+
+
+</style>
+
+<!-- MODAL SCRIPTS -->
+<script>
+  function openPlansModal() {
+    document.getElementById('plansModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePlansModal() {
+    document.getElementById('plansModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+  }
+</script>
+
 
 <script>
   function drawGlow(canvas, color) {
@@ -571,7 +820,8 @@ padding-top: 4rem; /* or try margin-top */
 	</section>
 	
   <div style="text-align: center; margin: 2rem 0;">
-  <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
+  <a onclick="openPlansModal()" class="cta-btn">Enter The Top 1%</a>
+
 </div>
 
 
@@ -634,7 +884,7 @@ padding-top: 4rem; /* or try margin-top */
 
 
 <div style="text-align: center; margin: 2rem 0;">
-  <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
+  <a onclick="openPlansModal()" class="cta-btn">Enter The Top 1%</a>
 </div>
 
     </div>
@@ -688,7 +938,7 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
     </div>
 
 <div style="text-align: center; margin: 2rem 0;">
-  <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
+  <a onclick="openPlansModal()" class="cta-btn">Enter The Top 1%</a>
 </div>
 
   </div>
@@ -736,7 +986,7 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
       </div>
 
 <div style="text-align: center; margin: 2rem 0;">
-  <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
+  <a onclick="openPlansModal()" class="cta-btn">Enter The Top 1%</a>
 </div>
 
     </div>
@@ -786,7 +1036,7 @@ I’m also actively working on my health and hair. Going to Yoga now and lost 7 
 		
         <div class="light-sweep" style="pointer-events: none; z-index: 1; position: absolute;"></div>
    <div class="cta-container"> 
-  <a href="https://app.lava.top/products/17399162-dbe8-4c07-91de-56027bb19581" class="cta-btn">Enter the Top 1%</a>
+  <a onclick="openPlansModal()" class="cta-btn">Enter The Top 1%</a>
 
 
 
