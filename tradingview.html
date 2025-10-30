@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Crypto Smart Analyzer — Web (Standalone)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind CDN (just for quick styling) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* small tweaks for dark theme and monospace logs */
+    :root { --bg:#0b0b0b; --panel:#0f1720; --muted:#9aa4b2; --accent:#00d07a; --danger:#ff6b6b; }
+    html,body { height:100%; background:var(--bg); color:var(--muted); font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    .card { background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.03); border-radius:12px; }
+    #log { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; font-size:13px; color:#d6dde5; }
+    /* TradingView container height */
+    #tv_embed_container { height:100%; width:100%; }
+    .tv-wrap { height:560px; min-height:360px; }
+    .btn { padding:8px 12px; border-radius:8px; }
+    .small-muted { color: #abb6c4; font-size:13px; }
+  </style>
+</head>
+<body class="p-6">
+
+  <div class="max-w-[1400px] mx-auto">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h1 class="text-white text-2xl font-semibold">Crypto Smart Analyzer — Standalone</h1>
+        <div class="small-muted">Bybit candles | TradingView embed | Tailwind UI</div>
+      </div>
+      <div class="text-sm small-muted">Analyzer loop: <span id="loopInterval">150s</span> &nbsp; • &nbsp; Bybit source</div>
+    </div>
+
+    <div class="grid grid-cols-4 gap-4">
+      <!-- left column -->
+      <div class="col-span-1 card p-4 flex flex-col gap-3">
+        <label class="text-sm text-slate-300">Symbol</label>
+        <select id="symbolSelect" class="w-full bg-[#0b1220] text-white p-2 rounded">
+        </select>
+
+        <div class="flex gap-2">
+          <button id="btnStart" class="btn bg-green-600 text-white w-full">Start</button>
+          <button id="btnStop" class="btn bg-gray-700 text-white w-full">Stop</button>
+        </div>
+        <button id="btnAnalyze" class="btn bg-blue-600 text-white w-full">Analyze Now</button>
+
+        <div class="mt-2">
+          <div class="text-xs small-muted mb-1">Telegram Bot</div>
+          <input id="tgToken" placeholder="Bot token (botXXX:...)" class="w-full p-2 rounded bg-[#07101a] text-white" />
+          <input id="tgChat" placeholder="Chat ID" class="w-full p-2 mt-2 rounded bg-[#07101a] text-white" />
+          <div class="text-xs mt-2 small-muted">7672223015:AAFKcBctFgqS7NGUq1_lbnHNCEo6Fionbqs & 591775682. The analyzer will POST to Telegram directly.</div>
+        </div>
+
+        <div class="mt-2">
+          <div class="text-xs small-muted">Status</div>
+          <div class="mt-1 text-sm text-white">Price: <span id="price">-</span></div>
+          <div class="mt-1 text-sm">Direction: <span id="direction">-</span></div>
+          <div class="mt-1 text-sm">Score: <span id="score">-</span></div>
+          <div class="mt-1 text-sm">Consensus: <span id="consensus">-</span></div>
+          <div class="mt-1 text-sm">SL / TP: <span id="sltp">-</span></div>
+        </div>
+
+        <div class="mt-2">
+          <div class="text-xs small-muted">Controls</div>
+          <div class="mt-1">
+            <label class="inline-flex items-center small-muted">
+              <input id="useBybitCheckbox" type="checkbox" checked class="mr-2" />
+              Use Bybit (otherwise CoinGecko fallback)
+            </label>
+          </div>
+          <div class="mt-2 text-xs small-muted">Log limit</div>
+          <input id="logLimit" type="number" value="200" class="w-full p-2 rounded bg-[#07101a] text-white" />
+        </div>
+      </div>
+
+      <!-- right column: chart + logs -->
+      <div class="col-span-3 flex flex-col gap-4">
+        <div class="card p-3 tv-wrap" id="chartCard">
+          <!-- TradingView Widget BEGIN (exact block included) -->
+<div class="tradingview-widget-container" id="tv_embed_container" style="height:100%;width:100%">
+  <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+  <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/symbols/CME-XRP1!/" rel="noopener nofollow" target="_blank"><span class="blue-text">XRP1! chart</span></a><span class="trademark"> by TradingView</span></div>
+  <script id="tv_init_script" type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+  {
+  "allow_symbol_change": true,
+  "calendar": false,
+  "details": false,
+  "hide_side_toolbar": true,
+  "hide_top_toolbar": false,
+  "hide_legend": false,
+  "hide_volume": false,
+  "hotlist": false,
+  "interval": "5",
+  "locale": "en",
+  "save_image": true,
+  "style": "1",
+  "symbol": "CME:XRP1!",
+  "theme": "dark",
+  "timezone": "Etc/UTC",
+  "backgroundColor": "#0F0F0F",
+  "gridColor": "rgba(242, 242, 242, 0.06)",
+  "watchlist": [],
+  "withdateranges": false,
+  "compareSymbols": [],
+  "studies": [],
+  "autosize": true
+}
+  </script>
+</div>
+<!-- TradingView Widget END -->
+        </div>
+
+        <div class="card p-3 h-72 overflow-auto">
+          <div class="flex justify-between items-center mb-2">
+            <div class="text-sm text-white">Live Log</div>
+            <div class="text-xs small-muted">Most recent messages on top</div>
+          </div>
+          <pre id="log" class="whitespace-pre-wrap"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ============================
+   Standalone Analyzer (Browser)
+   ============================
+   - Fetches candles from Bybit v5 public REST API
+   - Performs EMA, RSI, ATR, pattern detection, scoring
+   - Runs every 150s loop (configurable below)
+   - Sends Telegram messages via bot token/chat id (user provided in UI)
+*/
+
+// ------------------ user-config / state ------------------
+const LOOP_SECONDS = 150; // main loop seconds (per your request)
+document.getElementById('loopInterval').innerText = LOOP_SECONDS + 's';
+
+const TOP_COINS = [
+  "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
+  "SOLUSDT","DOGEUSDT","MATICUSDT","DOTUSDT","TRXUSDT",
+  "LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT"
+];
+
+// Mapping to TradingView style symbols (use BINANCE: by default)
+const TV_MAP = {};
+TOP_COINS.forEach(c => TV_MAP[c] = `BINANCE:${c}`);
+// keep CME mapping for XRP as optional (we will use BINANCE by default)
+// TV_MAP["XRPUSDT"] = "CME:XRP1!"; // uncomment if you prefer CME for XRP
+
+// Bybit API base for kline (v5)
+const BYBIT_KLINE_URL = "https://api.bybit.com/v5/market/kline";
+
+// state
+let running = false;
+let loopTimer = null;
+let lastSent = { dir: null, time: null, overall_score: 0, last_price: 0 };
+let logs = [];
+const LOG_MAX = 2000;
+
+// UI references
+const sel = document.getElementById('symbolSelect');
+const btnStart = document.getElementById('btnStart');
+const btnStop = document.getElementById('btnStop');
+const btnAnalyze = document.getElementById('btnAnalyze');
+const priceEl = document.getElementById('price');
+const dirEl = document.getElementById('direction');
+const scoreEl = document.getElementById('score');
+const consEl = document.getElementById('consensus');
+const sltpEl = document.getElementById('sltp');
+const logEl = document.getElementById('log');
+const tgTokenInput = document.getElementById('tgToken');
+const tgChatInput = document.getElementById('tgChat');
+const useBybitCheckbox = document.getElementById('useBybitCheckbox');
+const logLimitInput = document.getElementById('logLimit');
+
+// thresholds & config (copied from your Python defaults)
+const MIN_SCORE_TO_SEND = 11;
+const MIN_CONSENSUS = 4;
+const SIGNIFICANT_CHANGE = 15;
+const TF_WEIGHTS = {"M":4,"W":4,"D":3,"15":1,"5":1};
+const MOMENTUM_PCT_THRESHOLD = 0.0025;
+const ATR_NORM_THRESHOLD = 0.0012;
+const RR_RATIO = 3.0;
+const HIGH_SCORE_OVERRIDE = 12;
+
+// initialize symbol selector
+TOP_COINS.forEach(c => {
+  const o = document.createElement('option');
+  o.value = c; o.textContent = c;
+  sel.appendChild(o);
+});
+sel.value = TOP_COINS[0];
+
+// ------------------ Logging helpers ------------------
+function addLog(msg) {
+  const t = new Date().toISOString().split('T')[1].split('.')[0];
+  logs.unshift(`[${t}] ${msg}`);
+  if (logs.length > 2000) logs.length = 2000;
+  const limit = Math.max(40, Number(logLimitInput.value || 200));
+  logEl.textContent = logs.slice(0, limit).join('\n\n');
+}
+
+// ------------------ Numeric helpers (safe) ------------------
+function toFixedSafe(v, n=6) {
+  if (v === null || v === undefined || Number.isNaN(v)) return '-';
+  return Number(v).toFixed(n);
+}
+
+// ------------------ Indicators (JS implementations) ------------------
+function ema(values, period) {
+  const v = values.map(Number);
+  if (v.length === 0) return [];
+  const alpha = 2.0 / (period + 1);
+  const e = new Array(v.length).fill(0);
+  e[0] = v[0];
+  for (let i = 1; i < v.length; i++) {
+    e[i] = alpha * v[i] + (1 - alpha) * e[i-1];
+  }
+  return e;
+}
+
+function rsi(values, period=14) {
+  const v = values.map(Number);
+  const n = v.length;
+  if (n < period + 1) return new Array(n).fill(0);
+  const deltas = new Array(n-1);
+  for (let i=1;i<n;i++) deltas[i-1] = v[i]-v[i-1];
+  let seed = deltas.slice(0, period);
+  let up = seed.filter(x=>x>=0).reduce((a,b)=>a+b,0)/period;
+  let down = -seed.filter(x=>x<0).reduce((a,b)=>a+b,0)/period;
+  let rs = down !== 0 ? up/down : Infinity;
+  const r = new Array(n).fill(0);
+  r.fill(0,0,period+1);
+  r[period] = 100 - 100/(1 + (isFinite(rs)?rs:1));
+  let up_sma = up;
+  let down_sma = down;
+  for (let i = period+1; i < n; i++) {
+    const delta = deltas[i-1];
+    const upval = Math.max(delta,0);
+    const downval = -Math.min(delta,0);
+    up_sma = (up_sma * (period - 1) + upval) / period;
+    down_sma = (down_sma * (period - 1) + downval) / period;
+    rs = down_sma !== 0 ? up_sma / down_sma : Infinity;
+    r[i] = 100 - 100/(1 + (isFinite(rs)?rs:1));
+  }
+  return r;
+}
+
+function atr(candles, period=14) {
+  if (!candles || candles.length < 2) return new Array(candles.length).fill(0);
+  const highs = candles.map(c=>Number(c.high));
+  const lows = candles.map(c=>Number(c.low));
+  const closes = candles.map(c=>Number(c.close));
+  const trs = [];
+  for (let i=1;i<closes.length;i++) {
+    const tr = Math.max(highs[i]-lows[i], Math.abs(highs[i]-closes[i-1]), Math.abs(lows[i]-closes[i-1]));
+    trs.push(tr);
+  }
+  if (trs.length < period) {
+    return [0, ...new Array(trs.length).fill(0)];
+  }
+  const atr_vals = new Array(trs.length).fill(0);
+  atr_vals[period-1] = trs.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for (let i=period;i<trs.length;i++) {
+    atr_vals[i] = (atr_vals[i-1] * (period - 1) + trs[i]) / period;
+  }
+  return [0, ...atr_vals];
+}
+
+// ------------------ pattern helpers ------------------
+function swings(closes, window=5) {
+  const res = [];
+  const n = closes.length;
+  for (let i = window; i < n - window; i++) {
+    const seg = closes.slice(i-window, i+window+1);
+    const val = closes[i];
+    if (val === Math.max(...seg)) res.push([i, val, 'high']);
+    else if (val === Math.min(...seg)) res.push([i, val, 'low']);
+  }
+  return res;
+}
+
+function fib_levels_from_swing(high, low) {
+  const diff = high - low;
+  return {
+    '0': low,
+    '0.382': high - diff * 0.382,
+    '0.5': high - diff * 0.5,
+    '0.618': high - diff * 0.618,
+    '1.0': high,
+    '1.618': high + diff * 0.618
+  };
+}
+
+function find_last_swing_high_low(candles, window=40) {
+  const seg = candles.length >= window ? candles.slice(-window) : candles;
+  let high = seg[0].high, low = seg[0].low;
+  for (const c of seg) {
+    if (c.high > high) high = c.high;
+    if (c.low < low) low = c.low;
+  }
+  return [high, low];
+}
+
+function fib_confirmation(candles, price, window=40, pct_tolerance=0.01) {
+  const [high, low] = find_last_swing_high_low(candles, window);
+  const levels = fib_levels_from_swing(high, low);
+  for (const k of ['0.382','0.5','0.618']) {
+    const lvl = levels[k];
+    if (Math.abs(price - lvl) / Math.max(1e-9, price) < pct_tolerance) {
+      return [true, k, lvl];
+    }
+  }
+  return [false, null, null];
+}
+
+function detect_triangle(candles, lookback=50, tol=0.08) {
+  if (candles.length < lookback) return false;
+  const highs = candles.slice(-lookback).map(c=>c.high);
+  const lows = candles.slice(-lookback).map(c=>c.low);
+  const slope_high = (highs[highs.length-1] - highs[0]) / Math.max(1, lookback);
+  const slope_low = (lows[lows.length-1] - lows[0]) / Math.max(1, lookback);
+  const amp_start = highs[0] - lows[0];
+  const amp_end = highs[highs.length-1] - lows[lows.length-1];
+  const is_converging = amp_end < amp_start * (1 - tol);
+  return (slope_high < 0 && slope_low > 0 && is_converging);
+}
+
+function detect_head_shoulders(candles, lookback=60, shoulder_tol=0.08) {
+  const closes = candles.slice(-lookback).map(c=>c.close);
+  const s = swings(closes, 3);
+  const highs = s.filter(p=>p[2]==='high');
+  if (highs.length < 3) return false;
+  for (let i=0;i<highs.length-2;i++) {
+    const a=highs[i], b=highs[i+1], c=highs[i+2];
+    if (b[1] > a[1] && b[1] > c[1]) {
+      const shoulder_diff = Math.abs(a[1] - c[1]) / Math.max(1e-9, Math.max(a[1], c[1]));
+      if (shoulder_diff < shoulder_tol) return true;
+    }
+  }
+  return false;
+}
+
+function detect_double_top_or_bottom(candles, lookback=60, tolerance=0.02) {
+  const closes = candles.slice(-lookback).map(c=>c.close);
+  const s = swings(closes, 3);
+  const highs = s.filter(p=>p[2]==='high');
+  const lows = s.filter(p=>p[2]==='low');
+  if (highs.length >= 2) {
+    const h1 = highs[highs.length-2], h2 = highs[highs.length-1];
+    if (Math.abs(h1[1]-h2[1]) / Math.max(h1[1], h2[1]) < tolerance) return 'double_top';
+  }
+  if (lows.length >= 2) {
+    const l1 = lows[lows.length-2], l2 = lows[lows.length-1];
+    if (Math.abs(l1[1]-l2[1]) / Math.max(l1[1], l2[1]) < tolerance) return 'double_bottom';
+  }
+  return null;
+}
+
+function detect_flag_pennant(candles, lookback=30) {
+  if (candles.length < lookback) return false;
+  const closes = candles.slice(-lookback).map(c=>c.close);
+  const returns = [];
+  for (let i=1;i<closes.length;i++) returns.push((closes[i]-closes[i-1]) / closes[i-1]);
+  if (returns.length < 6) return false;
+  const m1 = returns.slice(0, Math.floor(returns.length * 0.4)).reduce((a,b)=>a+b,0) / Math.max(1, Math.floor(returns.length * 0.4));
+  const s2 = (() => {
+    const arr = returns.slice(Math.floor(returns.length * 0.4));
+    const mean = arr.reduce((a,b)=>a+b,0)/Math.max(1,arr.length);
+    return Math.sqrt(arr.reduce((a,b)=>a + (b-mean)*(b-mean),0)/Math.max(1,arr.length));
+  })();
+  return (Math.abs(m1) > 0.01 && s2 < 0.003);
+}
+
+// ------------------ scoring & analysis (mimic Python logic) ------------------
+function score_for_interval(closes, candles) {
+  const details = {pattern_flags:{}, base_score:0, fib:null, vol_conf:false};
+  if (!closes || closes.length < 22) return {direction:"NEUTRAL", score:0, details};
+
+  const ema_short = ema(closes, 9);
+  const ema_long = ema(closes, 21);
+  const rsi_arr = rsi(closes);
+  const last_rsi = rsi_arr.length ? rsi_arr[rsi_arr.length-1] : 50;
+  const last_price = closes[closes.length-1];
+  let score = 0;
+
+  if (ema_short[ema_short.length-1] > ema_long[ema_long.length-1]) { score += 1; details['ema']='bull'; }
+  else if (ema_short[ema_short.length-1] < ema_long[ema_long.length-1]) { details['ema']='bear'; }
+  else details['ema']='neutral';
+
+  if (last_rsi > 30 && last_rsi < 70) { score += 1; details['rsi'] = last_rsi; }
+  else details['rsi'] = last_rsi;
+
+  const prev = closes[closes.length-2];
+  const pct = prev !== 0 ? (last_price - prev) / prev : 0;
+  if (Math.abs(pct) >= MOMENTUM_PCT_THRESHOLD) { score += 1; details['momentum_pct']=pct; }
+
+  const last_atr = (() => { const a = atr(candles); return a.length ? a[a.length-1] : 0; })();
+  const atr_norm = (last_price !== 0 && last_atr > 0) ? last_atr / last_price : 0;
+  if (atr_norm >= ATR_NORM_THRESHOLD) { score += 1; details['atr_norm']=atr_norm; }
+
+  details['base_score'] = score;
+
+  let pattern_score = 0;
+  const flags = {};
+  try {
+    if (detect_triangle(candles)) { pattern_score += 2; flags['triangle']=true; }
+    if (detect_head_shoulders(candles)) { pattern_score += 3; flags['head_shoulders']=true; }
+    const dt = detect_double_top_or_bottom(candles);
+    if (dt === 'double_top') { pattern_score += 2; flags['double_top']=true; }
+    if (dt === 'double_bottom') { pattern_score += 2; flags['double_bottom']=true; }
+    if (detect_flag_pennant(candles)) { pattern_score += 1; flags['flag_pennant']=true; }
+  } catch (e) {}
+
+  const [fib_ok, fib_k, fib_lvl] = fib_confirmation(candles, last_price);
+  const fib_score = fib_ok ? 1 : 0;
+  if (fib_ok) {
+    flags['fib'] = [fib_k, fib_lvl];
+    details['fib'] = [fib_k, fib_lvl];
+  }
+
+  // volume confirmation (if available)
+  let vol_conf = false;
+  const vols = candles.map(c=>c.volume || 0);
+  if (vols.length > 10) {
+    try {
+      const meanLast10 = vols.slice(-10).reduce((a,b)=>a+b,0) / 10;
+      if (vols[vols.length-1] > meanLast10 * 1.2) vol_conf = true;
+    } catch(e) { vol_conf = false; }
+  }
+  if (vol_conf) { pattern_score += 1; details['vol_conf']=true; }
+
+  details['pattern_flags'] = flags;
+  score = details['base_score'] + pattern_score + fib_score;
+
+  // direction decision
+  let direction = "NEUTRAL";
+  const es = ema_short[ema_short.length-1], el = ema_long[ema_long.length-1];
+  if (es > el && last_rsi < 70) direction = "LONG";
+  else if (es < el && last_rsi > 30) direction = "SHORT";
+  else {
+    if (flags['double_bottom'] || (flags['triangle'] && pct > 0)) direction = "LONG";
+    if (flags['double_top'] || (flags['triangle'] && pct < 0)) direction = "SHORT";
+  }
+
+  details['final_indicator_score'] = Math.floor(score);
+  details['last_price'] = last_price;
+  details['last_atr'] = last_atr;
+  details['atr_norm'] = atr_norm;
+
+  return {direction, score: Math.floor(score), details};
+}
+
+async function analyzeSymbol(symbol) {
+  // We'll fetch multiple intervals (M,W,D,15,5) as Python did,
+  // but public Bybit free API returns the requested interval; to keep parity we'll fetch for "5" and "15" at least.
+  // For a simplified approach, fetch 200 candles for intervals '5' and '15' and derive consensus using those plus a quick D/W fetch fallback.
+  const intervals = ["M","W","D","15","5"];
+  const consensus = {"LONG":0,"SHORT":0,"NEUTRAL":0};
+  let overall_score = 0;
+  let last_price = null;
+  let used_candles = null;
+  const interval_details = [];
+  for (const interval of intervals) {
+    let candles = [];
+    try {
+      if (useBybitCheckbox.checked) {
+        const url = new URL(BYBIT_KLINE_URL);
+        url.search = new URLSearchParams({category:"linear", symbol:symbol, interval: interval, limit: 200}).toString();
+        const r = await fetch(url.toString(), {cache: "no-store"});
+        const j = await r.json();
+        if (j.result && j.result.list) {
+          const list = j.result.list.slice().reverse(); // ensure chronological oldest->newest
+          candles = list.map(k=>{
+            // bybit K format sometimes list of arrays
+            // k could be [open_time, open, high, low, close, volume,...] or object—be defensive
+            if (Array.isArray(k)) {
+              return {time: Number(k[0])/1000, open: Number(k[1]), high: Number(k[2]), low: Number(k[3]), close: Number(k[4]), volume: Number(k[5]||0)};
+            } else {
+              return {time: Number(k.open_time||k.t||0)/1000, open: Number(k.open), high:Number(k.high), low:Number(k.low), close:Number(k.close), volume:Number(k.volume||0)};
+            }
+          });
+        } else {
+          // fall back to Coingecko or skip interval
+          candles = [];
+        }
+      } else {
+        candles = []; // we'll let other fallback later
+      }
+    } catch (e) {
+      candles = [];
+    }
+
+    if ((!candles || candles.length === 0) && interval==='M') {
+      // try coingecko simple price series fallback (not full candles, create pseudo-candles)
+      try {
+        const cg = await fetch(`https://api.coingecko.com/api/v3/coins/${mapSymbolToCoingeckoId(symbol)}/market_chart?vs_currency=usd&days=7`);
+        const j = await cg.json();
+        if (j.prices) {
+          candles = j.prices.map((p, i) => ({time: Math.floor(p[0]/1000), open:p[1], high:p[1], low:p[1], close:p[1], volume:0}));
+        }
+      } catch(e){}
+    }
+
+    if (!candles || candles.length === 0) continue;
+    const closes = candles.map(c=>c.close);
+    const scored = score_for_interval(closes, candles);
+    interval_details.push([interval, scored.direction, scored.score, scored.details]);
+    const weight = TF_WEIGHTS[interval] || 1;
+    overall_score += scored.score * weight;
+    consensus[scored.direction] = (consensus[scored.direction] || 0) + 1;
+    last_price = closes[closes.length-1];
+    used_candles = candles;
+  }
+
+  overall_score = Math.round(overall_score);
+
+  let final_dir = "NEUTRAL";
+  if (consensus["LONG"] > consensus["SHORT"]) final_dir = "LONG";
+  else if (consensus["SHORT"] > consensus["LONG"]) final_dir = "SHORT";
+
+  // adaptive RR
+  const base_rr = RR_RATIO;
+  const rr = Math.min(3.5, base_rr + Math.max(0, (overall_score - 10)) * 0.1);
+
+  let atr_last = last_price * 0.002;
+  if (used_candles && used_candles.length >= 20) {
+    const atr_vals = atr(used_candles, 14);
+    atr_last = atr_vals.length ? atr_vals[atr_vals.length-1] : last_price * 0.002;
+  }
+
+  let stop = null, take = null;
+  if (final_dir === "LONG") {
+    stop = last_price - atr_last * 1.5;
+    take = last_price + (last_price - stop) * rr;
+  } else if (final_dir === "SHORT") {
+    stop = last_price + atr_last * 1.5;
+    take = last_price - (stop - last_price) * rr;
+  }
+
+  // collect patterns
+  const patterns = {};
+  for (const it of interval_details) {
+    const pf = it[3].pattern_flags;
+    if (pf && Object.keys(pf).length) patterns[it[0]] = pf;
+  }
+
+  return {
+    symbol,
+    final_dir,
+    overall_score,
+    consensus,
+    intervals: interval_details,
+    last_price,
+    stop,
+    take,
+    time: new Date().toISOString(),
+    candles: used_candles,
+    patterns,
+    raw_details: interval_details
+  };
+}
+
+// ------------------ helpers ------------------
+function mapSymbolToCoingeckoId(symbol) {
+  const map = {
+    BTCUSDT:"bitcoin", ETHUSDT:"ethereum", XRPUSDT:"ripple", SOLUSDT:"solana",
+    BNBUSDT:"binancecoin", ADAUSDT:"cardano", DOGEUSDT:"dogecoin",
+    MATICUSDT:"matic-network", DOTUSDT:"polkadot", TRXUSDT:"tron",
+    LINKUSDT:"chainlink", LTCUSDT:"litecoin", BCHUSDT:"bitcoin-cash",
+    AVAXUSDT:"avalanche-2", UNIUSDT:"uniswap"
+  };
+  return map[symbol] || "bitcoin";
+}
+
+// decide whether to send telegram (mimic Python should_send_gui)
+function should_send_gui(res, last_sent_entry) {
+  const score = res.overall_score;
+  const dir_ = res.final_dir;
+  const consensus = res.consensus || {};
+  const last_dir = last_sent_entry.dir;
+  const last_score = last_sent_entry.overall_score || 0;
+  const last_price = last_sent_entry.last_price || 0;
+
+  if (dir_ !== "LONG" && dir_ !== "SHORT") return false;
+  if (score < MIN_SCORE_TO_SEND) return false;
+  if ((consensus[dir_] || 0) < MIN_CONSENSUS) return false;
+
+  let price_change_pct = 0;
+  if (last_price > 0 && res.last_price) price_change_pct = (res.last_price - last_price) / last_price;
+
+  if (Math.abs(price_change_pct) >= SIGNIFICANT_CHANGE || Math.abs(score - last_score) >= SIGNIFICANT_CHANGE) return true;
+  if (dir_ !== last_dir && score >= MIN_SCORE_TO_SEND) return true;
+
+  // enforce cooldown: don't resend same direction within LOOP_SECONDS minutes? We'll mimic MIN_COOLDOWN_MINUTES=30:
+  // But since loop is 150s, we keep basic checks above.
+  return false;
+}
+
+async function sendTelegramMessage(text) {
+  const token = tgTokenInput.value.trim();
+  const chat = tgChatInput.value.trim();
+  if (!token || !chat) {
+    addLog("Telegram not configured — skipping send.");
+    return {ok:false, error:"no_token"};
+  }
+  try {
+    const resp = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({chat_id: chat, text: text, parse_mode: "HTML"})
+    });
+    const j = await resp.json();
+    addLog("Telegram send result: " + JSON.stringify(j));
+    return j;
+  } catch (e) {
+    addLog("Telegram send failed: " + String(e));
+    return {ok:false, error:String(e)};
+  }
+}
+
+function formatMessageGui(res) {
+  const lines = [];
+  lines.push(`<b>${res.symbol} — ${res.final_dir}</b>`);
+  lines.push(`Price: ${toFixedSafe(res.last_price,6)}`);
+  if (res.stop !== null) {
+    lines.push(`Stop: ${toFixedSafe(res.stop,6)}`);
+    lines.push(`Take: ${toFixedSafe(res.take,6)}`);
+  }
+  lines.push(`Score: ${res.overall_score}`);
+  lines.push(`Consensus: L=${res.consensus.LONG || 0} S=${res.consensus.SHORT || 0}`);
+  if (res.patterns && Object.keys(res.patterns).length) {
+    const pattern_lines = [];
+    for (const tf in res.patterns) {
+      pattern_lines.push(`${tf}:${Object.keys(res.patterns[tf]).join(',')}`);
+    }
+    lines.push("Patterns: " + pattern_lines.join(" | "));
+  }
+  lines.push(`Time(UTC): ${res.time}`);
+  return lines.join("\n");
+}
+
+// ------------------ TradingView embed recreation (keep exact structure) ------------------
+function recreateTradingView(symbolTvString) {
+  const container = document.getElementById('tv_embed_container');
+  // maintain the exact outer markup, but replace the inner script content with new JSON config
+  container.innerHTML = `
+    <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+    <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/symbols/${encodeURIComponent(symbolTvString)}/" rel="noopener nofollow" target="_blank"><span class="blue-text">${symbolTvString} chart</span></a><span class="trademark"> by TradingView</span></div>
+  `;
+  const cfg = {
+    "allow_symbol_change": true,
+    "calendar": false,
+    "details": false,
+    "hide_side_toolbar": true,
+    "hide_top_toolbar": false,
+    "hide_legend": false,
+    "hide_volume": false,
+    "hotlist": false,
+    "interval": "5",
+    "locale": "en",
+    "save_image": true,
+    "style": "1",
+    "symbol": symbolTvString,
+    "theme": "dark",
+    "timezone": "Etc/UTC",
+    "backgroundColor": "#0F0F0F",
+    "gridColor": "rgba(242, 242, 242, 0.06)",
+    "watchlist": [],
+    "withdateranges": false,
+    "compareSymbols": [],
+    "studies": [],
+    "autosize": true
+  };
+  const s = document.createElement('script');
+  s.type = 'text/javascript';
+  s.async = true;
+  s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  s.innerHTML = JSON.stringify(cfg, null, 2);
+  container.appendChild(s);
+}
+
+// ------------------ main loop & UI wiring ------------------
+async function runOnce() {
+  const symbol = sel.value;
+  addLog(`Running analysis for ${symbol} ...`);
+  try {
+    const res = await analyzeSymbol(symbol);
+    // update UI
+    priceEl.innerText = res.last_price ? Number(res.last_price).toFixed(6) : '-';
+    dirEl.innerText = res.final_dir;
+    scoreEl.innerText = res.overall_score;
+    consEl.innerText = `L=${res.consensus.LONG||0} S=${res.consensus.SHORT||0}`;
+    sltpEl.innerText = (res.stop && res.take) ? `SL: ${Number(res.stop).toFixed(6)}  TP: ${Number(res.take).toFixed(6)}` : '-';
+    addLog(`${res.symbol}: ${res.final_dir} at ${toFixedSafe(res.last_price,6)} | score=${res.overall_score} | patterns=${JSON.stringify(res.patterns)}`);
+
+    // decide sending
+    if (should_send_gui(res, lastSent)) {
+      const msg = formatMessageGui(res);
+      await sendTelegramMessage(msg);
+      lastSent.dir = res.final_dir;
+      lastSent.time = new Date().toISOString();
+      lastSent.overall_score = res.overall_score;
+      lastSent.last_price = res.last_price;
+      addLog(`➡️ Sent signal for ${res.symbol} ${res.final_dir}`);
+    }
+
+  } catch (e) {
+    addLog("Analysis failed: " + String(e));
+  }
+}
+
+function startLoop() {
+  if (running) return;
+  running = true;
+  addLog("Analyzer started.");
+  // initial run
+  runOnce();
+  loopTimer = setInterval(runOnce, LOOP_SECONDS * 1000);
+}
+
+function stopLoop() {
+  if (!running) return;
+  running = false;
+  if (loopTimer) { clearInterval(loopTimer); loopTimer = null; }
+  addLog("Analyzer stopped.");
+}
+
+btnStart.addEventListener('click', startLoop);
+btnStop.addEventListener('click', stopLoop);
+btnAnalyze.addEventListener('click', runOnce);
+
+// change symbol => update TradingView embed and run analyze once
+sel.addEventListener('change', async () => {
+  const s = sel.value;
+  const tvSym = TV_MAP[s] || s;
+  recreateTradingView(tvSym);
+  addLog("Symbol changed to " + s);
+  // run a quick analyze
+  await runOnce();
+});
+
+// recreate tradingview on load
+window.addEventListener('load', () => {
+  recreateTradingView(TV_MAP[sel.value] || sel.value);
+  // auto-start the loop (if you prefer manual, comment next line)
+  startLoop();
+});
+
+</script>
+</body>
+</html>
