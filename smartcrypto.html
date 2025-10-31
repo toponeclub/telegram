@@ -115,6 +115,16 @@
 
 /* when in fullscreen, nudge the position slightly if needed */
 :fullscreen #btnFullscreen { opacity: 0.9; }
+
+#btnFullscreen {
+  position: fixed !important;
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+	 
+	 
 </style>
 
 
@@ -1413,3 +1423,4 @@ setActiveHorizon('MEDIUM');
 </script>
 </body>
 </html>
+
