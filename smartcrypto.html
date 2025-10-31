@@ -994,39 +994,52 @@ async function sendTelegramMessageImmediate(text) {
 function formatMessageGui(res) {
   const lines = [];
   lines.push(`<b>${res.symbol} — ${res.final_dir}</b>`);
-  lines.push(`Price: ${toFixedSafe(res.last_price,6)}`);
+  lines.push(`Price: ${toFixedSafe(res.last_price, 6)}`);
   if (res.stop !== null) {
-    lines.push(`Stop: ${toFixedSafe(res.stop,6)}`);
-    lines.push(`Take: ${toFixedSafe(res.take,6)}`);
+    lines.push(`Stop: ${toFixedSafe(res.stop, 6)}`);
+    lines.push(`Take: ${toFixedSafe(res.take, 6)}`);
   }
   lines.push(`Score: ${res.overall_score}`);
   lines.push(`Consensus: L=${res.consensus.LONG || 0} S=${res.consensus.SHORT || 0}`);
+
   if (res.patterns && Object.keys(res.patterns).length) {
     const pattern_lines = [];
-    for (const tf in res.patterns) pattern_lines.push(`${tf}:${Object.keys(res.patterns[tf]).join(',')}`);
+    for (const tf in res.patterns)
+      pattern_lines.push(`${tf}:${Object.keys(res.patterns[tf]).join(",")}`);
     lines.push("Patterns: " + pattern_lines.join(" | "));
   }
-  if (res.confidence) {
-  const confVal = parseFloat(res.confidence);
-  let emoji = "⚪";
-  if (confVal >= 80) emoji = "🟢";
-  else if (confVal >= 50) emoji = "🟡";
-  else emoji = "🔴";
-  lines.push(`Confidence: ${emoji} ${res.confidence}`);
-}
 
+  // --- Confidence ---
+  if (res.confidence) {
+    const confVal = parseFloat(res.confidence);
+    let emoji = "⚪";
+    if (confVal >= 80) emoji = "🟢";
+    else if (confVal >= 50) emoji = "🟡";
+    else emoji = "🔴";
+    lines.push(`Confidence: ${emoji} ${res.confidence}`);
+  }
+
+  // --- Strength ---
+  if (res.SignalStrength !== undefined) {
+    const strVal = Math.round(res.SignalStrength);
+    let emoji = "⚪";
+    if (strVal >= 70) emoji = "🟢";
+    else if (strVal >= 40) emoji = "🟡";
+    else emoji = "🔴";
+    lines.push(`Strength: ${emoji} ${strVal}%`);
+  }
+
+  // --- Timing ---
   if (res.expectedDuration) {
-  lines.push(`Timing: ${res.expectedDuration}`);
-}
+    lines.push(`Timing: ${res.expectedDuration}`);
+  }
 
   if (res.comment && res.comment.text) {
-  lines.push(`${res.comment.text}`);
-}
-
+    lines.push(`${res.comment.text}`);
+  }
 
   return lines.join("\n");
 }
-
 
 
 // ------------- UI RENDER -------------
@@ -1147,11 +1160,27 @@ document.addEventListener('fullscreenchange', () => {
   }
 });
 
-btn.addEventListener('click', () => {
-  if (!document.fullscreenElement) {
-    chartContainer.requestFullscreen().catch(err => console.log(err));
+btn.addEventListener('click', (e) => {
+  e.preventDefault();
+  const el = chartContainer;
+
+  // Проверяем все возможные API для разных браузеров
+  const openFullscreen = () => {
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); // Safari
+    else if (el.msRequestFullscreen) el.msRequestFullscreen(); // IE11
+  };
+
+  const closeFullscreen = () => {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    else if (document.msExitFullscreen) document.msExitFullscreen();
+  };
+
+  if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+    openFullscreen();
   } else {
-    document.exitFullscreen();
+    closeFullscreen();
   }
 });
 
@@ -1384,32 +1413,3 @@ setActiveHorizon('MEDIUM');
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
