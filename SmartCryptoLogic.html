@@ -1,0 +1,1415 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SmartCrypto</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+  
+    :root{
+      --bg:#0b0b0b; --panel:#0f1720; --muted:#9aa4b2;
+      --accent:#00d07a; --danger:#ff6b6b; --neon:rgba(0,208,122,0.18);
+      --yellow:#ffc857; --blue:#4aa3ff;
+    }
+    html,body{ height:100%; background:var(--bg); color:var(--muted); font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    .card{ background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.03); border-radius:12px; box-shadow: 0 6px 18px rgba(3,6,12,0.55); }
+    .panel{ padding:12px; border-radius:10px; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)); }
+    .small-muted{ color:#9aa4b2; font-size:13px; }
+    #log { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; font-size:13px; color:#d6dde5; }
+
+    .btn{ padding:10px 14px; border-radius:8px; transition: transform .12s ease, box-shadow .12s ease; cursor:pointer; border:none; font-weight:500; }
+    .btn:hover{ transform: scale(1.02); box-shadow: 0 6px 20px rgba(0,0,0,0.6), 0 0 8px rgba(0,208,122,0.06); }
+
+    .mode-btn { padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); cursor:pointer; transition:.12s; display:inline-flex; align-items:center; gap:8px; flex:1; justify-content:center; text-align:center; font-size:14px; }
+    .mode-btn:hover{ transform:translateY(-2px); box-shadow: 0 8px 22px rgba(0,0,0,0.7); }
+    .mode-active { box-shadow: 0 8px 24px rgba(0,0,0,0.7); transform:scale(1.02); }
+
+    .risk-aggressive { background: linear-gradient(90deg, rgba(255,182,182,0.02), rgba(255,107,107,0.02)); color:var(--danger); }
+    .risk-stable { background: linear-gradient(90deg, rgba(255,238,204,0.01), rgba(255,200,87,0.02)); color:var(--yellow); }
+    .risk-conservative { background: linear-gradient(90deg, rgba(204,255,226,0.01), rgba(0,208,122,0.02)); color:var(--accent); }
+
+    .h-short { background: linear-gradient(90deg, rgba(74,163,255,0.02), rgba(74,163,255,0.03)); color:var(--blue); }
+    .h-medium { background: linear-gradient(90deg, rgba(255,238,204,0.01), rgba(255,200,87,0.02)); color:var(--yellow); }
+    .h-long { background: linear-gradient(90deg, rgba(204,255,226,0.01), rgba(0,208,122,0.02)); color:var(--accent); }
+
+    .value-long{ color: #00d07a; font-weight:600; text-shadow: 0 0 6px rgba(0,208,122,0.08); }
+    .value-short{ color: #ff6b6b; font-weight:600; text-shadow: 0 0 6px rgba(255,107,107,0.08); }
+    .value-score{ color: #00d07a; font-weight:700; }
+    .consensus-L{ color: #ff6b6b; font-weight:600; }
+    .consensus-S{ color: #00d07a; font-weight:600; }
+    .sltp-sl{ color: #ff6b6b; font-weight:600; }
+    .sltp-tp{ color: #00d07a; font-weight:600; }
+
+    .tg-block{ border:1px solid rgba(255,255,255,0.03); padding:10px; border-radius:8px; background: linear-gradient(180deg, rgba(255,255,255,0.005), rgba(255,255,255,0.01)); }
+    .warn { color: #ff6b6b; font-size:13px; margin-top:6px; }
+    .ok { color: #00d07a; font-size:13px; margin-top:6px; }
+
+    .control-bar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; }
+    .control-bar .select, .control-bar .btn { min-width:100px; flex:1; }
+
+    @media (max-width: 1000px){
+      .grid-responsive{ grid-template-columns: 1fr !important; }
+      .btn, .select, input { width:100%; }
+      .mode-btn{ flex:1 1 100%; }
+    }
+	
+	/* === STATUS PANEL POLISH === */
+#statusCard {
+  font-family: "Inter", "Segoe UI", sans-serif;
+  line-height: 1.4;
+}
+
+#statusCard .status-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+#statusCard .status-key {
+  font-weight: 600;
+  color: #ddd;
+  letter-spacing: 0.3px;
+}
+
+#statusCard .status-value {
+  color: #9ad0ff;
+  font-weight: 400;
+  text-align: right;
+}
+
+#statusCard .status-value.red {
+  color: #ff6666;
+}
+#statusCard .status-value.green {
+  color: #50fa7b;
+}
+
+#statusCard .section-sep {
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin: 6px 0;
+}
+
+
+    .sep { height:1px; background: rgba(255,255,255,0.03); margin:10px 0; border-radius:2px; }
+  </style>
+ <style>
+/* style for the small copyright-adjacent fullscreen button */
+#btnFullscreen {
+  background: rgba(20,20,20,0.85);
+  border: 1px solid rgba(255,255,255,0.06);
+  color: white;
+  padding: 6px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: transform .12s ease, opacity .12s ease;
+  opacity: 0.9;
+}
+#btnFullscreen:hover { transform: scale(1.06); opacity: 1; }
+#btnFullscreen.hidden { display:none !important; }
+
+/* when in fullscreen, nudge the position slightly if needed */
+:fullscreen #btnFullscreen { opacity: 0.9; }
+</style>
+
+
+
+</head>
+<body class="p-4">
+  <div class="max-w-[1400px] mx-auto flex flex-col gap-4">
+
+    <div class="flex items-center justify-center mb-2">
+      <h1 class="text-gray-400 text-xl font-semibold">SmartCrypto</h1>
+    </div>
+
+
+
+    <!-- Control bar -->
+    <div class="card p-4">
+      <div class="control-bar">
+        <select id="symbolSelect" class="select bg-[#0b1220] text-white p-2 rounded"></select>
+        <button id="btnStart" class="btn bg-green-600 text-white">Start</button>
+        <button id="btnStop" class="btn bg-gray-700 text-white">Stop</button>
+      </div>
+      <div class="flex justify-center text-xs small-muted mt-2">
+        Loop Interval:
+        <select id="loopSelect" class="ml-2 bg-[#07101a] text-white p-1 rounded">
+          <option value="30">30s</option>
+          <option value="60">60s</option>
+          <option value="90">90s</option>
+          <option value="120">120s</option>
+          <option value="150" selected>150s</option>
+          <option value="180">180s</option>
+        </select>
+        <span class="ml-2">Current: <span id="loopInterval">150s</span></span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-4 gap-4 grid-responsive">
+
+      <!-- Left column -->
+      <div class="col-span-1 card p-4 flex flex-col gap-3">
+
+        <!-- Status -->
+        <div id="statusCard" class="card-section small-text">
+          <div class="text-xs small-muted">Status</div>
+         <div class="status-line"><span class="status-key">Price:</span><span id="price" class="status-value"></span></div>
+          <div class="status-line"><span class="status-key">Direction:</span><span id="direction" class="status-value red"></span></div>
+           <div class="status-line"><span class="status-key">Score:</span><span id="score" class="status-value"></span></div>
+           <div class="status-line"><span class="status-key">Consensus:</span><span id="consensus" class="status-value"></span></div>
+           <div class="status-line"><span class="status-key">SL  TP:</span><span id="sltp">-</span></div>
+		  <div class="statusLine">
+           <div class="status-line"><span class="status-key">Confidence:</span><span id="confidence" class="status-value"></span></div>
+         </div>
+				   <div class="status-line"><span class="status-key">Timing:</span><span id="timing" class="status-value"></span></div>
+          <div class="statusBox"><span class="value" id="comment">-</span></div>
+
+<!-- Signal Strength Bar -->
+<div id="signal-container" style="width:100%; margin-top:6px;">
+  <div class="text-xs text-gray-400 flex justify-between mb-1">
+    <span>Strength</span>
+    <span id="strengthLabel">0%</span>
+  </div>
+  <div id="progress-bar-container"
+       style="width:100%;height:12px;border-radius:8px;overflow:hidden;background:#1a1a1a;">
+    <div id="progress-fill"
+         style="height:100%;width:0%;
+                background:linear-gradient(90deg,#e5405e 0%,#ffdb3a 50%,#00d07a 100%);
+                transition:width .8s cubic-bezier(.86,.05,.4,.96);"></div>
+  </div>
+</div>
+
+		  
+		 <div class="mt-3">
+          <button id="btnAnalyze" class="btn bg-blue-600 text-white w-full">Analyze Now</button>
+         </div>	  
+        </div>
+
+        <!-- Modes Risk -->
+        <div class="panel">
+          <div class="text-xs small-muted mb-2">Risk Mode</div>
+          <div class="flex flex-wrap gap-2">
+            <div id="riskCons" class="mode-btn risk-conservative mode-active" data-risk="CONSERVATIVE">Conservative</div>
+            <div id="riskStable" class="mode-btn risk-stable" data-risk="STABLE">Stable</div>
+            <div id="riskAgg" class="mode-btn risk-aggressive" data-risk="AGGRESSIVE">Aggressive</div>
+          </div>
+          <div class="small-muted text-xs mt-2">Current: <span id="riskLabel">Conservative</span></div>
+        </div>
+
+        <!-- Modes Horizon -->
+        <div class="panel">
+          <div class="text-xs small-muted mb-2">Time Horizon</div>
+          <div class="flex flex-wrap gap-2">
+            <div id="hShort" class="mode-btn h-short mode-active" data-h="SHORT">Short</div>
+            <div id="hMed" class="mode-btn h-medium" data-h="MEDIUM">Medium</div>
+            <div id="hLong" class="mode-btn h-long" data-h="LONG">Long</div>
+          </div>
+          <div class="small-muted text-xs mt-2">Current: <span id="hLabel">Short</span></div>
+        </div>
+
+        <!-- Telegram -->
+        <div class="tg-block">
+          <div class="text-xs small-muted mb-1">Telegram Bot</div>
+          <input id="tgToken" value="7672223015:AAFKcBctFgqS7NGUq1_lbnHNCEo6Fionbqs" class="w-full p-2 rounded bg-[#07101a] text-white" />
+          <input id="tgChat" value="591775682" class="w-full p-2 mt-2 rounded bg-[#07101a] text-white" />
+          <div class="flex flex-col sm:flex-row gap-2 mt-3">
+            <button id="btnTgSendTest" class="btn bg-indigo-600 text-white flex-1">Send Current Info</button>
+            <button id="btnTgTestConn" class="btn bg-slate-600 text-white flex-1">Test Connection</button>
+          </div>
+          <div id="tgStatus" class="mt-2"></div>
+        </div>
+
+      </div>
+
+     <!-- Right column -->
+<div class="col-span-3 flex flex-col gap-4">
+  <div class="card p-3 tv-wrap relative" id="chartCard" style="height:420px;">
+    <!-- TradingView embed container (unchanged) -->
+    <div class="tradingview-widget-container" id="tv_embed_container" style="height:100%;width:100%">
+      <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+      <div class="tradingview-widget-copyright">
+        <a href="https://www.tradingview.com/symbols/BINANCE-BTCUSDT/" rel="noopener nofollow" target="_blank">
+          <span class="blue-text">BTCUSDT chart</span>
+        </a>
+        <span class="trademark"> by TradingView</span>
+      </div>
+      <script id="tv_init_script" type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+        {
+          "allow_symbol_change": true,
+          "calendar": false,
+          "details": false,
+          "hide_side_toolbar": true,
+          "hide_top_toolbar": false,
+          "hide_legend": false,
+          "hide_volume": false,
+          "interval": "5",
+          "locale": "en",
+          "symbol": "BINANCE:BTCUSDT",
+          "theme": "dark",
+          "timezone": "Etc/UTC",
+          "backgroundColor": "#0F0F0F",
+          "gridColor": "rgba(242, 242, 242, 0.06)",
+          "autosize": true
+        }
+      </script>
+    </div>
+
+    <!-- NOTE: Button is OUTSIDE the tv container but inside chartCard -->
+    <!-- This button will be positioned by JS to sit next to the TradingView "chart by" text -->
+    <button id="btnFullscreen" aria-label="Toggle fullscreen"
+      class="hidden absolute z-50 p-1 rounded-md transition-transform shadow-md"
+      title="Toggle Fullscreen">
+      <!-- default 'enter fullscreen' icon -->
+      <svg id="fsIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" class="w-5 h-5 pointer-events-none">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4h4M4 16v4h4m12-12V4h-4m4 12v4h-4" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Live log remains below and will not move -->
+  <div class="card p-3 h-72 overflow-auto">
+    <div class="flex justify-between items-center mb-2">
+      <div class="text-sm text-white">Live Log</div>
+      <div class="text-xs small-muted">Most recent messages on top</div>
+    </div>
+    <pre id="log" class="whitespace-pre-wrap"></pre>
+  </div>
+</div>
+
+
+<script>
+/* =========================
+   Enhanced Analyzer v1
+   - Uses Binance klines (fallback: Bybit)
+   - Mode buttons (risk + time horizon)
+   - Normalized scoring 0..100
+   - New send rule: consensus>3 AND overall_score>60 + anti-spam delta>=10
+   - Telegram: send/test current info
+   - Loop interval dropdown dynamic
+   ========================= */
+
+// ------------- CONFIG / STATE -------------
+let LOOP_SECONDS = 150;
+document.getElementById('loopInterval').innerText = LOOP_SECONDS + 's';
+
+const TOP_COINS = [
+  "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
+  "SOLUSDT","DOGEUSDT","MATICUSDT","DOTUSDT","TRXUSDT",
+  "LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT"
+];
+
+const TV_MAP = {};
+TOP_COINS.forEach(c => TV_MAP[c] = `BINANCE:${c}`);
+
+let running = false;
+let loopTimer = null;
+
+const lastSentPerSymbol = {}; // anti-spam store
+
+// UI refs
+const sel = document.getElementById('symbolSelect');
+const btnStart = document.getElementById('btnStart');
+const btnStop = document.getElementById('btnStop');
+const btnAnalyze = document.getElementById('btnAnalyze');
+const priceEl = document.getElementById('price');
+const dirEl = document.getElementById('direction');
+const scoreEl = document.getElementById('score');
+const consEl = document.getElementById('consensus');
+const sltpEl = document.getElementById('sltp');
+const timingEl = document.getElementById("timing");
+const confidenceEl = document.getElementById('confidence');
+
+const logEl = document.getElementById('log');
+const tgTokenInput = document.getElementById('tgToken');
+const tgChatInput = document.getElementById('tgChat');
+const loopSelect = document.getElementById('loopSelect');
+
+// Mode buttons
+const riskButtons = {
+  CONSERVATIVE: document.getElementById('riskCons'),
+  STABLE: document.getElementById('riskStable'),
+  AGGRESSIVE: document.getElementById('riskAgg')
+};
+const horizonButtons = {
+  SHORT: document.getElementById('hShort'),
+  MEDIUM: document.getElementById('hMed'),
+  LONG: document.getElementById('hLong')
+};
+const riskLabel = document.getElementById('riskLabel');
+const hLabel = document.getElementById('hLabel');
+
+// Telegram buttons
+const btnTgSendTest = document.getElementById('btnTgSendTest');
+const btnTgTestConn = document.getElementById('btnTgTestConn');
+const tgStatus = document.getElementById('tgStatus');
+
+// initialize selector
+TOP_COINS.forEach(c => {
+  const o = document.createElement('option'); o.value = c; o.textContent = c;
+  sel.appendChild(o);
+});
+sel.value = TOP_COINS[0];
+
+// ------------- LOGGING -------------
+let logs = [];
+function addLog(msg) {
+  const t = new Date().toISOString().split('T')[1].split('.')[0];
+  logs.unshift(`[${t}] ${msg}`);
+  if (logs.length > 2000) logs.length = 2000;
+  logEl.textContent = logs.slice(0, 200).join('\n\n');
+}
+
+// ------------- HELPERS (numeric safe) -------------
+function toFixedSafe(v, n=6) {
+  if (v === null || v === undefined || Number.isNaN(v)) return '-';
+  return Number(v).toFixed(n);
+}
+
+// ------------- INDICATORS (reuse original implementations with minor tweaks) -------------
+function ema(values, period) {
+  const v = values.map(Number);
+  if (v.length === 0) return [];
+  const alpha = 2.0 / (period + 1);
+  const e = new Array(v.length).fill(0);
+  e[0] = v[0];
+  for (let i = 1; i < v.length; i++) {
+    e[i] = alpha * v[i] + (1 - alpha) * e[i-1];
+  }
+  return e;
+}
+
+function rsi(values, period=14) {
+  const v = values.map(Number);
+  const n = v.length;
+  if (n < period + 1) return new Array(n).fill(50);
+  const deltas = new Array(n-1);
+  for (let i=1;i<n;i++) deltas[i-1] = v[i]-v[i-1];
+  let seed = deltas.slice(0, period);
+  let up = seed.filter(x=>x>=0).reduce((a,b)=>a+b,0)/period;
+  let down = -seed.filter(x=>x<0).reduce((a,b)=>a+b,0)/period;
+  let rs = down !== 0 ? up/down : Infinity;
+  const r = new Array(n).fill(50);
+  r[period] = 100 - 100/(1 + (isFinite(rs)?rs:1));
+  let up_sma = up;
+  let down_sma = down;
+  for (let i = period+1; i < n; i++) {
+    const delta = deltas[i-1];
+    const upval = Math.max(delta,0);
+    const downval = -Math.min(delta,0);
+    up_sma = (up_sma * (period - 1) + upval) / period;
+    down_sma = (down_sma * (period - 1) + downval) / period;
+    rs = down_sma !== 0 ? up_sma / down_sma : Infinity;
+    r[i] = 100 - 100/(1 + (isFinite(rs)?rs:1));
+  }
+  return r;
+}
+
+function atr(candles, period=14) {
+  if (!candles || candles.length < 2) return new Array(candles.length).fill(0);
+  const highs = candles.map(c=>Number(c.high));
+  const lows = candles.map(c=>Number(c.low));
+  const closes = candles.map(c=>Number(c.close));
+  const trs = [];
+  for (let i=1;i<closes.length;i++) {
+    const tr = Math.max(highs[i]-lows[i], Math.abs(highs[i]-closes[i-1]), Math.abs(lows[i]-closes[i-1]));
+    trs.push(tr);
+  }
+  if (trs.length < period) {
+    return [0, ...new Array(trs.length).fill(0)];
+  }
+  const atr_vals = new Array(trs.length).fill(0);
+  atr_vals[period-1] = trs.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for (let i=period;i<trs.length;i++) {
+    atr_vals[i] = (atr_vals[i-1] * (period - 1) + trs[i]) / period;
+  }
+  return [0, ...atr_vals];
+}
+
+// pattern helpers (kept simple, returning confidence)
+function swings(closes, window=5) {
+  const res = [];
+  const n = closes.length;
+  for (let i = window; i < n - window; i++) {
+    const seg = closes.slice(i-window, i+window+1);
+    const val = closes[i];
+    if (val === Math.max(...seg)) res.push([i, val, 'high']);
+    else if (val === Math.min(...seg)) res.push([i, val, 'low']);
+  }
+  return res;
+}
+
+function detect_triangle_confidence(candles, lookback=50, tol=0.08) {
+  if (candles.length < lookback) return 0;
+  const highs = candles.slice(-lookback).map(c=>c.high);
+  const lows = candles.slice(-lookback).map(c=>c.low);
+  const amp_start = highs[0] - lows[0];
+  const amp_end = highs[highs.length-1] - lows[lows.length-1];
+  const is_converging = amp_end < amp_start * (1 - tol);
+  if (!is_converging) return 0;
+  // confidence increases if amplitude decreased significantly
+  const conf = Math.min(1, (amp_start - amp_end) / Math.max(1e-9, amp_start));
+  return conf * 0.8 + 0.2; // 0.2..1.0
+}
+
+function detect_head_shoulders_confidence(candles, lookback=60, shoulder_tol=0.08) {
+  const closes = candles.slice(-lookback).map(c=>c.close);
+  const s = swings(closes, 3);
+  const highs = s.filter(p=>p[2]==='high');
+  if (highs.length < 3) return 0;
+  for (let i=0;i<highs.length-2;i++) {
+    const a=highs[i], b=highs[i+1], c=highs[i+2];
+    if (b[1] > a[1] && b[1] > c[1]) {
+      const shoulder_diff = Math.abs(a[1] - c[1]) / Math.max(1e-9, Math.max(a[1], c[1]));
+      if (shoulder_diff < shoulder_tol) return 0.8; // confident
+    }
+  }
+  return 0;
+}
+
+function detect_double_confidence(candles, lookback=60, tolerance=0.02) {
+  const closes = candles.slice(-lookback).map(c=>c.close);
+  const s = swings(closes, 3);
+  const highs = s.filter(p=>p[2]==='high');
+  const lows = s.filter(p=>p[2]==='low');
+  if (highs.length >= 2) {
+    const h1 = highs[highs.length-2], h2 = highs[highs.length-1];
+    if (Math.abs(h1[1]-h2[1]) / Math.max(h1[1], h2[1]) < tolerance) return 0.6;
+  }
+  if (lows.length >= 2) {
+    const l1 = lows[lows.length-2], l2 = lows[lows.length-1];
+    if (Math.abs(l1[1]-l2[1]) / Math.max(l1[1], l2[1]) < tolerance) return 0.6;
+  }
+  return 0;
+}
+
+function detect_flag_confidence(candles, lookback=30) {
+  if (candles.length < lookback) return 0;
+  const closes = candles.slice(-lookback).map(c=>c.close);
+  const returns = [];
+  for (let i=1;i<closes.length;i++) returns.push((closes[i]-closes[i-1]) / closes[i-1]);
+  if (returns.length < 6) return 0;
+  const m1 = returns.slice(0, Math.floor(returns.length * 0.4)).reduce((a,b)=>a+b,0) / Math.max(1, Math.floor(returns.length * 0.4));
+  const s2 = (() => {
+    const arr = returns.slice(Math.floor(returns.length * 0.4));
+    const mean = arr.reduce((a,b)=>a+b,0)/Math.max(1,arr.length);
+    return Math.sqrt(arr.reduce((a,b)=>a + (b-mean)*(b-mean),0)/Math.max(1,arr.length));
+  })();
+  return (Math.abs(m1) > 0.01 && s2 < 0.003) ? 0.5 : 0;
+}
+
+// ------------- SCORING (normalized) -------------
+// feature weights (base)
+const baseWeights = { ema: 0.25, rsi: 0.2, atr: 0.05, mom: 0.15, pattern: 0.25, vol: 0.1 };
+
+// TF weights per horizon
+const TF_PRESETS = {
+  SHORT: {"15":2, "5":2, "1":1},
+  MEDIUM: {"D":3, "15":2, "5":1},
+  LONG: {"W":4, "D":3, "M":4}
+};
+
+// Risk mode presets
+const RISK_PRESETS = {
+  AGGRESSIVE: { score_multiplier: 1.4, min_score_send: 50, min_consensus: 2, rr_base: 4.0, atr_mult_stop: 1.0 },
+  STABLE: { score_multiplier: 1.0, min_score_send: 60, min_consensus: 3, rr_base: 3.0, atr_mult_stop: 1.5 },
+  CONSERVATIVE: { score_multiplier: 0.8, min_score_send: 70, min_consensus: 4, rr_base: 2.0, atr_mult_stop: 2.0 }
+};
+
+let ACTIVE_RISK = "CONSERVATIVE";
+let ACTIVE_HORIZON = "SHORT";
+
+// compute feature vector and normalized score (-1..1 -> 0..100)
+function score_for_interval_normalized(closes, candles) {
+  const details = { pattern_flags:{}, base_score:0, fib:null, vol_conf:false };
+  if (!closes || closes.length < 22) return { direction: "NEUTRAL", score: 50, details };
+
+  const ema_short = ema(closes, 9);
+  const ema_long = ema(closes, 21);
+  const rsi_arr = rsi(closes);
+  const last_rsi = rsi_arr.length ? rsi_arr[rsi_arr.length-1] : 50;
+  const last_price = closes[closes.length-1];
+  let f1 = 0, f2 = 0, f3 = 0, f4 = 0, f5 = 0, f6 = 0;
+  
+  // If ATR not computed elsewhere, estimate volatility using recent prices
+const atrArray = closes.slice(-14);
+const atrHigh = Math.max(...atrArray);
+const atrLow = Math.min(...atrArray);
+const atrApprox = (atrHigh - atrLow) / 14;
+
+const avgATR = atrApprox / last_price;
+
+  
+    // EMA strength: normalized difference
+  const es = ema_short[ema_short.length-1], el = ema_long[ema_long.length-1];
+  f1 = Math.tanh( ((es - el) / Math.max(1e-9, el)) * 10 ); // roughly -1..1
+
+  // RSI: centered on 50
+  f2 = (last_rsi - 50) / 50; // -1..1
+
+  // Momentum pct (last candle)
+  const prev = closes[closes.length-2];
+  const pct = prev !== 0 ? (last_price - prev) / prev : 0;
+  f4 = Math.tanh(pct * 100);
+
+  // ATR normalized
+  const last_atr_arr = atr(candles);
+  const last_atr = last_atr_arr.length ? last_atr_arr[last_atr_arr.length-1] : 0;
+  const atr_norm = (last_price !== 0 && last_atr > 0) ? last_atr / last_price : 0;
+  // map atr_norm to 0..1 (cap at 0.05 => 5%)
+  f3 = Math.min(1, atr_norm / 0.05);
+
+  // volume confirmation
+  const vols = candles.map(c=>c.volume || 0);
+  if (vols.length > 10) {
+    try {
+      const meanLast10 = vols.slice(-10).reduce((a,b)=>a+b,0) / 10;
+      if (vols[vols.length-1] > meanLast10 * 1.2) f6 = 1;
+    } catch(e) { f6 = 0; }
+  }
+
+  // patterns
+  try {
+    let pat_conf = 0;
+    const tri = detect_triangle_confidence(candles);
+    if (tri) { pat_conf = Math.max(pat_conf, tri); details['triangle']=tri; }
+    const hs = detect_head_shoulders_confidence(candles);
+    if (hs) { pat_conf = Math.max(pat_conf, hs); details['head_shoulders']=hs; }
+    const db = detect_double_confidence(candles);
+    if (db) { pat_conf = Math.max(pat_conf, db); details['double']=db; }
+    const fl = detect_flag_confidence(candles);
+    if (fl) { pat_conf = Math.max(pat_conf, fl); details['flag']=fl; }
+    f5 = pat_conf; // 0..1
+  } catch(e) { f5 = 0; }
+
+  // combine with baseWeights
+  const w = Object.assign({}, baseWeights);
+  // optionally adjust weights per horizon or risk later
+  const S_interval = (w.ema * f1) + (w.rsi * f2) + (w.atr * (f3*2-1)) + (w.mom * f4) + (w.pattern * (f5*2-1)) + (w.vol * (f6*2-1));
+  // S_interval roughly -1..1 — convert to 0..100
+  const S_norm = Math.round(((S_interval + 1) / 2) * 100);
+  // direction determination
+  let direction = "NEUTRAL";
+  if (es > el && last_rsi < 70) direction = "LONG";
+  else if (es < el && last_rsi > 30) direction = "SHORT";
+  else {
+    if (details['double'] && pct > 0.001) direction = "LONG";
+    if (details['double'] && pct < -0.001) direction = "SHORT";
+  }
+
+  details['last_price'] = last_price;
+  details['last_atr'] = last_atr;
+  details['atr_norm'] = atr_norm;
+  details['features'] = { f1,f2,f3,f4,f5,f6 };
+  details['S_interval'] = S_interval;
+
+  return { direction, score: S_norm, details };
+}
+
+// ------------- CANDLE FETCH (Binance primary, Bybit fallback) -------------
+function map_interval_for_binance(interval) {
+  // our logical intervals -> binance
+  const m = {
+    "1":"1m","5":"5m","15":"15m","60":"1h","D":"1d","W":"1w","M":"1M"
+  };
+  return m[interval] || "5m";
+}
+
+async function fetchCandles(symbol, interval, limit=300) {
+  // try Binance first
+  try {
+    const bintv = map_interval_for_binance(interval);
+    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${bintv}&limit=${Math.min(limit,1000)}`;
+    const r = await fetch(url, {cache:"no-store"});
+    if (!r.ok) throw new Error('Binance failed');
+    const j = await r.json();
+    // j is array of arrays
+    const candles = j.map(k => ({
+      time: Math.floor(Number(k[0])/1000),
+      open: Number(k[1]),
+      high: Number(k[2]),
+      low: Number(k[3]),
+      close: Number(k[4]),
+      volume: Number(k[5])
+    }));
+    return candles;
+  } catch (e) {
+    addLog(`Binance fetch failed for ${symbol} ${interval}: ${String(e)} — trying Bybit fallback`);
+    // Bybit fallback (best-effort)
+    try {
+      const url = new URL("https://api.bybit.com/v5/market/kline");
+      url.search = new URLSearchParams({ category: "linear", symbol: symbol, interval: interval, limit: limit }).toString();
+      const r2 = await fetch(url.toString(), {cache:"no-store"});
+      const j2 = await r2.json();
+      if (j2.result && j2.result.list) {
+        const list = j2.result.list.slice().reverse();
+        const candles = list.map(k=>{
+          if (Array.isArray(k)) {
+            return { time: Number(k[0])/1000, open: Number(k[1]), high: Number(k[2]), low: Number(k[3]), close: Number(k[4]), volume: Number(k[5]||0) };
+          } else {
+            return { time: Number(k.open_time||k.t||0)/1000, open: Number(k.open), high: Number(k.high), low: Number(k.low), close: Number(k.close), volume: Number(k.volume||0) };
+          }
+        });
+        return candles;
+      } else throw new Error('Bybit empty');
+    } catch (err) {
+      addLog(`Bybit fallback failed: ${String(err)}`);
+      return []; // nothing
+    }
+  }
+}
+// ==============================================
+//  MARKET COMMENTARY MODULE (Mixed Trader Style)
+// ==============================================
+function generateMarketCommentary({ final_dir, overall_score, consensus, confidence }) {
+  let text = "Observing market...";
+  let sentiment = "neutral";
+
+  const confNum = parseFloat(confidence);
+  const long = consensus?.LONG || 0;
+  const short = consensus?.SHORT || 0;
+  const net = long - short;
+
+  if (!final_dir || overall_score === null || isNaN(overall_score)) {
+    text = "Insufficient data, waiting for clearer setup...";
+    sentiment = "neutral";
+  } 
+  else if (overall_score > 85 && confNum > 80) {
+    text = final_dir === "LONG" 
+      ? "🚀 Strong bullish momentum detected — ideal moment to act swiftly."
+      : "⚡ Strong bearish impulse — rapid move likely, stay sharp.";
+    sentiment = "positive";
+  } 
+  else if (overall_score > 70 && confNum > 65) {
+    text = final_dir === "LONG"
+      ? "📈 Bullish bias forming — setup looks promising."
+      : "📉 Bearish trend consolidating — keep watch.";
+    sentiment = "positive";
+  } 
+  else if (overall_score > 55 && confNum > 50) {
+    text = final_dir === "LONG"
+      ? "Market leaning upward, but momentum moderate. Confirm before entry."
+      : "Market leaning downward, possible short setup brewing.";
+    sentiment = "neutral";
+  } 
+  else if (overall_score < 45 && confNum < 50) {
+    text = "💤 Low confidence setup — signals are mixed, better wait.";
+    sentiment = "neutral";
+  } 
+  else if (overall_score < 30 && confNum < 40) {
+    text = "⚠️ Volatility or uncertainty dominating — step back.";
+    sentiment = "negative";
+  }
+
+  // add nuance for consensus
+  if (net > 3 && confNum > 70) text += " Multiple timeframes aligned — strong confirmation.";
+  else if (Math.abs(net) <= 1) text += " Timeframes disagreement — move cautiously.";
+
+  return { text, sentiment };
+}
+
+
+
+// ------------- ANALYZE (multi-TF) -------------
+async function analyzeSymbol(symbol) {
+  // select TFs based on ACTIVE_HORIZON preset
+  const tfWeights = TF_PRESETS[ACTIVE_HORIZON];
+  const consensus = {"LONG":0,"SHORT":0,"NEUTRAL":0};
+  let overall_score_sum = 0;
+  let weight_sum = 0;
+  let last_price = null;
+  let used_candles = null;
+  const interval_details = [];
+  
+  // fetch for each TF key
+  for (const tf in tfWeights) {
+    const w = tfWeights[tf] || 1;
+    // fetch candles (map tf string to binance/possible bybit)
+    const candles = await fetchCandles(symbol, tf, 300);
+    if (!candles || candles.length < 22) continue;
+    const closes = candles.map(c=>c.close);
+    const res = score_for_interval_normalized(closes, candles);
+    interval_details.push([tf, res.direction, res.score, res.details]);
+    overall_score_sum += res.score * w;
+    weight_sum += w;
+    consensus[res.direction] = (consensus[res.direction] || 0) + 1;
+    last_price = closes[closes.length-1];
+    used_candles = candles;
+  }
+
+  const raw_overall = weight_sum ? (overall_score_sum / weight_sum) : 50; // 0..100
+  // apply risk multiplier
+  const riskCfg = RISK_PRESETS[ACTIVE_RISK];
+  const overall_score = Math.round(Math.min(100, raw_overall * (riskCfg.score_multiplier || 1)));
+
+  // final dir by consensus
+  let final_dir = "NEUTRAL";
+  if ((consensus["LONG"] || 0) > (consensus["SHORT"] || 0)) final_dir = "LONG";
+  else if ((consensus["SHORT"] || 0) > (consensus["LONG"] || 0)) final_dir = "SHORT";
+
+  // compute ATR-based stops
+  let atr_last = last_price * 0.002;
+  if (used_candles && used_candles.length >= 20) {
+    const atr_vals = atr(used_candles, 14);
+    atr_last = atr_vals.length ? atr_vals[atr_vals.length-1] : last_price * 0.002;
+  }
+  // adapt with risk preset
+  const atr_mult = riskCfg.atr_mult_stop || 1.5;
+  const stop = (final_dir === "LONG") ? (last_price - atr_last * atr_mult) : (final_dir === "SHORT") ? (last_price + atr_last * atr_mult) : null;
+  const rr = riskCfg.rr_base || 3.0;
+  const take = (stop !== null) ? (final_dir === "LONG" ? last_price + (last_price - stop) * rr : last_price - (stop - last_price) * rr) : null;
+
+
+
+// --- CONFIDENCE, VOLUME, AND EXPECTED DURATION LOGIC ---
+
+// 1️⃣ Base confidence from consensus (0–100 → 0–1)
+// compute normalized consensus strength (how aligned LONG vs SHORT are)
+const consLong = consensus?.LONG || 0;
+const consShort = consensus?.SHORT || 0;
+const consTotal = consLong + consShort;
+let confidence = consTotal > 0 ? Math.abs(consLong - consShort) / consTotal : 0;
+
+
+// 2️⃣ Momentum proxy – average absolute interval score
+let momentum = 0;
+if (interval_details?.length) {
+  momentum =
+    interval_details.reduce((a, b) => a + Math.abs(b.score || 0), 0) /
+    interval_details.length;
+}
+
+// 3️⃣ Volatility proxy – price range / last price
+let volatility = 0;
+if (used_candles?.length > 14) {
+  const closes = used_candles.map(c => c.close);
+  const max = Math.max(...closes);
+  const min = Math.min(...closes);
+  volatility = (max - min) / last_price;
+}
+
+// 4️⃣ Volume confirmation
+let volume_factor = 1.0;
+if (used_candles && used_candles.length > 20) {
+  const vols = used_candles.map(c => c.volume);
+  const avgVol = vols.slice(-20).reduce((a, b) => a + b, 0) / 20;
+  const currVol = vols[vols.length - 1];
+  const relVol = currVol / (avgVol || 1);
+  if (relVol >= 2) volume_factor = 1.2;       // strong conviction
+  else if (relVol >= 1) volume_factor = 1.0;  // normal
+  else if (relVol >= 0.5) volume_factor = 0.7;// weak
+  else volume_factor = 0.4;                   // no conviction
+}
+
+// 5️⃣ Combine factors into dynamic confidence
+confidence =
+  (0.6 * confidence + 0.4 * momentum) *
+  (1 - Math.min(volatility, 0.5)) *
+  volume_factor;
+confidence = Math.min(1, Math.max(0, confidence));
+
+// 6️⃣ Predictive trade lifespan (in minutes) — data-driven version
+let expectedMinutes = 5;  // default fail-safe minimum
+
+if (final_dir === "LONG" || final_dir === "SHORT") {
+  // --- 1️⃣ Price-velocity projection toward TP ---
+  const distPct = Math.abs((take - last_price) / last_price);
+  const closes = used_candles.map(c => c.close);
+  const returns = [];
+  for (let i = 1; i < closes.length; i++) returns.push((closes[i] - closes[i - 1]) / closes[i - 1]);
+  const avgVel = returns.slice(-10).reduce((a, b) => a + b, 0) / 10;     // mean recent velocity
+  const dirVel = final_dir === "LONG" ? Math.max(avgVel, 1e-9) : Math.max(-avgVel, 1e-9);
+  const T_proj = distPct / dirVel;                                       // projected minutes if 1-minute candles
+  const T_proj_clamped = isFinite(T_proj) && T_proj > 0 ? Math.min(Math.max(T_proj, 1), 1440) : 30;
+
+  // --- 2️⃣ Pattern-based expectation (rough heuristic) ---
+  let patternFactor = 1;
+  if (interval_details.some(x => x[3].pattern_flags?.triangle)) patternFactor = 3;
+  if (interval_details.some(x => x[3].pattern_flags?.flag)) patternFactor = 1.5;
+  if (interval_details.some(x => x[3].pattern_flags?.double)) patternFactor = 2;
+  if (interval_details.some(x => x[3].pattern_flags?.head_shoulders)) patternFactor = 2.5;
+
+  const horizonCap = { SHORT: 60, MEDIUM: 360, LONG: 2880 }[ACTIVE_HORIZON] || 120;
+
+  // --- 3️⃣ Stability weighting ---
+  const stability = Math.min(
+    1,
+    (1 - Math.min(volatility, 0.5)) * (0.5 + confidence * 0.5) * volume_factor
+  );
+
+  // --- 4️⃣ Fuse projections ---
+  let fused = (T_proj_clamped * (0.6 + stability * 0.4)) * patternFactor;
+  fused = Math.max(1, Math.min(fused, horizonCap));
+
+  // --- 5️⃣ Risk-mode interpretation (contextual) ---
+  if (ACTIVE_RISK === "AGGRESSIVE") {
+    // fast-acting, accepts low stability, shortens window
+    if (stability < 0.6) fused *= 0.6;
+    else fused *= 0.8;
+  } else if (ACTIVE_RISK === "CONSERVATIVE") {
+    // precise but slower — extend slightly if stability high
+    if (stability > 0.8) fused *= 1.3;
+    else if (stability < 0.5) fused *= 0.8;
+  }
+  expectedMinutes = Math.max(1, Math.min(fused, horizonCap));
+}
+
+// --- 6️⃣ Convert to readable text ---
+let expectedDurationText;
+if (expectedMinutes < 2) expectedDurationText = `~1 minute`;
+else if (expectedMinutes < 60) expectedDurationText = `~${Math.round(expectedMinutes)} minutes`;
+else if (expectedMinutes < 1440)
+  expectedDurationText = `~${(expectedMinutes / 60).toFixed(1)} hours`;
+else expectedDurationText = `~${(expectedMinutes / 1440).toFixed(1)} days`;
+
+
+// 8️⃣ Format confidence for display
+const confidenceText = `${(confidence * 100).toFixed(1)}%`;
+
+// --- 9️⃣ Signal Strength ---
+let SignalStrength =
+  0.4 * (overall_score / 100) +
+  0.25 * confidence +
+  0.15 * (volume_factor / 1.2) +
+  0.1 * Math.min(1, (consensus[final_dir] || 0) / 4) +
+  0.1 * (1 - Math.min(volatility, 0.5) * 2);
+
+SignalStrength = Math.round(Math.max(0, Math.min(SignalStrength * 100, 100)));
+
+
+
+  // collect patterns across TFs
+  const patterns = {};
+  for (const it of interval_details) {
+    const pf = it[3].pattern_flags;
+    if (pf && Object.keys(pf).length) patterns[it[0]] = pf;
+  }
+
+const comment = generateMarketCommentary({
+  final_dir,
+  overall_score,
+  consensus,
+  confidence: confidence * 100  // numeric for commentary
+});
+
+
+
+
+  return {
+    symbol,
+    final_dir,
+    overall_score,
+    consensus,
+    intervals: interval_details,
+    last_price,
+    stop,
+    take,
+    time: new Date().toISOString(),
+    candles: used_candles,
+    patterns,
+    raw_details: interval_details,
+	expectedDuration: expectedDurationText,
+	confidence: confidenceText,
+	comment,
+	ACTIVE_HORIZON,
+    ACTIVE_RISK,
+	SignalStrength,
+  };
+}
+
+// ------------- SHOULD SEND (new rule + anti-spam) -------------
+function should_send_gui_new(res) {
+  const score = res.overall_score;
+  const dir_ = res.final_dir;
+  const consensus = res.consensus || {};
+  if (dir_ !== "LONG" && dir_ !== "SHORT") return false;
+  const riskCfg = RISK_PRESETS[ACTIVE_RISK];
+
+  const consCount = consensus[dir_] || 0;
+  if (consCount <= 3) return false;
+  if (score <= riskCfg.min_score_send) return false;
+
+  const prev = lastSentPerSymbol[res.symbol] || null;
+  if (prev && prev.dir === dir_) {
+    if (Math.abs(score - prev.overall_score) < 10) return false; // anti-spam delta < 10
+  }
+  return true;
+}
+
+// ------------- TELEGRAM HELPERS -------------
+async function sendTelegramMessage(text) {
+  const token = tgTokenInput.value.trim();
+  const chat = tgChatInput.value.trim();
+  if (!token || !chat) {
+    addLog("Telegram not configured — skipping send.");
+    return {ok:false, error:"no_token"};
+  }
+  
+  try {
+    const resp = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({chat_id: chat, text: text, parse_mode: "HTML"})
+    });
+    const j = await resp.json();
+    addLog("Telegram send result: " + JSON.stringify(j));
+    return j;
+  } catch (e) {
+    addLog("Telegram send failed: " + String(e));
+    return {ok:false, error:String(e)};
+  }
+}
+
+async function sendTelegramMessageImmediate(text) {
+  const token = tgTokenInput.value.trim();
+  const chat = tgChatInput.value.trim();
+  if (!token || !chat) {
+    tgStatus.innerHTML = `<div class="warn">⚠️ Please enter valid Telegram credentials.</div>`;
+    addLog("Telegram not configured — skipping send.");
+    return {ok:false, error:"no_token"};
+  }
+  try {
+    const resp = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({chat_id: chat, text: text, parse_mode: "HTML"})
+    });
+    const j = await resp.json();
+    if (j.ok) tgStatus.innerHTML = `<div class="ok">✅ Telegram connection OK</div>`;
+    else tgStatus.innerHTML = `<div class="warn">⚠️ Telegram error</div>`;
+    addLog("Telegram send result: " + JSON.stringify(j));
+    return j;
+  } catch (e) {
+    tgStatus.innerHTML = `<div class="warn">⚠️ Telegram send failed</div>`;
+    addLog("Telegram send failed: " + String(e));
+    return {ok:false, error:String(e)};
+  }
+}
+
+// format message (simple)
+function formatMessageGui(res) {
+  const lines = [];
+  lines.push(`<b>${res.symbol} — ${res.final_dir}</b>`);
+  lines.push(`Price: ${toFixedSafe(res.last_price,6)}`);
+  if (res.stop !== null) {
+    lines.push(`Stop: ${toFixedSafe(res.stop,6)}`);
+    lines.push(`Take: ${toFixedSafe(res.take,6)}`);
+  }
+  lines.push(`Score: ${res.overall_score}`);
+  lines.push(`Consensus: L=${res.consensus.LONG || 0} S=${res.consensus.SHORT || 0}`);
+  if (res.patterns && Object.keys(res.patterns).length) {
+    const pattern_lines = [];
+    for (const tf in res.patterns) pattern_lines.push(`${tf}:${Object.keys(res.patterns[tf]).join(',')}`);
+    lines.push("Patterns: " + pattern_lines.join(" | "));
+  }
+  if (res.confidence) {
+  const confVal = parseFloat(res.confidence);
+  let emoji = "⚪";
+  if (confVal >= 80) emoji = "🟢";
+  else if (confVal >= 50) emoji = "🟡";
+  else emoji = "🔴";
+  lines.push(`Confidence: ${emoji} ${res.confidence}`);
+}
+
+  if (res.expectedDuration) {
+  lines.push(`Timing: ${res.expectedDuration}`);
+}
+
+  if (res.comment && res.comment.text) {
+  lines.push(`${res.comment.text}`);
+}
+
+
+  return lines.join("\n");
+}
+
+
+
+// ------------- UI RENDER -------------
+function renderStatusUI(res) {
+  priceEl.innerText = res.last_price ? Number(res.last_price).toFixed(6) : '-';
+  if (res.final_dir === 'LONG') dirEl.innerHTML = `<span class="value-long">LONG</span>`;
+  else if (res.final_dir === 'SHORT') dirEl.innerHTML = `<span class="value-short">SHORT</span>`;
+  else dirEl.innerHTML = `<span>-</span>`;
+  scoreEl.innerHTML = `<span class="value-score">${res.overall_score}</span>`;
+  const l = res.consensus.LONG || 0, s = res.consensus.SHORT || 0;
+  consEl.innerHTML = `L=<span class="consensus-L">${l}</span> S=<span class="consensus-S">${s}</span>`;
+  if (res.stop !== null && res.take !== null) {
+    sltpEl.innerHTML = ` <span class="sltp-sl">${Number(res.stop).toFixed(6)}</span> <span class="sltp-tp">${Number(res.take).toFixed(6)}</span>`;
+  } else sltpEl.innerText = '-';
+  if (timingEl) {
+  confidenceEl.textContent = res.confidence || "-";
+  timingEl.textContent = res.expectedDuration || "-";
+  
+  if (res.SignalStrength !== undefined) {
+  const val = Math.round(res.SignalStrength);
+  const fill = document.getElementById('progress-fill');
+  const label = document.getElementById('strengthLabel');
+
+  fill.style.width = val + '%';
+  label.textContent = val + '%';
+
+  // Цветовая остановка (не анимирует фон, только ширину)
+  // Никаких циклов, просто плавное заполнение
+}
+
+
+  const commentEl = document.getElementById("comment");
+  if (commentEl && res.comment?.text) {
+    commentEl.textContent = res.comment.text;
+    if (res.comment.sentiment === "positive") commentEl.style.color = "#00d07a";
+    else if (res.comment.sentiment === "negative") commentEl.style.color = "#ff6b6b";
+    else commentEl.style.color = "#9aa4b2";
+  }
+}
+
+
+
+}
+
+// ------------- MAIN RUN LOOP -------------
+async function runOnce() {
+  const symbol = sel.value;
+  addLog(`Running analysis for ${symbol} ...`);
+  try {
+    const res = await analyzeSymbol(symbol);
+    renderStatusUI(res);
+    addLog(`${res.symbol}: ${res.final_dir} at ${toFixedSafe(res.last_price,6)} | score=${res.overall_score} | patterns=${JSON.stringify(res.patterns)}`);
+
+
+
+    // decide sending
+    if (should_send_gui_new(res)) {
+      const msg = formatMessageGui(res);
+      const sendResult = await sendTelegramMessage(msg);
+      if (sendResult && sendResult.ok) {
+        lastSentPerSymbol[res.symbol] = { dir: res.final_dir, overall_score: res.overall_score, time: new Date().toISOString() };
+        addLog(`➡️ Sent signal for ${res.symbol} ${res.final_dir}`);
+      } else {
+        addLog(`⚠️ Send failed for ${res.symbol}`);
+      }
+    }
+  } catch (e) {
+    addLog("Analysis failed: " + String(e));
+  }
+}
+
+function startLoop() {
+  if (running) return;
+  running = true;
+  addLog("Analyzer started.");
+  runOnce();
+  loopTimer = setInterval(runOnce, LOOP_SECONDS * 1000);
+}
+
+function stopLoop() {
+  if (!running) return;
+  running = false;
+  if (loopTimer) { clearInterval(loopTimer); loopTimer = null; }
+  addLog("Analyzer stopped.");
+}
+
+// ------------- EVENT BINDINGS -------------
+btnStart.addEventListener('click', startLoop);
+btnStop.addEventListener('click', stopLoop);
+btnAnalyze.addEventListener('click', runOnce);
+
+loopSelect.addEventListener('change', () => {
+  const v = Number(loopSelect.value || 150);
+  LOOP_SECONDS = v;
+  document.getElementById('loopInterval').innerText = LOOP_SECONDS + 's';
+  if (running) { stopLoop(); startLoop(); addLog(`Loop interval changed to ${LOOP_SECONDS}s and applied.`); }
+});
+
+
+const btn = document.getElementById('btnFullscreen');
+const chartContainer = document.getElementById('tv_embed_container');
+const icon = btn.querySelector('svg');
+
+document.addEventListener('fullscreenchange', () => {
+  if (document.fullscreenElement) {
+    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M9 14H5v4M15 10h4V6M5 5h4M19 19v-4"/>';
+    chartContainer.appendChild(btn);
+    btn.style.position = 'fixed';
+    btn.style.bottom = '12px';
+    btn.style.right = '12px';
+    btn.style.zIndex = '9999';
+  } else {
+    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4h4M4 16v4h4m12-12V4h-4m4 12v4h-4" />';
+    document.getElementById('chartCard').appendChild(btn);
+    btn.style.position = '';
+    btn.style.bottom = '';
+    btn.style.right = '';
+  }
+});
+
+btn.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    chartContainer.requestFullscreen().catch(err => console.log(err));
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+
+
+// symbol change -> update tradingview and analyze
+sel.addEventListener('change', async () => {
+  const s = sel.value;
+  const tvSym = TV_MAP[s] || s;
+  recreateTradingView(tvSym);
+  addLog("Symbol changed to " + s);
+  await runOnce();
+ 
+});
+
+
+
+// Telegram event handlers
+btnTgSendTest.addEventListener('click', async () => {
+  const sym = sel.value;
+  addLog(`Manual send requested for ${sym}`);
+  try {
+    const r = await analyzeSymbol(sym);
+    const msg = formatMessageGui(r);
+    await sendTelegramMessageImmediate(msg);
+  } catch (e) {
+    addLog("Manual send failed: " + String(e));
+  }
+});
+btnTgTestConn.addEventListener('click', async () => {
+  const token = tgTokenInput.value.trim();
+  const chat = tgChatInput.value.trim();
+  if (!token || !chat) {
+    tgStatus.innerHTML = `<div class="warn">⚠️ Please enter valid Telegram credentials.</div>`;
+    return;
+  }
+  try {
+    const resp = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+    const j = await resp.json();
+    if (j.ok) tgStatus.innerHTML = `<div class="ok">✅ Telegram connection OK</div>`;
+    else tgStatus.innerHTML = `<div class="warn">⚠️ Invalid token</div>`;
+    addLog("Telegram test result: " + JSON.stringify(j));
+  } catch (e) {
+    tgStatus.innerHTML = `<div class="warn">⚠️ Telegram connection failed</div>`;
+    addLog("Telegram test failed: " + String(e));
+  }
+});
+
+// Mode buttons interactions
+function setActiveRisk(r) {
+  ACTIVE_RISK = r;
+  riskLabel.innerText = r.charAt(0) + r.slice(1).toLowerCase();
+  for (const k in riskButtons) {
+    if (k === r) riskButtons[k].classList.add('mode-active'); else riskButtons[k].classList.remove('mode-active');
+  }
+  addLog("Risk mode set to " + r);
+}
+function setActiveHorizon(h) {
+  ACTIVE_HORIZON = h;
+  hLabel.innerText = h.charAt(0) + h.slice(1).toLowerCase();
+  for (const k in horizonButtons) {
+    if (k === h) horizonButtons[k].classList.add('mode-active'); else horizonButtons[k].classList.remove('mode-active');
+  }
+  addLog("Horizon set to " + h);
+}
+riskButtons.CONSERVATIVE.addEventListener('click', ()=>setActiveRisk('CONSERVATIVE'));
+riskButtons.STABLE.addEventListener('click', ()=>setActiveRisk('STABLE'));
+riskButtons.AGGRESSIVE.addEventListener('click', ()=>setActiveRisk('AGGRESSIVE'));
+horizonButtons.SHORT.addEventListener('click', ()=>setActiveHorizon('SHORT'));
+horizonButtons.MEDIUM.addEventListener('click', ()=>setActiveHorizon('MEDIUM'));
+horizonButtons.LONG.addEventListener('click', ()=>setActiveHorizon('LONG'));
+
+// ------------- TradingView recreation -------------
+function recreateTradingView(symbolTvString) {
+  const container = document.getElementById('tv_embed_container');
+  container.innerHTML = `
+    <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+    <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/symbols/${encodeURIComponent(symbolTvString)}/" rel="noopener nofollow" target="_blank"><span class="blue-text">${symbolTvString} chart</span></a><span class="trademark"> by TradingView</span></div>
+  `;
+  const cfg = {
+    "allow_symbol_change": true,
+    "calendar": false,
+    "details": false,
+    "hide_side_toolbar": false,
+    "hide_top_toolbar": false,
+    "hide_legend": false,
+    "hide_volume": false,
+    "hotlist": false,
+    "interval": "5",
+    "locale": "en",
+    "save_image": true,
+    "style": "3",
+    "symbol": symbolTvString,
+    "theme": "dark",
+    "timezone": "Etc/UTC",
+    "backgroundColor": "#0F0F0F",
+    "gridColor": "rgba(242, 242, 242, 0.06)",
+    "watchlist": [],
+    "withdateranges": false,
+    "compareSymbols": [],
+    "studies": [],
+    "autosize": true
+  };
+  const s = document.createElement('script');
+  s.type = 'text/javascript';
+  s.async = true;
+  s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  s.innerHTML = JSON.stringify(cfg, null, 2);
+  container.appendChild(s);
+}
+
+// ---------- Positioning + persistent button logic ----------
+(function(){
+  const btn = document.getElementById('btnFullscreen');
+  const icon = document.getElementById('fsIcon');
+  const tvContainer = () => document.getElementById('tv_embed_container');
+
+  // compute position to sit just right of the copyright text
+  function positionBtn() {
+    const tv = tvContainer();
+    if (!tv) { btn.classList.add('hidden'); return; }
+
+    // find the copyright element inside the tv container iframe wrapper
+    const copyright = tv.querySelector('.tradingview-widget-copyright');
+    if (!copyright) { btn.classList.add('hidden'); return; }
+
+    // ensure chartCard is positioned (parent)
+    const chartCard = document.getElementById('chartCard');
+    const cardRect = chartCard.getBoundingClientRect();
+    const copyRect = copyright.getBoundingClientRect();
+
+    // compute offsets relative to chartCard
+    const offsetRight = cardRect.right - copyRect.right; // how far from right edge the copyright is
+    const right = Math.max(8, offsetRight + 8); // small gap
+    const bottom = Math.max(8, (cardRect.bottom - copyRect.bottom) + 4);
+
+    // position absolute relative to chartCard (chartCard is relative)
+    // note: we use style.right and style.bottom in px
+    btn.style.right = (right) + 'px';
+    btn.style.bottom = (bottom) + 'px';
+    btn.style.top = 'auto';
+    btn.classList.remove('hidden');
+  }
+
+  // call initially and on resize
+  window.addEventListener('resize', positionBtn);
+  window.addEventListener('orientationchange', positionBtn);
+  // call after a slight delay to let TradingView render
+  setTimeout(positionBtn, 800);
+
+  // observe changes inside tv_embed_container (TradingView often rewrites DOM)
+  const target = tvContainer();
+  if (target) {
+    const mo = new MutationObserver(() => {
+      // reposition when TradingView changes nodes
+      setTimeout(positionBtn, 120);
+    });
+    mo.observe(target, { childList: true, subtree: true, attributes: true });
+    // store on element so recreateTradingView doesn't orphan it
+    target.__tvFullscreenMo = mo;
+  }
+
+  // if recreateTradingView replaces innerHTML, we must reattach observer each time.
+  // Patch recreateTradingView to re-run position after it runs:
+  const origRecreate = window.recreateTradingView;
+  if (typeof origRecreate === 'function') {
+    window.recreateTradingView = function(...args) {
+      const res = origRecreate.apply(this, args);
+      setTimeout(() => {
+        // re-observe the new container content
+        const t = tvContainer();
+        if (t && !t.__tvFullscreenMo) {
+          const mo = new MutationObserver(() => setTimeout(positionBtn, 120));
+          mo.observe(t, { childList: true, subtree: true, attributes: true });
+          t.__tvFullscreenMo = mo;
+        }
+        positionBtn();
+      }, 200);
+      return res;
+    };
+  }
+
+  // show correct icon based on fullscreen state
+  function updateIcon() {
+    if (document.fullscreenElement) {
+      // exit icon (collapse)
+      icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M9 14H5v4M15 10h4V6M5 5h4M19 19v-4"/>';
+    } else {
+      // enter icon (expand) — original path
+      icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4h4M4 16v4h4m12-12V4h-4m4 12v4h-4" />';
+    }
+  }
+  document.addEventListener('fullscreenchange', updateIcon);
+
+  // click toggles fullscreen on the actual tv embed container
+  btn.addEventListener('click', async () => {
+    const tv = tvContainer();
+    if (!tv) return;
+    try {
+      if (!document.fullscreenElement) {
+        await tv.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.warn('Fullscreen toggle failed:', err);
+    }
+  });
+
+  // ensure reposition after initial TradingView load
+  // some embed loads later — poll a couple times
+  let tries = 0;
+  const poll = setInterval(() => {
+    positionBtn();
+    tries++;
+    if (tries > 20) clearInterval(poll);
+  }, 300);
+})();
+
+
+// ------------- On load: setup default + autostart -------------
+window.addEventListener('load', () => {
+  recreateTradingView(TV_MAP[sel.value] || sel.value);
+  // set defaults
+  setActiveRisk('STABLE');
+setActiveHorizon('MEDIUM');
+
+  startLoop();
+});
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
