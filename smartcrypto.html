@@ -1083,13 +1083,14 @@ function recreateTradingView(symbolTvString) {
 window.addEventListener('load', () => {
   recreateTradingView(TV_MAP[sel.value] || sel.value);
   // set defaults
-  setActiveRisk('CONSERVATIVE');
-  setActiveHorizon('SHORT');
+ setActiveRisk('STABLE');
+setActiveHorizon('MEDIUM');
   startLoop();
 });
 </script>
 </body>
 </html>
+
 
 
 
