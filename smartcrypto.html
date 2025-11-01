@@ -310,7 +310,15 @@ document.getElementById('loopInterval').innerText = LOOP_SECONDS + 's';
 const TOP_COINS = [
   "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
   "SOLUSDT","DOGEUSDT","MATICUSDT","DOTUSDT","TRXUSDT",
-  "LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT"
+  "LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT", "PEPEUSDT", "BONKUSDT", "INJUSDT", "PYTHUSDT", "APTUSDT", "ADAUSDT", "NVDA",     
+  "TSLA",    
+  "AAPL",    
+  "AMZN",   
+  "MSFT", 
+  "SPY", 
+  "QQQ", 
+  "XAUUSD", 
+  "USOIL", 
 ];
 
 const TV_MAP = {};
@@ -1323,6 +1331,11 @@ async function sendTelegramMessageImmediate(text) {
 function formatMessageGui(res) {
   const lines = [];
   lines.push(`<b>${res.symbol} — ${res.final_dir}</b>`);
+if (res.ACTIVE_RISK || res.ACTIVE_HORIZON) {
+  lines.push(`Mode: ${res.ACTIVE_RISK || 'STABLE'}/${res.ACTIVE_HORIZON || 'MEDIUM'}`);
+}
+
+
   lines.push(`Price: ${toFixedSafe(res.last_price, 6)}`);
   if (res.stop !== null) {
     lines.push(`Stop: ${toFixedSafe(res.stop, 6)}`);
