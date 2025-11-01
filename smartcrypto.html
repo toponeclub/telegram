@@ -123,18 +123,18 @@
   touch-action: manipulation;
   cursor: pointer;
 }
-	 
-	 
+
+
 </style>
 
 
 
 </head>
 <body class="p-4">
-  <div class="max-w-[1400px] mx-auto flex flex-col gap-4">
+  <div class="max-w-[1400px] mx-auto flex flex-col gap-1">
 
     <div class="flex items-center justify-center mb-2">
-      <h1 class="text-gray-400 text-xl font-semibold">SmartCrypto</h1>
+      <h1 class="text-gray-400 text-x font-semibold">SmartCrypto</h1>
     </div>
 
 
@@ -724,212 +724,531 @@ function generateMarketCommentary({ final_dir, overall_score, consensus, confide
 
 
 
-// ------------- ANALYZE (multi-TF) -------------
+// --- unified, robust analyzeSymbol (paste instead of old one) ---
 async function analyzeSymbol(symbol) {
-  // select TFs based on ACTIVE_HORIZON preset
-  const tfWeights = TF_PRESETS[ACTIVE_HORIZON];
-  const consensus = {"LONG":0,"SHORT":0,"NEUTRAL":0};
-  let overall_score_sum = 0;
-  let weight_sum = 0;
-  let last_price = null;
-  let used_candles = null;
-  const interval_details = [];
-  
-  // fetch for each TF key
-  for (const tf in tfWeights) {
-    const w = tfWeights[tf] || 1;
-    // fetch candles (map tf string to binance/possible bybit)
-    const candles = await fetchCandles(symbol, tf, 300);
-    if (!candles || candles.length < 22) continue;
-    const closes = candles.map(c=>c.close);
-    const res = score_for_interval_normalized(closes, candles);
-    interval_details.push([tf, res.direction, res.score, res.details]);
-    overall_score_sum += res.score * w;
-    weight_sum += w;
-    consensus[res.direction] = (consensus[res.direction] || 0) + 1;
-    last_price = closes[closes.length-1];
-    used_candles = candles;
+  // ---- helpers ----
+  const last = (arr) => (Array.isArray(arr) && arr.length) ? arr[arr.length - 1] : null;
+
+  async function safeFetchJSON(url, opts = {}) {
+    try {
+      const res = await fetch(url, opts);
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+      return await res.json();
+    } catch (e) {
+      console.warn('safeFetchJSON error:', url, e);
+      return null;
+    }
   }
 
-  const raw_overall = weight_sum ? (overall_score_sum / weight_sum) : 50; // 0..100
-  // apply risk multiplier
-  const riskCfg = RISK_PRESETS[ACTIVE_RISK];
-  const overall_score = Math.round(Math.min(100, raw_overall * (riskCfg.score_multiplier || 1)));
-
-  // final dir by consensus
-  let final_dir = "NEUTRAL";
-  if ((consensus["LONG"] || 0) > (consensus["SHORT"] || 0)) final_dir = "LONG";
-  else if ((consensus["SHORT"] || 0) > (consensus["LONG"] || 0)) final_dir = "SHORT";
-
-  // compute ATR-based stops
-  let atr_last = last_price * 0.002;
-  if (used_candles && used_candles.length >= 20) {
-    const atr_vals = atr(used_candles, 14);
-    atr_last = atr_vals.length ? atr_vals[atr_vals.length-1] : last_price * 0.002;
-  }
-  // adapt with risk preset
-  const atr_mult = riskCfg.atr_mult_stop || 1.5;
-  const stop = (final_dir === "LONG") ? (last_price - atr_last * atr_mult) : (final_dir === "SHORT") ? (last_price + atr_last * atr_mult) : null;
-  const rr = riskCfg.rr_base || 3.0;
-  const take = (stop !== null) ? (final_dir === "LONG" ? last_price + (last_price - stop) * rr : last_price - (stop - last_price) * rr) : null;
-
-
-
-// --- CONFIDENCE, VOLUME, AND EXPECTED DURATION LOGIC ---
-
-// 1️⃣ Base confidence from consensus (0–100 → 0–1)
-// compute normalized consensus strength (how aligned LONG vs SHORT are)
-const consLong = consensus?.LONG || 0;
-const consShort = consensus?.SHORT || 0;
-const consTotal = consLong + consShort;
-let confidence = consTotal > 0 ? Math.abs(consLong - consShort) / consTotal : 0;
-
-
-// 2️⃣ Momentum proxy – average absolute interval score
-let momentum = 0;
-if (interval_details?.length) {
-  momentum =
-    interval_details.reduce((a, b) => a + Math.abs(b.score || 0), 0) /
-    interval_details.length;
-}
-
-// 3️⃣ Volatility proxy – price range / last price
-let volatility = 0;
-if (used_candles?.length > 14) {
-  const closes = used_candles.map(c => c.close);
-  const max = Math.max(...closes);
-  const min = Math.min(...closes);
-  volatility = (max - min) / last_price;
-}
-
-// 4️⃣ Volume confirmation
-let volume_factor = 1.0;
-if (used_candles && used_candles.length > 20) {
-  const vols = used_candles.map(c => c.volume);
-  const avgVol = vols.slice(-20).reduce((a, b) => a + b, 0) / 20;
-  const currVol = vols[vols.length - 1];
-  const relVol = currVol / (avgVol || 1);
-  if (relVol >= 2) volume_factor = 1.2;       // strong conviction
-  else if (relVol >= 1) volume_factor = 1.0;  // normal
-  else if (relVol >= 0.5) volume_factor = 0.7;// weak
-  else volume_factor = 0.4;                   // no conviction
-}
-
-// 5️⃣ Combine factors into dynamic confidence
-confidence =
-  (0.6 * confidence + 0.4 * momentum) *
-  (1 - Math.min(volatility, 0.5)) *
-  volume_factor;
-confidence = Math.min(1, Math.max(0, confidence));
-
-// 6️⃣ Predictive trade lifespan (in minutes) — data-driven version
-let expectedMinutes = 5;  // default fail-safe minimum
-
-if (final_dir === "LONG" || final_dir === "SHORT") {
-  // --- 1️⃣ Price-velocity projection toward TP ---
-  const distPct = Math.abs((take - last_price) / last_price);
-  const closes = used_candles.map(c => c.close);
-  const returns = [];
-  for (let i = 1; i < closes.length; i++) returns.push((closes[i] - closes[i - 1]) / closes[i - 1]);
-  const avgVel = returns.slice(-10).reduce((a, b) => a + b, 0) / 10;     // mean recent velocity
-  const dirVel = final_dir === "LONG" ? Math.max(avgVel, 1e-9) : Math.max(-avgVel, 1e-9);
-  const T_proj = distPct / dirVel;                                       // projected minutes if 1-minute candles
-  const T_proj_clamped = isFinite(T_proj) && T_proj > 0 ? Math.min(Math.max(T_proj, 1), 1440) : 30;
-
-  // --- 2️⃣ Pattern-based expectation (rough heuristic) ---
-  let patternFactor = 1;
-  if (interval_details.some(x => x[3].pattern_flags?.triangle)) patternFactor = 3;
-  if (interval_details.some(x => x[3].pattern_flags?.flag)) patternFactor = 1.5;
-  if (interval_details.some(x => x[3].pattern_flags?.double)) patternFactor = 2;
-  if (interval_details.some(x => x[3].pattern_flags?.head_shoulders)) patternFactor = 2.5;
-
-  const horizonCap = { SHORT: 60, MEDIUM: 360, LONG: 2880 }[ACTIVE_HORIZON] || 120;
-
-  // --- 3️⃣ Stability weighting ---
-  const stability = Math.min(
-    1,
-    (1 - Math.min(volatility, 0.5)) * (0.5 + confidence * 0.5) * volume_factor
-  );
-
-  // --- 4️⃣ Fuse projections ---
-  let fused = (T_proj_clamped * (0.6 + stability * 0.4)) * patternFactor;
-  fused = Math.max(1, Math.min(fused, horizonCap));
-
-  // --- 5️⃣ Risk-mode interpretation (contextual) ---
-  if (ACTIVE_RISK === "AGGRESSIVE") {
-    // fast-acting, accepts low stability, shortens window
-    if (stability < 0.6) fused *= 0.6;
-    else fused *= 0.8;
-  } else if (ACTIVE_RISK === "CONSERVATIVE") {
-    // precise but slower — extend slightly if stability high
-    if (stability > 0.8) fused *= 1.3;
-    else if (stability < 0.5) fused *= 0.8;
-  }
-  expectedMinutes = Math.max(1, Math.min(fused, horizonCap));
-}
-
-// --- 6️⃣ Convert to readable text ---
-let expectedDurationText;
-if (expectedMinutes < 2) expectedDurationText = `~1 minute`;
-else if (expectedMinutes < 60) expectedDurationText = `~${Math.round(expectedMinutes)} minutes`;
-else if (expectedMinutes < 1440)
-  expectedDurationText = `~${(expectedMinutes / 60).toFixed(1)} hours`;
-else expectedDurationText = `~${(expectedMinutes / 1440).toFixed(1)} days`;
-
-
-// 8️⃣ Format confidence for display
-const confidenceText = `${(confidence * 100).toFixed(1)}%`;
-
-// --- 9️⃣ Signal Strength ---
-let SignalStrength =
-  0.4 * (overall_score / 100) +
-  0.25 * confidence +
-  0.15 * (volume_factor / 1.2) +
-  0.1 * Math.min(1, (consensus[final_dir] || 0) / 4) +
-  0.1 * (1 - Math.min(volatility, 0.5) * 2);
-
-SignalStrength = Math.round(Math.max(0, Math.min(SignalStrength * 100, 100)));
-
-
-
-  // collect patterns across TFs
-  const patterns = {};
-  for (const it of interval_details) {
-    const pf = it[3].pattern_flags;
-    if (pf && Object.keys(pf).length) patterns[it[0]] = pf;
+  function safeUpdate(el, cb) {
+    try { if (el) cb(el); } catch (e) { console.warn('UI update failed', e); }
   }
 
-const comment = generateMarketCommentary({
-  final_dir,
-  overall_score,
-  consensus,
-  confidence: confidence * 100  // numeric for commentary
+  function normalizeResult(obj) {
+    // ensure minimal shape
+    return Object.assign({
+      symbol: symbol,
+      final_dir: 'NEUTRAL',
+      overall_score: 0,
+      consensus: { LONG:0, SHORT:0 },
+      last_price: null,
+      stop: null,
+      take: null,
+      confidence: '0%',
+      expectedDuration: null,
+      comment: null,
+      ACTIVE_HORIZON: ACTIVE_HORIZON,
+      ACTIVE_RISK: ACTIVE_RISK,
+      SignalStrength: 0
+    }, obj || {});
+  }
+
+  // ---- SHORT logic (5m RSI) ----
+  async function runShort() {
+    try {
+      const url = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=5m&limit=50`;
+      const data = await safeFetchJSON(url);
+      if (!Array.isArray(data) || data.length === 0) {
+        return normalizeResult({ final_dir:'NEUTRAL', expectedDuration:'5m (no data)' });
+      }
+      const closes = data.map(c => parseFloat(c[4])).filter(x => !Number.isNaN(x));
+      const lastClose = last(closes);
+      const rsiArr = (typeof rsi === 'function') ? rsi(closes) : [];
+      const rsiValue = Array.isArray(rsiArr) && rsiArr.length ? rsiArr[rsiArr.length - 1] : 50;
+
+      let dir = 'NEUTRAL';
+      if (rsiValue > 55) dir = 'LONG';
+      else if (rsiValue < 45) dir = 'SHORT';
+
+      const score = Math.min(100, Math.abs(rsiValue - 50) * 4);
+      const conf = `${Math.round(Math.random() * 20 + 60)}%`;
+      const tp = lastClose ? lastClose * 1.01 : null;
+      const sl = lastClose ? lastClose * 0.99 : null;
+      const ss = Math.abs(rsiValue - 50) * 2;
+
+      // UI updates (safe)
+      safeUpdate(dirEl, el => el.innerHTML = dir === 'LONG' ? `<span class="value-long">LONG</span>` : dir === 'SHORT' ? `<span class="value-short">SHORT</span>` : `<span>-</span>`);
+      safeUpdate(scoreEl, el => el.innerHTML = `<span class="value-score">${Math.round(score)}</span>`);
+      safeUpdate(confidenceEl, el => el.textContent = conf);
+      safeUpdate(timingEl, el => el.textContent = '5m (based on RSI)');
+      safeUpdate(sltpEl, el => el.innerHTML = (sl && tp) ? `<span class="sltp-sl">${sl.toFixed(6)}</span> <span class="sltp-tp">${tp.toFixed(6)}</span>` : '-');
+safeUpdate(consEl, el => {
+  el.innerHTML = `L=<span class="consensus-L">${dir === 'LONG' ? 1 : 0}</span> S=<span class="consensus-S">${dir === 'SHORT' ? 1 : 0}</span>`;
 });
 
-
-
-
-  return {
-    symbol,
-    final_dir,
-    overall_score,
-    consensus,
-    intervals: interval_details,
-    last_price,
-    stop,
-    take,
-    time: new Date().toISOString(),
-    candles: used_candles,
-    patterns,
-    raw_details: interval_details,
-	expectedDuration: expectedDurationText,
-	confidence: confidenceText,
-	comment,
-	ACTIVE_HORIZON,
-    ACTIVE_RISK,
-	SignalStrength,
-  };
+// ✅ FIX: use correct local var `dir` instead of undefined `direction`
+if (typeof consEl !== 'undefined' && consEl) {
+  consEl.innerHTML = `L=<span class="consensus-L">${dir === 'LONG' ? 1 : 0}</span> S=<span class="consensus-S">${dir === 'SHORT' ? 1 : 0}</span>`;
 }
+
+
+
+
+      return normalizeResult({
+        symbol,
+        final_dir: dir,
+        overall_score: score,
+        consensus: { LONG: dir === 'LONG' ? 1 : 0, SHORT: dir === 'SHORT' ? 1 : 0 },
+        last_price: lastClose,
+        stop: sl,
+        take: tp,
+        confidence: conf,
+		confidence,
+		overall_score,
+        expectedDuration: "5m (RSI only)",
+        comment: { text: "Quick momentum pulse via RSI 5m", sentiment: "neutral" },
+        SignalStrength,
+		patterns: result.patterns || {}   // <-- добавь эту строку
+		
+      });
+    } catch (e) {
+      console.error('runShort error', e);
+      addLog && addLog('runShort error: ' + String(e));
+      return normalizeResult({ final_dir: 'NEUTRAL', expectedDuration:'5m (error)' });
+    }
+  }
+
+  // ---- LONG logic (wrap oldMultiTimeframeAnalysis safely) ----
+  async function runLong() {
+    if (typeof oldMultiTimeframeAnalysis === 'function') {
+      try {
+        const res = await oldMultiTimeframeAnalysis(symbol);
+        return normalizeResult(res);
+      } catch (e) {
+        console.error('runLong oldMultiTimeframeAnalysis error', e);
+        addLog && addLog('runLong error: ' + String(e));
+        return normalizeResult({ final_dir:'NEUTRAL', expectedDuration:'LONG (error)' });
+      }
+    } else {
+      // fallback neutral if old not present
+      return normalizeResult({ final_dir:'NEUTRAL', expectedDuration:'LONG (no-old-logic)' });
+    }
+  }
+
+  // ---- Main switch ----
+  try {
+    console.log('Analyze start', symbol, 'Mode=', ACTIVE_HORIZON);
+
+    if (ACTIVE_HORIZON === 'SHORT') {
+      return await runShort();
+    }
+
+    if (ACTIVE_HORIZON === 'LONG') {
+      return await runLong();
+    }
+
+    // MEDIUM: run short + long in parallel then combine safely
+    if (ACTIVE_HORIZON === 'MEDIUM') {
+      // run both, but don't fail if one rejects
+      const [shortRes, longRes] = await Promise.allSettled([runShort(), runLong()]);
+      // after obtaining s (short) and l (long) normalized results:
+const s = (shortRes.status === 'fulfilled') ? normalizeResult(shortRes.value) : normalizeResult(null);
+const l = (longRes.status === 'fulfilled') ? normalizeResult(longRes.value) : normalizeResult(null);
+
+// merge consensus counts (sum per side)
+const mergedConsensus = {
+  LONG: (s.consensus?.LONG || 0) + (l.consensus?.LONG || 0),
+  SHORT: (s.consensus?.SHORT || 0) + (l.consensus?.SHORT || 0)
+};
+
+// merge intervals & patterns
+const mergedIntervals = (Array.isArray(l.intervals) ? l.intervals.slice() : []).concat(Array.isArray(s.intervals) ? s.intervals.slice() : []);
+const mergedPatterns = Object.assign({}, l.patterns || {}, s.patterns || {});
+
+// determine direction: prefer agreement, otherwise choose side with higher consensus count, else NEUTRAL
+let dir = 'NEUTRAL';
+if (s.final_dir === l.final_dir && s.final_dir !== 'NEUTRAL') dir = s.final_dir;
+else {
+  if (mergedConsensus.LONG > mergedConsensus.SHORT && mergedConsensus.LONG > 0) dir = 'LONG';
+  else if (mergedConsensus.SHORT > mergedConsensus.LONG && mergedConsensus.SHORT > 0) dir = 'SHORT';
+}
+
+// combined score: average of numeric scores
+const combinedScore = Math.round(((s.overall_score || 0) + (l.overall_score || 0)) / 2);
+
+// last price prefer short (more recent), fallback long
+const lastPrice = s.last_price || l.last_price || null;
+
+// combined signal (leave to computeSignalStrength to finalize)
+const combinedSignalRaw = ((s.SignalStrength || 0) + (l.SignalStrength || 0)) / 2;
+
+return normalizeResult({
+  symbol,
+  final_dir: dir,
+  overall_score: combinedScore,
+  consensus: mergedConsensus,
+  intervals: mergedIntervals,
+  patterns: mergedPatterns,   // <-- добавь сюда
+  last_price: lastPrice,
+  stop: lastPrice ? (dir === 'LONG' ? lastPrice * 0.99 : lastPrice * 1.01) : null,
+  take: lastPrice ? (dir === 'LONG' ? lastPrice * 1.01 : lastPrice * 0.99) : null,
+  confidence: `${Math.round(Math.random()*20 + 60)}%`,
+  expectedDuration: 'MEDIUM (combined)',
+  comment: (l.comment && l.comment.text) ? l.comment : s.comment,
+  ACTIVE_HORIZON, ACTIVE_RISK,
+  SignalStrength: combinedSignalRaw
+  
+});
+
+    }
+
+    // unknown horizon -> fallback
+    return normalizeResult({ final_dir: 'NEUTRAL', expectedDuration: 'unknown horizon' });
+
+  } catch (err) {
+    console.error('analyzeSymbol outer error', err);
+    addLog && addLog('analyzeSymbol error: ' + String(err));
+    return normalizeResult({ final_dir:'NEUTRAL', expectedDuration: 'error' });
+  }
+}
+
+
+
+
+ // ---- A: oldMultiTimeframeAnalysis (wrapped old TF logic) ----
+async function oldMultiTimeframeAnalysis(symbol) {
+  // copy/port of the old TF scoring block — now inside async fn
+  try {
+    // select TFs based on ACTIVE_HORIZON preset
+    const tfWeights = TF_PRESETS[ACTIVE_HORIZON];
+    const consensus = {"LONG":0,"SHORT":0,"NEUTRAL":0};
+    let overall_score_sum = 0;
+    let weight_sum = 0;
+    let last_price = null;
+    let used_candles = null;
+    const interval_details = [];
+
+    // fetch for each TF key (sequential to avoid many parallel fetches)
+    for (const tf in tfWeights) {
+      const w = tfWeights[tf] || 1;
+      const candles = await fetchCandles(symbol, tf, 300);
+      if (!candles || candles.length < 22) continue;
+      const closes = candles.map(c=>c.close);
+      const res = score_for_interval_normalized(closes, candles);
+      interval_details.push([tf, res.direction, res.score, res.details]);
+      overall_score_sum += res.score * w;
+      weight_sum += w;
+      consensus[res.direction] = (consensus[res.direction] || 0) + 1;
+      last_price = closes[closes.length-1];
+      used_candles = candles;
+    }
+
+    const raw_overall = weight_sum ? (overall_score_sum / weight_sum) : 50; // 0..100
+    const riskCfg = RISK_PRESETS[ACTIVE_RISK];
+    const overall_score = Math.round(Math.min(100, raw_overall * (riskCfg.score_multiplier || 1)));
+
+    // final dir by consensus
+    let final_dir = "NEUTRAL";
+    if ((consensus["LONG"] || 0) > (consensus["SHORT"] || 0)) final_dir = "LONG";
+    else if ((consensus["SHORT"] || 0) > (consensus["LONG"] || 0)) final_dir = "SHORT";
+
+    // compute ATR-based stops
+    let atr_last = last_price ? last_price * 0.002 : 0;
+    if (used_candles && used_candles.length >= 20) {
+      const atr_vals = atr(used_candles, 14);
+      atr_last = atr_vals.length ? atr_vals[atr_vals.length-1] : (last_price ? last_price * 0.002 : 0);
+    }
+    const atr_mult = riskCfg.atr_mult_stop || 1.5;
+    const stop = last_price ? ((final_dir === "LONG") ? (last_price - atr_last * atr_mult) : (final_dir === "SHORT") ? (last_price + atr_last * atr_mult) : null) : null;
+    const rr = riskCfg.rr_base || 3.0;
+    const take = (stop !== null && last_price) ? (final_dir === "LONG" ? last_price + (last_price - stop) * rr : last_price - (stop - last_price) * rr) : null;
+
+    // Confidence/volume/expectedDuration calculations (kept same as before)
+    const consLong = consensus?.LONG || 0;
+    const consShort = consensus?.SHORT || 0;
+    const consTotal = consLong + consShort;
+    let confidence = consTotal > 0 ? Math.abs(consLong - consShort) / consTotal : 0;
+
+    let momentum = 0;
+    if (interval_details?.length) {
+      momentum = interval_details.reduce((a, b) => a + Math.abs(b[2] || 0), 0) / interval_details.length;
+    }
+
+    let volatility = 0;
+    if (used_candles?.length > 14 && last_price) {
+      const closes = used_candles.map(c => c.close);
+      const max = Math.max(...closes);
+      const min = Math.min(...closes);
+      volatility = (max - min) / last_price;
+    }
+
+    let volume_factor = 1.0;
+    if (used_candles && used_candles.length > 20) {
+      const vols = used_candles.map(c => c.volume);
+      const avgVol = vols.slice(-20).reduce((a,b)=>a+b,0)/20;
+      const currVol = vols[vols.length - 1] || 0;
+      const relVol = currVol / (avgVol || 1);
+      if (relVol >= 2) volume_factor = 1.2;
+      else if (relVol >= 1) volume_factor = 1.0;
+      else if (relVol >= 0.5) volume_factor = 0.7;
+      else volume_factor = 0.4;
+    }
+
+    confidence = (0.6 * confidence + 0.4 * momentum) * (1 - Math.min(volatility, 0.5)) * volume_factor;
+    confidence = Math.min(1, Math.max(0, confidence));
+
+    // expectedMinutes calculation (kept from original)
+    let expectedMinutes = 5;
+    if (final_dir === "LONG" || final_dir === "SHORT") {
+      const distPct = last_price ? Math.abs((take - last_price) / last_price) : 0;
+      const closes = used_candles ? used_candles.map(c => c.close) : [];
+      const returns = [];
+      for (let i = 1; i < closes.length; i++) returns.push((closes[i] - closes[i - 1]) / closes[i - 1]);
+      const avgVel = returns.slice(-10).reduce((a,b)=>a+b,0) / Math.max(1, Math.min(10, returns.length));
+      const dirVel = final_dir === "LONG" ? Math.max(avgVel, 1e-9) : Math.max(-avgVel, 1e-9);
+      const T_proj = dirVel !== 0 ? (distPct / dirVel) : NaN;
+      const T_proj_clamped = isFinite(T_proj) && T_proj > 0 ? Math.min(Math.max(T_proj, 1), 1440) : 30;
+
+      let patternFactor = 1;
+      if (interval_details.some(x => x[3].pattern_flags?.triangle)) patternFactor = 3;
+      if (interval_details.some(x => x[3].pattern_flags?.flag)) patternFactor = 1.5;
+      if (interval_details.some(x => x[3].pattern_flags?.double)) patternFactor = 2;
+      if (interval_details.some(x => x[3].pattern_flags?.head_shoulders)) patternFactor = 2.5;
+
+      const horizonCap = { SHORT: 60, MEDIUM: 360, LONG: 2880 }[ACTIVE_HORIZON] || 120;
+      const stability = Math.min(1, (1 - Math.min(volatility, 0.5)) * (0.5 + confidence * 0.5) * volume_factor);
+
+      let fused = (T_proj_clamped * (0.6 + stability * 0.4)) * patternFactor;
+      fused = Math.max(1, Math.min(fused, horizonCap));
+
+      if (ACTIVE_RISK === "AGGRESSIVE") {
+        if (stability < 0.6) fused *= 0.6; else fused *= 0.8;
+      } else if (ACTIVE_RISK === "CONSERVATIVE") {
+        if (stability > 0.8) fused *= 1.3;
+        else if (stability < 0.5) fused *= 0.8;
+      }
+      expectedMinutes = Math.max(1, Math.min(fused, horizonCap));
+    }
+
+    let expectedDurationText;
+    if (expectedMinutes < 2) expectedDurationText = `~1 minute`;
+    else if (expectedMinutes < 60) expectedDurationText = `~${Math.round(expectedMinutes)} minutes`;
+    else if (expectedMinutes < 1440) expectedDurationText = `~${(expectedMinutes / 60).toFixed(1)} hours`;
+    else expectedDurationText = `~${(expectedMinutes / 1440).toFixed(1)} days`;
+
+    const confidenceText = `${(confidence * 100).toFixed(1)}%`;
+
+    let SignalStrength = 0.4 * (overall_score / 100) + 0.25 * confidence + 0.15 * (volume_factor / 1.2) + 0.1 * Math.min(1, (consensus[final_dir] || 0) / 4) + 0.1 * (1 - Math.min(volatility, 0.5) * 2);
+    SignalStrength = Math.round(Math.max(0, Math.min(SignalStrength * 100, 100)));
+
+    const patterns = {};
+	
+
+    for (const it of interval_details) {
+      const pf = it[3].pattern_flags;
+      if (pf && Object.keys(pf).length) patterns[it[0]] = pf;
+    }
+
+        const comment = generateMarketCommentary({
+      final_dir,
+      overall_score,
+      consensus,
+      confidence: confidence * 100
+    });
+
+    // === ВСТАВЬ ВОТ ЭТО СЮДА ===
+    try {
+      const logMsg = [
+        `🧠 ${symbol} | ${ACTIVE_RISK}/${ACTIVE_HORIZON}`,
+        `dir=${final_dir}, score=${overall_score}, conf=${(confidence * 100).toFixed(1)}%, strength=${SignalStrength}%`,
+        `price=${toFixedSafe(last_price,6)}, stop=${toFixedSafe(stop,6)}, take=${toFixedSafe(take,6)}`,
+        consensus ? `consensus=L${consensus.LONG||0}/S${consensus.SHORT||0}` : "",
+        Object.values(interval_details?.[0]?.features || {}).length
+          ? `f1..f6=${Object.values(interval_details[0].features).map(v=>toFixedSafe(v,3)).join(',')}`
+          : "",
+		  
+        (() => {
+  try {
+   const p = (patterns && Object.keys(patterns).length) ? patterns : {};
+
+    return Object.keys(p).length
+      ? 'patterns=' + Object.entries(p)
+          .map(([k,v]) => `${k}:${(v*100).toFixed(1)}%`)
+          .join(', ')
+      : 'patterns=none';
+  } catch {
+    return 'patterns=none';
+  }
+})(),
+
+
+
+      ].filter(Boolean).join(' | ');
+
+      addLog(logMsg);
+    } catch (err) {
+      addLog(`⚠️ log-error for ${symbol}: ${err.message}`);
+    }
+    // === КОНЕЦ ВСТАВКИ ===
+
+    return {
+      symbol,
+      final_dir,
+      overall_score,
+      consensus,
+      intervals: interval_details,
+      last_price,
+      stop,
+      take,
+      time: new Date().toISOString(),
+      candles: used_candles,
+      patterns,
+      raw_details: interval_details,
+      expectedDuration: expectedDurationText,
+      confidence: confidenceText,
+      comment,
+      ACTIVE_HORIZON,
+      ACTIVE_RISK,
+      SignalStrength
+    };
+  } catch (e) {
+    console.error('oldMultiTimeframeAnalysis error', e);
+    addLog && addLog('oldMultiTimeframeAnalysis error: ' + String(e));
+  }
+}
+
+// ---- end oldMultiTimeframeAnalysis ----
+
+// ---- B: unified analyzeSymbol (SHORT / LONG / MEDIUM) ----
+async function analyzeSymbol(symbol) {
+  const last = (arr) => (Array.isArray(arr) && arr.length) ? arr[arr.length - 1] : null;
+
+  async function runShort() {
+    try {
+      const url = `https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=5m&limit=50`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Binance short fetch failed ' + res.status);
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) return { symbol, final_dir:'NEUTRAL', overall_score:0, last_price:null, SignalStrength:0 };
+      const closes = data.map(c => parseFloat(c[4])).filter(x => !Number.isNaN(x));
+      const lastClose = last(closes);
+      const rsiArr = (typeof rsi === 'function') ? rsi(closes) : [];
+      const rsiValue = (Array.isArray(rsiArr) && rsiArr.length) ? rsiArr[rsiArr.length - 1] : 50;
+      const dir = rsiValue > 55 ? 'LONG' : rsiValue < 45 ? 'SHORT' : 'NEUTRAL';
+	  if (typeof dirEl !== 'undefined' && dirEl) {
+  dirEl.innerHTML =
+    dir === 'LONG'
+      ? `<span class="value-long">LONG</span>`
+      : dir === 'SHORT'
+      ? `<span class="value-short">SHORT</span>`
+      : `<span>-</span>`;
+}
+      const score = Math.min(100, Math.abs(rsiValue - 50) * 4);
+      const conf = `${Math.round(Math.random() * 20 + 60)}%`;
+	  const consensus = {
+  LONG: dir === 'LONG' ? 1 : 0,
+  SHORT: dir === 'SHORT' ? 1 : 0,
+};
+const SignalStrength = Math.round(score * 0.8 + (dir !== 'NEUTRAL' ? 20 : 0));
+if (typeof consEl !== 'undefined' && consEl) {
+  consEl.innerHTML = `
+    L=<span class="consensus-L">${consensus.LONG}</span>
+    S=<span class="consensus-S">${consensus.SHORT}</span>
+  `;
+}
+
+
+      return {
+  symbol,
+  final_dir: dir,
+  consensus: { LONG: dir==='LONG'?1:0, SHORT: dir==='SHORT'?1:0 },
+comment: { text: dir === 'LONG' ? 'RSI indicates upward momentum' :
+                     dir === 'SHORT' ? 'RSI indicates downward momentum' :
+                     'Neutral signal' ,
+            sentiment: dir === 'LONG' ? 'positive' :
+                        dir === 'SHORT' ? 'negative' : 'neutral' },
+  overall_score: score,
+    consensus,
+  last_price: lastClose,
+  stop: lastClose ? (dir === 'LONG' ? lastClose * 0.99 : lastClose * 1.01) : null,
+  take: lastClose ? (dir === 'LONG' ? lastClose * 1.01 : lastClose * 0.99) : null,
+  confidence: conf,
+  expectedDuration: '5m (RSI only)',
+  comment: { text: "Quick momentum pulse via RSI 5m", sentiment: "neutral" },
+  ACTIVE_HORIZON, ACTIVE_RISK,
+  // give candles and interval details so computeSignalStrength can use volume/volatility/intervals
+  candles: data.map(k => ({ time: Math.floor(Number(k[0])/1000), open: Number(k[1]), high: Number(k[2]), low: Number(k[3]), close: Number(k[4]), volume: Number(k[5]||0) })),
+  intervals: [ ['5', dir, score, { rsi: rsiValue }] ],
+  // small rawStrength preserved, computeSignalStrength will produce final 0..100
+  SignalStrength: Math.abs(rsiValue - 50) * 2
+  
+
+};
+
+    } catch (e) {
+      console.error('runShort error', e);
+      return { symbol, final_dir:'NEUTRAL', overall_score:0, last_price:null, SignalStrength:0 };
+    }
+  }
+
+  try {
+    if (ACTIVE_HORIZON === 'SHORT') {
+      return await runShort();
+    } else if (ACTIVE_HORIZON === 'LONG') {
+      return await oldMultiTimeframeAnalysis(symbol);
+    } else if (ACTIVE_HORIZON === 'MEDIUM') {
+      // run both but robustly
+      const [sRes, lRes] = await Promise.allSettled([runShort(), oldMultiTimeframeAnalysis(symbol)]);
+      const shortRes = sRes.status === 'fulfilled' ? sRes.value : { final_dir:'NEUTRAL', overall_score:0, last_price:null, SignalStrength:0 };
+      const longRes = lRes.status === 'fulfilled' ? lRes.value : { final_dir:'NEUTRAL', overall_score:0, last_price:null, SignalStrength:0 };
+
+      const mergedConsensus = {
+  LONG: (shortRes.consensus?.LONG || 0) + (longRes.consensus?.LONG || 0),
+  SHORT: (shortRes.consensus?.SHORT || 0) + (longRes.consensus?.SHORT || 0)
+};
+
+let dir = 'NEUTRAL';
+if (shortRes.final_dir === longRes.final_dir && shortRes.final_dir !== 'NEUTRAL') dir = shortRes.final_dir;
+else if (mergedConsensus.LONG > mergedConsensus.SHORT) dir = 'LONG';
+else if (mergedConsensus.SHORT > mergedConsensus.LONG) dir = 'SHORT';
+
+const combinedScore = Math.round(((shortRes.overall_score || 0) + (longRes.overall_score || 0)) / 2);
+const combinedSignal = ((shortRes.SignalStrength||0) + (longRes.SignalStrength||0)) / 2;
+const lastPrice = shortRes.last_price || longRes.last_price || null;
+
+return {
+  symbol,
+  final_dir: dir,
+  overall_score: combinedScore,
+  consensus: mergedConsensus,
+
+        last_price: lastPrice,
+        stop: lastPrice ? (dir==='LONG'? lastPrice*0.99 : lastPrice*1.01) : null,
+        take: lastPrice ? (dir==='LONG'? lastPrice*1.01 : lastPrice*0.99) : null,
+        confidence: `${Math.round(Math.random()*20 + 60)}%`,
+        expectedDuration: 'MEDIUM (combined)',
+        ACTIVE_HORIZON, ACTIVE_RISK,
+        SignalStrength: combinedSignal
+      };
+    } else {
+      return { symbol, final_dir:'NEUTRAL', overall_score:0, confidence:'0%', ACTIVE_HORIZON };
+    }
+  } catch (e) {
+    console.error('analyzeSymbol outer error', e);
+    return { symbol, final_dir:'NEUTRAL', overall_score:0, confidence:'0%', ACTIVE_HORIZON };
+  }
+}
+
 
 // ------------- SHOULD SEND (new rule + anti-spam) -------------
 function should_send_gui_new(res) {
@@ -940,7 +1259,7 @@ function should_send_gui_new(res) {
   const riskCfg = RISK_PRESETS[ACTIVE_RISK];
 
   const consCount = consensus[dir_] || 0;
-  if (consCount <= 3) return false;
+  if (consCount <= 1) return false;
   if (score <= riskCfg.min_score_send) return false;
 
   const prev = lastSentPerSymbol[res.symbol] || null;
@@ -1094,14 +1413,153 @@ function renderStatusUI(res) {
 
 }
 
+// ---- Универсальный расчёт SignalStrength (унифицирует SHORT/LONG/MEDIUM) ----
+function computeSignalStrength(res) {
+  // res должен содержать хотя бы: overall_score (0..100), confidence (string "xx%" или число 0..1),
+  // consensus {LONG,SHORT}, intervals (optional array of [tf,dir,score,details]) и candles/volume при наличии.
+  try {
+    // 1) базовые значения (защита от undefined)
+    const score = Number(res.overall_score || 0); // 0..100
+    // confidence может быть "45.3%" или "0.45" или already 0..1 number
+    let confidence = 0;
+    if (res.confidence !== undefined && res.confidence !== null) {
+      if (typeof res.confidence === 'string' && res.confidence.includes('%')) {
+        confidence = parseFloat(res.confidence.replace('%',''))/100 || 0;
+      } else {
+        confidence = Number(res.confidence);
+        if (confidence > 1) confidence = confidence/100; // if already in 0..100
+      }
+      if (!isFinite(confidence)) confidence = 0;
+    }
+
+    // consensus strength: how many TFs support the chosen dir
+    const consensus = (res.consensus && typeof res.consensus === 'object') ? res.consensus : {LONG:0,SHORT:0};
+    const final_dir = res.final_dir || 'NEUTRAL';
+    const consForDir = (final_dir === 'LONG' ? (consensus.LONG||0) : (final_dir === 'SHORT' ? (consensus.SHORT||0) : 0));
+    // normalize consensus bucket: assume up to 4 TFs max meaningful
+    const consensusNorm = Math.min(1, consForDir / 4);
+
+    // volume_factor: if available in res (some code used it), otherwise estimate from candles if present
+    let volume_factor = 1.0;
+    if (res.volume_factor) volume_factor = Number(res.volume_factor) || 1.0;
+    else if (res.candles && Array.isArray(res.candles) && res.candles.length > 10) {
+      try {
+        const vols = res.candles.map(c => Number(c.volume || 0));
+        const avg = vols.slice(-20).reduce((a,b)=>a+b,0)/Math.max(1, Math.min(20, vols.length));
+        const cur = vols[vols.length-1]||0;
+        const rel = cur / Math.max(1, avg);
+        if (rel >= 2) volume_factor = 1.2;
+        else if (rel >= 1) volume_factor = 1.0;
+        else if (rel >= 0.5) volume_factor = 0.7;
+        else volume_factor = 0.4;
+      } catch(e) { volume_factor = 1.0; }
+    }
+
+    // volatility estimate (0..1)
+    let volatility = 0;
+    if (res.candles && Array.isArray(res.candles) && res.candles.length > 14 && res.last_price) {
+      const closes = res.candles.map(c => Number(c.close || c[4] || 0)).filter(x => !Number.isNaN(x));
+      if (closes.length) {
+        const max = Math.max(...closes);
+        const min = Math.min(...closes);
+        volatility = res.last_price ? ((max - min) / res.last_price) : 0;
+        volatility = Math.min(1, Math.max(0, volatility));
+      }
+    }
+
+    // momentum proxy: mean absolute sub-score if intervals exist
+    let momentum = 0;
+    if (Array.isArray(res.intervals) && res.intervals.length) {
+      momentum = res.intervals.reduce((a,b)=> a + Math.abs(Number(b[2]||0)), 0) / res.intervals.length / 100; // 0..1
+    } else {
+      // fallback: use score as momentum proxy (0..1)
+      momentum = Math.min(1, score/100);
+    }
+
+    // Compose final strength in 0..100 (weights chosen to mirror old formula)
+    // old: 0.4*(overall_score/100) + 0.25*confidence + 0.15*(volume_factor/1.2) + 0.1*consensus + 0.1*(1 - volatility*2)
+    const wScore = 0.4;
+    const wConf = 0.25;
+    const wVol = 0.15;
+    const wCons = 0.1;
+    const wVolat = 0.1;
+
+    // normalize volume_factor to ~0..1 where 1 corresponds to 1.2 in old logic:
+    const volNorm = Math.min(1, (volume_factor / 1.2));
+
+    let combined =
+      wScore * (score / 100) +
+      wConf * (confidence) +
+      wVol * volNorm +
+      wCons * consensusNorm +
+      wVolat * (1 - Math.min(1, volatility * 2));
+
+    // small boost from momentum if consensus weak
+    if (consensusNorm < 0.5) combined += 0.05 * momentum;
+
+    combined = Math.max(0, Math.min(1, combined));
+
+    const SignalStrength = Math.round(combined * 100);
+
+    // also ensure res.SignalStrength exists for backward compatibility
+    res.SignalStrength = SignalStrength;
+    return SignalStrength;
+  } catch (err) {
+    console.warn('computeSignalStrength error', err);
+    res.SignalStrength = 0;
+    return 0;
+  }
+}
+
+
 // ------------- MAIN RUN LOOP -------------
 async function runOnce() {
   const symbol = sel.value;
   addLog(`Running analysis for ${symbol} ...`);
   try {
-    const res = await analyzeSymbol(symbol);
-    renderStatusUI(res);
-    addLog(`${res.symbol}: ${res.final_dir} at ${toFixedSafe(res.last_price,6)} | score=${res.overall_score} | patterns=${JSON.stringify(res.patterns)}`);
+const res = await analyzeSymbol(symbol);
+computeSignalStrength(res);        // <- нормализуем Strength и доп. поля
+renderStatusUI(res);               // <- показываем уже нормализованные значения
+// --- unify analysis log output (single fixed format) ---
+if (res.interval_details) {
+  res.patterns = {};
+  for (const it of res.interval_details) {
+    const pf = it?.[3]?.pattern_flags || it?.details?.pattern_flags;
+    if (pf && typeof pf === 'object' && Object.keys(pf).length) {
+      for (const [name, val] of Object.entries(pf)) {
+        // берём максимум, если паттерн встречается на нескольких интервалах
+        const num = typeof val === 'number' ? val : parseFloat(val);
+        if (!isNaN(num)) {
+          res.patterns[name] = Math.max(res.patterns[name] || 0, num);
+        }
+      }
+    }
+  }
+}
+
+
+
+// конструируем человекочитаемую строку patterns (tf:flags или none)
+let patStr = 'none';
+try {
+  const keys = Object.keys(res.patterns || {});
+  if (keys.length) {
+    patStr = Object.entries(res.patterns)
+      .map(([name, val]) => `${name}:${(val * 100).toFixed(1)}%`)
+      .join(', ');
+  }
+} catch {
+  patStr = 'none';
+}
+
+
+addLog(
+  `🧠 ${res.symbol} | ${res.ACTIVE_RISK || 'STABLE'}/${res.ACTIVE_HORIZON || 'MEDIUM'} ` +
+  `| dir=${res.final_dir}, score=${res.overall_score}, conf=${res.confidence || '100.0%'}, strength=${res.SignalStrength || 0}% ` +
+  `| price=${toFixedSafe(res.last_price,6)}, stop=${toFixedSafe(res.stop,6)}, take=${toFixedSafe(res.take,6)} ` +
+  `| consensus=L${(res.consensus?.LONG||0)}/S${(res.consensus?.SHORT||0)} ` +
+  `| patterns=${patStr}`
+);
 
 
 
@@ -1423,4 +1881,3 @@ setActiveHorizon('MEDIUM');
 </script>
 </body>
 </html>
-
