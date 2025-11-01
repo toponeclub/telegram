@@ -371,7 +371,7 @@ function addLog(msg) {
   const t = new Date().toISOString().split('T')[1].split('.')[0];
   logs.unshift(`[${t}] ${msg}`);
   if (logs.length > 2000) logs.length = 2000;
-  logEl.textContent = logs.slice(0, 200).join('\n\n');
+  logEl.textContent = logs.slice(0, 1200).join('\n\n');
 }
 
 // ------------- HELPERS (numeric safe) -------------
@@ -1069,7 +1069,7 @@ async function oldMultiTimeframeAnalysis(symbol) {
     // === ВСТАВЬ ВОТ ЭТО СЮДА ===
     try {
       const logMsg = [
-        `🧠 ${symbol} | ${ACTIVE_RISK}/${ACTIVE_HORIZON}`,
+        `🔵🧠 [MAIN-TF] ${symbol} | ${ACTIVE_RISK}/${ACTIVE_HORIZON}`,
         `dir=${final_dir}, score=${overall_score}, conf=${(confidence * 100).toFixed(1)}%, strength=${SignalStrength}%`,
         `price=${toFixedSafe(last_price,6)}, stop=${toFixedSafe(stop,6)}, take=${toFixedSafe(take,6)}`,
         consensus ? `consensus=L${consensus.LONG||0}/S${consensus.SHORT||0}` : "",
@@ -1554,7 +1554,7 @@ try {
 
 
 addLog(
-  `🧠 ${res.symbol} | ${res.ACTIVE_RISK || 'STABLE'}/${res.ACTIVE_HORIZON || 'MEDIUM'} ` +
+  `🔴🧠 [RSI-5M-TF] ${res.symbol} | ${res.ACTIVE_RISK || 'STABLE'}/${res.ACTIVE_HORIZON || 'MEDIUM'} ` +
   `| dir=${res.final_dir}, score=${res.overall_score}, conf=${res.confidence || '100.0%'}, strength=${res.SignalStrength || 0}% ` +
   `| price=${toFixedSafe(res.last_price,6)}, stop=${toFixedSafe(res.stop,6)}, take=${toFixedSafe(res.take,6)} ` +
   `| consensus=L${(res.consensus?.LONG||0)}/S${(res.consensus?.SHORT||0)} ` +
