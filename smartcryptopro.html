@@ -603,9 +603,9 @@ img, embed, object, video {
   <div class="max-w-[1400px] mx-auto flex flex-col gap-1">
     <!-- Header -->
     <div class="flex items-center justify-center mb-2">
-      <h1 class="text-gray-400 text-s font-semibold">SmartCrypto Pro</h1>
-      <span class="ml-2 text-xs bg-purple-600 px-2 py-1 rounded">MONSTER EDITION</span>
-    </div>
+  <h1 class="text-gray-400 text-s font-semibold select-none">SmartCrypto Pro</h1>
+  <span class="ml-2 text-xs bg-purple-600 px-2 py-1 rounded select-none cursor-default">MONSTER EDITION</span>
+</div>
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 grid-responsive">
       <!-- Left column - Status & Controls -->
@@ -740,11 +740,11 @@ img, embed, object, video {
     <div class="loop-selector flex items-center gap-2">
       <span class="text-xs small-muted whitespace-nowrap">Interval:</span>
       <select id="loopSelect" class="loop-select bg-[#0c1219] text-white p-2 rounded">
-        <option value="30">30s</option>
+         <option value="30" selected>30s</option>
         <option value="60">60s</option>
         <option value="90">90s</option>
         <option value="120">120s</option>
-        <option value="150" selected>150s</option>
+         <option value="150">150s</option>
         <option value="180">180s</option>
       </select>
     </div>
@@ -822,7 +822,7 @@ img, embed, object, video {
    =========================================== */
 
 // ------------- CONFIG / STATE -------------
-let LOOP_SECONDS = 150;
+let LOOP_SECONDS = 30;
 
 const TOP_COINS = [
   "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
@@ -1336,41 +1336,81 @@ class MonsterEngine {
     return Math.min(1, Math.abs(currentDiff) * 50);
   }
 
-  // Enhanced momentum stacking
-  async analyzeMomentumStacking(symbol, horizon) {
-    const momentumLayers = {
-      SHORT: { "5m": 2, "15m": 3 },
-      MEDIUM: { "15m": 2, "1h": 3, "4h": 2 },
-      LONG: { "1h": 2, "4h": 3, "1d": 4 }
-    };
-
-    const layers = momentumLayers[horizon] || momentumLayers.MEDIUM;
-    const analysis = { LONG: 0, SHORT: 0, totalWeight: 0, details: [] };
-
-    for (const [tf, weight] of Object.entries(layers)) {
-      try {
-        const candles = await this.fetchCandles(symbol, tf, 100);
-        if (candles.length < 20) continue;
-
-        const signal = this.analyzeTimeframe(candles, tf);
-        analysis[signal.direction] += signal.strength * weight;
-        analysis.totalWeight += weight;
-        analysis.details.push({ tf, direction: signal.direction, strength: signal.strength });
-      } catch (e) {
-        console.log(`TF ${tf} analysis failed: ${e.message}`);
-      }
-    }
-
-    const netMomentum = (analysis.LONG - analysis.SHORT) / Math.max(1, analysis.totalWeight);
-    const direction = netMomentum > 0.1 ? 'LONG' : netMomentum < -0.1 ? 'SHORT' : 'NEUTRAL';
+  // Enhanced momentum stacking with ALL combinations
+async analyzeMomentumStacking(symbol, horizon, risk, strategy) {
+  // COMPLETE timeframe configuration for ALL combinations
+  const timeframeConfigs = {
+    // AGGRESSIVE combinations
+    'AGGRESSIVE_SHORT_MOMENTUM': { base: '3m', layers: { "1m": 4, "3m": 3, "5m": 2 } },
+    'AGGRESSIVE_SHORT_BREAKOUT': { base: '3m', layers: { "1m": 3, "3m": 4, "5m": 2 } },
+    'AGGRESSIVE_SHORT_MEANREV': { base: '5m', layers: { "3m": 3, "5m": 4, "15m": 2 } },
     
-    return {
-      direction,
-      strength: Math.abs(netMomentum),
-      consensus: { LONG: analysis.LONG, SHORT: analysis.SHORT },
-      details: analysis.details
-    };
+    'AGGRESSIVE_MEDIUM_MOMENTUM': { base: '5m', layers: { "3m": 2, "5m": 4, "15m": 3 } },
+    'AGGRESSIVE_MEDIUM_BREAKOUT': { base: '5m', layers: { "5m": 4, "15m": 3, "30m": 2 } },
+    'AGGRESSIVE_MEDIUM_MEANREV': { base: '15m', layers: { "5m": 2, "15m": 4, "30m": 3 } },
+    
+    'AGGRESSIVE_LONG_MOMENTUM': { base: '15m', layers: { "5m": 2, "15m": 4, "1h": 3 } },
+    'AGGRESSIVE_LONG_BREAKOUT': { base: '15m', layers: { "15m": 4, "1h": 3, "4h": 2 } },
+    'AGGRESSIVE_LONG_MEANREV': { base: '1h', layers: { "15m": 2, "1h": 4, "4h": 3 } },
+
+    // STABLE combinations
+    'STABLE_SHORT_MOMENTUM': { base: '5m', layers: { "3m": 3, "5m": 4, "15m": 2 } },
+    'STABLE_SHORT_BREAKOUT': { base: '5m', layers: { "5m": 4, "15m": 3, "30m": 2 } },
+    'STABLE_SHORT_MEANREV': { base: '15m', layers: { "5m": 2, "15m": 4, "30m": 3 } },
+    
+    'STABLE_MEDIUM_MOMENTUM': { base: '15m', layers: { "5m": 2, "15m": 4, "1h": 3 } },
+    'STABLE_MEDIUM_BREAKOUT': { base: '15m', layers: { "15m": 4, "1h": 3, "4h": 2 } },
+    'STABLE_MEDIUM_MEANREV': { base: '1h', layers: { "15m": 2, "1h": 4, "4h": 3 } },
+    
+    'STABLE_LONG_MOMENTUM': { base: '1h', layers: { "15m": 2, "1h": 4, "4h": 3 } },
+    'STABLE_LONG_BREAKOUT': { base: '1h', layers: { "1h": 4, "4h": 3, "1d": 2 } },
+    'STABLE_LONG_MEANREV': { base: '4h', layers: { "1h": 2, "4h": 4, "1d": 3 } },
+
+    // CONSERVATIVE combinations
+    'CONSERVATIVE_SHORT_MOMENTUM': { base: '15m', layers: { "5m": 2, "15m": 4, "1h": 3 } },
+    'CONSERVATIVE_SHORT_BREAKOUT': { base: '15m', layers: { "15m": 4, "1h": 3, "4h": 2 } },
+    'CONSERVATIVE_SHORT_MEANREV': { base: '1h', layers: { "15m": 2, "1h": 4, "4h": 3 } },
+    
+    'CONSERVATIVE_MEDIUM_MOMENTUM': { base: '1h', layers: { "15m": 2, "1h": 4, "4h": 3 } },
+    'CONSERVATIVE_MEDIUM_BREAKOUT': { base: '1h', layers: { "1h": 4, "4h": 3, "1d": 2 } },
+    'CONSERVATIVE_MEDIUM_MEANREV': { base: '4h', layers: { "1h": 2, "4h": 4, "1d": 3 } },
+    
+    'CONSERVATIVE_LONG_MOMENTUM': { base: '4h', layers: { "1h": 2, "4h": 4, "1d": 3 } },
+    'CONSERVATIVE_LONG_BREAKOUT': { base: '4h', layers: { "4h": 4, "1d": 3, "1w": 2 } },
+    'CONSERVATIVE_LONG_MEANREV': { base: '1d', layers: { "4h": 2, "1d": 4, "1w": 3 } }
+  };
+
+  const configKey = `${risk}_${horizon}_${strategy}`;
+  const config = timeframeConfigs[configKey] || timeframeConfigs['STABLE_MEDIUM_BREAKOUT'];
+  
+  const layers = config.layers;
+  const analysis = { LONG: 0, SHORT: 0, totalWeight: 0, details: [] };
+
+  for (const [tf, weight] of Object.entries(layers)) {
+    try {
+      const candles = await this.fetchCandles(symbol, tf, 100);
+      if (candles.length < 20) continue;
+
+      const signal = this.analyzeTimeframe(candles, tf);
+      analysis[signal.direction] += signal.strength * weight;
+      analysis.totalWeight += weight;
+      analysis.details.push({ tf, direction: signal.direction, strength: signal.strength });
+    } catch (e) {
+      console.log(`TF ${tf} analysis failed: ${e.message}`);
+    }
   }
+
+  const netMomentum = (analysis.LONG - analysis.SHORT) / Math.max(1, analysis.totalWeight);
+  const direction = netMomentum > 0.1 ? 'LONG' : netMomentum < -0.1 ? 'SHORT' : 'NEUTRAL';
+  
+  return {
+    direction,
+    strength: Math.abs(netMomentum),
+    consensus: { LONG: analysis.LONG, SHORT: analysis.SHORT },
+    details: analysis.details,
+    baseTimeframe: config.base
+  };
+}
 
   analyzeTimeframe(candles, timeframe) {
     const closes = candles.map(c => c.close);
@@ -1476,7 +1516,11 @@ class MonsterEngine {
 
   async fetchCandles(symbol, interval, limit = 100) {
     try {
-      const binanceMap = { "5m":"5m", "15m":"15m", "1h":"1h", "4h":"4h", "1d":"1d" };
+      // Update the binanceMap to include ALL needed timeframes:
+const binanceMap = { 
+  "1m":"1m", "3m":"3m", "5m":"5m", "15m":"15m", 
+  "30m":"30m", "1h":"1h", "4h":"4h", "1d":"1d", "1w":"1w" 
+};
       const bintv = binanceMap[interval] || "5m";
       const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${bintv}&limit=${limit}`;
       const r = await fetch(url, {cache:"no-store"});
@@ -1503,20 +1547,25 @@ const tradingEngine = new MonsterEngine();
 async function analyzeSymbol(symbol) {
   try {
     addLog(`🧠 MONSTER analyzing...`);
-	
     
-    // Fetch base data
-    const candles = await tradingEngine.fetchCandles(symbol, '15m', 100);
+    // Get adaptive configuration based on current mode
+    const momentum = await tradingEngine.analyzeMomentumStacking(
+      symbol, ACTIVE_HORIZON, ACTIVE_RISK, ACTIVE_STRATEGY
+    );
+
+    // Use adaptive base timeframe for main analysis
+    const baseTimeframe = momentum.baseTimeframe || '15m';
+    const candles = await tradingEngine.fetchCandles(symbol, baseTimeframe, 100);
+    
     if (candles.length < 20) {
       throw new Error('Insufficient data');
     }
 
     const currentPrice = candles[candles.length-1].close;
     
-    // Multi-dimensional analysis
-    const [regime, momentum, patterns] = await Promise.all([
+    // Multi-dimensional analysis with adaptive timeframe
+    const [regime, patterns] = await Promise.all([
       tradingEngine.detectMarketRegime(candles),
-      tradingEngine.analyzeMomentumStacking(symbol, ACTIVE_HORIZON),
       tradingEngine.detectGeometricPatterns(candles)
     ]);
 
@@ -1544,11 +1593,11 @@ async function analyzeSymbol(symbol) {
     // Adjust ATR multiplier based on volatility regime
     let atrMultiplier;
     if (regime.regime === 'VOLATILE') {
-      atrMultiplier = 2.5; // Wider stops in high volatility
+      atrMultiplier = 2.5;
     } else if (regime.regime === 'RANGING') {
-      atrMultiplier = 1.5; // Tighter stops in ranging markets
+      atrMultiplier = 1.5;
     } else {
-      atrMultiplier = 2.0; // Normal stops
+      atrMultiplier = 2.0;
     }
     
     // Risk-based position sizing
@@ -1564,11 +1613,12 @@ async function analyzeSymbol(symbol) {
     const stop = momentum.direction === 'LONG' ? currentPrice - stopDistance : currentPrice + stopDistance;
     const take = momentum.direction === 'LONG' ? currentPrice + takeDistance : currentPrice - takeDistance;
 
-    // Generate market commentary
+    // Enhanced market commentary with mode info
     const marketComment = [
       regime.comment,
-      ...patterns.patternComments.slice(0, 2), // Show up to 2 pattern comments
-      `Strategy: ${ACTIVE_STRATEGY} | Risk: ${ACTIVE_RISK} | Horizon: ${ACTIVE_HORIZON}`
+      ...patterns.patternComments.slice(0, 2),
+      `${ACTIVE_RISK}/${ACTIVE_HORIZON}/${ACTIVE_STRATEGY}`,
+      //`Timeframes: ${Object.keys(momentum.details || {}).join(', ')}`
     ].filter(Boolean).join('. ');
 
     const result = {
@@ -1588,15 +1638,17 @@ async function analyzeSymbol(symbol) {
       SignalStrength: signalStrength,
       marketComment,
       atrMultiplier,
-      positionSize: riskConfig.positionSize
+      positionSize: riskConfig.positionSize,
+      baseTimeframe: baseTimeframe
     };
 
-    // Enhanced logging with pattern details
+    // Enhanced logging with adaptive timeframe info
     if (momentum.details && momentum.details.length > 0) {
       const tfDetails = momentum.details.map(d => 
         `${d.tf}:${d.direction.charAt(0)}${Math.round(d.strength * 100)}`
       ).join(' ');
-      addLog(`📈 Timeframes: ${tfDetails}`);
+      addLog(`📈 ${ACTIVE_RISK}/${ACTIVE_HORIZON}/${ACTIVE_STRATEGY} | Base:${baseTimeframe}`);
+      addLog(`⏰ Timeframes: ${tfDetails}`);
     }
 
     // Pattern detection logging
@@ -1612,13 +1664,11 @@ async function analyzeSymbol(symbol) {
     const consensusShort = Math.round(momentum.consensus?.SHORT || 0);
     const confidencePercent = Math.round(regime.confidence * 100);
 
-    addLog(`conf=${confidencePercent}%, price=${toFixedSafe(currentPrice, 6)}, stop=${toFixedSafe(stop, 6)}, take=${toFixedSafe(take, 6)} | consensus=L${consensusLong}/S${consensusShort}`);
+    addLog(`conf=${confidencePercent}%, price=${toFixedSafe(currentPrice, 6)}`);
+    addLog(`⚡ Timing:${expectedDuration} | Strength:${signalStrength}%`);
+    addLog(`🎯 ${symbol} | ${result.final_dir} | Grade:${grade} | Score:${score}`);
 
-    addLog(`⚡ ${ACTIVE_RISK}/${ACTIVE_HORIZON}/${ACTIVE_STRATEGY} | Timing:${expectedDuration}`);
-    addLog(`📊 Regime:${regime.regime} | Strength:${signalStrength}%`);
-    addLog(`🎯 ${symbol} | ${result.final_dir} | Grade:${grade} | Score:${score} | Prob:${result.probability}%`);
-
-    // Update performance metrics (simulated)
+    // Update performance metrics
     updatePerformanceMetrics(result);
     
     return result;
@@ -1823,13 +1873,12 @@ async function sendTelegramMessage(text) {
 
 function formatMessageGui(res) {
   const lines = [];
-  lines.push(`<b>${res.symbol} — ${res.final_dir} 🚀 MONSTER SIGNAL</b>`);
-  lines.push(`Grade: ${res.setupGrade} | Score: ${res.overall_score} | Probability: ${res.probability}%`);
-  lines.push(`Regime: ${res.regime} | Strength: ${getStrengthEmoji(res.SignalStrength)} ${res.SignalStrength}%`);
-  lines.push(`Price: ${toFixedSafe(res.last_price, 6)}`);
-  lines.push(`Stop: 🟥 ${toFixedSafe(res.stop, 6)} | Take: 🟩 ${toFixedSafe(res.take, 6)}`);
-  lines.push(`Timing: ${res.expectedDuration} | Strategy: ${ACTIVE_STRATEGY}`);
-  lines.push(`Risk: ${ACTIVE_RISK} | Horizon: ${ACTIVE_HORIZON}`);
+  lines.push(`<b>${res.symbol} — ${res.final_dir} 🚀 </b>`);
+  lines.push(`Grade: ${res.setupGrade} | SCORE: ${res.overall_score} | PROBABILITY: ${res.probability}%`);
+  lines.push(`Regime: ${res.regime} | STRENGHT: ${getStrengthEmoji(res.SignalStrength)} ${res.SignalStrength}%`);
+  lines.push(`PRICE: ${toFixedSafe(res.last_price, 6)}`);
+  lines.push(`🟩 ${toFixedSafe(res.take, 6)} | 🟥 ${toFixedSafe(res.stop, 6)}`);
+  lines.push(`TIMING: ${res.expectedDuration}`);
   lines.push(`📊 ${res.marketComment}`);
   return lines.join("\n");
 }
@@ -1848,12 +1897,12 @@ function toFixedSafe(v, n=6) {
 function shouldSendSignal(res) {
   if (res.final_dir === 'NEUTRAL') return false;
   if (res.overall_score < 60) return false;
-  if (res.probability < 60) return false;
+  if (res.probability < 55) return false;
   if (res.setupGrade === 'C') return false;
   
   const prev = lastSentPerSymbol[res.symbol];
   if (prev && prev.dir === res.final_dir) {
-    if (Math.abs(res.overall_score - prev.score) < 15) return false;
+    if (Math.abs(res.overall_score - prev.score) < 6) return false;
   }
   
   return true;
