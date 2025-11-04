@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>🧠 SmartCrypto Monster</title>
+  <title>SmartCrypto Monster</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -240,398 +240,7 @@
     
 }
 
-#menu {
-    visibility: hidden;
-    opacity: 0;
-    pointer-events: none;
-    transition-property: visibility, opacity, filter;
-    transition-duration: 0s, 0.25s, 0.25s;
-    transition-delay: 0.5s, 0s, 0s;
-    transition-timing-function: var(--ease);
-    filter: blur(4px);
-    
-    font-family: 'Asap', sans-serif;
-    color: #737985;
-    
-    position: fixed;
-    top: 140px;
-    left: 2svw;
-    min-width: 275px;
-    min-height: 275px;
-    border-radius: var(--radius);
-    border: var(--border) solid var(--border-color);
-    padding: 1em;
-    background: linear-gradient(235deg, hsl(var(--hue1) 50% 10% / 0.8), hsl(var(--hue1) 50% 10% / 0) 33%), linear-gradient(45deg , hsl(var(--hue2) 50% 10% / 0.8), hsl(var(--hue2) 50% 10% / 0) 33%), linear-gradient(hsl(220deg 25% 4.8% / 0.66));
-    backdrop-filter: blur(12px);
-    box-shadow: hsl(var(--hue2) 50% 2%) 0px 10px 16px -8px, hsl(var(--hue2) 50% 4%) 0px 20px 36px -14px;
-}
 
-#menu:not(.open)::before,
-#menu:not(.open)::after,
-#menu:not(.open) .glow {
-    opacity: 0;
-    pointer-events: none;
-    animation: glowoff 0.25s var(--ease) both;
-}
-
-
-#menu.open {
-    
-    visibility: visible;
-    opacity: 1;
-    pointer-events: auto;
-    transition-delay: 0s;
-    filter: blur(0px); 
-    
-    &::before,
-    &::after,
-    & .glow,
-    & .shine {
-        animation: glow 1s var(--ease) both;
-    }
-    & .shine {
-        animation-delay: 0s;
-        animation-duration: 2s;
-    }
-    & .glow {
-        animation-delay: 0.2s;
-    }
-    & .glow-bright {
-        animation-delay: 0.1s;
-        animation-duration: 1.5s;
-    }
-    & .shine-bottom {
-        animation-delay: 0.1s;
-        animation-duration: 1.8s;
-    }
-    & .glow-bottom {
-        animation-delay: 0.3s;
-    }
-    & .glow-bright.glow-bottom {
-        animation-delay: 0.3s;
-        animation-duration: 1.1s;
-    }
-}
-
-#menu .shine,
-#menu .glow {
-    --hue: var(--hue1);
-}
-#menu .shine-bottom,
-#menu .glow-bottom {
-    --hue: var(--hue2);
-    --conic: 135deg;
-}
-
-#menu .shine {
-}
-
-#menu .shine,
-#menu .shine::before,
-#menu .shine::after {
-    
-    /* shine is the bright white-ish inner pixel-wide lights */
-    
-    pointer-events: none;
-    
-    border-radius: 0;
-    border-top-right-radius: inherit;
-    border-bottom-left-radius: inherit;
-    border: 1px solid transparent;
-    
-    width: 75%;
-    height: auto;
-    min-height: 0px;
-    aspect-ratio: 1;
-    display: block;
-    position: absolute;
-    right: calc(var(--border) * -1);
-    top: calc(var(--border) * -1);
-    left: auto;
-    
-    z-index: 1;
-    
-    --start: 12%;
-    background: conic-gradient(
-        from var(--conic, -45deg) at center in oklch,
-        transparent var(--start,0%), hsl( var(--hue), var(--sat,80%), var(--lit,60%)), transparent  var(--end,50%) 
-    ) border-box;
-    
-    mask: 
-        linear-gradient(transparent), 
-        linear-gradient(black);
-    mask-repeat: no-repeat;
-    mask-clip: padding-box, border-box;
-    mask-composite: subtract;
-    
-}
-
-#menu .shine::before,
-#menu .shine::after {
-    content: "";
-    width: auto;
-    inset: -2px;
-    mask: none;
-}
-    
-#menu .shine::after { 
-    z-index: 2;
-    --start: 17%;
-    --end: 33%;
-    background: conic-gradient(
-        from var(--conic, -45deg) at center in oklch,
-        transparent var(--start,0%), hsl( var(--hue), var(--sat,80%), var(--lit,85%)), transparent var(--end,50%) 
-    );
-    
-}
-
-#menu .shine-bottom {
-    top: auto;
-    bottom: calc(var(--border) * -1);
-    left: calc(var(--border) * -1);
-    right: auto;
-}
-
-#menu .glow {
-    
-    /* glow is the sparse colour bleed with noise */
-    
-    pointer-events: none;
-    
-    border-top-right-radius: calc(var(--radius) * 2.5);
-    border-bottom-left-radius: calc(var(--radius) * 2.5);
-    border: calc(var(--radius) * 1.25) solid transparent;
-    inset: calc(var(--radius) * -2);
-    
-    width: 75%;
-    height: auto;
-    min-height: 0px;
-    aspect-ratio: 1;
-    display: block;
-    position: absolute;
-    left: auto;
-    bottom: auto;
-    
-    mask: url('https://assets.codepen.io/13471/noise-base.png');
-    mask-mode: luminance;
-    mask-size: 29%;
-    
-    opacity: 1;
-    filter: blur(12px) saturate(1.25) brightness(0.5);
-    mix-blend-mode: plus-lighter;
-    z-index: 3;
-    
-    &.glow-bottom {
-        inset: calc(var(--radius) * -2);
-        top: auto;
-        right: auto;
-    }
-    
-    &::before, 
-    &::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border: inherit;
-        border-radius: inherit;
-        background: conic-gradient(
-            from var(--conic, -45deg) at center in oklch,
-            transparent var(--start,0%), hsl( var(--hue), var(--sat,95%), var(--lit,60%)), transparent  var(--end,50%) 
-        ) border-box;
-        mask: 
-            linear-gradient(transparent), 
-            linear-gradient(black);
-        mask-repeat: no-repeat;
-        mask-clip: padding-box, border-box;
-        mask-composite: subtract;
-        filter: saturate(2) brightness(1);
-        
-    }
-    
-    &::after {
-        --lit: 70%;
-        --sat: 100%;
-        --start: 15%;
-        --end: 35%;
-        border-width: calc(var(--radius) * 1.75);
-        border-radius: calc(var(--radius) * 2.75);
-        inset: calc(var(--radius) * -0.25);
-        z-index: 4;
-        opacity: 0.75;
-    }
-    &.glow-bottom::after {
-    }
-
-}
-
-#menu .glow-bright {
-    
-    /* glow-bright is a sharper colour outline to accentuate the shine */
-    
-    --lit: 80%;
-    --sat: 100%;
-    --start: 13%;
-    --end: 37%;
-    
-    border-width: 5px;
-    border-radius: calc(var(--radius) + 2px);
-    inset: -7px;
-    left: auto;
-    filter: blur(2px) brightness(0.66);
-    
-    &::after {
-        content: none;
-    }
-    
-    &.glow-bottom {
-        inset: -7px;
-        right: auto;
-        top: auto;
-    }
-}
-
-#menu .inner,
-#menu section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5em;
-}
-
-#menu .inner {
-    font-size: 0.875rem;
-}
-
-#menu hr {
-    width: 100%;
-    height: 0.5px;
-    background: var(--border-color);
-    border: none;
-    margin: 0.25em 0 0.5em;
-    opacity: 0.66;
-}
-
-#menu input {
-    --tint2: hsl(var(--hue2) 50% 90% / 0.1);
-    color: hsl(0 0 100% / 0.5);
-    font-family: 'Asap', sans-serif;
-    font-weight: 300;
-    box-shadow: 0 0 0 1px transparent;
-    border: 1px solid hsl(var(--hue2) 13% 18.5% / 0.5);
-    background: linear-gradient(to bottom, hsl(var(--hue1) 20% 20% / 0.1) 50%, hsl(var(--hue1) 50% 50% / 0.8) 180%);
-    background-size: 100% 300%;
-    background-position: 0% 0%;
-    background-repeat: no-repeat;
-    border-radius: calc(var(--radius) * 0.33333);
-    padding-left: 2.33em;
-    transition: all 0.3s var(--ease);
-    
-    &:focus {
-        border-color: hsl(var(--hue1) 20% 70% / 0.5);
-        background-position: 0% 50%;
-        color: hsl(var(--hue1) 20% 80% / 1);
-    }
-    
-    &::placeholder {
-        color: hsl(0 0 100% / 1);
-    }
-}
-
-#menu label {
-    display: grid;
-    grid-template: 1fr/1fr;
-    margin-bottom: 1em;
-    width: 100%;
-    & > * {
-        grid-area: 1/1;
-        align-self: center;
-    }
-    
-    & svg {
-        margin-left: 0.5em;
-        opacity: 0.5;
-    }
-}
-
-#menu .search svg {
-    &:has(+ input:focus) {
-        stroke: hsl(var(--hue1) 60% 70% / 1);
-    }
-}
-
-#menu header {
-    font-size: 0.75rem;
-    font-weight: 300;
-    padding: 0 0.66em;
-}
-
-#menu ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#menu li {
-    --item-hue: var(--hue2);
-    position: relative;
-    padding: 0.66em;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    border-radius: calc(var(--radius) * 0.33333);
-    border: 1px solid transparent;
-    transition: all 0.3s ease-in, --item-opacity 0.3s ease-in;
-    background: 
-        linear-gradient(
-            90deg  in oklch, 
-            hsl(var(--item-hue) 29% 13% / var(--item-opacity)),
-            hsl(var(--item-hue) 30% 15% / var(--item-opacity)) 24% 32%, 
-            hsl(var(--item-hue) 5% 7% / 0) 95%
-        ) border-box;
-    
-    &::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        border: inherit;
-        background: 
-            linear-gradient(
-                90deg in oklch, 
-                hsl(var(--item-hue) 15% 16% / var(--item-opacity)),
-                hsl(var(--item-hue) 40% 24% / var(--item-opacity)) 20% 32%, 
-                hsl(var(--item-hue) 2% 12% / 0) 95%
-            ) border-box;
-			opacity: 0.1;
-        mask: 
-            linear-gradient(transparent), 
-            linear-gradient(to right, black, transparent);
-        mask-repeat: no-repeat;
-        mask-clip: padding-box, border-box;
-        mask-composite: subtract;
-    }
-        
-    &:hover,
-    &.selected,
-    &:hover::after,
-    &.selected::after,
-    &:focus,
-    &:focus::after {
-        --item-opacity: 0.5;
-        transition: all 0.1s ease-out, --item-opacity 0.1s ease-out;
-        color: white;
-        outline: none;
-    }
-    
-    &.selected,
-    &.selected::after {
-        animation: flash 0.75s ease-out 1 forwards;
-    }
-}
-
-#menu section:nth-of-type(1) li {
-    --item-hue: var(--hue1);
-}
 
 @property --item-opacity {
     syntax: "<number>";
@@ -703,7 +312,7 @@ body {
         linear-gradient(to right in oklab, hsl(var(--hue2) 50% 75%), hsl(var(--hue1) 50% 75%));
     background-size: cover;
     background-position: center;
-    background-blend-mode: hard-light;
+    background-blend-mode: multiply;
     padding: 0;
 	background-opacity: 0.1;
 	 background-blend:5%;
@@ -1216,6 +825,179 @@ img, embed, object, video {
 #chartCard:-webkit-full-screen .tv-close-panel-header {
   display: none !important;
 }
+
+/* Predictive Metrics Styles */
+.predictive-metric {
+  background: rgba(255,255,255,0.02);
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.metric-icon {
+  font-size: 14px;
+}
+
+.metric-name {
+  font-size: 11px;
+  color: #9aa4b2;
+  flex-grow: 1;
+  margin-left: 6px;
+}
+
+.metric-trend {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.trend-up { color: #00d07a; }
+.trend-down { color: #ff4f6e; }
+.trend-neutral { color: #ffcc66; }
+
+.progress-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-bar {
+  flex-grow: 1;
+  height: 6px;
+  background: #1a1a1a;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s cubic-bezier(.86,.05,.4,.96);
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.whales-fill { 
+  background: linear-gradient(90deg, #ff4f6e, #ff6b6b);
+  box-shadow: 0 0 6px rgba(255, 107, 107, 0.4);
+}
+.liquidity-fill { 
+  background: linear-gradient(90deg, #3f9cff, #5b8fff);
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+}
+.sentiment-fill { 
+  background: linear-gradient(90deg, #00d07a, #00ff88);
+  box-shadow: 0 0 6px rgba(0, 208, 122, 0.4);
+}
+.structure-fill { 
+  background: linear-gradient(90deg, #ffcc66, #ffdb3a);
+  box-shadow: 0 0 6px rgba(255, 204, 102, 0.4);
+}
+
+.metric-percentage {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f1f3f7;
+  min-width: 30px;
+  text-align: right;
+}
+
+.container {
+  width: 200px;
+  height: 100px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.gauge-a {
+  z-index: 1;
+  position: absolute;
+  background-color: rgba(255,255,255,.1);
+  width: 200px;
+  height: 100px;
+  top: 0%;
+  border-radius: 200px 200px 0px 0px;
+}
+.gauge-b {
+  z-index: 3;
+  position: absolute;
+  background-color: var(--bg);
+  width: 120px;
+  height: 60px;
+  top: 40px;
+  left: 40px;
+  border-radius: 120px 120px 0px 0px;
+}
+.gauge-c {
+  z-index: 2;
+  position: absolute;
+  background: linear-gradient(370deg, #ff4f6e 0%, #ffcc66 50%, #00d07a 100%);
+  width: 200px;
+  height: 100px;
+  top: 100px;
+  left: 0;
+  border-radius: 0px 0px 100px 100px;
+  transform-origin: center top;
+  transition: all 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.gauge-data {
+  z-index: 4;
+  color: #f1f3f7;
+  position: absolute;
+  width: 200px;
+  height: 100px;
+  top: 57px;
+  left: 0;
+}
+.gauge-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 21px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.gauge-label {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  color: #9aa2ad;
+}
+
+/* GLOW EFFECT для Predictive Metrics - как у Market Intelligence */
+#predictiveMetricsCard {
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02)) !important;
+  border: 1px solid rgba(255,255,255,0.03) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 18px rgba(3,6,12,0.55) !important;
+}
+
+/* Точная копия glow эффектов */
+#predictiveMetricsCard.signal-strong {
+  box-shadow: 
+    0 6px 18px rgba(3,6,12,0.55),
+    0 0 20px rgba(0, 208, 122, 0.4) !important;
+  border-color: rgba(0, 208, 122, 0.5) !important;
+}
+
+#predictiveMetricsCard.signal-moderate {
+  box-shadow: 
+    0 6px 18px rgba(3,6,12,0.55),
+    0 0 12px rgba(255, 200, 87, 0.3) !important;
+  border-color: rgba(255, 200, 87, 0.4) !important;
+}
+
+#predictiveMetricsCard.signal-weak {
+  box-shadow: 
+    0 6px 18px rgba(3,6,12,0.55),
+    0 0 8px rgba(255, 107, 107, 0.2) !important;
+  border-color: rgba(255, 107, 107, 0.3) !important;
+}
   </style>
 </head>
 <body class="p-4">
@@ -1279,12 +1061,22 @@ img, embed, object, video {
           <div class="text-xs small-muted mb-3">MARKET INTELLIGENCE</div>
           <div class="space-y-2">
             <div class="status-line"><span class="status-key">Price:</span><span id="price" class="status-value">-</span></div>
+			  <div class="status-line"><span class="status-key">TP/SL:</span><span id="sltp">-</span></div>
             <div class="status-line"><span class="status-key">Regime:</span><span id="regime" class="status-value">-</span></div>
             <div class="status-line"><span class="status-key">Direction:</span><span id="direction" class="status-value">-</span></div>
             <div class="status-line"><span class="status-key">Score:</span><span id="score" class="status-value">-</span></div>
             <div class="status-line"><span class="status-key">Probability:</span><span id="probability" class="status-value">-</span></div>
             <div class="status-line"><span class="status-key">Consensus:</span><span id="consensus" class="status-value">-</span></div>
-            <div class="status-line"><span class="status-key">TP/SL:</span><span id="sltp">-</span></div>
+ <!-- Balance Bar -->
+<div class="status-line">
+ 
+  <div class="balance-bar-container">
+    <div class="balance-bar">
+      <div class="balance-fill" id="balanceFill"></div>
+    </div>
+  </div>
+</div>
+           
             <div class="status-line"><span class="status-key">Confidence:</span><span id="confidence" class="status-value">-</span></div>
             <div class="status-line"><span class="status-key">Timing:</span><span id="timing" class="status-value">-</span></div>
             
@@ -1368,9 +1160,98 @@ img, embed, object, video {
    
           <!-- Chart header with coin selector and loop interval -->
         
+	<!-- Predictive Metrics Block -->
+<div class="card p-4" id="predictiveMetricsCard">
+  <div class="text-xs small-muted mb-3">PREDICTIVE METRICS</div>
+  
+ <!-- Fixed Beautiful Gauge -->
+<div class="flex justify-center mb-4">
+  <div class="container" style="width: 200px; height: 100px;">
+    <div class="gauge-a"></div>
+    <div class="gauge-b"></div>
+    <div class="gauge-c" id="gaugeMask"></div>
+    <div class="gauge-data">
+      <h1 id="gaugeValue">0%</h1>
+      <div class="gauge-label">STRENGTH</div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Recommended Timing -->
+  <div class="text-center mt-2">
+    <div class="text-xs small-muted">RECOMENDED TIMING</div>
+    <div id="recommendedTiming" class="text-sm font-semibold text-blue-400">-</div>
+  </div>
+</div>
+
+  <!-- Four Predictive Metrics -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+    <!-- Whale Metric -->
+    <div class="metric-card predictive-metric">
+      <div class="metric-header">
+        <span class="metric-icon">🐋</span>
+        <span class="metric-name">WHALES</span>
+        <span class="metric-trend" id="whalesTrend">→</span>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar">
+          <div class="progress-fill whales-fill" style="width: 0%"></div>
+        </div>
+        <span class="metric-percentage" id="whalesValue">0%</span>
+      </div>
+    </div>
+
+    <!-- Liquidity Metric -->
+    <div class="metric-card predictive-metric">
+      <div class="metric-header">
+        <span class="metric-icon">💧</span>
+        <span class="metric-name">LIQUIDITY</span>
+        <span class="metric-trend" id="liquidityTrend">→</span>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar">
+          <div class="progress-fill liquidity-fill" style="width: 0%"></div>
+        </div>
+        <span class="metric-percentage" id="liquidityValue">0%</span>
+      </div>
+    </div>
+
+    <!-- Sentiment Metric -->
+    <div class="metric-card predictive-metric">
+      <div class="metric-header">
+        <span class="metric-icon">📱</span>
+        <span class="metric-name">PSYCHOLOGY</span>
+        <span class="metric-trend" id="sentimentTrend">→</span>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar">
+          <div class="progress-fill sentiment-fill" style="width: 0%"></div>
+        </div>
+        <span class="metric-percentage" id="sentimentValue">0%</span>
+      </div>
+    </div>
+
+    <!-- Structure Metric -->
+    <div class="metric-card predictive-metric">
+      <div class="metric-header">
+        <span class="metric-icon">📊</span>
+        <span class="metric-name">STRUCTURE</span>
+        <span class="metric-trend" id="structureTrend">→</span>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar">
+          <div class="progress-fill structure-fill" style="width: 0%"></div>
+        </div>
+        <span class="metric-percentage" id="structureValue">0%</span>
+      </div>
+    </div>
+  </div>
+
+
 			
 			 <!-- Performance Metrics -->
-<div class="card p-4">
+<div class="card p-4" id="performanceMetricsCard">
   <div class="text-xs small-muted mb-3">PERFORMANCE METRICS</div>
   
   <!-- Metrics first -->
@@ -1404,8 +1285,8 @@ img, embed, object, video {
     <div class="loop-selector flex items-center gap-2">
       <span class="text-xs small-muted whitespace-nowrap">Interval:</span>
       <select id="loopSelect" class="loop-select bg-[#0c1219] text-white p-2 rounded">
-         <option value="30" selected>30s</option>
-        <option value="60">60s</option>
+         <option value="30">30s</option>
+           <option value="60" selected>60s</option>
         <option value="90">90s</option>
         <option value="120">120s</option>
          <option value="150">150s</option>
@@ -1448,8 +1329,11 @@ img, embed, object, video {
     "gridColor": "rgba(242, 242, 242, 0.06)",
     "watchlist": [],
     "withdateranges": false,
+	"STD;Gaps"
     "compareSymbols": [],
     "studies": []
+	"CorrelationCoefficient@tv-basicstudies"
+	
   }
   </script>
 </div>
@@ -1486,7 +1370,7 @@ img, embed, object, video {
    =========================================== */
 
 // ------------- CONFIG / STATE -------------
-let LOOP_SECONDS = 30;
+let LOOP_SECONDS = 60;
 
 const TOP_COINS = [
   "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
@@ -1514,6 +1398,232 @@ let performanceMetrics = {
   totalProfit: 0,
   recentTrades: []
 };
+
+// ------------- PREDICTIVE ENGINE -------------
+class PredictiveEngine {
+  constructor() {
+    this.history = [];
+    this.patternMemory = [];
+  }
+  
+  
+
+  // Анализ поведения китов (объемы + крупные ордера)
+  analyzeWhales(candles, currentPrice) {
+    const volumes = candles.map(c => c.volume);
+    const recentVolume = volumes.slice(-10).reduce((a, b) => a + b, 0);
+    const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+    
+    const volumeRatio = recentVolume / (avgVolume * 10);
+    let whaleScore = Math.min(100, volumeRatio * 80);
+    
+    // Обнаружение аномальных объемов (возможные манипуляции)
+    const volumeSpike = volumeRatio > 2 ? 20 : 0;
+    whaleScore += volumeSpike;
+    
+    return {
+      score: Math.round(whaleScore),
+      trend: volumeRatio > 1.2 ? '↑' : volumeRatio < 0.8 ? '↓' : '→'
+    };
+  }
+
+  analyzeLiquidity(candles, currentPrice) {
+  const highs = candles.map(c => c.high);
+  const lows = candles.map(c => c.low);
+  const volumes = candles.map(c => c.volume);
+  
+  // 1. Анализ объемов (основной индикатор ликвидности)
+  const recentVolume = volumes.slice(-10).reduce((a, b) => a + b, 0);
+  const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length * 10;
+  const volumeRatio = recentVolume / avgVolume;
+  
+  // 2. Анализ спреда (разница между high и low)
+  const recentHigh = Math.max(...highs.slice(-5));
+  const recentLow = Math.min(...lows.slice(-5));
+  const spread = (recentHigh - recentLow) / recentLow;
+  
+  // 3. Волатильность (низкая волатильность = высокая ликвидность)
+  const priceChanges = [];
+  for (let i = 1; i < candles.length; i++) {
+    priceChanges.push(Math.abs(candles[i].close - candles[i-1].close) / candles[i-1].close);
+  }
+  const volatility = priceChanges.reduce((a, b) => a + b, 0) / priceChanges.length;
+  
+  let liquidityScore = 50;
+  
+  // Объемы: высокие объемы = высокая ликвидность
+  if (volumeRatio > 1.5) liquidityScore += 25;
+  else if (volumeRatio > 1.2) liquidityScore += 15;
+  else if (volumeRatio < 0.5) liquidityScore -= 20;
+  
+  // Спред: маленький спред = высокая ликвидность
+  if (spread < 0.01) liquidityScore += 15;
+  else if (spread > 0.05) liquidityScore -= 15;
+  
+  // Волатильность: низкая волатильность = высокая ликвидность
+  if (volatility < 0.02) liquidityScore += 10;
+  else if (volatility > 0.05) liquidityScore -= 10;
+  
+  // Определяем тренд
+  let trend = '→';
+  if (volumeRatio > 1.1 && spread < 0.02) trend = '↑';
+  else if (volumeRatio < 0.8 && spread > 0.03) trend = '↓';
+  
+  return {
+    score: Math.round(Math.max(0, Math.min(100, liquidityScore))),
+    trend: trend
+  };
+}
+
+  // Анализ рыночного настроения (RSI, соц. сигналы, momentum)
+  analyzeSentiment(candles, momentum, regime) {
+    const closes = candles.map(c => c.close);
+    const rsi = this.calculateRSI(closes);
+    const lastRsi = rsi[rsi.length - 1];
+    
+    let sentimentScore = 50;
+    
+    // RSI-based sentiment
+    if (lastRsi < 30) sentimentScore += 25;
+    else if (lastRsi > 70) sentimentScore -= 25;
+    
+    // Momentum alignment
+    sentimentScore += momentum.strength * 20;
+    
+    // Regime-based sentiment
+    if (regime.regime === 'TRENDING') sentimentScore += 15;
+    else if (regime.regime === 'VOLATILE') sentimentScore -= 10;
+    
+    return {
+      score: Math.round(Math.max(0, Math.min(100, sentimentScore))),
+      trend: lastRsi < 40 ? '↑' : lastRsi > 60 ? '↓' : '→'
+    };
+  }
+
+  // Анализ структурных паттернов (тех. анализ + волны)
+  analyzeStructure(candles, patterns, currentPrice) {
+    let structureScore = 50;
+    
+    // Pattern strength boost
+    structureScore += patterns.patternBoost * 60;
+    
+    // Support/Resistance levels
+    const supportResistanceScore = this.analyzeSupportResistance(candles, currentPrice);
+    structureScore += supportResistanceScore;
+    
+    // Trend consistency
+    const trendScore = this.analyzeTrendConsistency(candles);
+    structureScore += trendScore;
+    
+    return {
+      score: Math.round(Math.max(0, Math.min(100, structureScore))),
+      trend: structureScore > 60 ? '↑' : structureScore < 40 ? '↓' : '→'
+    };
+  }
+
+  // Вспомогательные методы
+  calculateVolatility(returns) {
+    const mean = returns.reduce((a, b) => a + b, 0) / returns.length;
+    const variance = returns.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / returns.length;
+    return Math.sqrt(variance);
+  }
+
+  calculateRSI(closes, period = 14) {
+    if (closes.length < period + 1) return new Array(closes.length).fill(50);
+    
+    const gains = [], losses = [];
+    for (let i = 1; i < closes.length; i++) {
+      const change = closes[i] - closes[i-1];
+      gains.push(Math.max(change, 0));
+      losses.push(Math.max(-change, 0));
+    }
+    
+    const rsi = new Array(closes.length).fill(50);
+    let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+    let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+    
+    for (let i = period; i < closes.length; i++) {
+      avgGain = ((avgGain * (period - 1)) + gains[i-1]) / period;
+      avgLoss = ((avgLoss * (period - 1)) + losses[i-1]) / period;
+      
+      const rs = avgLoss !== 0 ? avgGain / avgLoss : Infinity;
+      rsi[i] = 100 - (100 / (1 + rs));
+    }
+    
+    return rsi;
+  }
+
+  analyzeSupportResistance(candles, currentPrice) {
+    const highs = candles.map(c => c.high);
+    const lows = candles.map(c => c.low);
+    
+    const recentHigh = Math.max(...highs.slice(-10));
+    const recentLow = Math.min(...lows.slice(-10));
+    
+    const distanceToHigh = (recentHigh - currentPrice) / currentPrice;
+    const distanceToLow = (currentPrice - recentLow) / currentPrice;
+    
+    if (distanceToHigh < 0.02) return -10; // Near resistance
+    if (distanceToLow < 0.02) return 10;   // Near support
+    
+    return 0;
+  }
+
+  analyzeTrendConsistency(candles) {
+    const closes = candles.map(c => c.close);
+    const shortMA = this.ema(closes, 5);
+    const longMA = this.ema(closes, 20);
+    
+    const currentDiff = (shortMA[shortMA.length-1] - longMA[longMA.length-1]) / longMA[longMA.length-1];
+    const prevDiff = (shortMA[shortMA.length-2] - longMA[longMA.length-2]) / longMA[longMA.length-2];
+    
+    // Consistent trend
+    if (Math.sign(currentDiff) === Math.sign(prevDiff)) {
+      return Math.abs(currentDiff) > 0.02 ? 15 : 5;
+    }
+    
+    return -10; // Trend reversal
+  }
+
+  ema(values, period) {
+    const v = values.map(Number);
+    if (v.length === 0) return [];
+    const alpha = 2.0 / (period + 1);
+    const e = new Array(v.length).fill(0);
+    e[0] = v[0];
+    for (let i = 1; i < v.length; i++) {
+      e[i] = alpha * v[i] + (1 - alpha) * e[i-1];
+    }
+    return e;
+  }
+
+  // Главный метод предсказания
+  async predict(symbol, candles, momentum, regime, patterns, currentPrice) {
+    const prediction = {
+      whales: this.analyzeWhales(candles, currentPrice),
+      liquidity: this.analyzeLiquidity(candles, currentPrice),
+      sentiment: this.analyzeSentiment(candles, momentum, regime),
+      structure: this.analyzeStructure(candles, patterns, currentPrice)
+    };
+
+    // Вычисление общего predictive score
+    const weights = { whales: 0.25, liquidity: 0.20, sentiment: 0.30, structure: 0.25 };
+    let totalScore = 0;
+    
+    for (const [metric, data] of Object.entries(prediction)) {
+      totalScore += data.score * weights[metric];
+    }
+
+    prediction.overall = Math.round(totalScore);
+    
+    return prediction;
+  }
+}
+
+
+
+// Инициализация predictive engine
+const predictiveEngine = new PredictiveEngine();
 
 // UI refs
 const sel = document.getElementById('symbolSelect');
@@ -1557,12 +1667,16 @@ const strategyButtons = {
   MEANREV: document.getElementById('stratMeanRev')
 };
 
+
+
 // Initialize selector
 TOP_COINS.forEach(c => {
   const o = document.createElement('option'); o.value = c; o.textContent = c;
   sel.appendChild(o);
 });
 sel.value = TOP_COINS[0];
+
+
 
 // ------------- ENHANCED LOGGING -------------
 let logs = [];
@@ -1747,6 +1861,73 @@ class MonsterEngine {
 
     return { patternBoost, patternComments, patterns };
   }
+  
+ // Добавляем в класс PredictiveEngine (после существующих методов)
+calculateSimpleTiming(psychology, liquidity, whales, structure) {
+    const baseTime = 3;
+    const weights = [0.4, 0.3, 0.2, 0.1];
+    
+    const score = (psychology * weights[0]) + 
+                 (liquidity * weights[1]) + 
+                 (whales * weights[2]) + 
+                 (structure * weights[3]);
+    
+    let timing = baseTime * (score / 100); // делим на 100 т.к. метрики 0-100
+    timing = Math.max(0.5, Math.min(10, timing));
+    
+    return timing.toFixed(1) + " MIN";
+}
+
+getTimingRange(timing) {
+    if (timing < 1.5) return "0.5-2 мин";
+    if (timing < 2.5) return "1-3 мин";
+    if (timing < 4) return "2-5 мин";
+    return "3-7 мин";
+}
+
+// УЛУЧШЕННАЯ ФУНКЦИЯ ТИПА СИГНАЛА
+getSignalType(psychology, liquidity, whales, structure) {
+    const totalScore = (psychology + liquidity + whales + structure) / 4;
+    
+    if (psychology >= 85 && liquidity >= 80 && totalScore >= 80) {
+        return { type: "ДЛИТЕЛЬНЫЙ ТРЕНД", color: "#00d07a", emoji: "📈" };
+    }
+    if (psychology >= 70 && whales >= 65 && totalScore >= 70) {
+        return { type: "СРЕДНЕСРОЧНЫЙ ИМПУЛЬС", color: "#3f9cff", emoji: "⚡" };
+    }
+    if (structure >= 75 && liquidity >= 70 && psychology >= 60) {
+        return { type: "ТЕХНИЧЕСКИЙ ОТСКОК", color: "#ffcc66", emoji: "🔄" };
+    }
+    if (psychology >= 75 && whales >= 70) {
+        return { type: "КИТОВЫЙ ДВИЖ", color: "#ff6b6b", emoji: "🐋" };
+    }
+    return { type: "СКАЛЬПИНГ", color: "#9aa2ad", emoji: "🎯" };
+}
+
+
+// В методе predict класса PredictiveEngine
+async predict(symbol, candles, momentum, regime, patterns, currentPrice) {
+    // ... существующий код расчета prediction ...
+	
+
+    // === ДОБАВЛЯЕМ ПРОСТОЙ ТАЙМИНГ ===
+    const simpleTiming = this.calculateSimpleTiming(
+        prediction.sentiment.score,    // psychology
+        prediction.liquidity.score,    // liquidity  
+        prediction.whales.score,       // whales
+        prediction.structure.score     // structure
+    );
+
+      // === ДОБАВЛЯЕМ ПРОСТОЙ ТАЙМИНГ ===
+    prediction.simpleTiming = this.calculateSimpleTiming(
+        prediction.sentiment.score,
+        prediction.liquidity.score, 
+        prediction.whales.score,
+        prediction.structure.score
+    );
+	
+	    return prediction;
+}
 
   // KEEP ALL YOUR EXISTING METHODS BELOW - DO NOT REMOVE THESE:
 
@@ -2004,18 +2185,19 @@ class MonsterEngine {
 async analyzeMomentumStacking(symbol, horizon, risk, strategy) {
   // COMPLETE timeframe configuration for ALL combinations
   const timeframeConfigs = {
-    // AGGRESSIVE combinations
-    'AGGRESSIVE_SHORT_MOMENTUM': { base: '3m', layers: { "1m": 4, "3m": 3, "5m": 2 } },
-    'AGGRESSIVE_SHORT_BREAKOUT': { base: '3m', layers: { "1m": 3, "3m": 4, "5m": 2 } },
-    'AGGRESSIVE_SHORT_MEANREV': { base: '5m', layers: { "3m": 3, "5m": 4, "15m": 2 } },
-    
-    'AGGRESSIVE_MEDIUM_MOMENTUM': { base: '5m', layers: { "3m": 2, "5m": 4, "15m": 3 } },
-    'AGGRESSIVE_MEDIUM_BREAKOUT': { base: '5m', layers: { "5m": 4, "15m": 3, "30m": 2 } },
-    'AGGRESSIVE_MEDIUM_MEANREV': { base: '15m', layers: { "5m": 2, "15m": 4, "30m": 3 } },
-    
-    'AGGRESSIVE_LONG_MOMENTUM': { base: '15m', layers: { "5m": 2, "15m": 4, "1h": 3 } },
-    'AGGRESSIVE_LONG_BREAKOUT': { base: '15m', layers: { "15m": 4, "1h": 3, "4h": 2 } },
-    'AGGRESSIVE_LONG_MEANREV': { base: '1h', layers: { "15m": 2, "1h": 4, "4h": 3 } },
+     // AGGRESSIVE combinations - ТОЛЬКО 1m
+  'AGGRESSIVE_SHORT_MOMENTUM': { base: '1m', layers: { "1m": 10 } },
+  'AGGRESSIVE_SHORT_BREAKOUT': { base: '1m', layers: { "1m": 10 } },
+  'AGGRESSIVE_SHORT_MEANREV': { base: '1m', layers: { "1m": 10 } },
+  
+  'AGGRESSIVE_MEDIUM_MOMENTUM': { base: '1m', layers: { "1m": 10 } },
+  'AGGRESSIVE_MEDIUM_BREAKOUT': { base: '1m', layers: { "1m": 10 } },
+  'AGGRESSIVE_MEDIUM_MEANREV': { base: '1m', layers: { "1m": 10 } },
+  
+  'AGGRESSIVE_LONG_MOMENTUM': { base: '1m', layers: { "1m": 10 } },
+  'AGGRESSIVE_LONG_BREAKOUT': { base: '1m', layers: { "1m": 10 } },
+  'AGGRESSIVE_LONG_MEANREV': { base: '1m', layers: { "1m": 10 } },
+
 
     // STABLE combinations
     'STABLE_SHORT_MOMENTUM': { base: '5m', layers: { "3m": 3, "5m": 4, "15m": 2 } },
@@ -2238,6 +2420,26 @@ async function analyzeSymbol(symbol) {
       regime, momentum, ACTIVE_RISK, ACTIVE_HORIZON, ACTIVE_STRATEGY
     );
 
+     // === PREDICTIVE ANALYSIS ===
+    let prediction;
+    try {
+      prediction = await predictiveEngine.predict(
+        symbol, candles, momentum, regime, patterns, currentPrice
+      );
+      console.log("🧠 Prediction created:", prediction); // ← ДОБАВЬ ЭТУ СТРОКУ
+    } catch (error) {
+      console.log("❌ Predictive analysis failed, using fallback:", error);
+      prediction = {
+        whales: { score: 75, trend: '↑' },
+        liquidity: { score: 60, trend: '→' },
+        sentiment: { score: 80, trend: '↑' },
+        structure: { score: 65, trend: '↑' },
+        overall: 70
+      };
+    }
+	
+	
+
     // Calculate probabilities
     const baseProbability = 0.5 + (momentum.strength - 0.5) * 0.3 + patterns.patternBoost;
     const probability = Math.max(0.1, Math.min(0.95, baseProbability));
@@ -2248,6 +2450,24 @@ async function analyzeSymbol(symbol) {
     
     // Calculate signal strength
     const signalStrength = Math.round(score * 0.8 + (grade === 'A' ? 20 : grade === 'B' ? 10 : 0));
+
+    // === UPDATE PREDICTIVE UI ===
+  updatePredictiveUI(prediction, prediction.simpleTiming);
+	
+	 // === ПОКАЗЫВАЕМ ПРОСТОЙ ТАЙМИНГ ИЗ PREDICTION ===
+    const timingElement = document.getElementById('recommendedTiming');
+    if (timingElement && prediction.simpleTiming) {
+        timingElement.innerHTML = `
+            <div style="font-size: 14px; font-weight: 600; color: #3f9cff;">
+                ${prediction.simpleTiming}
+            </div>
+            <div style="font-size: 11px; color: #9aa2ad;">
+                Simple Timing
+            </div>
+        `;
+    }
+
+	
 
     // Dynamic stop-loss based on volatility
     const atr = tradingEngine.calculateVolatility(candles.map((c, i, arr) => 
@@ -2282,7 +2502,6 @@ async function analyzeSymbol(symbol) {
       regime.comment,
       ...patterns.patternComments.slice(0, 2),
       `${ACTIVE_RISK}/${ACTIVE_HORIZON}/${ACTIVE_STRATEGY}`,
-      //`Timeframes: ${Object.keys(momentum.details || {}).join(', ')}`
     ].filter(Boolean).join('. ');
 
     const result = {
@@ -2355,10 +2574,14 @@ async function analyzeSymbol(symbol) {
   }
 }
 
+
+
 // ------------- PERFORMANCE METRICS -------------
 function updatePerformanceMetrics(result) {
   // Simulate trade results for demo purposes
   // In a real implementation, this would track actual trade results
+  
+  
   
   // Randomly generate trade results for demonstration
   if (result.overall_score > 60 && Math.random() > 0.3) {
@@ -2389,6 +2612,8 @@ function updatePerformanceMetrics(result) {
     }
   }
   
+  
+  
   // Update UI
   const winRate = performanceMetrics.totalTrades > 0 ? 
     (performanceMetrics.winningTrades / performanceMetrics.totalTrades * 100).toFixed(1) + '%' : '-';
@@ -2405,6 +2630,8 @@ function updatePerformanceMetrics(result) {
   sharpeRatioEl.textContent = sharpeRatio;
   totalTradesEl.textContent = performanceMetrics.totalTrades;
 }
+
+
 
 // ------------- ENHANCED UI RENDER -------------
 function renderStatusUI(res) {
@@ -2469,6 +2696,79 @@ function renderStatusUI(res) {
     marketCommentEl.classList.remove('hidden');
   }
 }
+
+function updatePredictiveUI(prediction, recommendedTiming) {
+  if (!prediction) return;
+
+  const gaugeMask = document.getElementById('gaugeMask');
+  const gaugeValue = document.getElementById('gaugeValue');
+  const overallScore = prediction.overall;
+  
+  if (gaugeMask && gaugeValue) {
+    const rotation = (overallScore / 100 * 180);
+    gaugeMask.style.transform = `rotate(${rotation}deg)`;
+    gaugeValue.textContent = overallScore + '%';
+  }
+  
+   // === ОБНОВЛЯЕМ ТАЙМИНГ В UI === (ДОЛЖНО БЫТЬ ТАК)
+  const timingElement = document.getElementById('recommendedTiming');
+  if (timingElement && recommendedTiming) {
+      timingElement.innerHTML = `
+          <div style="font-size: 14px; font-weight: 600; color: #3f9cff;">
+              ${recommendedTiming}
+          </div>
+          <div style="font-size: 11px; color: #9aa2ad;">
+              Simple Timing
+          </div>
+      `;
+  }
+
+
+  // Обновляем цветовую схему блока
+  const predictiveCard = document.getElementById('predictiveMetricsCard');
+  if (predictiveCard) {
+    predictiveCard.classList.remove('signal-strong', 'signal-moderate', 'signal-weak');
+    
+    if (overallScore >= 70) {
+      predictiveCard.classList.add('signal-strong');
+    } else if (overallScore >= 50) {
+      predictiveCard.classList.add('signal-moderate');
+    } else {
+      predictiveCard.classList.add('signal-weak');
+    }
+  }
+
+  // Обновляем метрики
+  updateMetricUI('whales', prediction.whales);
+  updateMetricUI('liquidity', prediction.liquidity);
+  updateMetricUI('sentiment', prediction.sentiment);
+  updateMetricUI('structure', prediction.structure);
+
+  // Обновляем тайминг
+  if (recommendedTiming) {
+    const timingElement = document.getElementById('recommendedTiming');
+    if (timingElement) timingElement.textContent = recommendedTiming;
+  }
+}
+
+function updateMetricUI(metricName, metricData) {
+  const fillElement = document.querySelector(`.${metricName}-fill`);
+  const valueElement = document.getElementById(`${metricName}Value`);
+  const trendElement = document.getElementById(`${metricName}Trend`);
+
+  if (fillElement && valueElement && trendElement) {
+    fillElement.style.width = `${metricData.score}%`;
+    valueElement.textContent = `${metricData.score}%`;
+    
+    // Обновляем тренд с цветом
+    trendElement.textContent = metricData.trend;
+    trendElement.className = 'metric-trend ' + 
+      (metricData.trend === '↑' ? 'trend-up' : 
+       metricData.trend === '↓' ? 'trend-down' : 'trend-neutral');
+  }
+}
+
+
 
 // ------------- HELP MODAL FUNCTIONALITY -------------
 const helpModal = document.getElementById('helpModal');
@@ -2627,15 +2927,18 @@ function toFixedSafe(v, n=6) {
   return Number(v).toFixed(n);
 }
 
-function shouldSendSignal(res) {
+function shouldSendSignal(res, prediction) {  // ← БЕЗ prediction в параметрах
   if (res.final_dir === 'NEUTRAL') return false;
   if (res.overall_score < 60) return false;
   if (res.probability < 55) return false;
   if (res.setupGrade === 'C') return false;
   
+  // ВРЕМЕННО ЗАКОММЕНТИРОВАТЬ - вернем когда починим
+  if (prediction && prediction.overall < 64) return false;
+  
   const prev = lastSentPerSymbol[res.symbol];
   if (prev && prev.dir === res.final_dir) {
-    if (Math.abs(res.overall_score - prev.score) < 6) return false;
+    if (Math.abs(res.overall_score - prev.score) < 8) return false;
   }
   
   return true;
@@ -2648,7 +2951,8 @@ async function runOnce() {
     const res = await analyzeSymbol(symbol);
     renderStatusUI(res);
     
-    if (shouldSendSignal(res)) {
+    // === ИСПРАВЛЕННАЯ СТРОКА ===
+    if (shouldSendSignal(res)) {  // ← УБРАЛ prediction отсюда
       const msg = formatMessageGui(res);
       const sendResult = await sendTelegramMessage(msg);
       if (sendResult && sendResult.ok) {
@@ -2663,6 +2967,8 @@ async function runOnce() {
 
 function startLoop() {
   if (running) return;
+   // Агрессивный режим = 25 сек, остальные = выбранный интервал
+  //const dynamicInterval = ACTIVE_RISK === 'AGGRESSIVE' ? 25 : LOOP_SECONDS;
   running = true;
   addLog("🤖 MONSTER ENGINE STARTED");
   runOnce();
@@ -2871,6 +3177,7 @@ window.addEventListener('load', () => {
     }
   }, 30_000); // каждые 30 сек
 })();
+
 // === КОРОТКАЯ ЗАЩИТА ОТ СНА ===
 (async function preventSleep() {
     let wakeLock = null;
@@ -2896,6 +3203,7 @@ window.addEventListener('load', () => {
         fetch(window.location.href, {method: 'HEAD'}).catch(() => {});
     }, 30000);
 })();
+
 </script>
 </body>
 </html>
