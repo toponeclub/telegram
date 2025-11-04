@@ -1406,7 +1406,21 @@ class PredictiveEngine {
     this.patternMemory = [];
   }
   
-  
+    // === ПЕРЕМЕСТИТЕ ЭТОТ МЕТОД СЮДА ===
+  calculateSimpleTiming(psychology, liquidity, whales, structure) {
+    const baseTime = 3;
+    const weights = [0.4, 0.3, 0.2, 0.1];
+    
+    const score = (psychology * weights[0]) + 
+                 (liquidity * weights[1]) + 
+                 (whales * weights[2]) + 
+                 (structure * weights[3]);
+    
+    let timing = baseTime * (score / 100);
+    timing = Math.max(0.5, Math.min(10, timing));
+    
+    return timing.toFixed(1) + " MIN";
+  }
 
   // Анализ поведения китов (объемы + крупные ордера)
   analyzeWhales(candles, currentPrice) {
@@ -1616,6 +1630,14 @@ class PredictiveEngine {
 
     prediction.overall = Math.round(totalScore);
     
+    // === ВЫЧИСЛЯЕМ ПРОСТОЙ ТАЙМИНГ И СОХРАНЯЕМ В ПРЕДИКЦИЮ ===
+    prediction.simpleTiming = this.calculateSimpleTiming(
+      prediction.sentiment.score,
+      prediction.liquidity.score,
+      prediction.whales.score,
+      prediction.structure.score
+    );
+
     return prediction;
   }
 }
