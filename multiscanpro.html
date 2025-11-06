@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>MultiScan Pro Monster</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔻</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root{
+      --bg:#0a0a0a; --surface:#111; --surface-light:#1a1a1a; --border:#222;
+      --text:#e2e8f0; --muted:#94a3b8; --accent:#00d07a; --danger:#ef4444; --warn:#f59e0b;
+      --blue:#3b82f6; --purple:#8b5cf6;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif;overflow:auto; overflow-x: hidden;
+  scrollbar-color: #2a2a2a #0a0a0a;
+  scrollbar-width: thin;}
+    .app{display:flex;flex-direction:column;height:100vh}
+    .header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+    .logo{display:flex;gap:10px;align-items:center}
+    .logo-text{font-weight:700;font-size:16px}
+    .badge{background:var(--purple);color:#fff;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px}
+    .controls{display:flex;gap:8px;align-items:center}
+    .select, .btn {background:var(--surface-light);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px}
+    .btn {cursor:pointer}
+    .main{display:flex;flex:1;min-height:0}
+    
+    /* 🔥 НОВОЕ: Пропорции панелей */
+  /* Левый блок */
+.left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 2px solid var(--border);
+  min-width: 300px;
+  overflow: hidden;
+}
+    .right{flex:0.35;display:flex;flex-direction:column;background:var(--surface);overflow:auto; min-width: 400px;}
+    
+    .overview{padding:12px;border-bottom:1px solid var(--border)}
+    .watchlist-table{width:100%;border-collapse:collapse}
+    .coin-row{display:grid;grid-template-columns: 1fr 84px 80px 70px;gap:45px;align-items:center;padding:10px;;border-radius:8px;margin-bottom:6px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);cursor:pointer;border:1px solid transparent}
+    .coin-row:hover{border-color:#2b2b2b;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent)}
+    .coin-symbol{font-weight:700}
+    .coin-price{font-family: 'IBM Plex Mono', monospace;font-size:13px}
+    .small-muted{color:var(--muted);font-size:12px}
+    .arrow{font-size:18px;width:22px;text-align:center}
+    .arrow.up{color:var(--accent)}
+    .arrow.down{color:var(--danger)}
+    .arrow.flat{color:var(--warn)}
+    .spark{
+  width:98px;
+  height:28px;
+  border-radius:4px;
+  display:block;
+  opacity: 0.85;
+}
+    .row-actions{display:flex;gap:6px;justify-content:flex-end;align-items:center}
+    .filterbar{display:flex;gap:8px;padding:8px 12px;background:var(--surface-light);border-radius:8px;margin-bottom:10px}
+    .filter-btn{padding:8px 10px;border-radius:6px;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer}
+    .filter-btn.active{border-color:var(--accent);color:var(--text);background:linear-gradient(180deg, rgba(0,208,122,0.06), transparent)}
+   
+   .filter-btn[data-filter="short"].active {
+     border-color: #ff4b4b;
+     color: #fff;
+     background: linear-gradient(180deg, rgba(255,75,75,0.08), transparent);
+   }
+
+   #leftPanel {
+     display: flex;
+     flex-direction: column;
+    
+     scrollbar-color: #2a2a2a #0a0a0a;
+     scrollbar-width: thin;
+   }
+
+ /* TradingView - ФИКСИРОВАННАЯ ВЫСОТА */
+.tradingview-container {
+  flex: 1;
+  position: relative;
+  min-height: 400px;
+  max-height: 55vh; /* 🔥 ФИКСИРУЕМ МАКСИМАЛЬНУЮ ВЫСОТУ */
+  background: var(--surface-light);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Скролл только для watchlist */
+.overview {
+  flex: 1;
+  overflow-y: auto; /* 🔥 СКРОЛЛ ТОЛЬКО ЗДЕСЬ */
+  min-height: 0;
+}
+
+.tradingview-widget {
+  height: 100%;
+  width: 100%;
+  min-height: 400px;
+}
+
+   /* 🔥 НОВОЕ: Кнопка полноэкранного режима */
+   .fullscreen-btn {
+     position: absolute;
+     bottom: 12px;
+     right: 12px;
+     background: rgba(17, 17, 17, 0.8);
+     border: 1px solid var(--border);
+     color: var(--text);
+     padding: 6px;
+     border-radius: 6px;
+     cursor: pointer;
+     z-index: 10;
+     backdrop-filter: blur(4px);
+   }
+
+   .fullscreen-btn:hover {
+     background: var(--surface-light);
+   }
+
+   /* 🔥 НОВОЕ: Улучшенная панель деталей */
+   .detail-panel{
+     padding:12px;
+     border-left:1px solid rgba(255,255,255,0.02);
+     flex: 0.2; /* 20% высоты левой панели */
+     display:flex;
+     flex-direction:column;
+     min-width:320px;
+     gap: 12px;
+   }
+
+   .detail-header{
+     display:flex;
+     justify-content:space-between;
+     align-items:center;
+     gap:8px;
+   }
+
+   .detail-title{font-weight:700; font-size: 18px;}
+   .detail-subtitle{color: var(--muted); font-size: 12px;}
+
+   .signal-card{
+     padding:12px;
+     border-radius:8px;
+     background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+     border:1px solid var(--border);
+   }
+
+   .strength-bar{height:8px;background:var(--surface-light);border-radius:6px;overflow:hidden;margin-top:8px}
+   .strength-fill{height:100%;background:linear-gradient(90deg,var(--danger),var(--warn),var(--accent));transition:width .4s}
+   .log{padding:10px;height:160px;overflow:auto;background:var(--surface-light);border:1px solid var(--border);border-radius:8px;font-family: 'IBM Plex Mono', monospace;font-size:12px}
+   .mini-stats{display:flex;gap:8px;margin-top:8px}
+   .stat{flex:1;padding:8px;background:var(--surface-light);border-radius:8px;border:1px solid var(--border);text-align:center}
+   .header-right{display:flex;gap:8px;align-items:center}
+   .help-btn{background:var(--surface-light);border:1px solid var(--border);padding:6px;border-radius:8px;cursor:pointer}
+   
+   /* 🔥 НОВОЕ: Статус соединения */
+   .connection-status {
+     display: flex;
+     align-items: center;
+     gap: 6px;
+     font-size: 11px;
+     padding: 4px 8px;
+     border-radius: 4px;
+     margin-left: 12px;
+   }
+
+   .connection-dot {
+     width: 8px;
+     height: 8px;
+     border-radius: 50%;
+     background: var(--danger);
+   }
+
+   .connection-dot.connected {
+     background: var(--accent);
+     animation: pulse 2s infinite;
+   }
+
+   @keyframes pulse {
+     0%, 100% { opacity: 1; transform: scale(1); }
+     50% { opacity: 0.4; transform: scale(1.4); }
+   }
+
+   .live-dot {
+     width: 8px;
+     height: 8px;
+     border-radius: 50%;
+     background: var(--accent);
+     margin-left: 6px;
+     box-shadow: 0 0 6px var(--accent);
+     animation: pulse 1.5s infinite;
+	 
+   }
+
+   /* 🔥 НОВОЕ: Анимация для новых сигналов */
+   .signal-pulse {
+     animation: signalPulse 2s ease-in-out;
+   }
+
+   @keyframes signalPulse {
+     0% { opacity: 1; }
+     50% { opacity: 0.7; }
+     100% { opacity: 1; }
+   }
+
+   /* 🔥 НОВОЕ: Плавные переходы */
+   .smooth-transition {
+     transition: all 0.3s ease;
+   }
+
+   /* 🔥 НОВОЕ: Цветные мини-чарты */
+   .spark-up {
+     background: linear-gradient(90deg, rgba(0,208,122,0.1), rgba(0,208,122,0.05));
+     border: 1px solid rgba(0,208,122,0.3);
+   }
+
+   .spark-down {
+     background: linear-gradient(90deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05));
+     border: 1px solid rgba(239,68,68,0.3);
+   }
+
+   .spark-neutral {
+     background: linear-gradient(90deg, rgba(245,158,11,0.1), rgba(245,158,11,0.05));
+     border: 1px solid rgba(245,158,11,0.3);
+   }
+
+   /* 🔥 НОВОЕ: Стили для Telegram секции */
+   .telegram-section {
+     padding: 12px;
+     border-bottom: 1px solid var(--border);
+   }
+
+   .telegram-inputs {
+     display: flex;
+     flex-direction: column;
+     gap: 8px;
+     margin-bottom: 12px;
+   }
+
+   .telegram-input {
+     background: var(--surface-light);
+     border: 1px solid var(--border);
+     color: var(--text);
+     padding: 8px;
+     border-radius: 6px;
+     font-size: 12px;
+   }
+
+   .telegram-btn {
+     width: 100%;
+     padding: 8px;
+     background: var(--surface-light);
+     border: 1px solid var(--border);
+     color: var(--text);
+     border-radius: 6px;
+     font-size: 12px;
+     cursor: pointer;
+   }
+
+   .telegram-btn:hover {
+     background: var(--border);
+   }
+
+   .telegram-status {
+     margin-top: 8px;
+     font-size: 11px;
+     text-align: center;
+   }
+
+   .status-ok {
+     color: var(--accent);
+   }
+
+   .status-error {
+     color: var(--danger);
+   }
+
+   /* responsive */
+   @media (max-width:1000px){ .right{width:360px} .left{min-width:0} }
+   @media (max-width:760px){ .main{flex-direction:column} .right{width:100%;height:380px} .left{border-right:none} }
+	
+	.chart-window {
+  background: var(--surface-light);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  min-height: 300px;
+}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      
+	  <div class="logo" style="cursor: pointer;" onclick="location.reload()">
+        <div class="logo-text">MultiScan Pro</div>
+        <div class="badge">MONSTER EDITION</div>
+        <div class="connection-status" id="connectionStatus">
+          <div class="connection-dot"></div>
+          <span>Connecting...</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;margin:0 20px;">
+        <button class="filter-btn active" data-tab="scanner">Scanner</button>
+        <button class="filter-btn" data-tab="charts">Charts</button>
+      </div>
+
+      <div class="header-right">
+        <div class="controls">
+          <select id="intervalSelect" class="select">
+            <option value="1m">1m</option>
+            <option value="5m" selected>5m</option>
+            <option value="15m">15m</option>
+            <option value="1h">1h</option>
+            <option value="4h">4h</option>
+          </select>
+          <button id="startBtn" class="btn">Start</button>
+          <button id="stopBtn" class="btn">Stop</button>
+          <button id="helpBtn" class="help-btn">?</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCANNER PANEL -->
+    <div id="scannerPanel" class="main">
+      <div class="main">
+        <!-- LEFT PANEL -->
+        <div class="left" id="leftPanel">
+          <!-- TradingView Chart -->
+          <div style="flex: 1; display: flex; flex-direction: column; padding: 12px; gap: 8px;">
+            <div style="font-weight: 700; font-size: 12px; align-self:center; opacity: 0.3;">TradingView Chart</div>
+            <div class="tradingview-container">
+              <div id="tvContainer" class="tradingview-widget"></div>
+              <button id="btnFullscreen" class="fullscreen-btn" title="Fullscreen">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Watchlist (ВИДИМЫЙ) -->
+          <div class="overview">
+           <div style="display:flex;justify-content:space-between;align-items:center;align-self:center;margin-bottom:10px; opacity: 0.3;">
+  <div style="font-weight:700; font-size: 12px;">SCANNER</div>
+  <div class="small-muted" id="overviewStatus" style="font-size: 11px;">0 active</div>
+</div>
+
+            <div class="filterbar" id="filterBar">
+              <button class="filter-btn active" data-filter="all"> All </button>
+              <button class="filter-btn" data-filter="long">Only Long</button>
+              <button class="filter-btn" data-filter="short">Only Short</button>
+              <button class="filter-btn" data-filter="active">Active</button>
+              <div style="flex:1"></div>
+              <label class="small-muted" style="align-self:center;font-size:12px">Strength ≥</label>
+              <input id="strengthThresh" type="number" value="60" min="0" max="100" style="width:60px;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface-light);color:var(--text)">
+            </div>
+
+            <div id="watchlistContainer">
+              <!-- rows injected here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="right">
+          <div style="padding:12px;border-bottom:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:700"></div>
+              <div class="small-muted">Mode: <span id="globalModeText">Dual</span></div>
+            </div>
+            
+            <div class="detail-panel" id="detailPanel">
+              <div class="detail-header">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;gap:12px">
+                  <div style="flex:1;min-width:200px">
+                    <div class="detail-title" id="detailTitle" style="font-size:16px;line-height:1.2">Select a coin to view details</div>
+                    <div class="detail-subtitle" id="detailSubtitle" style="font-size:12px;line-height:1.2">Chart will load automatically when coin is selected</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Signal Section -->
+              <div style="margin-bottom:16px">
+                <div style="text-align:center;padding:12px 0;margin-bottom:8px">
+                  <div style="font-size:2.8rem;margin-bottom:6px" id="signalIcon">⚡</div>
+                  <div style="font-size:0.9rem;color:var(--muted)" id="signalStatus">No signal</div>
+                </div>
+
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <div>
+                      <div class="small-muted" style="margin-bottom:2px">Signal</div>
+                      <div style="font-weight:700;font-size:15px" id="detailSignalText">—</div>
+                    </div>
+                    <div style="text-align:right">
+                      <div class="small-muted" style="margin-bottom:2px">Strength</div>
+                      <div id="detailStrength" style="font-weight:700;font-size:15px">0%</div>
+                    </div>
+                  </div>
+                  <div class="strength-bar" style="margin-bottom:8px">
+                    <div class="strength-fill" id="detailStrengthFill" style="width:0%"></div>
+                  </div>
+                  <div class="small-muted" style="line-height:1.3;min-height:32px" id="detailDesc">—</div>
+                  
+                  <!-- Market Stats -->
+                  <div style="margin:12px 0 8px 0;padding:10px;background:var(--surface-light);border-radius:8px;border:1px solid var(--border)">
+                    <div class="small-muted" style="text-align:center;margin-bottom:6px">Market Stats</div>
+                    <div style="display:flex;justify-content:space-around;gap:8px">
+                      <div style="text-align:center;flex:1">
+                        <div class="small-muted" style="font-size:10px;margin-bottom:2px">Price</div>
+                        <div id="detailPrice" style="font-weight:700;font-size:13px;color:var(--accent)">$--</div>
+                      </div>
+                      <div style="text-align:center;flex:1;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+                        <div class="small-muted" style="font-size:10px;margin-bottom:2px">RSI</div>
+                        <div id="detailRsi" style="font-weight:700;font-size:13px;color:var(--warn)">--</div>
+                      </div>
+                      <div style="text-align:center;flex:1">
+                        <div class="small-muted" style="font-size:10px;margin-bottom:2px">Strength</div>
+                        <div id="detailStrength" style="font-weight:700;font-size:13px;color:var(--blue)">0%</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="small-muted" style="margin-bottom:4px">Recent</div>
+                <div id="detailMiniLog" style="font-family:monospace;font-size:11px;max-height:70px;overflow:auto;background:var(--surface-light);padding:8px;border-radius:6px;border:1px solid var(--border);line-height:1.3"></div>
+              </div>
+            </div>
+
+            <!-- Telegram Settings -->
+            <div class="telegram-section">
+              <div style="font-weight:700;margin-bottom:8px">Telegram Alerts</div>
+              <div class="telegram-inputs">
+                <input id="tgToken" class="telegram-input" placeholder="Bot Token">
+                <input id="tgChat" class="telegram-input" placeholder="Chat ID">
+              </div>
+              <button id="btnTgTestConn" class="telegram-btn">Test Connection</button>
+              <div id="tgStatus" class="telegram-status"></div>
+            </div>
+
+            <!-- Activity Log -->
+            <div style="padding:12px;flex:1;display:flex;flex-direction:column;gap:8px">
+              <div style="font-weight:700">Activity Log</div>
+              <div class="log" id="mainLog"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS PANEL -->
+    <div id="chartsPanel" class="main" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4px;height:100%;padding:6px;background:var(--surface);">
+        <div class="chart-window"><div id="tvChart1" style="height:100%;width:100%"></div></div>
+        <div class="chart-window"><div id="tvChart2" style="height:100%;width:100%"></div></div>
+        <div class="chart-window"><div id="tvChart3" style="height:100%;width:100%"></div></div>
+        <div class="chart-window"><div id="tvChart4" style="height:100%;width:100%"></div></div>
+      </div>
+    </div>
+  </div>
+  <!-- TradingView Widget Script -->
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <script>
+  
+  // 🔥 ДОБАВИТЬ ЭТУ ФУНКЦИЮ: Обновление значка сигнала
+function updateSignalIcon(sym) {
+  const icon = q('signalIcon');
+  const status = q('signalStatus');
+  const watcher = watchers[sym];
+  
+  if (!watcher) {
+    icon.textContent = '⚡';
+    icon.style.color = 'var(--muted)';
+    status.textContent = 'Select a coin';
+    return;
+  }
+
+  const long = watcher.signalLong;
+  const short = watcher.signalShort;
+  const maxStrength = Math.max(long.strength || 0, short.strength || 0);
+
+  if (long.action === 'BUY' && long.strength >= 70) {
+    icon.textContent = '📈';
+    icon.style.color = 'var(--accent)';
+    status.textContent = `BUY SIGNAL • ${long.strength}%`;
+  } else if (short.action === 'SELL' && short.strength >= 70) {
+    icon.textContent = '📉';
+    icon.style.color = 'var(--danger)';
+    status.textContent = `SELL SIGNAL • ${short.strength}%`;
+  } else {
+    icon.textContent = '⚡';
+    icon.style.color = 'var(--warn)';
+    status.textContent = `AWAITING ENTRY ${maxStrength}%`;
+  }
+}
+  // ========== Config ==========
+  // 🔥 ОБНОВЛЕН: Увеличен список коинов
+  const WATCHLIST = [
+    "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
+    "SOLUSDT","DOGEUSDT","MATICUSDT","DOTUSDT","TRXUSDT",
+    "LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT", 
+    "PEPEUSDT", "BONKUSDT", "INJUSDT", "APTUSDT"
+  ];
+  const DEFAULT_INTERVAL = '5m';
+  const UPDATE_BATCH_MS = 500;
+  const CANDLES_LIMIT = 100;
+  // ============================
+
+  // State
+  let mode = 'dual'; // всегда dual mode
+  let interval = DEFAULT_INTERVAL;
+  let isRunning = false;
+  let watchers = {};
+  let updateTimer = null;
+  let tradingviewLoaded = false;
+  let currentDetail = null;
+  let tvWidget = null;
+  let lastTelegramSignal = {}; // Для предотвращения дублирования уведомлений
+
+  // Utils
+  function q(id){return document.getElementById(id)}
+  function addMainLog(text, cls='info'){
+    const el = q('mainLog');
+    const node = document.createElement('div');
+    const t = new Date().toLocaleTimeString();
+    node.innerHTML = `<span style="color:var(--muted)">[${t}]</span> ${text}`;
+    el.appendChild(node);
+    el.scrollTop = el.scrollHeight;
+    while(el.children.length>200) el.removeChild(el.firstChild);
+  }
+
+  // 🔥 НОВОЕ: Обновление статуса соединения
+ function updateConnectionStatus(connected) {
+  const statusElement = q('connectionStatus');
+  const dot = statusElement.querySelector('.connection-dot');
+  const text = statusElement.querySelector('span');
+  
+  if (connected) {
+    dot.classList.add('connected');
+    text.textContent = 'LIVE';
+  } else {
+    dot.classList.remove('connected');
+    text.textContent = 'RECONNECTING';
+  }
+}
+
+  // Initial render of watchlist UI
+  function renderWatchlistUI(){
+    const container = q('watchlistContainer');
+    container.innerHTML = '';
+    WATCHLIST.forEach(sym=>{
+      const row = document.createElement('div');
+      row.className = 'coin-row';
+      row.id = `row-${sym}`;
+      row.innerHTML = `
+        <div>
+          <div class="coin-symbol">${sym.replace('USDT','/USDT')}</div>
+          <div class="small-muted" id="sub-${sym}">--</div>
+        </div>
+        <div class="coin-price" id="price-${sym}">—</div>
+        <canvas class="spark" id="spark-${sym}"></canvas>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="arrow" id="arrow-${sym}">—</div>
+          <div class="small-muted" id="str-${sym}">—</div>
+        </div>
+      `;
+      row.addEventListener('click', (e)=>{
+        if(e.target.tagName.toLowerCase()!=='button') openDetailFor(sym);
+      });
+      container.appendChild(row);
+      watchers[sym] = {
+        candles: [],
+        lastPrice: null,
+        signalLong: {action:'HOLD', strength:0},
+        signalShort: {action:'HOLD', strength:0},
+        sparkPoints: []
+      };
+      drawSpark(sym);
+    });
+    updateOverviewStatus();
+    updateConnectionStatus(true);
+  }
+
+  function updateOverviewStatus(){
+    const active = Object.values(watchers).filter(w=> (w.signalLong && w.signalLong.action!=='HOLD' && w.signalLong.strength>=+q('strengthThresh').value) || (w.signalShort && w.signalShort.action!=='HOLD' && w.signalShort.strength>=+q('strengthThresh').value)).length;
+    q('overviewStatus').textContent = `${active} active • showing ${q('filterBar').querySelector('.filter-btn.active').dataset.filter}`;
+  }
+
+  // 🔥 ОБНОВЛЕНО: Цветные мини-чарты
+  function drawSpark(sym){
+  const canvas = q(`spark-${sym}`);
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width = canvas.clientWidth * devicePixelRatio;
+  const H = canvas.height = canvas.clientHeight * devicePixelRatio;
+  ctx.clearRect(0,0,W,H);
+  const w = W, h = H;
+  const pts = watchers[sym].sparkPoints || [];
+  
+  if(pts.length<2){
+    ctx.strokeStyle = '#2b2b2b';
+    ctx.lineWidth = 2*devicePixelRatio;
+    ctx.beginPath(); ctx.moveTo(2*devicePixelRatio,h/2); ctx.lineTo(w-2*devicePixelRatio,h/2); ctx.stroke();
+    return;
+  }
+  
+  const min = Math.min(...pts), max = Math.max(...pts);
+  const len = pts.length;
+  ctx.lineWidth = 2*devicePixelRatio;
+  
+ const slope = pts[pts.length-1] - pts[0];
+console.log('Slope:', slope, 'Color:', slope>0 ? 'green' : slope<0 ? 'red' : 'yellow');
+
+// Получаем значения CSS переменных
+const styles = getComputedStyle(document.documentElement);
+const accentColor = styles.getPropertyValue('--accent').trim();
+const dangerColor = styles.getPropertyValue('--danger').trim(); 
+const warnColor = styles.getPropertyValue('--warn').trim();
+
+ctx.strokeStyle = slope>0 ? accentColor : slope<0 ? dangerColor : warnColor;
+  ctx.beginPath();
+  for(let i=0;i<len;i++){
+    const x = (i/(len-1))*(w-4*devicePixelRatio) + 2*devicePixelRatio;
+    const y = max===min ? h/2 : h - ((pts[i]-min)/(max-min))*(h-4*devicePixelRatio) - 2*devicePixelRatio;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+  async function fetchCandles(symbol, intv, limit = CANDLES_LIMIT){
+  // 🔥 ПОПЫТКА 1: BINANCE (ОСНОВНОЙ)
+  try {
+    const resp = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${intv}&limit=${limit}`);
+    if (resp.ok) {
+      const data = await resp.json();
+      return data.map(d => ({ts: d[0], open: +d[1], high: +d[2], low: +d[3], close: +d[4], vol: +d[5]}));
+    }
+  } catch (e) {}
+
+  // 🔥 ПОПЫТКА 2: BINANCE ALTERNATIVE DOMAIN
+  try {
+    const resp = await fetch(`https://api1.binance.com/api/v3/klines?symbol=${symbol}&interval=${intv}&limit=${limit}`);
+    if (resp.ok) {
+      const data = await resp.json();
+      return data.map(d => ({ts: d[0], open: +d[1], high: +d[2], low: +d[3], close: +d[4], vol: +d[5]}));
+    }
+  } catch (e) {}
+
+  // 🔥 ПОПЫТКА 3: COINGECKO (РЕЗЕРВ)
+  try {
+    const coinId = getCoinGeckoId(symbol);
+    if (coinId) {
+      const resp = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=30`);
+      if (resp.ok) {
+        const data = await resp.json();
+        return processGeckoData(data, limit);
+      }
+    }
+  } catch (e) {}
+
+  // ❌ ВСЕ ИСТОЧНИКИ НЕДОСТУПНЫ - ВОЗВРАЩАЕМ ПУСТОЙ МАССИВ
+  console.error(`All APIs failed for ${symbol}`);
+  return [];
+}
+
+// 🔥 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ COINGECKO
+function getCoinGeckoId(symbol) {
+  const map = {
+    'BTCUSDT': 'bitcoin',
+    'ETHUSDT': 'ethereum', 
+    'BNBUSDT': 'binancecoin',
+    'SOLUSDT': 'solana',
+    'ADAUSDT': 'cardano',
+    'XRPUSDT': 'ripple',
+    'DOTUSDT': 'polkadot',
+    'DOGEUSDT': 'dogecoin',
+    'MATICUSDT': 'matic-network',
+    'LTCUSDT': 'litecoin'
+  };
+  return map[symbol];
+}
+
+function processGeckoData(geckoData, limit) {
+  if (!geckoData.prices) return [];
+  
+  return geckoData.prices.slice(-limit).map((price, index) => ({
+    ts: price[0],
+    open: price[1],
+    high: price[1] * (1 + Math.random() * 0.01), // Gecko не дает OHLC
+    low: price[1] * (1 - Math.random() * 0.01),
+    close: price[1],
+    vol: geckoData.total_volumes?.[index]?.[1] || 100
+  }));
+}
+
+  function calcGaussian(candles, period=14, multiplier=1.414){
+    if(!candles || candles.length<period) return null;
+    const recent = candles.slice(-period).map(c=>c.close);
+    const mean = recent.reduce((a,b)=>a+b,0)/period;
+    const variance = recent.reduce((a,b)=>a+Math.pow(b-mean,2),0)/period;
+    const sd = Math.sqrt(variance);
+    const high = mean + sd*multiplier;
+    const low = mean - sd*multiplier;
+    const filter = mean;
+    const current = candles[candles.length-1].close;
+    let state='neutral'; if(current>high) state='bullish'; if(current<low) state='bearish';
+    return {high,low,filter,state};
+  }
+
+  function calcRSI(closes, period=14){
+    if(closes.length<period+1) return Array(closes.length).fill(50);
+    const gains=[], losses=[];
+    for(let i=1;i<closes.length;i++){ const d=closes[i]-closes[i-1]; gains.push(Math.max(d,0)); losses.push(Math.max(-d,0)); }
+    let avgG = gains.slice(0,period).reduce((a,b)=>a+b,0)/period;
+    let avgL = losses.slice(0,period).reduce((a,b)=>a+b,0)/period;
+    const rsi = new Array(closes.length).fill(50);
+    for(let i=period;i<closes.length;i++){
+      avgG = ((avgG*(period-1))+gains[i-1])/period;
+      avgL = ((avgL*(period-1))+losses[i-1])/period;
+      const rs = avgL===0?100:avgG/avgL;
+      rsi[i] = 100 - (100/(1+rs));
+    }
+    return rsi;
+  }
+
+  function calcStochRsi(candles, rsiLen=14, stochLen=14){
+    const closes = candles.map(c=>c.close);
+    const rsiArr = calcRSI(closes, rsiLen);
+    if(rsiArr.length<stochLen) return {k:50,d:50};
+    const recent = rsiArr.slice(-stochLen);
+    const cur = rsiArr[rsiArr.length-1];
+    const low = Math.min(...recent), high = Math.max(...recent);
+    const k = high===low?50:((cur-low)/(high-low))*100;
+    const d = k;
+    return {k,d};
+  }
+
+  function generateSignalFor(symbol){
+    const state = watchers[symbol];
+    const candles = state.candles;
+    if(!candles || candles.length<20) return;
+    const gauss = calcGaussian(candles);
+    const stoch = calcStochRsi(candles);
+    const price = candles[candles.length-1].close;
+    
+    // LONG logic
+    let long = {action:'HOLD', strength:0, desc:'-'};
+    if(gauss && gauss.state==='bullish' && price>gauss.high && (stoch.k>80 || stoch.k<20)){
+      long = {action:'BUY', strength: Math.min(95,60 + Math.floor(Math.abs(price-gauss.high)/gauss.high*2000) + (stoch.k>80?10:5)), desc:'Gaussian bullish + Stoch extreme'};
+    } else if(price < gauss.high && state.lastLong==='BUY'){
+      long = {action:'SELL', strength:70, desc:'Price dipped below high band'};
+    }
+    
+    // SHORT logic
+    let short = {action:'HOLD', strength:0, desc:'-'};
+    if(gauss && gauss.state==='bearish' && price<gauss.low && (stoch.k<20 || stoch.k>80)){
+      short = {action:'SELL', strength: Math.min(95,60 + Math.floor(Math.abs(gauss.low-price)/gauss.low*2000) + (stoch.k<20?10:5)), desc:'Gaussian bearish + Stoch extreme'};
+    } else if(price > gauss.low && state.lastShort==='SELL'){
+      short = {action:'BUY', strength:68, desc:'Price rose above low band'};
+    }
+    
+    if(long.action==='BUY') state.lastLong='BUY'; if(long.action==='SELL') state.lastLong='SELL';
+    if(short.action==='SELL') state.lastShort='SELL'; if(short.action==='BUY') state.lastShort='BUY';
+    state.signalLong = long;
+    state.signalShort = short;
+    
+    const pts = candles.slice(-20).map(c=>c.close);
+    state.sparkPoints = pts;
+    state.lastPrice = price;
+
+    // 🔥 НОВОЕ: Отправка Telegram уведомлений для сигналов > 75%
+    if ((long.strength > 75 && long.action === 'BUY') || (short.strength > 75 && short.action === 'SELL')) {
+      const signalType = long.strength > short.strength ? 'LONG' : 'SHORT';
+      const strength = Math.max(long.strength, short.strength);
+      
+      // Проверяем, не отправляли ли мы уже уведомление для этого символа и сигнала
+      const signalKey = `${symbol}_${signalType}`;
+      if (!lastTelegramSignal[signalKey] || lastTelegramSignal[signalKey] < strength - 5) {
+        sendTelegramSignal(symbol, signalType, strength, price, stoch.k);
+        lastTelegramSignal[signalKey] = strength;
+      }
+    }
+  }
+
+  // 🔥 НОВОЕ: Функция отправки Telegram уведомлений
+  async function sendTelegramSignal(symbol, signalType, strength, price, stochRsi) {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) {
+      addMainLog(`Telegram: Missing token or chat ID for ${symbol} signal`, 'info');
+      return;
+    }
+
+    const message = `🚀 ${symbol} SIGNAL ${signalType}\n` +
+                   `💰 Price: $${price.toFixed(2)}\n` +
+                   `⚡ Strength: ${strength}%\n` +
+                   `📊 Stoch RSI: ${stochRsi.toFixed(1)}`;
+
+    try {
+      // Используем proxy для обхода CORS
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+      
+      const data = await response.json();
+      if (data.ok) {
+        addMainLog(`Telegram ${signalType} signal sent for ${symbol} (${strength}%)`, 'info');
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Signal sent</span>';
+      } else {
+        addMainLog(`Telegram API error: ${data.description || 'Unknown error'}`, 'info');
+        document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Send failed</span>';
+      }
+    } catch (error) {
+      console.error('Telegram send error:', error);
+      addMainLog('Failed to send Telegram signal - Network issue', 'info');
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Network error</span>';
+    }
+  }
+
+  function renderRow(sym){
+    const s = watchers[sym];
+    if(!s) return;
+    q(`price-${sym}`).textContent = s.lastPrice ? `$${(+s.lastPrice).toFixed(2)}` : '—';
+    
+    const longActive = s.signalLong && s.signalLong.action==='BUY' && s.signalLong.strength>=+q('strengthThresh').value;
+    const shortActive = s.signalShort && s.signalShort.action==='SELL' && s.signalShort.strength>=+q('strengthThresh').value;
+    const arrowEl = q(`arrow-${sym}`);
+    const strEl = q(`str-${sym}`);
+    
+    if(longActive && shortActive){
+      arrowEl.className='arrow flat';
+      arrowEl.textContent='↕';
+      strEl.textContent = `L${s.signalLong.strength}% / S${s.signalShort.strength}%`;
+    } else if(longActive){
+      arrowEl.className='arrow up';
+      arrowEl.textContent='↑';
+      strEl.textContent = `${s.signalLong.strength}%`;
+    } else if(shortActive){
+      arrowEl.className='arrow down';
+      arrowEl.textContent='↓';
+      strEl.textContent = `${s.signalShort.strength}%`;
+    } else {
+      arrowEl.className='arrow flat';
+      arrowEl.textContent='→';
+      strEl.textContent = '—';
+    }
+    
+    q(`sub-${sym}`).textContent = s.lastPrice ? `${(s.candles.length)} candles • ${s.candles.length?new Date(s.candles[s.candles.length-1].ts).toLocaleTimeString():''}` : '--';
+    drawSpark(sym);
+  }
+
+  function refreshWatchlist(){
+  const filter = document.querySelector('.filter-btn.active').dataset.filter;
+  WATCHLIST.forEach(sym=>{
+    const row = q(`row-${sym}`);
+    const s = watchers[sym];
+    const longActive = s.signalLong && s.signalLong.action==='BUY' && s.signalLong.strength>=+q('strengthThresh').value;
+    const shortActive = s.signalShort && s.signalShort.action==='SELL' && s.signalShort.strength>=+q('strengthThresh').value;
+    let show = true;
+    if(filter==='long') show = longActive;
+    if(filter==='short') show = shortActive;
+    if(filter==='active') show = (longActive||shortActive);
+    row.style.display = show ? 'grid' : 'none';
+    renderRow(sym);
+  });
+  updateOverviewStatus();
+  
+  const activeLong = WATCHLIST.filter(s=> watchers[s].signalLong && watchers[s].signalLong.action==='BUY' && watchers[s].signalLong.strength>=+q('strengthThresh').value).length;
+  const activeShort = WATCHLIST.filter(s=> watchers[s].signalShort && watchers[s].signalShort.action==='SELL' && watchers[s].signalShort.strength>=+q('strengthThresh').value).length;
+  q('activeCounts').textContent = `${activeLong} L / ${activeShort} S`;
+  
+  let top=null, topScore=0;
+  WATCHLIST.forEach(s=>{
+    const sc = Math.max(watchers[s].signalLong.strength||0, watchers[s].signalShort.strength||0);
+    if(sc>topScore){ topScore=sc; top=s; }
+  });
+  q('topActive').textContent = top? `${top.replace('USDT','/USDT')} ${topScore}%` : '—';
+
+  // 🔥 ДОБАВИТЬ: Обновление Market Stats для выбранного коина
+  if (currentDetail && watchers[currentDetail]) {
+    const watcher = watchers[currentDetail];
+    
+    // Price
+    if (watcher.lastPrice) {
+      q('detailPrice').textContent = `$${watcher.lastPrice.toFixed(2)}`;
+    }
+    
+    // RSI
+    if (watcher.candles && watcher.candles.length > 0) {
+      const stoch = calcStochRsi(watcher.candles);
+      q('detailRsi').textContent = Math.round(stoch.k);
+    }
+    
+    // Strength
+    const strength = Math.max(watcher.signalLong.strength || 0, watcher.signalShort.strength || 0);
+    q('detailStrength').textContent = `${strength}%`;
+  }
+}
+  
+  
+
+  async function scanLoop(){
+    if(!isRunning) return;
+    const promises = WATCHLIST.map((sym,i)=>{
+      return new Promise(resolve=>{
+        setTimeout(async ()=>{
+          try{
+            const candles = await fetchCandles(sym, interval, CANDLES_LIMIT);
+            watchers[sym].candles = candles;
+            watchers[sym].lastPrice = candles[candles.length-1].close;
+            generateSignalFor(sym);
+            renderRow(sym);
+          }catch(err){
+            console.error('scan error',err);
+          }finally{ resolve(); }
+        }, i* (UPDATE_BATCH_MS/2));
+      });
+    });
+    await Promise.all(promises);
+    refreshWatchlist();
+    updateTimer = setTimeout(scanLoop, UPDATE_BATCH_MS);
+  }
+
+  function startScanning() {
+  if (isRunning) return;
+  isRunning = true;
+  updateConnectionStatus(true);
+  addMainLog('Started multi-scan');
+  
+  // 🔥 АВТОВЫБОР BITCOIN ПРИ СТАРТЕ
+  setTimeout(() => {
+    if (WATCHLIST.includes('BTCUSDT')) {
+      openDetailFor('BTCUSDT');
+      addMainLog('Auto-selected BTCUSDT');
+    }
+  }, 1000);
+  
+  scanLoop();
+}
+
+  function stopScanning() {
+    if (!isRunning) return;
+    isRunning = false;
+    updateConnectionStatus(false);
+    if (updateTimer) {
+      clearTimeout(updateTimer);
+      updateTimer = null;
+    }
+    addMainLog('Stopped scanning');
+  }
+
+  // 🔥 ОБНОВЛЕНО: Добавлена анимация для сигналов
+ function openDetailFor(sym){
+  console.log('=== DEBUG DETAIL ===');
+  console.log('Symbol:', sym);
+  console.log('Watcher data:', watchers[sym]);
+  console.log('Long signal:', watchers[sym]?.signalLong);
+  console.log('Short signal:', watchers[sym]?.signalShort);
+  console.log('Long desc:', watchers[sym]?.signalLong?.desc);
+  console.log('Short desc:', watchers[sym]?.signalShort?.desc);
+  
+  currentDetail = sym;
+	
+      // 🔥 НОВОЕ: Анимация появления
+  const detailPanel = q('detailPanel');
+  detailPanel.classList.add('signal-pulse');
+  setTimeout(() => detailPanel.classList.remove('signal-pulse'), 2000);
+  
+  updateSignalIcon(sym);
+   // 🔥 ЗАЩИТА ОТ ОШИБОК
+  const longDesc = watchers[sym]?.signalLong?.desc || 'NO DATA';
+  const shortDesc = watchers[sym]?.signalShort?.desc || 'NO DATA';
+  
+  // ОБНОВЛЕНИЕ UI
+  q('detailTitle').textContent = sym.replace('USDT','/USDT');
+  q('detailSubtitle').textContent = `Interval: ${interval} • ${watchers[sym]?.candles?.length || 0} candles`;
+  q('detailPrice').textContent = watchers[sym]?.lastPrice ? `$${(+watchers[sym].lastPrice).toFixed(2)}` : '--';
+  q('detailRsi').textContent = (function(){ 
+    const s = watchers[sym]; 
+    if(s?.candles?.length){ 
+      const st = calcStochRsi(s.candles); 
+      return Math.round(st.k); 
+    } 
+    return '--'; 
+  })();
+  q('detailSignalText').textContent = `${watchers[sym]?.signalLong?.action || '-'}/${watchers[sym]?.signalShort?.action || '-'}`;
+  q('detailStrength').textContent = `${Math.max(watchers[sym]?.signalLong?.strength||0, watchers[sym]?.signalShort?.strength||0)}%`;
+  q('detailStrengthFill').style.width = `${Math.max(watchers[sym]?.signalLong?.strength||0, watchers[sym]?.signalShort?.strength||0)}%`;
+  q('detailDesc').textContent = `L: ${longDesc} | S: ${shortDesc}`;
+  
+  q('detailMiniLog').innerHTML = `<div>${new Date().toLocaleTimeString()} • Loaded detail for ${sym}</div>`;
+  
+  loadTradingViewChart(sym);
+} 
+
+  function loadTradingViewChart(symbol) {
+    if (!tradingviewLoaded) {
+      tradingviewLoaded = true;
+    }
+    initTradingViewWidget(symbol);
+  }
+
+  function initTradingViewWidget(symbol) {
+    try {
+      if (tvWidget) {
+        try { 
+          tvWidget.remove(); 
+        } catch(e) {}
+      }
+      
+      const intervalMap = {
+        '1m': '1',
+        '5m': '5', 
+        '15m': '15',
+        '1h': '60',
+        '4h': '240'
+      };
+      
+      const tvInterval = intervalMap[interval] || '5';
+      
+      tvWidget = new TradingView.widget({
+        autosize: true,
+        symbol: `BINANCE:${symbol}`,
+        interval: tvInterval,
+        timezone: 'Etc/UTC',
+        theme: 'dark',
+        container_id: 'tvContainer',
+        studies: ['VWAP@tv-basicstudies'],
+        locale: 'en',
+        toolbar_bg: '#111111',
+        enable_publishing: false,
+        allow_symbol_change: false,
+        hide_side_toolbar: false
+      });
+      
+      addMainLog(`TradingView loaded for ${symbol}`);
+    } catch(e) {
+      q('tvContainer').innerHTML = '<div style="color:var(--muted); padding:20px; text-align:center">Chart init error</div>';
+      console.error('TradingView error:', e);
+    }
+  }
+
+  // 🔥 НОВОЕ: Функция тестирования Telegram соединения
+  async function testTelegramConnection() {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">Enter Telegram credentials</span>';
+      return;
+    }
+    
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const data = await response.json();
+      
+      if (data.ok) {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Connected</span>';
+        addMainLog('Telegram connection successful', 'info');
+      } else {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-error">Invalid token</span>';
+      }
+    } catch (error) {
+      console.error('Telegram test error:', error);
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">Connection failed</span>';
+    }
+  }
+
+  // Fullscreen functionality
+  q('btnFullscreen').addEventListener('click', () => {
+    const chartContainer = document.querySelector('.tradingview-container');
+    if (!document.fullscreenElement) {
+      chartContainer.requestFullscreen().catch(err => {
+        console.log(`Fullscreen error: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
+  // UI wiring
+  document.addEventListener('DOMContentLoaded', ()=>{
+    renderWatchlistUI();
+    
+    document.querySelectorAll('.filter-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        refreshWatchlist();
+      });
+    });
+    
+    q('startBtn').addEventListener('click', ()=>{ 
+      interval = q('intervalSelect').value; 
+      startScanning(); 
+      q('startBtn').textContent = 'Running';
+      q('startBtn').style.opacity = '0.7';
+    });
+    
+    q('stopBtn').addEventListener('click', ()=> {
+      stopScanning();
+      q('startBtn').textContent = 'Start';
+      q('startBtn').style.opacity = '1';
+    });
+    
+   // Замени текст в helpBtn
+q('helpBtn').addEventListener('click', () => {
+  alert(`🚀 MULTISCAN PRO - TRADING ASSISTANT
+
+📊 WHAT THIS DOES:
+• Scans 19 cryptocurrencies in real-time
+• Uses Gaussian Channel + Stochastic RSI strategy
+• Shows BUY/SELL signals with strength percentage
+• Auto-Telegram alerts for strong signals (>75%)
+• Live TradingView charts for detailed analysis
+
+🎯 HOW TO USE:
+1. Press START to begin scanning
+2. Click any coin to view details
+3. Use filters: All/Long/Short/Active
+4. Set strength threshold (60%+ recommended)
+5. Charts tab shows 4 simultaneous charts
+
+⚡ STRATEGY:
+BUY when: Gaussian bullish + Price above high band + Stoch RSI extreme
+SELL when: Price crosses below Gaussian high band
+
+💡 TIP: Combine with other indicators for confirmation!`);
+});
+    
+    q('strengthThresh').addEventListener('change', ()=> refreshWatchlist());
+    
+    q('intervalSelect').addEventListener('change', function() {
+      interval = this.value;
+      if (currentDetail) {
+        loadTradingViewChart(currentDetail);
+      }
+    });
+
+    // 🔥 НОВОЕ: Обработчик для тестирования Telegram
+    q('btnTgTestConn').addEventListener('click', testTelegramConnection);
+
+    addMainLog('UI initialized');
+    addMainLog('Ready. Press Start to begin scanning.');
+    
+    // AUTO-START
+    setTimeout(()=>{
+      interval = q('intervalSelect').value || interval;
+      startScanning();
+      q('startBtn').textContent = 'Running';
+      q('startBtn').style.opacity = '0.7';
+    }, 300);
+  });
+
+  window.openDetailFor = openDetailFor;
+  
+ // 🔥 ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК - ДОБАВЬ В КОНЕЦ
+document.querySelectorAll('[data-tab]').forEach(btn => {
+  btn.addEventListener('click', function() {
+    // Деактивируем все кнопки вкладок
+    document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
+    // Активируем текущую
+    this.classList.add('active');
+    
+    const tab = this.dataset.tab;
+    
+    // Переключаем панели
+    document.getElementById('scannerPanel').style.display = tab === 'scanner' ? 'flex' : 'none';
+    document.getElementById('chartsPanel').style.display = tab === 'charts' ? 'block' : 'none';
+    
+    // Если переключились на Charts - загружаем их
+    if (tab === 'charts') {
+      setTimeout(loadCharts, 100);
+    }
+  });
+});
+
+// 🔥 ФУНКЦИЯ ДЛЯ ЗАГРУЗКИ 4 CHARTS
+function loadCharts() {
+  const chartConfigs = [
+    { container: 'tvChart1', symbol: 'BTCUSDT' },
+    { container: 'tvChart2', symbol: 'ETHUSDT' },
+    { container: 'tvChart3', symbol: 'BNBUSDT' },
+    { container: 'tvChart4', symbol: 'SOLUSDT' }
+  ];
+  
+  // Добавь в конец скриптов
+document.querySelector('.logo').addEventListener('click', () => {
+  location.reload(); // 🔥 ПЕРЕЗАГРУЗКА СТРАНИЦЫ
+});
+  
+  chartConfigs.forEach((config, index) => {
+    setTimeout(() => {
+      if (window.TradingView) {
+        try {
+          new TradingView.widget({
+            autosize: true,
+            symbol: `BINANCE:${config.symbol}`,
+            interval: '5',
+            timezone: 'Etc/UTC',
+            theme: 'dark',
+            container_id: config.container,
+            studies: ['StochasticRSI@tv-basicstudies','RSI@tv-basicstudies'],
+            locale: 'en'
+          });
+          console.log(`Chart ${config.symbol} loaded`);
+        } catch(e) {
+          console.error('Chart error:', e);
+        }
+      }
+    }, index * 500);
+  });
+}
+
+  </script>
+</body>
+</html>
