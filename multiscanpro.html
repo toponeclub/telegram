@@ -1083,6 +1083,61 @@
     loadTradingViewChart(sym);
   }
 
+  // 🔥 СОРТИРОВКА ТОЛЬКО ДЛЯ АКТИВНОЙ СЕКЦИИ
+function refreshWatchlist(){
+    const filter = document.querySelector('.filter-btn.active').dataset.filter;
+    WATCHLIST.forEach(sym=>{
+        const row = q(`row-${sym}`);
+        const s = watchers[sym];
+        const longActive = s.signalLong && s.signalLong.action==='BUY' && s.signalLong.strength>=+q('strengthThresh').value;
+        const shortActive = s.signalShort && s.signalShort.action==='SELL' && s.signalShort.strength>=+q('strengthThresh').value;
+        let show = true;
+        
+        if(filter==='long') show = longActive;
+        if(filter==='short') show = shortActive;
+        if(filter==='active') show = (longActive||shortActive);
+        
+        row.style.display = show ? 'grid' : 'none';
+        renderRow(sym);
+    });
+    
+    // 🔥 СОРТИРОВКА ТОЛЬКО ДЛЯ АКТИВНОЙ СЕКЦИИ
+    if (filter === 'active') {
+        sortActiveByStrength();
+    }
+    
+    updateOverviewStatus();
+}
+
+// 🔥 СОРТИРОВКА АКТИВНЫХ СИГНАЛОВ ПО СИЛЕ
+function sortActiveByStrength() {
+    const container = q('watchlistContainer');
+    const visibleRows = Array.from(container.querySelectorAll('.coin-row[style*="display: grid"]'));
+    
+    // Сортируем только видимые (активные) строки по силе сигнала (по убыванию)
+    visibleRows.sort((a, b) => {
+        const symA = a.id.replace('row-', '');
+        const symB = b.id.replace('row-', '');
+        const watcherA = watchers[symA];
+        const watcherB = watchers[symB];
+        
+        // Вычисляем максимальную силу сигнала для каждого символа
+        const strengthA = Math.max(
+            watcherA?.signalLong?.strength || 0, 
+            watcherA?.signalShort?.strength || 0
+        );
+        const strengthB = Math.max(
+            watcherB?.signalLong?.strength || 0, 
+            watcherB?.signalShort?.strength || 0
+        );
+        
+        return strengthB - strengthA; // По убыванию
+    });
+    
+    // Перемещаем отсортированные строки обратно в контейнер
+    visibleRows.forEach(row => container.appendChild(row));
+}
+
   // TRADINGVIEW
   function loadTradingViewChart(symbol) {
     if (!tradingviewLoaded) {
