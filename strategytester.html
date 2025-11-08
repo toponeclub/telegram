@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Strategy Backtester</title>
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111;
+            --surface-light: #1a1a1a;
+            --border: #222;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #00d07a;
+            --danger: #ef4444;
+            --warn: #f59e0b;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 8px;
+            gap: 8px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .badge {
+            background: var(--purple);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--border);
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            color: black;
+            border-color: var(--accent);
+        }
+
+        .btn.primary:hover {
+            background: #00b86c;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            gap: 8px;
+            min-height: 0;
+        }
+
+        .chart-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 6px;
+            padding: 8px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .chart-btn {
+            padding: 4px 8px;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .chart-btn.active {
+            background: var(--accent);
+            color: black;
+            border-color: var(--accent);
+        }
+
+        #priceChart {
+            flex: 1;
+            width: 100%;
+        }
+
+        .execution-progress {
+            padding: 6px 8px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 3px;
+            background: var(--surface-light);
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .right-panel {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 350px;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--surface);
+            border-radius: 6px 6px 0 0;
+            overflow: hidden;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 8px 12px;
+            background: var(--surface);
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 11px;
+            text-align: center;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            background: var(--surface-light);
+            color: var(--text);
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            border-radius: 0 0 6px 6px;
+            border: 1px solid var(--border);
+            border-top: none;
+            overflow: hidden;
+        }
+
+        .tab-pane {
+            flex: 1;
+            display: none;
+            overflow: auto;
+            padding: 12px;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .stat-card {
+            background: var(--surface-light);
+            border-radius: 6px;
+            padding: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 4px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .positive {
+            color: var(--accent);
+        }
+
+        .negative {
+            color: var(--danger);
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .code-container {
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            flex-shrink: 0;
+            height: 300px;
+            min-height: 250px;
+            max-height: 400px;
+            resize: vertical;
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--surface-light);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-title {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            height: calc(100% - 40px);
+            background: var(--bg);
+            color: var(--text);
+            border: none;
+            padding: 12px;
+            resize: none;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        textarea:focus {
+            outline: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        th, td {
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .analysis-result {
+            margin-top: 8px;
+            padding: 8px;
+            background: var(--surface-light);
+            border-radius: 4px;
+            border-left: 3px solid var(--accent);
+            font-size: 11px;
+        }
+
+        .analysis-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--accent);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 16px;
+            border-radius: 6px;
+            z-index: 1000;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .strategy-examples {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .example-btn {
+            padding: 4px 8px;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            transition: all 0.2s;
+        }
+
+        .example-btn:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+       
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .right-panel {
+                width: 100%;
+                min-width: auto;
+            }
+            
+            .code-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <span>Strategy Backtester</span>
+                <div class="badge">PRO</div>
+            </div>
+            <div class="controls">
+                                <button class="btn" id="randomizeBtn">New Market</button>
+                <button class="btn primary" id="runStrategy">Run Strategy</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chart-section">
+                <div class="loading" id="chartLoading">
+                    <div>Executing strategy...</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                
+                <div class="chart-controls">
+                    <button class="chart-btn active">Candles</button>
+                    <div style="flex: 1"></div>
+                    <button class="btn" id="toggleVolume">Volume: OFF</button>
+                </div>
+                
+                <div id="priceChart"></div>
+                
+                <div class="execution-progress">
+                    <div id="progressText">Ready to execute strategy</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="executionProgress"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="tabs">
+                    <button class="tab active" data-tab="overview">Overview</button>
+                    <button class="tab" data-tab="performance">Performance</button>
+                    <button class="tab" data-tab="trades">Trades</button>
+                </div>
+
+                <div class="tab-content">
+                    <div id="overview" class="tab-pane active">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-label">Total P&L</div>
+                                <div class="stat-value" id="totalPnL">$0.00</div>
+                                <div class="stat-label" id="totalPnLPercent">+0.00%</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Max Drawdown</div>
+                                <div class="stat-value negative" id="maxDrawdown">-$0.00</div>
+                                <div class="stat-label negative" id="maxDrawdownPercent">-0.00%</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Total Trades</div>
+                                <div class="stat-value" id="totalTrades">0</div>
+                                <div class="stat-label">Win Rate</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Profit Factor</div>
+                                <div class="stat-value positive" id="profitFactor">0.00</div>
+                                <div class="stat-label">Risk/Reward</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Sharpe Ratio</div>
+                                <div class="stat-value positive" id="sharpeRatio">0.00</div>
+                                <div class="stat-label">Risk Adjusted</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Buy & Hold</div>
+                                <div class="stat-value positive" id="buyHoldReturn">+0.00%</div>
+                                <div class="stat-label">Strategy vs B&H</div>
+                            </div>
+                        </div>
+
+                        <div class="analysis-result">
+                            <div class="analysis-title">Strategy Analysis</div>
+                            <div id="analysisResultText">Ready to execute strategy. Write your code and click Run Strategy.</div>
+                        </div>
+                    </div>
+
+                    <div id="performance" class="tab-pane">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-label">Gross Profit</div>
+                                <div class="stat-value positive" id="grossProfit">$0.00</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Gross Loss</div>
+                                <div class="stat-value negative" id="grossLoss">$0.00</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Avg Win / Loss</div>
+                                <div class="stat-value positive" id="winLossRatio">0.00</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Profit per Trade</div>
+                                <div class="stat-value positive" id="avgTrade">$0.00</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Winning Trades</div>
+                                <div class="stat-value positive" id="winningTrades">0</div>
+                                <div class="stat-label" id="winningTradesPercent">0.0%</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Losing Trades</div>
+                                <div class="stat-value negative" id="losingTrades">0</div>
+                                <div class="stat-label" id="losingTradesPercent">0.0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="trades" class="tab-pane">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Entry</th>
+                                    <th>Exit</th>
+                                    <th>P&L</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tradesTableBody">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: var(--muted);">No trades executed yet</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="code-container">
+                    <div class="code-header">
+                        <div class="code-title">Strategy Code</div>
+                        <div class="strategy-examples">
+                            <button class="example-btn" data-example="sma">SMA Crossover</button>
+                            <button class="example-btn" data-example="rsi">RSI Strategy</button>
+                            <button class="example-btn" data-example="alligator">Alligator</button>
+                        </div>
+                    </div>
+                    <textarea id="strategyCode">// Simple Moving Average Crossover Strategy
+function strategy(marketData) {
+    const trades = [];
+    let position = null;
+    let equity = 10000;
+    const equityCurve = [equity];
+    
+    // Calculate indicators
+    const fastSMA = calculateSMA(marketData, 10);
+    const slowSMA = calculateSMA(marketData, 20);
+    const rsi = calculateRSI(marketData, 14);
+    
+    // Execute strategy
+    for (let i = 20; i < marketData.length; i++) {
+        const candle = marketData[i];
+        const currentEquity = equityCurve[equityCurve.length - 1];
+        
+        // Buy condition
+        const buyCondition = fastSMA[i] > slowSMA[i] && 
+                            fastSMA[i-1] <= slowSMA[i-1] && 
+                            rsi[i] < 70;
+        
+        // Sell condition
+        const sellCondition = fastSMA[i] < slowSMA[i] && 
+                             fastSMA[i-1] >= slowSMA[i-1] && 
+                             rsi[i] > 30;
+        
+        // Close position
+        if (position) {
+            const unrealizedPL = (candle.close - position.entryPrice) * position.size;
+            const stopLoss = position.entryPrice * 0.95;
+            const takeProfit = position.entryPrice * 1.10;
+            
+            if (candle.close <= stopLoss || candle.close >= takeProfit || sellCondition) {
+                trades.push({
+                    id: trades.length + 1,
+                    type: 'LONG',
+                    entryTime: position.entryTime,
+                    entryPrice: position.entryPrice,
+                    exitTime: candle.timestamp,
+                    exitPrice: candle.close,
+                    size: position.size,
+                    pnl: unrealizedPL
+                });
+                
+                equity += unrealizedPL;
+                position = null;
+            }
+        }
+        
+        // Open new position
+        if (!position && buyCondition && currentEquity > 100) {
+            position = {
+                type: 'LONG',
+                entryTime: candle.timestamp,
+                entryPrice: candle.close,
+                size: currentEquity * 0.1 / candle.close
+            };
+        }
+        
+        equityCurve.push(equity);
+    }
+    
+    // Close open position
+    if (position) {
+        const lastCandle = marketData[marketData.length - 1];
+        const unrealizedPL = (lastCandle.close - position.entryPrice) * position.size;
+        
+        trades.push({
+            id: trades.length + 1,
+            type: position.type,
+            entryTime: position.entryTime,
+            entryPrice: position.entryPrice,
+            exitTime: lastCandle.timestamp,
+            exitPrice: lastCandle.close,
+            size: position.size,
+            pnl: unrealizedPL
+        });
+        
+        equity += unrealizedPL;
+    }
+    
+    return { trades, equityCurve, finalEquity: equity };
+}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== GLOBAL VARIABLES ====================
+        let chart = null;
+        let candlestickSeries = null;
+        let volumeSeries = null;
+        let volumeVisible = true;
+        let marketData = [];
+        let currentTrades = [];
+        let currentEquityCurve = [];
+        let isExecuting = false;
+
+        // ==================== CHART INITIALIZATION ====================
+function initializeChart() {
+    const chartContainer = document.getElementById('priceChart');
+    chartContainer.innerHTML = '';
+    
+    chart = LightweightCharts.createChart(chartContainer, {
+        width: chartContainer.clientWidth,
+        height: chartContainer.clientHeight,
+        layout: {
+            background: { color: '#111' },
+            textColor: '#94a3b8',
+        },
+        grid: {
+            vertLines: { color: 'rgba(42, 46, 57, 0.5)' },
+            horzLines: { color: 'rgba(42, 46, 57, 0.5)' },
+        },
+        crosshair: {
+            mode: LightweightCharts.CrosshairMode.Normal,
+        },
+        rightPriceScale: {
+            borderColor: 'rgba(42, 46, 57, 0.8)',
+            scaleMargins: {
+                top: 0.1,    // 10% top margin for candles
+                bottom: 0.4, // 40% bottom margin for volume (creates separation)
+            },
+        },
+        timeScale: {
+            borderColor: 'rgba(42, 46, 57, 0.8)',
+            timeVisible: true,
+            secondsVisible: false,
+        },
+        handleScroll: {
+            mouseWheel: true,
+            pressedMouseMove: true,
+        },
+        handleScale: {
+            axisPressedMouseMove: true,
+            mouseWheel: true,
+            pinch: true,
+        },
+    });
+
+    // Candlestick series
+    candlestickSeries = chart.addCandlestickSeries({
+        upColor: '#00d07a',
+        downColor: '#ef4444',
+        borderDownColor: '#ef4444',
+        borderUpColor: '#00d07a',
+        wickDownColor: '#ef4444',
+        wickUpColor: '#00d07a',
+    });
+
+    // Volume series with proper separation
+    volumeSeries = chart.addHistogramSeries({
+        color: '#26a69a',
+        priceFormat: {
+            type: 'volume',
+        },
+        priceScaleId: 'volume', // Separate price scale for volume
+    });
+
+    // Configure volume price scale to appear at bottom
+    chart.priceScale('volume').applyOptions({
+        scaleMargins: {
+            top: 0.7,  // Volume starts at 70% from top (below candles)
+            bottom: 0,  // Volume goes to bottom
+        },
+    });
+
+    return chart;
+}
+
+      function updateChartData(marketData, trades = []) {
+    if (!candlestickSeries) return;
+
+    const chartData = marketData.map(item => ({
+        time: item.timestamp / 1000,
+        open: item.open,
+        high: item.high,
+        low: item.low,
+        close: item.close,
+    }));
+
+    const volumeData = marketData.map(item => ({
+        time: item.timestamp / 1000,
+        value: item.volume,
+        color: item.close >= item.open ? 'rgba(0, 208, 122, 0.8)' : 'rgba(239, 68, 68, 0.8)',
+    }));
+
+    // Update candlestick data
+    candlestickSeries.setData(chartData);
+    
+    // Update volume data (always visible)
+    volumeSeries.setData(volumeData);
+
+    // Clear previous markers by recreating the series
+    chart.removeSeries(candlestickSeries);
+    candlestickSeries = chart.addCandlestickSeries({
+        upColor: '#00d07a',
+        downColor: '#ef4444',
+        borderDownColor: '#ef4444',
+        borderUpColor: '#00d07a',
+        wickDownColor: '#ef4444',
+        wickUpColor: '#00d07a',
+    });
+    candlestickSeries.setData(chartData);
+
+   // Add ALL trade markers
+const allMarkers = [];
+trades.forEach(trade => {
+    // Buy - Arrow up (triangle shape)
+    allMarkers.push({
+        time: trade.entryTime / 1000,
+        position: 'belowBar',
+        color: '#00ff88',
+        shape: 'arrowUp', // Built-in triangle
+        size: 1.5
+    });
+    
+    // Sell - Arrow down (triangle shape)
+    allMarkers.push({
+        time: trade.exitTime / 1000,
+        position: 'aboveBar',
+        color: '#ff2e63',
+        shape: 'arrowDown', // Built-in triangle
+        size: 1.5
+    });
+});
+
+    // Set ALL markers at once
+    candlestickSeries.setMarkers(allMarkers);
+
+    chart.timeScale().fitContent();
+}
+
+        // ==================== MARKET DATA & INDICATORS ====================
+        function generateMarketData() {
+            const data = [];
+            let price = 50000;
+            const startDate = new Date('2018-01-01');
+            const endDate = new Date('2026-12-31');
+            let currentDate = new Date(startDate);
+            
+            const phases = [
+                { start: '2018-01-01', end: '2018-12-31', trend: -0.8, volatility: 0.08 },
+                { start: '2019-01-01', end: '2020-02-29', trend: 0.4, volatility: 0.05 },
+                { start: '2020-03-01', end: '2021-11-30', trend: 2.0, volatility: 0.12 },
+                { start: '2021-12-01', end: '2023-06-30', trend: -1.2, volatility: 0.10 },
+                { start: '2023-07-01', end: '2024-12-31', trend: 1.5, volatility: 0.07 },
+                { start: '2025-01-01', end: '2026-12-31', trend: 0.8, volatility: 0.09 }
+            ];
+            
+            let currentPhase = 0;
+            
+            while (currentDate <= endDate) {
+                if (currentDate > new Date(phases[currentPhase].end) && currentPhase < phases.length - 1) {
+                    currentPhase++;
+                }
+                
+                const phase = phases[currentPhase];
+                const dailyTrend = phase.trend / 365;
+                const volatility = phase.volatility;
+                
+                const randomWalk = (Math.random() - 0.5) * 2;
+                const changePercent = dailyTrend + (randomWalk * volatility);
+                const newPrice = price * (1 + changePercent);
+                
+                const open = price;
+                const close = newPrice;
+                const high = Math.max(open, close) * (1 + Math.random() * 0.02);
+                const low = Math.min(open, close) * (1 - Math.random() * 0.02);
+                
+                data.push({
+                    timestamp: new Date(currentDate).getTime(),
+                    open: parseFloat(open.toFixed(2)),
+                    high: parseFloat(high.toFixed(2)),
+                    low: parseFloat(low.toFixed(2)),
+                    close: parseFloat(close.toFixed(2)),
+                    volume: parseFloat((10000 + Math.random() * 5000).toFixed(2))
+                });
+                
+                price = close;
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            return data;
+        }
+
+        function calculateSMA(data, period) {
+            const sma = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) {
+                    sma.push(null);
+                } else {
+                    const sum = data.slice(i - period + 1, i + 1)
+                        .reduce((acc, val) => acc + val.close, 0);
+                    sma.push(sum / period);
+                }
+            }
+            return sma;
+        }
+
+        function calculateRSI(data, period) {
+            const rsi = [];
+            const gains = [];
+            const losses = [];
+            
+            for (let i = 1; i < data.length; i++) {
+                const change = data[i].close - data[i-1].close;
+                gains.push(change > 0 ? change : 0);
+                losses.push(change < 0 ? Math.abs(change) : 0);
+            }
+            
+            for (let i = period; i < gains.length; i++) {
+                const avgGain = gains.slice(i - period, i).reduce((a, b) => a + b, 0) / period;
+                const avgLoss = losses.slice(i - period, i).reduce((a, b) => a + b, 0) / period;
+                
+                if (avgLoss === 0) {
+                    rsi.push(100);
+                } else {
+                    const rs = avgGain / avgLoss;
+                    rsi.push(100 - (100 / (1 + rs)));
+                }
+            }
+            
+            return Array(period + 1).fill(null).concat(rsi);
+        }
+
+        // ==================== STRATEGY EXECUTION ====================
+        function executeStrategyRealTime(strategyCode, marketData) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const strategyFunction = new Function('marketData', `
+                        ${strategyCode}
+                        return strategy(marketData);
+                    `);
+                    
+                    const result = strategyFunction(marketData);
+                    resolve(result);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+
+        // ==================== STATISTICS CALCULATION ====================
+        function calculateStatistics(trades, equityCurve, initialCapital = 10000) {
+            if (trades.length === 0) {
+                const buyHoldReturn = ((equityCurve[equityCurve.length - 1] - initialCapital) / initialCapital) * 100;
+                return {
+                    totalTrades: 0,
+                    profitableTrades: 0,
+                    winRate: 0,
+                    totalPnL: 0,
+                    totalPnLPercent: 0,
+                    profitFactor: 0,
+                    maxDrawdown: 0,
+                    maxDrawdownPercent: 0,
+                    avgTrade: 0,
+                    avgWin: 0,
+                    avgLoss: 0,
+                    buyHoldReturn: parseFloat(buyHoldReturn.toFixed(2)),
+                    grossProfit: 0,
+                    grossLoss: 0,
+                    sharpeRatio: 0
+                };
+            }
+            
+            const profitableTrades = trades.filter(t => t.pnl > 0).length;
+            const winRate = (profitableTrades / trades.length) * 100;
+            
+            const totalPnL = trades.reduce((sum, t) => sum + t.pnl, 0);
+            const totalPnLPercent = (totalPnL / initialCapital) * 100;
+            
+            const grossProfit = trades.filter(t => t.pnl > 0).reduce((sum, t) => sum + t.pnl, 0);
+            const grossLoss = Math.abs(trades.filter(t => t.pnl < 0).reduce((sum, t) => sum + t.pnl, 0));
+            const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
+            
+            let maxEquity = initialCapital;
+            let maxDrawdown = 0;
+            let maxDrawdownPercent = 0;
+            
+            equityCurve.forEach(equity => {
+                if (equity > maxEquity) maxEquity = equity;
+                const drawdown = maxEquity - equity;
+                const drawdownPercent = (drawdown / maxEquity) * 100;
+                
+                if (drawdown > maxDrawdown) {
+                    maxDrawdown = drawdown;
+                    maxDrawdownPercent = drawdownPercent;
+                }
+            });
+            
+            const winningTrades = trades.filter(t => t.pnl > 0);
+            const losingTrades = trades.filter(t => t.pnl < 0);
+            
+            const avgTrade = totalPnL / trades.length;
+            const avgWin = winningTrades.length > 0 ? 
+                winningTrades.reduce((sum, t) => sum + t.pnl, 0) / winningTrades.length : 0;
+            const avgLoss = losingTrades.length > 0 ? 
+                losingTrades.reduce((sum, t) => sum + t.pnl, 0) / losingTrades.length : 0;
+            
+            // Sharpe ratio (simplified)
+            const returns = [];
+            for (let i = 1; i < equityCurve.length; i++) {
+                returns.push((equityCurve[i] - equityCurve[i-1]) / equityCurve[i-1]);
+            }
+            const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+            const stdDev = Math.sqrt(returns.reduce((a, b) => a + Math.pow(b - avgReturn, 2), 0) / returns.length);
+            const sharpeRatio = stdDev === 0 ? 0 : avgReturn / stdDev * Math.sqrt(252);
+            
+            const buyHoldReturn = ((equityCurve[equityCurve.length - 1] - initialCapital) / initialCapital) * 100;
+            
+            return {
+                totalTrades: trades.length,
+                profitableTrades,
+                winRate: parseFloat(winRate.toFixed(2)),
+                totalPnL: parseFloat(totalPnL.toFixed(2)),
+                totalPnLPercent: parseFloat(totalPnLPercent.toFixed(2)),
+                profitFactor: parseFloat(profitFactor.toFixed(2)),
+                maxDrawdown: parseFloat(maxDrawdown.toFixed(2)),
+                maxDrawdownPercent: parseFloat(maxDrawdownPercent.toFixed(2)),
+                avgTrade: parseFloat(avgTrade.toFixed(2)),
+                avgWin: parseFloat(avgWin.toFixed(2)),
+                avgLoss: parseFloat(avgLoss.toFixed(2)),
+                buyHoldReturn: parseFloat(buyHoldReturn.toFixed(2)),
+                grossProfit: parseFloat(grossProfit.toFixed(2)),
+                grossLoss: parseFloat(grossLoss.toFixed(2)),
+                sharpeRatio: parseFloat(sharpeRatio.toFixed(2))
+            };
+        }
+
+        // ==================== UI UPDATES ====================
+        function updateStatistics(stats) {
+            const safeFormat = (value, defaultValue = '0') => {
+                if (value === undefined || value === null) return defaultValue;
+                return typeof value === 'number' ? value.toFixed(2) : defaultValue;
+            };
+
+            document.getElementById('totalPnL').textContent = `$${safeFormat(stats.totalPnL)}`;
+            document.getElementById('totalPnL').className = `stat-value ${stats.totalPnL >= 0 ? 'positive' : 'negative'}`;
+            
+            document.getElementById('totalPnLPercent').textContent = `${stats.totalPnLPercent >= 0 ? '+' : ''}${safeFormat(stats.totalPnLPercent)}%`;
+            
+            document.getElementById('maxDrawdown').textContent = `-$${safeFormat(Math.abs(stats.maxDrawdown))}`;
+            document.getElementById('maxDrawdownPercent').textContent = `-${safeFormat(stats.maxDrawdownPercent)}%`;
+            
+            document.getElementById('totalTrades').textContent = stats.totalTrades || '0';
+            document.getElementById('profitFactor').textContent = safeFormat(stats.profitFactor);
+            document.getElementById('sharpeRatio').textContent = safeFormat(stats.sharpeRatio);
+            document.getElementById('buyHoldReturn').textContent = `${stats.buyHoldReturn >= 0 ? '+' : ''}${safeFormat(stats.buyHoldReturn)}%`;
+            document.getElementById('buyHoldReturn').className = `stat-value ${stats.buyHoldReturn >= 0 ? 'positive' : 'negative'}`;
+
+            document.getElementById('grossProfit').textContent = `$${safeFormat(stats.grossProfit)}`;
+            document.getElementById('grossLoss').textContent = `$${safeFormat(Math.abs(stats.grossLoss))}`;
+            document.getElementById('winLossRatio').textContent = stats.avgLoss ? safeFormat(Math.abs(stats.avgWin / stats.avgLoss)) : '0.00';
+            document.getElementById('avgTrade').textContent = `$${safeFormat(stats.avgTrade)}`;
+
+            document.getElementById('winningTrades').textContent = stats.profitableTrades || '0';
+            document.getElementById('losingTrades').textContent = (stats.totalTrades - (stats.profitableTrades || 0)) || '0';
+            document.getElementById('winningTradesPercent').textContent = `${safeFormat(stats.winRate)}%`;
+            document.getElementById('losingTradesPercent').textContent = `${safeFormat(100 - (stats.winRate || 0))}%`;
+        }
+
+        function updateTradesTable(trades) {
+            const tbody = document.getElementById('tradesTableBody');
+            tbody.innerHTML = '';
+            
+            if (trades.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td colspan="5" style="text-align: center; color: var(--muted);">No trades executed</td>`;
+                tbody.appendChild(row);
+                return;
+            }
+            
+            const recentTrades = [...trades].reverse().slice(0, 20);
+            
+            recentTrades.forEach(trade => {
+                const row = document.createElement('tr');
+                const entryDate = new Date(trade.entryTime).toLocaleDateString();
+                const exitDate = new Date(trade.exitTime).toLocaleDateString();
+                
+                row.innerHTML = `
+                    <td>${entryDate}</td>
+                    <td>${trade.type}</td>
+                    <td>$${trade.entryPrice.toFixed(2)}</td>
+                    <td>$${trade.exitPrice.toFixed(2)}</td>
+                    <td class="${trade.pnl >= 0 ? 'positive' : 'negative'}">
+                        ${trade.pnl >= 0 ? '+' : ''}$${trade.pnl.toFixed(2)}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // ==================== EVENT HANDLERS ====================
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        document.getElementById('randomizeBtn').addEventListener('click', () => {
+            const loadingElement = document.getElementById('chartLoading');
+            loadingElement.style.display = 'block';
+            
+            setTimeout(() => {
+                marketData = generateMarketData();
+                updateChartData(marketData, []);
+                loadingElement.style.display = 'none';
+                document.getElementById('analysisResultText').textContent = 'New market data generated.';
+            }, 500);
+        });
+
+      
+
+        document.getElementById('runStrategy').addEventListener('click', async () => {
+            if (isExecuting) return;
+            
+            const code = document.getElementById('strategyCode').value;
+            const runBtn = document.getElementById('runStrategy');
+            const loadingElement = document.getElementById('chartLoading');
+            const progressElement = document.getElementById('executionProgress');
+            const progressText = document.getElementById('progressText');
+            
+            if (marketData.length === 0) {
+                marketData = generateMarketData();
+            }
+            
+            try {
+                isExecuting = true;
+                loadingElement.style.display = 'block';
+                runBtn.textContent = 'Running...';
+                runBtn.disabled = true;
+                
+                progressElement.style.width = '50%';
+                progressText.textContent = 'Executing strategy...';
+                
+                const result = await executeStrategyRealTime(code, marketData);
+                
+                currentTrades = result.trades;
+                currentEquityCurve = result.equityCurve;
+                
+                const statistics = calculateStatistics(result.trades, result.equityCurve);
+                
+                updateChartData(marketData, result.trades);
+                updateStatistics(statistics);
+                updateTradesTable(result.trades);
+                
+                document.getElementById('analysisResultText').textContent = 
+                    `Strategy executed! ${result.trades.length} trades, P&L: $${statistics.totalPnL.toFixed(2)} (${statistics.totalPnLPercent.toFixed(2)}%)`;
+                
+                progressText.textContent = `Complete: ${result.trades.length} trades`;
+                progressElement.style.width = '100%';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('analysisResultText').textContent = `Error: ${error.message}`;
+                progressText.textContent = 'Execution failed';
+            } finally {
+                setTimeout(() => {
+                    loadingElement.style.display = 'none';
+                    runBtn.textContent = 'Run Strategy';
+                    runBtn.disabled = false;
+                    isExecuting = false;
+                }, 1000);
+            }
+        });
+
+        document.querySelectorAll('.example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const example = btn.getAttribute('data-example');
+                let code = '';
+                
+                if (example === 'sma') {
+                    code = `// Simple Moving Average Crossover Strategy
+function strategy(marketData) {
+    const trades = [];
+    let position = null;
+    let equity = 10000;
+    const equityCurve = [equity];
+    
+    const fastSMA = calculateSMA(marketData, 10);
+    const slowSMA = calculateSMA(marketData, 20);
+    const rsi = calculateRSI(marketData, 14);
+    
+    for (let i = 20; i < marketData.length; i++) {
+        const candle = marketData[i];
+        const currentEquity = equityCurve[equityCurve.length - 1];
+        
+        const buyCondition = fastSMA[i] > slowSMA[i] && 
+                            fastSMA[i-1] <= slowSMA[i-1] && 
+                            rsi[i] < 70;
+        
+        const sellCondition = fastSMA[i] < slowSMA[i] && 
+                             fastSMA[i-1] >= slowSMA[i-1] && 
+                             rsi[i] > 30;
+        
+        if (position) {
+            const unrealizedPL = (candle.close - position.entryPrice) * position.size;
+            const stopLoss = position.entryPrice * 0.95;
+            const takeProfit = position.entryPrice * 1.10;
+            
+            if (candle.close <= stopLoss || candle.close >= takeProfit || sellCondition) {
+                trades.push({
+                    id: trades.length + 1,
+                    type: 'LONG',
+                    entryTime: position.entryTime,
+                    entryPrice: position.entryPrice,
+                    exitTime: candle.timestamp,
+                    exitPrice: candle.close,
+                    size: position.size,
+                    pnl: unrealizedPL
+                });
+                
+                equity += unrealizedPL;
+                position = null;
+            }
+        }
+        
+        if (!position && buyCondition && currentEquity > 100) {
+            position = {
+                type: 'LONG',
+                entryTime: candle.timestamp,
+                entryPrice: candle.close,
+                size: currentEquity * 0.1 / candle.close
+            };
+        }
+        
+        equityCurve.push(equity);
+    }
+    
+    if (position) {
+        const lastCandle = marketData[marketData.length - 1];
+        const unrealizedPL = (lastCandle.close - position.entryPrice) * position.size;
+        
+        trades.push({
+            id: trades.length + 1,
+            type: position.type,
+            entryTime: position.entryTime,
+            entryPrice: position.entryPrice,
+            exitTime: lastCandle.timestamp,
+            exitPrice: lastCandle.close,
+            size: position.size,
+            pnl: unrealizedPL
+        });
+        
+        equity += unrealizedPL;
+    }
+    
+    return { trades, equityCurve, finalEquity: equity };
+}`;
+                } else if (example === 'rsi') {
+                    code = `// RSI Strategy
+function strategy(marketData) {
+    const trades = [];
+    let position = null;
+    let equity = 10000;
+    const equityCurve = [equity];
+    
+    const rsi = calculateRSI(marketData, 14);
+    const sma = calculateSMA(marketData, 50);
+    
+    for (let i = 50; i < marketData.length; i++) {
+        const candle = marketData[i];
+        const currentEquity = equityCurve[equityCurve.length - 1];
+        
+        const buyCondition = rsi[i] < 30 && candle.close > sma[i];
+        const sellCondition = rsi[i] > 70;
+        
+        if (position) {
+            const unrealizedPL = (candle.close - position.entryPrice) * position.size;
+            const stopLoss = position.entryPrice * 0.97;
+            
+            if (candle.close <= stopLoss || sellCondition) {
+                trades.push({
+                    id: trades.length + 1,
+                    type: 'LONG',
+                    entryTime: position.entryTime,
+                    entryPrice: position.entryPrice,
+                    exitTime: candle.timestamp,
+                    exitPrice: candle.close,
+                    size: position.size,
+                    pnl: unrealizedPL
+                });
+                
+                equity += unrealizedPL;
+                position = null;
+            }
+        }
+        
+        if (!position && buyCondition && currentEquity > 100) {
+            position = {
+                type: 'LONG',
+                entryTime: candle.timestamp,
+                entryPrice: candle.close,
+                size: currentEquity * 0.15 / candle.close
+            };
+        }
+        
+        equityCurve.push(equity);
+    }
+    
+    if (position) {
+        const lastCandle = marketData[marketData.length - 1];
+        const unrealizedPL = (lastCandle.close - position.entryPrice) * position.size;
+        
+        trades.push({
+            id: trades.length + 1,
+            type: position.type,
+            entryTime: position.entryTime,
+            entryPrice: position.entryPrice,
+            exitTime: lastCandle.timestamp,
+            exitPrice: lastCandle.close,
+            size: position.size,
+            pnl: unrealizedPL
+        });
+        
+        equity += unrealizedPL;
+    }
+
+    
+    
+    return { trades, equityCurve, finalEquity: equity };
+}`;
+                }
+                
+                document.getElementById('strategyCode').value = code;
+            });
+        });
+
+        // ==================== INITIALIZATION ====================
+        window.addEventListener('load', function() {
+            initializeChart();
+            marketData = generateMarketData();
+            updateChartData(marketData, []);
+            
+            document.getElementById('analysisResultText').textContent = 
+                'Ready to execute strategies. Use the examples or write your own code.';
+        });
+
+        window.addEventListener('resize', () => {
+            if (chart) {
+                const chartContainer = document.getElementById('priceChart');
+                chart.applyOptions({
+                    width: chartContainer.clientWidth,
+                    height: chartContainer.clientHeight
+                });
+            }
+        });
+    </script>
+</body>
+</html>
