@@ -595,8 +595,7 @@
   </div>
 
   <script>
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0dsiut7O2QmJ_768zP592MNeUfRecKpevonkGpnimbafxCyhVtYmOKPNxhmVTDFI-/exec';
-    
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0dsiut7O2QmJ_768zP592MNeUfRecKpevonkGpnimbafxCyhVtYmOKPNxhmVTDFI-/exec';    
     let LOOP_SECONDS = 60;
     let ACTIVE_RISK = "AGGRESSIVE";
     let ACTIVE_HORIZON = "SHORT"; 
@@ -1622,74 +1621,66 @@
       }
     }
 
-   // Функция отправки с детальным логированием
-// НОВАЯ функция отправки напрямую в Google Sheets через API
+  // СУПЕР-ПРОСТАЯ функция отправки
 async function sendToGoogleSheets(signalData) {
   try {
-    addLog(`📤 Отправка ${signalData.symbol} напрямую в Google Sheets...`);
+    console.log('🔄 Пытаюсь отправить:', signalData.symbol);
     
-    // Твои данные для авторизации - ЗАМЕНИ НА СВОИ!
-    const SPREADSHEET_ID = '1blSF6XI60zXCb5IU2ybuzpBJhe7tCt8LbV7oJRxHMyA'; // ЗАМЕНИ на ID своей таблицы
-    const RANGE = 'signals!A:H';
+    // Только самые основные данные
+    const payload = {
+      sheet: 'signals',
+      coin: signalData.symbol,
+      signal_type: signalData.final_dir,
+      confidence: signalData.probability + '%',
+      scanner: 'SmartCryptoPro',
+      price: String(signalData.last_price),
+      timeframe: signalData.baseTimeframe,
+      additional_data: 'test'
+    };
+
+    console.log('📦 Отправляю данные:', payload);
     
-    const rowData = [
-      new Date().toISOString(),
-      signalData.symbol,
-      signalData.final_dir === 'LONG' ? 'BUY' : 'SELL',
-      signalData.probability + '%',
-      'SmartCryptoPro',
-      String(signalData.last_price),
-      signalData.baseTimeframe,
-      JSON.stringify({
-        score: signalData.overall_score,
-        grade: signalData.setupGrade,
-        timing: signalData.expectedDuration,
-        strength: signalData.SignalStrength,
-        regime: signalData.regime,
-        pattern_comments: signalData.patternComments || []
-      })
-    ];
-
-    addLog(`📦 Данные: ${JSON.stringify(rowData)}`);
-
-    // Используем Google Sheets API v4
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}:append?valueInputOption=RAW`, {
+    // Простой fetch запрос
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        values: [rowData]
-      })
+      body: JSON.stringify(payload)
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Sheets API error: ${response.status} - ${errorText}`);
-    }
-
     const result = await response.json();
-    addLog(`✅ Успешно отправлено в таблицу!`);
+    console.log('📨 Ответ от Google:', result);
     
-    return { success: true, message: 'Signal sent to Google Sheets' };
+    return result;
     
   } catch (error) {
-    addLog(`❌ Ошибка: ${error.message}`);
-    
-    // Fallback: попробуем сохранить в localStorage
-    try {
-      const signals = JSON.parse(localStorage.getItem('cryptoSignals') || '[]');
-      signals.push({
-        ...signalData,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem('cryptoSignals', JSON.stringify(signals));
-      addLog(`💾 Сигнал сохранен локально (localStorage)`);
-    } catch (localError) {
-      addLog(`⚠️ Не удалось сохранить локально`);
-    }
-    
-    return { success: false, message: error.message };
+    console.log('❌ Ошибка:', error);
+    return {status: 'error', message: error.message};
+  }
+}
+
+// Простая функция отправки всех результатов
+async function sendAllToSheets() {
+  console.log('🎯 Начинаю отправку всех результатов...');
+  
+  if (scanResults.length === 0) {
+    console.log('📭 Нет результатов для отправки');
+    return;
+  }
+
+  // Берем только ПЕРВЫЙ результат для теста
+  const firstResult = scanResults[0];
+  console.log('🔄 Отправляю первый результат:', firstResult.symbol);
+  
+  const result = await sendToGoogleSheets(firstResult);
+  
+  if (result.status === 'success') {
+    console.log('✅ УСПЕХ! Данные отправлены в таблицу');
+    addLog('✅ Данные отправлены в Google Sheets!');
+  } else {
+    console.log('❌ ОШИБКА отправки:', result.message);
+    addLog('❌ Ошибка: ' + result.message);
   }
 }
 
