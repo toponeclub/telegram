@@ -1,0 +1,1967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crypto War Room Monster Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --surface-light: #1a1a1a;
+            --border: #222222;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent: #00d07a;
+            --accent-dark: #00a865;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'IBM Plex Sans', system-ui, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .war-room {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header Styles */
+        .war-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            height: 60px;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-text {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .badge {
+            background: var(--purple);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        /* Tabs */
+        .tabs-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-btn.active {
+            background: var(--surface-light);
+            border-color: var(--accent);
+            color: var(--text);
+        }
+
+        .tab-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .tab-indicator.online {
+            background: var(--accent);
+            box-shadow: 0 0 6px var(--accent);
+        }
+
+        .tab-indicator.offline {
+            background: var(--danger);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .settings-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .settings-btn:hover {
+            background: var(--surface-light);
+        }
+
+        /* Main Content */
+        .war-main {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Global Metrics Panel - НОВАЯ СТИЛИЗАЦИЯ */
+        .global-metrics {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            padding: 12px 16px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .metric-card {
+            background: var(--surface-light);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--blue));
+        }
+
+        .metric-card.warning::before {
+            background: linear-gradient(90deg, var(--warning), var(--danger));
+        }
+
+        .metric-value {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-family: 'IBM Plex Mono', monospace;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .metric-card.warning .metric-value {
+            background: linear-gradient(135deg, var(--warning), var(--danger));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .metric-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .metric-trend {
+            font-size: 9px;
+            margin-top: 4px;
+        }
+
+        .trend-up {
+            color: var(--accent);
+        }
+
+        .trend-down {
+            color: var(--danger);
+        }
+
+        /* Left Panel - Scanner Controls & Watchlist */
+        .left-panel {
+            width: 350px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .trading-style-buttons {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .style-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 11px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .style-btn.active {
+            border-color: var(--accent);
+            color: var(--text);
+            background: linear-gradient(180deg, rgba(0,208,122,0.06), transparent);
+        }
+
+        .risk-slider {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .watchlist-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .watchlist-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .coin-row {
+            display: grid;
+            grid-template-columns: 1fr 80px 70px 60px;
+            gap: 12px;
+            align-items: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .coin-row:hover {
+            border-color: var(--border);
+            background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+        }
+
+        .coin-symbol {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .coin-price {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            text-align: right;
+        }
+
+        .small-muted {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .arrow {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .arrow.up {
+            color: var(--accent);
+        }
+
+        .arrow.down {
+            color: var(--danger);
+        }
+
+        .arrow.flat {
+            color: var(--warning);
+        }
+
+        .spark {
+            width: 80px;
+            height: 24px;
+            border-radius: 4px;
+        }
+
+        .filterbar {
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            background: var(--surface-light);
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .filter-btn {
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn.active {
+            border-color: var(--accent);
+            color: var(--text);
+            background: linear-gradient(180deg, rgba(0,208,122,0.06), transparent);
+        }
+
+        .filter-btn[data-filter="short"].active {
+            border-color: var(--danger);
+            color: var(--text);
+            background: linear-gradient(180deg, rgba(239,68,68,0.06), transparent);
+        }
+
+        /* Center Panel - Coin Grid */
+        .center-panel {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            background: var(--bg);
+        }
+
+        .coin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .coin-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            transition: all 0.3s ease;
+            position: relative;
+            height: 180px; /* Уменьшили высоту на 10% */
+        }
+
+        .coin-card.long:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 208, 122, 0.2);
+        }
+
+        .coin-card.short:hover {
+            border-color: var(--danger);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+        }
+
+        .coin-card.neutral:hover {
+            border-color: var(--warning);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+        }
+
+        .coin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .coin-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+
+        .coin-price {
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+        }
+
+        .price-change {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .price-change.positive {
+            color: var(--accent);
+        }
+
+        .price-change.negative {
+            color: var(--danger);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .metric-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bar {
+            flex: 1;
+            height: 6px;
+            background: var(--surface-light);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .signal-section {
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .signal-section.long {
+            background: rgba(0, 208, 122, 0.1);
+            border: 1px solid rgba(0, 208, 122, 0.3);
+        }
+
+        .signal-section.short {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .signal-section.neutral {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .signal-badge {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .signal-badge.long {
+            color: var(--accent);
+        }
+
+        .signal-badge.short {
+            color: var(--danger);
+        }
+
+        .signal-badge.neutral {
+            color: var(--warning);
+        }
+
+        .signal-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-buy {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-buy:hover {
+            background: var(--accent-dark);
+        }
+
+        .btn-sell {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-sell:hover {
+            background: #dc2626;
+        }
+
+        .btn-details {
+            background: var(--surface-light);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-details:hover {
+            background: var(--border);
+        }
+
+        /* Right Panel - Analytics & Alerts */
+        .right-panel {
+            width: 400px;
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .alerts-panel {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .alert-item {
+            padding: 12px;
+            background: var(--surface-light);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .alert-item.critical {
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .alert-item.warning {
+            border-color: var(--warning);
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .alert-time {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .alert-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Iframe containers for apps */
+        .app-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: var(--surface);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-left: 12px;
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+
+        .connection-dot.connected {
+            background: var(--accent);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Telegram Section */
+        .telegram-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .telegram-inputs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .telegram-input {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .telegram-btn {
+            width: 100%;
+            padding: 8px;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .telegram-btn:hover {
+            background: var(--border);
+        }
+
+        .telegram-status {
+            margin-top: 8px;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .status-ok {
+            color: var(--accent);
+        }
+
+        .status-error {
+            color: var(--danger);
+        }
+
+        /* Settings Modal */
+        .settings-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+
+        .settings-content {
+            background: var(--surface);
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .settings-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .settings-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .settings-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-label {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .settings-input {
+            width: 100%;
+            padding: 10px;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .settings-select {
+            width: 100%;
+            padding: 10px;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .coin-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+            .right-panel {
+                width: 350px;
+            }
+            .global-metrics {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .war-main {
+                flex-direction: column;
+            }
+            .left-panel, .right-panel {
+                width: 100%;
+                height: auto;
+            }
+            .left-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .right-panel {
+                border-left: none;
+                border-top: 1px solid var(--border);
+            }
+            .global-metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="war-room">
+        <!-- Header -->
+        <header class="war-header">
+            <div class="logo">
+                <span class="logo-text">Crypto War Room</span>
+                <span class="badge">MONSTER EDITION</span>
+                <div class="connection-status" id="connectionStatus">
+                    <div class="connection-dot connected"></div>
+                    <span>LIVE</span>
+                </div>
+            </div>
+
+            <div class="tabs-container">
+                <button class="tab-btn active" data-tab="dashboard">
+                    <div class="tab-indicator online"></div>
+                    🎯 Dashboard
+                </button>
+                <button class="tab-btn" data-tab="smartcrypto">
+                    <div class="tab-indicator online"></div>
+                    🤖 SmartCrypto Pro
+                </button>
+                <button class="tab-btn" data-tab="alligator">
+                    <div class="tab-indicator online"></div>
+                    🐊 Alligator
+                </button>
+                <button class="tab-btn" data-tab="gaussian">
+                    <div class="tab-indicator online"></div>
+                    📊 Gaussian
+                </button>
+                <button class="tab-btn" data-tab="coinglass">
+                    <div class="tab-indicator online"></div>
+                    📈 CoinGlass
+                </button>
+                <button class="tab-btn" data-tab="trade">
+                    <div class="tab-indicator online"></div>
+                    💰 TRADE
+                </button>
+                <button class="tab-btn" data-tab="strategytester">
+                    <div class="tab-indicator online"></div>
+                    🧪 Strategy Tester
+                </button>
+                <button class="tab-btn" data-tab="app8">
+                    <div class="tab-indicator online"></div>
+                    🔮 App 8
+                </button>
+            </div>
+
+            <div class="header-controls">
+                <button class="settings-btn" id="settingsBtn">⚙️</button>
+            </div>
+        </header>
+
+        <!-- Global Metrics Panel - 8 МЕТРИК -->
+        <div class="global-metrics" id="globalMetrics">
+            <!-- Общие метрики рынка -->
+            <div class="metric-card">
+                <div class="metric-value" id="volatilityMetric">2.4%</div>
+                <div class="metric-label">Volatility</div>
+                <div class="metric-trend trend-up">↗ +0.3%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="whalesMetric">100%</div>
+                <div class="metric-label">Whale Activity</div>
+                <div class="metric-trend trend-up">↗ High</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="psychologyMetric">79%</div>
+                <div class="metric-label">Market Psychology</div>
+                <div class="metric-trend trend-down">↘ -5%</div>
+            </div>
+            <div class="metric-card warning">
+                <div class="metric-value" id="manipulationMetric">8%</div>
+                <div class="metric-label">Manipulation Level</div>
+                <div class="metric-trend trend-down">↘ Low</div>
+            </div>
+            
+            <!-- Метрики выбранного коина -->
+            <div class="metric-card">
+                <div class="metric-value" id="coinVolatility">1.8%</div>
+                <div class="metric-label">Coin Volatility</div>
+                <div class="metric-trend trend-up">↗ +0.2%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="coinStrength">87%</div>
+                <div class="metric-label">Coin Strength</div>
+                <div class="metric-trend trend-up">↗ +3%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="coinTrend">85%</div>
+                <div class="metric-label">Coin Trend</div>
+                <div class="metric-trend trend-up">↗ +2%</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="coinVolume">124%</div>
+                <div class="metric-label">Volume Ratio</div>
+                <div class="metric-trend trend-up">↗ +15%</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="war-main">
+            <!-- Dashboard View -->
+            <div id="dashboardView" class="war-main">
+                <!-- Left Panel - Scanner Controls & Watchlist -->
+                <aside class="left-panel">
+                    <div class="panel-section">
+                        <div class="panel-title">Risk Management</div>
+                        
+                        <div class="trading-style-buttons">
+                            <button class="style-btn active" data-style="scalping">Scalping</button>
+                            <button class="style-btn" data-style="swing">Swing</button>
+                            <button class="style-btn" data-style="position">Position</button>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 12px;">
+                            <div>
+                                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px;">Risk Level</label>
+                                <input type="range" min="1" max="100" value="30" class="risk-slider">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Watchlist -->
+                    <div class="watchlist-container">
+                        <div class="panel-title">Watchlist</div>
+                        
+                        <div class="filterbar" id="filterBar">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="long">Only Long</button>
+                            <button class="filter-btn" data-filter="short">Only Short</button>
+                            <button class="filter-btn" data-filter="active">Active</button>
+                            <div style="flex:1"></div>
+                            <label class="small-muted" style="align-self:center;font-size:12px">Strength ≥</label>
+                            <input id="strengthThresh" type="number" value="60" min="0" max="100" style="width:60px;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface-light);color:var(--text)">
+                        </div>
+
+                        <div id="watchlistContainer">
+                            <!-- Coin rows will be dynamically generated -->
+                        </div>
+                    </div>
+
+                    <!-- Telegram Integration -->
+                    <div class="panel-section telegram-section">
+                        <div class="panel-title">Telegram Integration</div>
+                        <div class="telegram-inputs">
+                            <input id="tgToken" class="telegram-input" placeholder="Bot Token">
+                            <input id="tgChat" class="telegram-input" placeholder="Chat ID">
+                        </div>
+                        <button id="btnTgTestConn" class="telegram-btn">Test Connection</button>
+                        <div id="tgStatus" class="telegram-status"></div>
+                    </div>
+                </aside>
+
+                <!-- Center Panel - Coin Grid -->
+                <section class="center-panel">
+                    <div class="coin-grid" id="coinGrid">
+                        <!-- Coin cards will be dynamically generated -->
+                    </div>
+                </section>
+
+                <!-- Right Panel - Alerts -->
+                <aside class="right-panel">
+                    <div class="alerts-panel">
+                        <div class="panel-title">Active Alerts & Manipulations</div>
+                        <div class="alert-list" id="alertList">
+                            <!-- Alerts will be dynamically generated -->
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- App Views (Hidden by default) -->
+            <div id="smartcryptoView" class="hidden" style="width: 100%; height: 100%;">
+                <iframe class="app-frame" id="smartcryptoFrame" src="about:blank"></iframe>
+            </div>
+
+            <div id="alligatorView" class="hidden" style="width: 100%; height: 100%;">
+                <iframe class="app-frame" id="alligatorFrame" src="about:blank"></iframe>
+            </div>
+
+            <div id="gaussianView" class="hidden" style="width: 100%; height: 100%;">
+                <iframe class="app-frame" id="gaussianFrame" src="about:blank"></iframe>
+            </div>
+
+            <div id="coinglassView" class="hidden" style="width: 100%; height: 100%;">
+                <iframe class="app-frame" id="coinglassFrame" src="https://www.coinglass.com/tv/Bitget_BTC_UMCBL"></iframe>
+            </div>
+
+            <div id="tradeView" class="hidden" style="width: 100%; height: 100%;">
+                <iframe class="app-frame" id="tradeFrame" src="https://www.bitget.com/ru/futures/BTC"></iframe>
+            </div>
+
+            <div id="strategytesterView" class="hidden" style="width: 100%; height: 100%;">
+                <iframe class="app-frame" id="strategytesterFrame" src="about:blank"></iframe>
+            </div>
+
+            <div id="app8View" class="hidden" style="width: 100%; height: 100%;">
+                <iframe class="app-frame" id="app8Frame" src="about:blank"></iframe>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="settings-modal hidden">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2 class="settings-title">Settings</h2>
+                <button class="settings-close" id="settingsClose">&times;</button>
+            </div>
+            
+            <div class="settings-group">
+                <label class="settings-label">Google Sheets URL</label>
+                <input type="text" class="settings-input" id="sheetsUrl" placeholder="https://script.google.com/macros/s/...">
+            </div>
+            
+            <div class="settings-group">
+                <label class="settings-label">Update Interval</label>
+                <select class="settings-select" id="updateInterval">
+                    <option value="5000">5 seconds</option>
+                    <option value="10000" selected>10 seconds</option>
+                    <option value="15000">15 seconds</option>
+                    <option value="30000">30 seconds</option>
+                </select>
+            </div>
+            
+            <div class="settings-group">
+                <label class="settings-label">Default Exchange</label>
+                <select class="settings-select" id="defaultExchange">
+                    <option value="binance">Binance</option>
+                    <option value="bitget" selected>Bitget</option>
+                    <option value="bybit">Bybit</option>
+                </select>
+            </div>
+            
+            <div class="settings-group">
+                <label class="settings-label">Theme</label>
+                <select class="settings-select" id="themeSelect">
+                    <option value="dark" selected>Dark</option>
+                    <option value="light">Light</option>
+                    <option value="auto">Auto</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="saveSettings()">Save Settings</button>
+        </div>
+    </div>
+
+    <script>
+        // ===========================================
+        // CRYPTO WAR ROOM MONSTER EDITION
+        // Enhanced with Trade Tab and Settings
+        // ===========================================
+
+        // Configuration
+        const CONFIG = {
+            GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec',
+            TELEGRAM_BOT_TOKEN: 'YOUR_BOT_TOKEN',
+            TELEGRAM_CHAT_ID: 'YOUR_CHAT_ID',
+            UPDATE_INTERVAL: 10000,
+            SCANNER_URLS: {
+                smartcrypto: 'YOUR_SMARTCRYPTO_URL',
+                alligator: 'YOUR_ALLIGATOR_URL', 
+                gaussian: 'YOUR_GAUSSIAN_URL',
+                coinglass: 'https://www.coinglass.com',
+                trade: 'https://www.bitget.com/ru/futures/BTC',
+                strategytester: 'YOUR_STRATEGY_TESTER_URL',
+                app8: 'YOUR_APP8_URL'
+            },
+            COINS: [
+                "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
+                "SOLUSDT","DOGEUSDT","MATICUSDT","DOTUSDT","TRXUSDT",
+                "LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT", 
+                "PEPEUSDT", "BONKUSDT", "INJUSDT", "APTUSDT"
+            ]
+        };
+
+        // Global State
+        let warRoomState = {
+            activeTab: 'dashboard',
+            coinsData: {},
+            alerts: [],
+            scannersStatus: {},
+            updateTimer: null,
+            tradingStyle: 'scalping',
+            filters: {
+                type: 'all',
+                strength: 60
+            },
+            selectedCoin: 'BTCUSDT',
+            settings: {
+                sheetsUrl: CONFIG.GOOGLE_SCRIPT_URL,
+                updateInterval: 10000,
+                defaultExchange: 'bitget',
+                theme: 'dark'
+            }
+        };
+
+        // Real Data Fetcher from Binance
+        class BinanceDataFetcher {
+            constructor() {
+                this.baseUrl = 'https://api.binance.com/api/v3';
+            }
+
+            async fetchTickerData(symbol) {
+                try {
+                    const response = await fetch(`${this.baseUrl}/ticker/24hr?symbol=${symbol}`);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return await response.json();
+                } catch (error) {
+                    console.error(`Error fetching data for ${symbol}:`, error);
+                    return null;
+                }
+            }
+
+            async fetchKlines(symbol, interval = '5m', limit = 100) {
+                try {
+                    const response = await fetch(`${this.baseUrl}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return await response.json();
+                } catch (error) {
+                    console.error(`Error fetching klines for ${symbol}:`, error);
+                    return null;
+                }
+            }
+        }
+
+        // Google Sheets Manager
+        class GoogleSheetsManager {
+            constructor() {
+                this.scriptUrl = CONFIG.GOOGLE_SCRIPT_URL;
+                this.updateScriptUrl();
+                this.loadSettings();
+                this.applySettings();
+                this.initEventListeners();
+            }
+
+            updateScriptUrl() {
+                this.scriptUrl = warRoomState.settings.sheetsUrl || CONFIG.GOOGLE_SCRIPT_URL;
+            }
+
+            loadSettings() {
+                const saved = localStorage.getItem('warRoomSettings');
+                if (saved) {
+                    warRoomState.settings = { ...warRoomState.settings, ...JSON.parse(saved) };
+                }
+            }
+
+            saveSettings() {
+                localStorage.setItem('warRoomSettings', JSON.stringify(warRoomState.settings));
+            }
+
+            applySettings() {
+                // Apply theme
+                document.documentElement.setAttribute('data-theme', warRoomState.settings.theme);
+                
+                // Update update interval
+                if (warRoomState.updateTimer) {
+                    clearInterval(warRoomState.updateTimer);
+                    warRoomState.updateTimer = setInterval(updateDashboardData, warRoomState.settings.updateInterval);
+                }
+            }
+
+            initEventListeners() {
+                // Settings modal
+                document.getElementById('settingsBtn').addEventListener('click', () => {
+                    document.getElementById('settingsModal').classList.remove('hidden');
+                    this.populateSettingsForm();
+                });
+
+                document.getElementById('settingsClose').addEventListener('click', () => {
+                    document.getElementById('settingsModal').classList.add('hidden');
+                });
+
+                document.getElementById('settingsModal').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('settingsModal')) {
+                        document.getElementById('settingsModal').classList.add('hidden');
+                    }
+                });
+            }
+
+            populateSettingsForm() {
+                document.getElementById('sheetsUrl').value = warRoomState.settings.sheetsUrl;
+                document.getElementById('updateInterval').value = warRoomState.settings.updateInterval;
+                document.getElementById('defaultExchange').value = warRoomState.settings.defaultExchange;
+                document.getElementById('themeSelect').value = warRoomState.settings.theme;
+            }
+
+            async readSignals() {
+                try {
+                    // In real implementation, this would read from Google Sheets
+                    // For now, we'll generate realistic signal data
+                    const signals = [];
+                    
+                    CONFIG.COINS.forEach(symbol => {
+                        if (Math.random() > 0.3) { // 70% chance of signal
+                            const scanners = ['SmartCryptoPro', 'Alligator', 'Gaussian', 'WhaleDetector'];
+                            const randomScanner = scanners[Math.floor(Math.random() * scanners.length)];
+                            const direction = Math.random() > 0.5 ? 'LONG' : 'SHORT';
+                            const confidence = Math.floor(Math.random() * 30) + 70; // 70-100
+                            const score = Math.floor(Math.random() * 20) + 80; // 80-100
+                            
+                            signals.push({
+                                coin: symbol,
+                                scanner: randomScanner,
+                                direction: direction,
+                                confidence: confidence,
+                                score: score,
+                                probability: Math.floor(Math.random() * 20) + 80, // 80-100
+                                timestamp: Date.now() - Math.floor(Math.random() * 300000) // Within 5 minutes
+                            });
+                        }
+                    });
+                    
+                    return signals;
+                } catch (error) {
+                    console.error('Error reading from Google Sheets:', error);
+                    return [];
+                }
+            }
+
+            async readManipulations() {
+                try {
+                    // In real implementation, this would read from Google Sheets
+                    // For now, we'll generate realistic manipulation data
+                    const manipulations = [];
+                    
+                    if (Math.random() > 0.7) { // 30% chance of manipulation
+                        const manipulationTypes = ['STOP_HUNTING', 'LIQUIDITY_GRAB', 'SPOOFING', 'PUMP_AND_DUMP'];
+                        const randomType = manipulationTypes[Math.floor(Math.random() * manipulationTypes.length)];
+                        const randomCoin = CONFIG.COINS[Math.floor(Math.random() * CONFIG.COINS.length)];
+                        const score = Math.floor(Math.random() * 30) + 70; // 70-100
+                        
+                        manipulations.push({
+                            coin: randomCoin,
+                            type: randomType,
+                            score: score,
+                            timestamp: Date.now(),
+                            description: this.getManipulationDescription(randomType, randomCoin)
+                        });
+                    }
+                    
+                    return manipulations;
+                } catch (error) {
+                    console.error('Error reading manipulations:', error);
+                    return [];
+                }
+            }
+
+            getManipulationDescription(type, coin) {
+                const descriptions = {
+                    'STOP_HUNTING': `Detected stop-loss hunting pattern on ${coin}. Price moved to trigger clustered stop orders.`,
+                    'LIQUIDITY_GRAB': `Large liquidity grab detected on ${coin}. Whales removing order book walls.`,
+                    'SPOOFING': `Spoofing activity detected on ${coin}. Large fake orders placed and quickly canceled.`,
+                    'PUMP_AND_DUMP': `Potential pump and dump scheme forming on ${coin}. Unusual volume and price action.`
+                };
+                
+                return descriptions[type] || `Suspicious activity detected on ${coin}.`;
+            }
+        }
+
+        // Signal Aggregator
+        class SignalAggregator {
+            constructor() {
+                this.signals = new Map();
+                this.thresholds = {
+                    confidence: 75,
+                    score: 65,
+                    probability: 80
+                };
+            }
+
+            processSignals(signals) {
+                const coinSignals = {};
+                
+                signals.forEach(signal => {
+                    if (!coinSignals[signal.coin]) {
+                        coinSignals[signal.coin] = [];
+                    }
+                    
+                    coinSignals[signal.coin].push(signal);
+                });
+                
+                // Evaluate each coin's signals
+                Object.keys(coinSignals).forEach(coin => {
+                    const signals = coinSignals[coin];
+                    const evaluation = this.evaluateCoinSignals(signals);
+                    coinSignals[coin] = evaluation;
+                });
+                
+                return coinSignals;
+            }
+
+            evaluateCoinSignals(signals) {
+                const longSignals = signals.filter(s => s.direction === 'LONG' && this.meetsThreshold(s));
+                const shortSignals = signals.filter(s => s.direction === 'SHORT' && this.meetsThreshold(s));
+                
+                const totalSignals = longSignals.length + shortSignals.length;
+                const longRatio = totalSignals > 0 ? longSignals.length / totalSignals : 0;
+                
+                let direction = 'NEUTRAL';
+                if (longRatio > 0.7) direction = 'LONG';
+                else if (longRatio < 0.3) direction = 'SHORT';
+                
+                const avgScore = signals.reduce((sum, s) => sum + s.score, 0) / signals.length;
+                
+                return {
+                    score: avgScore,
+                    count: totalSignals,
+                    direction: direction,
+                    buySignals: longSignals.length,
+                    sellSignals: shortSignals.length,
+                    allSignals: signals
+                };
+            }
+
+            meetsThreshold(signal) {
+                return signal.confidence >= this.thresholds.confidence &&
+                       signal.score >= this.thresholds.score &&
+                       signal.probability >= this.thresholds.probability;
+            }
+        }
+
+        // Initialize managers
+        const binanceFetcher = new BinanceDataFetcher();
+        const sheetsManager = new GoogleSheetsManager();
+        const signalAggregator = new SignalAggregator();
+
+        // UI Management
+        class UIManager {
+            constructor() {
+                this.coinGrid = document.getElementById('coinGrid');
+                this.watchlistContainer = document.getElementById('watchlistContainer');
+                this.alertList = document.getElementById('alertList');
+            }
+
+            updateCoinCards(coinsData, filters) {
+                this.coinGrid.innerHTML = '';
+                
+                Object.values(coinsData).forEach(coin => {
+                    if (!this.passesFilter(coin, filters)) return;
+                    
+                    const card = this.createCoinCard(coin);
+                    this.coinGrid.appendChild(card);
+                });
+            }
+            
+            updateWatchlist(coinsData, filters) {
+                this.watchlistContainer.innerHTML = '';
+                
+                Object.values(coinsData).forEach(coin => {
+                    if (!this.passesFilter(coin, filters)) return;
+                    
+                    const row = this.createWatchlistRow(coin);
+                    this.watchlistContainer.appendChild(row);
+                });
+            }
+
+            createCoinCard(coin) {
+                const card = document.createElement('div');
+                card.className = `coin-card ${coin.rating.direction.toLowerCase()}`;
+                
+                const rating = coin.rating;
+                const price = coin.price;
+                
+                card.innerHTML = `
+                    <div class="coin-header">
+                        <div class="coin-name">
+                            <span>${coin.symbol.replace('USDT', '/USDT')}</span>
+                        </div>
+                        <div class="coin-price">$${price.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 6})}</div>
+                        <div class="price-change ${price.change >= 0 ? 'positive' : 'negative'}">
+                            ${price.change >= 0 ? '↗' : '↘'} ${Math.abs(price.change).toFixed(2)}%
+                        </div>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <div class="metric-label">Signal Strength</div>
+                            <div class="metric-bar">
+                                <div class="bar">
+                                    <div class="bar-fill" style="width: ${rating.score}%; background: ${this.getColorForScore(rating.score)}"></div>
+                                </div>
+                                <span>${Math.round(rating.score)}%</span>
+                            </div>
+                        </div>
+                        <div class="metric">
+                            <div class="metric-label">Confidence</div>
+                            <div class="metric-bar">
+                                <div class="bar">
+                                    <div class="bar-fill" style="width: ${rating.count > 0 ? 80 : 0}%; background: ${this.getColorForScore(rating.count > 0 ? 80 : 0)}"></div>
+                                </div>
+                                <span>${rating.count > 0 ? 'High' : 'Low'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${rating.count > 0 ? `
+                    <div class="signal-section ${rating.direction.toLowerCase()}">
+                        <div class="signal-badge ${rating.direction.toLowerCase()}">
+                            <span>${rating.direction === 'LONG' ? '🚀 BUY' : rating.direction === 'SHORT' ? '🔻 SELL' : '⚪ NEUTRAL'} SIGNAL</span>
+                            <span>${Math.round(rating.score)}%</span>
+                        </div>
+                        <div class="signal-details">
+                            <div>⏱ ${this.getTimeframe()}</div>
+                            <div>🎯 ${rating.buySignals}/${rating.sellSignals}</div>
+                            <div>🛡 ${rating.count} scanners</div>
+                            <div>📊 ${this.getVolumeText(price.volume)}</div>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <div class="action-buttons">
+                        <button class="btn ${rating.direction === 'LONG' ? 'btn-buy' : rating.direction === 'SHORT' ? 'btn-sell' : 'btn-details'}" 
+                                onclick="executeTrade('${coin.symbol}', '${rating.direction}')">
+                            ${rating.direction === 'LONG' ? 'BUY' : rating.direction === 'SHORT' ? 'SELL' : 'DETAILS'}
+                        </button>
+                        <button class="btn btn-details" onclick="showChart('${coin.symbol}')">
+                            CHART
+                        </button>
+                    </div>
+                `;
+
+                return card;
+            }
+            
+            createWatchlistRow(coin) {
+                const row = document.createElement('div');
+                row.className = 'coin-row';
+                
+                const rating = coin.rating;
+                const price = coin.price;
+                
+                row.innerHTML = `
+                    <div>
+                        <div class="coin-symbol">${coin.symbol.replace('USDT', '/USDT')}</div>
+                        <div class="small-muted">${this.getVolumeText(price.volume)}</div>
+                    </div>
+                    <div class="coin-price">$${price.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 6})}</div>
+                    <canvas class="spark" id="spark-${coin.symbol}"></canvas>
+                    <div style="display:flex;flex-direction:column;align-items:center">
+                        <div class="arrow ${rating.direction === 'LONG' ? 'up' : rating.direction === 'SHORT' ? 'down' : 'flat'}" 
+                             id="arrow-${coin.symbol}">
+                            ${rating.direction === 'LONG' ? '↑' : rating.direction === 'SHORT' ? '↓' : '→'}
+                        </div>
+                        <div class="small-muted" id="str-${coin.symbol}">${Math.round(rating.score)}%</div>
+                    </div>
+                `;
+                
+                row.addEventListener('click', () => {
+                    selectCoin(coin.symbol);
+                });
+                
+                // Draw sparkline
+                this.drawSparkline(coin.symbol, this.generateSparklineData(price.price, price.change));
+                
+                return row;
+            }
+            
+            drawSparkline(symbol, data) {
+                const canvas = document.getElementById(`spark-${symbol}`);
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                const width = canvas.width = canvas.clientWidth * devicePixelRatio;
+                const height = canvas.height = canvas.clientHeight * devicePixelRatio;
+                
+                ctx.clearRect(0, 0, width, height);
+                
+                if (data.length < 2) return;
+                
+                const min = Math.min(...data);
+                const max = Math.max(...data);
+                
+                ctx.strokeStyle = data[data.length - 1] >= data[0] ? 'var(--accent)' : 'var(--danger)';
+                ctx.lineWidth = 2 * devicePixelRatio;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                
+                ctx.beginPath();
+                
+                data.forEach((value, index) => {
+                    const x = (index / (data.length - 1)) * (width - 4) + 2;
+                    const y = height - ((value - min) / (max - min)) * (height - 4) - 2;
+                    
+                    if (index === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                
+                ctx.stroke();
+            }
+            
+            generateSparklineData(basePrice, changePercent) {
+                const data = [];
+                const volatility = Math.abs(changePercent) / 100;
+                
+                for (let i = 0; i < 20; i++) {
+                    const randomChange = (Math.random() - 0.5) * volatility * 2;
+                    data.push(basePrice * (1 + randomChange));
+                }
+                return data;
+            }
+
+            updateAlerts(alerts) {
+                this.alertList.innerHTML = '';
+                
+                alerts.forEach(alert => {
+                    const alertElement = document.createElement('div');
+                    alertElement.className = `alert-item ${alert.score > 85 ? 'critical' : 'warning'}`;
+                    
+                    const icon = this.getAlertIcon(alert.type);
+                    
+                    alertElement.innerHTML = `
+                        <div class="alert-header">
+                            <div class="alert-title">${icon} ${alert.type.replace('_', ' ')}</div>
+                            <div class="alert-time">${this.formatTime(alert.timestamp)}</div>
+                        </div>
+                        <div class="alert-desc">${alert.description}</div>
+                    `;
+                    
+                    this.alertList.appendChild(alertElement);
+                });
+            }
+            
+            updateGlobalMetrics(metrics, selectedCoin) {
+                document.getElementById('volatilityMetric').textContent = `${metrics.volatility.toFixed(1)}%`;
+                document.getElementById('whalesMetric').textContent = `${metrics.whales}%`;
+                document.getElementById('psychologyMetric').textContent = `${metrics.psychology}%`;
+                document.getElementById('manipulationMetric').textContent = `${metrics.manipulation}%`;
+                
+                // Update coin-specific metrics
+                if (selectedCoin && warRoomState.coinsData[selectedCoin]) {
+                    const coin = warRoomState.coinsData[selectedCoin];
+                    document.getElementById('coinVolatility').textContent = `${Math.abs(coin.price.change).toFixed(1)}%`;
+                    document.getElementById('coinStrength').textContent = `${Math.round(coin.rating.score)}%`;
+                    document.getElementById('coinTrend').textContent = `${coin.rating.direction === 'LONG' ? 85 : coin.rating.direction === 'SHORT' ? 15 : 50}%`;
+                    document.getElementById('coinVolume').textContent = `${Math.min(100, Math.round(coin.price.volume / 1000000))}%`;
+                } else {
+                    document.getElementById('coinVolatility').textContent = '--';
+                    document.getElementById('coinStrength').textContent = '--';
+                    document.getElementById('coinTrend').textContent = '--';
+                    document.getElementById('coinVolume').textContent = '--';
+                }
+            }
+            
+            getAlertIcon(type) {
+                const icons = {
+                    'STOP_HUNTING': '🛑',
+                    'LIQUIDITY_GRAB': '💧',
+                    'SPOOFING': '🎭',
+                    'PUMP_AND_DUMP': '🚀'
+                };
+                
+                return icons[type] || '⚠️';
+            }
+
+            passesFilter(coin, filters) {
+                if (filters.type === 'all') return true;
+                if (filters.type === 'long' && coin.rating.direction === 'LONG') return true;
+                if (filters.type === 'short' && coin.rating.direction === 'SHORT') return true;
+                if (filters.type === 'active' && coin.rating.count > 0 && coin.rating.score >= filters.strength) return true;
+                return false;
+            }
+
+            getColorForScore(score) {
+                if (score >= 80) return 'var(--accent)';
+                if (score >= 60) return 'var(--warning)';
+                return 'var(--danger)';
+            }
+            
+            getVolumeText(volume) {
+                if (volume >= 1000000) return `${(volume / 1000000).toFixed(1)}M`;
+                if (volume >= 1000) return `${(volume / 1000).toFixed(1)}K`;
+                return volume.toFixed(0);
+            }
+            
+            getTimeframe() {
+                const timeframes = {
+                    'scalping': '1-5m',
+                    'swing': '15-60m',
+                    'position': '4h-1d'
+                };
+                return timeframes[warRoomState.tradingStyle] || '5-15m';
+            }
+
+            formatTime(timestamp) {
+                return new Date(timestamp).toLocaleTimeString();
+            }
+        }
+
+        // Tab Management
+        function switchTab(tabName) {
+            // Hide all views
+            document.querySelectorAll('[id$="View"]').forEach(view => {
+                view.classList.add('hidden');
+            });
+            
+            // Show selected view
+            document.getElementById(`${tabName}View`).classList.remove('hidden');
+            
+            // Update active tab button
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            warRoomState.activeTab = tabName;
+            
+            // Load app content if needed
+            if (tabName !== 'dashboard') {
+                loadAppContent(tabName);
+            }
+        }
+
+        function loadAppContent(appName) {
+            const frame = document.getElementById(`${appName}Frame`);
+            if (frame && CONFIG.SCANNER_URLS[appName]) {
+                frame.src = CONFIG.SCANNER_URLS[appName];
+            }
+        }
+
+        function selectCoin(symbol) {
+            warRoomState.selectedCoin = symbol;
+            
+            // Update global metrics for selected coin
+            const uiManager = new UIManager();
+            const globalMetrics = calculateGlobalMetrics(Object.values(warRoomState.coinsData));
+            uiManager.updateGlobalMetrics(globalMetrics, symbol);
+            
+            // Update UI to show selected coin
+            document.querySelectorAll('.coin-row').forEach(row => {
+                row.style.borderColor = row.id === `row-${symbol}` ? 'var(--accent)' : 'transparent';
+            });
+        }
+
+        function showChart(symbol) {
+            // Update CoinGlass iframe with the selected symbol
+            const coinglassFrame = document.getElementById('coinglassFrame');
+            coinglassFrame.src = `https://www.coinglass.com/tv/Bitget_${symbol.replace('USDT', '')}_UMCBL`;
+            
+            // Switch to CoinGlass tab
+            switchTab('coinglass');
+        }
+
+        function executeTrade(symbol, direction) {
+            // Update Bitget iframe with the selected symbol
+            const tradeFrame = document.getElementById('tradeFrame');
+            tradeFrame.src = `https://www.bitget.com/ru/futures/${symbol.replace('USDT', '')}`;
+            
+            // Switch to Trade tab
+            switchTab('trade');
+            
+            // Send Telegram notification if configured
+            sendTelegramAlert(`🔄 TRADE: ${direction} ${symbol} at $${warRoomState.coinsData[symbol].price.price}`);
+        }
+
+        // Data Management
+        async function updateDashboardData() {
+            try {
+                // Fetch real data from Binance
+                const priceData = {};
+                const allTickerData = [];
+                
+                // Fetch data for all coins
+                for (const symbol of CONFIG.COINS) {
+                    const tickerData = await binanceFetcher.fetchTickerData(symbol);
+                    if (tickerData) {
+                        allTickerData.push(tickerData);
+                        
+                        priceData[symbol] = {
+                            symbol: symbol,
+                            price: {
+                                price: parseFloat(tickerData.lastPrice),
+                                change: parseFloat(tickerData.priceChangePercent),
+                                volume: parseFloat(tickerData.quoteVolume),
+                                timestamp: Date.now()
+                            }
+                        };
+                    }
+                }
+                
+                // Calculate global metrics
+                const globalMetrics = calculateGlobalMetrics(allTickerData);
+                
+                // Read signals from Google Sheets
+                const signals = await sheetsManager.readSignals();
+                const manipulations = await sheetsManager.readManipulations();
+                
+                // Process signals
+                const processedSignals = signalAggregator.processSignals(signals);
+                
+                // Combine price data with signals
+                Object.keys(priceData).forEach(symbol => {
+                    if (processedSignals[symbol]) {
+                        priceData[symbol].rating = processedSignals[symbol];
+                    } else {
+                        priceData[symbol].rating = {
+                            score: 0,
+                            count: 0,
+                            direction: 'NEUTRAL',
+                            buySignals: 0,
+                            sellSignals: 0,
+                            allSignals: []
+                        };
+                    }
+                });
+                
+                warRoomState.coinsData = priceData;
+                
+                // Update alerts
+                warRoomState.alerts = [...warRoomState.alerts, ...manipulations]
+                    .sort((a, b) => b.timestamp - a.timestamp)
+                    .slice(0, 10); // Keep last 10
+                
+                // Update UI
+                const uiManager = new UIManager();
+                uiManager.updateCoinCards(warRoomState.coinsData, warRoomState.filters);
+                uiManager.updateWatchlist(warRoomState.coinsData, warRoomState.filters);
+                uiManager.updateAlerts(warRoomState.alerts);
+                uiManager.updateGlobalMetrics(globalMetrics, warRoomState.selectedCoin);
+                
+                // Update status bar
+                updateStatusBar();
+                
+            } catch (error) {
+                console.error('Error updating dashboard:', error);
+            }
+        }
+
+        function calculateGlobalMetrics(tickerData) {
+            if (!tickerData || tickerData.length === 0) {
+                return {
+                    volatility: 2.4,
+                    whales: 100,
+                    psychology: 79,
+                    manipulation: 8
+                };
+            }
+            
+            // Calculate average volatility
+            const avgVolatility = tickerData.reduce((sum, ticker) => {
+                return sum + Math.abs(parseFloat(ticker.priceChangePercent));
+            }, 0) / tickerData.length;
+            
+            // Calculate whale activity (simulated based on volume)
+            const totalVolume = tickerData.reduce((sum, ticker) => sum + parseFloat(ticker.quoteVolume), 0);
+            const avgVolume = totalVolume / tickerData.length;
+            const whaleActivity = Math.min(100, (avgVolume / 1000000) * 10); // Scale based on volume
+            
+            // Calculate market psychology (simulated)
+            const bullishCoins = tickerData.filter(ticker => parseFloat(ticker.priceChangePercent) > 0).length;
+            const marketPsychology = (bullishCoins / tickerData.length) * 100;
+            
+            // Calculate manipulation level (simulated)
+            const highVolatilityCoins = tickerData.filter(ticker => 
+                Math.abs(parseFloat(ticker.priceChangePercent)) > 5
+            ).length;
+            const manipulationLevel = (highVolatilityCoins / tickerData.length) * 50; // Scale down
+            
+            return {
+                volatility: avgVolatility,
+                whales: Math.round(whaleActivity),
+                psychology: Math.round(marketPsychology),
+                manipulation: Math.round(manipulationLevel)
+            };
+        }
+
+        function updateStatusBar() {
+            const activeSignals = Object.values(warRoomState.coinsData).filter(
+                coin => coin.rating.count > 0 && coin.rating.score >= warRoomState.filters.strength
+            ).length;
+        }
+
+        async function sendTelegramAlert(message) {
+            const token = document.getElementById('tgToken').value.trim();
+            const chatId = document.getElementById('tgChat').value.trim();
+            
+            if (!token || !chatId) return;
+
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: message,
+                        parse_mode: 'HTML'
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.ok) {
+                    console.log('Telegram alert sent successfully');
+                }
+            } catch (error) {
+                console.error('Telegram send failed:', error);
+            }
+        }
+
+        async function testTelegramConnection() {
+            const token = document.getElementById('tgToken').value.trim();
+            const chatId = document.getElementById('tgChat').value.trim();
+            
+            if (!token || !chatId) {
+                document.getElementById('tgStatus').innerHTML = '<span class="status-error">Enter Telegram credentials</span>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Telegram connection successful</span>';
+                } else {
+                    document.getElementById('tgStatus').innerHTML = '<span class="status-error">Invalid token</span>';
+                }
+            } catch (error) {
+                document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Connection failed</span>';
+            }
+        }
+
+        // Settings Management
+        function saveSettings() {
+            warRoomState.settings.sheetsUrl = document.getElementById('sheetsUrl').value;
+            warRoomState.settings.updateInterval = parseInt(document.getElementById('updateInterval').value);
+            warRoomState.settings.defaultExchange = document.getElementById('defaultExchange').value;
+            warRoomState.settings.theme = document.getElementById('themeSelect').value;
+            
+            sheetsManager.saveSettings();
+            sheetsManager.applySettings();
+            sheetsManager.updateScriptUrl();
+            
+            document.getElementById('settingsModal').classList.add('hidden');
+            
+            // Restart update timer with new interval
+            if (warRoomState.updateTimer) {
+                clearInterval(warRoomState.updateTimer);
+                warRoomState.updateTimer = setInterval(updateDashboardData, warRoomState.settings.updateInterval);
+            }
+        }
+
+        // Filter Management
+        function setupFilters() {
+            // Filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    warRoomState.filters.type = btn.dataset.filter;
+                    refreshUI();
+                });
+            });
+            
+            // Strength threshold
+            document.getElementById('strengthThresh').addEventListener('change', function() {
+                warRoomState.filters.strength = parseInt(this.value);
+                refreshUI();
+            });
+            
+            // Trading style buttons
+            document.querySelectorAll('.style-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    warRoomState.tradingStyle = btn.dataset.style;
+                    // In a full implementation, this would change the scanning intervals
+                });
+            });
+        }
+
+        function refreshUI() {
+            const uiManager = new UIManager();
+            uiManager.updateCoinCards(warRoomState.coinsData, warRoomState.filters);
+            uiManager.updateWatchlist(warRoomState.coinsData, warRoomState.filters);
+            updateStatusBar();
+        }
+
+        // Initialize War Room
+        function initializeWarRoom() {
+            console.log('🚀 Initializing Crypto War Room Monster Edition...');
+            
+            // Set up tab event listeners
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchTab(btn.dataset.tab);
+                });
+            });
+            
+            // Set up filters
+            setupFilters();
+            
+            // Set up Telegram connection test
+            document.getElementById('btnTgTestConn').addEventListener('click', testTelegramConnection);
+            
+            // Start update cycle
+            warRoomState.updateTimer = setInterval(updateDashboardData, warRoomState.settings.updateInterval);
+            
+            // Initial data load
+            updateDashboardData();
+            
+            // Select BTC by default
+            setTimeout(() => {
+                if (warRoomState.coinsData['BTCUSDT']) {
+                    selectCoin('BTCUSDT');
+                }
+            }, 1000);
+            
+            console.log('✅ Crypto War Room ready!');
+        }
+
+        // Start everything when page loads
+        window.addEventListener('load', initializeWarRoom);
+
+        // Export for global access
+        window.executeTrade = executeTrade;
+        window.showChart = showChart;
+        window.switchTab = switchTab;
+        window.saveSettings = saveSettings;
+        window.selectCoin = selectCoin;
+    </script>
+</body>
+</html>
