@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>SmartCrypto Pro - Multi-Coin Scanner</title>
+  <title>SmartCrypto Pro - Multi Scanner</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Сохраняем все существующие стили, но добавляем новые для таблицы результатов */
     :root {
       --bg: #0a0a0a;
       --surface: #111111;
@@ -45,7 +44,6 @@
       max-width: 100%;
     }
 
-    /* Header */
     .app-header {
       display: flex;
       justify-content: space-between;
@@ -78,89 +76,28 @@
       font-weight: 700;
     }
 
-    .symbol-selector {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .symbol-select {
-      background: var(--surface-light);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 14px;
-      min-width: 120px;
-    }
-
-    .interval-select {
-      background: var(--surface-light);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 14px;
-      width: 80px;
-    }
-
-    /* Main Content */
     .app-main {
       display: flex;
       flex: 1;
       overflow: hidden;
+      gap: 1px;
     }
 
-    /* Left Panel - Chart */
     .left-panel {
-      flex: 1;
+      flex: 0.6;
       display: flex;
       flex-direction: column;
       background: var(--surface);
-      border-right: 1px solid var(--border);
-    }
-
-    .chart-container {
-      flex: 1;
-      position: relative;
-      padding: 16px;
-    }
-
-    .tradingview-widget-container {
-      height: 100%;
-      width: 100%;
-      background: var(--surface-light);
-      border-radius: 8px;
-      border: 1px solid var(--border);
       overflow: hidden;
     }
 
-    .fullscreen-btn {
-      position: absolute;
-      bottom: 12px;
-      right: 12px;
-      background: rgba(17, 17, 17, 0.8);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px;
-      border-radius: 6px;
-      cursor: pointer;
-      z-index: 10;
-      backdrop-filter: blur(4px);
-    }
-
-    .fullscreen-btn:hover {
-      background: var(--surface-light);
-    }
-
-    /* Right Panel - Intelligence & Controls */
     .right-panel {
-      flex: 0.35;
+      flex: 0.4;
       display: flex;
       flex-direction: column;
       background: var(--surface);
       overflow: auto;
-      min-width: 300px;
+      min-width: 400px;
     }
 
     .panel-section {
@@ -177,7 +114,176 @@
       letter-spacing: 0.5px;
     }
 
-    /* Intelligence Panel */
+    .results-container {
+      flex: 1;
+      overflow: auto;
+      padding: 0 16px 16px 16px;
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .results-table th {
+      background: var(--surface-light);
+      padding: 8px 12px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+    }
+
+    .results-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .signal-long {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .signal-short {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .grade-badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      display: inline-block;
+      min-width: 20px;
+    }
+
+    .grade-A {
+      background: rgba(0, 208, 122, 0.15);
+      color: var(--accent);
+    }
+
+    .grade-B {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+    }
+
+    .grade-C {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+    }
+
+    .scanner-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .control-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .control-btn {
+      flex: 1;
+      padding: 8px 6px;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .control-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .control-btn.risk-aggressive.active {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .control-btn.risk-stable.active {
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    .control-btn.risk-conservative.active {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-secondary {
+      background: var(--surface-light);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    .scan-progress {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .scan-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
     .intelligence-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -223,29 +329,6 @@
       color: var(--blue);
     }
 
-    .grade-badge {
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-weight: 700;
-      font-size: 12px;
-      text-align: center;
-    }
-
-    .grade-A {
-      background: rgba(0, 208, 122, 0.15);
-      color: var(--accent);
-    }
-
-    .grade-B {
-      background: rgba(245, 158, 11, 0.15);
-      color: var(--warning);
-    }
-
-    .grade-C {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--danger);
-    }
-
     .signal-strength {
       margin-top: 14px;
     }
@@ -269,140 +352,20 @@
       top: 0;
     }
 
-    .action-buttons {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
-    }
-
-    .btn {
+    .log-panel {
       flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      background: var(--surface);
+      padding: 16px;
+      overflow-y: auto;
     }
 
-    .btn-primary {
-      background: var(--blue);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: #2563eb;
-    }
-
-    .btn-secondary {
-      background: var(--surface-light);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover {
-      background: var(--border);
-    }
-
-    /* Strategy Controls Panel */
-.strategy-controls-panel {
-  width: 100%;
-  background: var(--surface);
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-}
-
-/* Strategy Controls */
-.strategy-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-    .control-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.control-label {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.control-buttons {
-  display: flex;
-  gap: 6px;
-}
-
-.control-btn {
-  flex: 1;
-  padding: 8px 6px;
-  background: var(--surface-light);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-muted);
-  font-size: 12px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.control-btn.active {
-  background: var(--surface);
-  color: var(--text);
-  border-color: var(--accent);
-  font-weight: 600;
-}
-
-.control-btn.risk-aggressive.active {
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
-.control-btn.risk-stable.active {
-  border-color: var(--blue);
-  color: var(--blue);
-}
-
-.control-btn.risk-conservative.active {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-   /* Bottom Panel - Predictive Metrics & Strategy Controls */
-.bottom-panel {
-  height: 320px; /* Increased height to accommodate both sections */
-  display: flex;
-  border-top: 1px solid var(--border);
-}
-
-/* Predictive Metrics */
-.predictive-panel {
-  width: 100%;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
-    .predictive-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .metric-percentage {
+    #log {
+      font-family: 'IBM Plex Mono', monospace;
       font-size: 11px;
-      font-weight: 600;
-      color: #f1f3f7;
-      min-width: 30px;
-      text-align: right;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin: 0;
+      white-space: pre-wrap;
     }
 
     .container {
@@ -411,6 +374,7 @@
       position: relative;
       overflow: hidden;
       text-align: center;
+      margin: 0 auto;
     }
 
     .gauge-a {
@@ -470,478 +434,15 @@
       color: #9aa2ad;
     }
 
-    .timing-info {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .timing-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--blue);
-      margin-bottom: 4px;
-    }
-
-    .timing-label {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .predictive-metrics {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-    }
-
-    .predictive-item {
-      background: var(--surface-light);
-      border-radius: 6px;
-      padding: 10px;
-      border: 1px solid var(--border);
-    }
-
-    .predictive-item-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
-    .predictive-icon {
-      font-size: 14px;
-    }
-
-    .predictive-name {
-      font-size: 11px;
-      color: var(--text-muted);
-      flex-grow: 1;
-      margin-left: 6px;
-    }
-
-    .predictive-trend {
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .trend-up {
-      color: var(--accent);
-    }
-
-    .trend-down {
-      color: var(--danger);
-    }
-
-    .trend-neutral {
-      color: var(--warning);
-    }
-
-    .predictive-progress {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .progress-bar {
-      flex-grow: 1;
-      height: 6px;
-      background: var(--bg);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 0.8s cubic-bezier(.86,.05,.4,.96);
-    }
-
-    .whales-fill {
-      background: linear-gradient(90deg, #ef4444, #f87171);
-    }
-
-    .liquidity-fill {
-      background: linear-gradient(90deg, #3b82f6, #60a5fa);
-    }
-
-    .sentiment-fill {
-      background: linear-gradient(90deg, #10b981, #34d399);
-    }
-
-    .structure-fill {
-      background: linear-gradient(90deg, #f59e0b, #fbbf24);
-    }
-
-    .predictive-value {
-      font-size: 11px;
-      font-weight: 600;
-      min-width: 30px;
-      text-align: right;
-    }
-
-    /* Performance & Log Panel */
-    .performance-log-panel {
-      min-width: 30%;
-      flex: 0.35;
-      flex-direction: column;
-    }
-
-    .performance-panel {
-      flex: 1;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .performance-metrics {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .performance-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
-
-    .performance-value {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 4px;
-      font-family: 'IBM Plex Mono', monospace;
-    }
-
-    .performance-label {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .win-rate {
-      color: var(--accent);
-    }
-
-    .avg-profit {
-      color: var(--blue);
-    }
-
-    .sharpe-ratio {
-      color: var(--warning);
-    }
-
-    .total-trades {
-      color: var(--danger);
-    }
-
-    .telegram-section {
-      margin-top: auto;
-    }
-
-    .telegram-inputs {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .telegram-input {
-      background: var(--surface-light);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px;
-      border-radius: 6px;
-      font-size: 12px;
-    }
-
-    .telegram-btn {
-      width: 100%;
-      padding: 8px;
-      background: var(--surface-light);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 6px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .telegram-btn:hover {
-      background: var(--border);
-    }
-
-    .telegram-status {
-      margin-top: 8px;
-      font-size: 11px;
-      text-align: center;
-    }
-
-    .status-ok {
-      color: var(--accent);
-    }
-
-    .status-error {
-      color: var(--danger);
-    }
-
-    /* Log Panel */
-    .log-panel {
-      flex: 1;
-      background: var(--surface);
-      padding: 16px;
-      overflow-y: auto;
-    }
-
-    .log-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 8px;
-    }
-
-    #log {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.4;
-      margin: 0;
-      white-space: pre-wrap;
-    }
-
-    /* Help Button */
-    .help-btn {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: var(--blue);
-      color: white;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-      backdrop-filter: blur(4px);
-    }
-
-    .modal-content {
-      background: var(--surface);
-      border-radius: 8px;
-      padding: 24px;
-      max-width: 500px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-      border: 1px solid var(--border);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .modal-title {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .modal-close {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-size: 24px;
-      cursor: pointer;
-    }
-
-    .modal-body {
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    /* Responsive */
     @media (max-width: 1024px) {
       .app-main {
         flex-direction: column;
       }
       
-      .left-panel {
+      .left-panel, .right-panel {
         flex: 1;
-        display: flex;
-        flex-direction: column;
-        background: var(--surface);
-        border-right: 2px solid var(--border);
-        min-width: 320px;
-        overflow: hidden;
+        min-width: auto;
       }
-      
-      .right-panel {
-        width: 100%;
-        height: auto;
-        max-height: 40vh;
-      }
-      
-      .bottom-panel {
-        flex-direction: column;
-        height: auto;
-      }
-      
-      .predictive-panel {
-        padding: 12px;
-        border-bottom: 1px solid var(--border);
-      }
-      
-      .performance-log-panel {
-        width: 100%;
-      }
-    }
-
-    @media (max-width: 768px) {
-      .app-header {
-        flex-direction: column;
-        height: auto;
-        gap: 12px;
-        padding: 12px;
-      }
-      
-      .symbol-selector {
-        width: 100%;
-        justify-content: space-between;
-      }
-      
-      .intelligence-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .predictive-metrics {
-        grid-template-columns: 1fr 1fr;
-      }
-      
-      .performance-metrics {
-        grid-template-columns: 1fr 1fr;
-      }
-      
-      .gauge-container {
-        flex-direction: column;
-        gap: 10px;
-      }
-    }
-
-    /* SmartCrypto Pro specific styles */
-    .consensus-L {
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .consensus-S {
-      color: var(--danger);
-      font-weight: 600;
-    }
-
-    .sltp-tp {
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    .sltp-sl {
-      color: var(--danger);
-      font-weight: 600;
-    }
-
-    .probability-badge {
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      background: rgba(0, 208, 122, 0.15);
-      color: #00d07a;
-    }
-
-    .market-comment {
-      background: rgba(255,255,255,0.03);
-      border-left: 3px solid var(--accent);
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      line-height: 1.4;
-      margin-top: 8px;
-    }
-
-    .results-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-    }
-    
-    .results-table th {
-      background: var(--surface-light);
-      padding: 8px 12px;
-      text-align: left;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
-      border-bottom: 1px solid var(--border);
-    }
-    
-    .results-table td {
-      padding: 8px 12px;
-      font-size: 12px;
-      border-bottom: 1px solid var(--border);
-    }
-    
-    .signal-long {
-      color: var(--accent);
-      font-weight: 600;
-    }
-    
-    .signal-short {
-      color: var(--danger);
-      font-weight: 600;
-    }
-    
-    .grade-A { background: rgba(0, 208, 122, 0.15); color: var(--accent); }
-    .grade-B { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-    .grade-C { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
-    
-    .scan-progress {
-      height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      overflow: hidden;
-      margin: 8px 0;
-    }
-    
-    .scan-progress-fill {
-      height: 100%;
-      background: var(--accent);
-      transition: width 0.3s ease;
     }
   </style>
 </head>
@@ -950,10 +451,10 @@
     <header class="app-header">
       <div class="logo">
         <span class="logo-text">SmartCrypto Pro</span>
-        <span class="badge">MULTI-COIN SCANNER</span>
+        <span class="badge">MULTI-SCANNER</span>
       </div>
       <div class="symbol-selector">
-        <select id="loopSelect" class="interval-select">
+        <select id="loopSelect" class="interval-select" style="background: var(--surface-light); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 14px;">
           <option value="30">30s</option>
           <option value="60" selected>60s</option>
           <option value="120">120s</option>
@@ -963,11 +464,10 @@
     </header>
 
     <main class="app-main">
-      <div class="right-panel" style="width: 100%;">
-        <!-- Scanner Controls -->
+      <div class="left-panel">
         <div class="panel-section">
           <div class="panel-title">SCANNER CONTROLS</div>
-          <div class="strategy-controls">
+          <div class="scanner-controls">
             <div class="control-group">
               <div class="control-label">Risk Mode</div>
               <div class="control-buttons">
@@ -998,7 +498,7 @@
           
           <div class="action-buttons">
             <button id="btnScanAll" class="btn btn-primary">Scan All Coins</button>
-            <button id="btnSendToSheets" class="btn btn-secondary">Send to Google Sheets</button>
+            <button id="btnSendToSheets" class="btn btn-secondary">Send to Sheets</button>
           </div>
           
           <div class="scan-progress">
@@ -1007,8 +507,7 @@
           <div class="intel-label" id="scanStatus">Ready to scan</div>
         </div>
 
-        <!-- Scan Results -->
-        <div class="panel-section">
+        <div class="results-container">
           <div class="panel-title">SCAN RESULTS</div>
           <table class="results-table">
             <thead>
@@ -1016,31 +515,87 @@
                 <th>Coin</th>
                 <th>Signal</th>
                 <th>Score</th>
-                <th>Probability</th>
+                <th>Prob</th>
                 <th>Grade</th>
                 <th>Timing</th>
                 <th>Price</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="resultsBody">
-              <!-- Results will be populated here -->
             </tbody>
           </table>
         </div>
+      </div>
 
-        <!-- Log Panel -->
+      <div class="right-panel">
+        <div class="panel-section">
+          <div class="panel-title">Market Intelligence</div>
+          
+          <div class="flex justify-center mb-4">
+            <div class="container">
+              <div class="gauge-a"></div>
+              <div class="gauge-b"></div>
+              <div class="gauge-c" id="gaugeMask"></div>
+              <div class="gauge-data">
+                <h1 id="gaugeValue">0%</h1>
+                <div class="gauge-label">STRENGTH</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="intelligence-grid">
+            <div class="intel-item">
+              <div class="intel-label">Price</div>
+              <div class="intel-value" id="price">-</div>
+            </div>
+            <div class="intel-item">
+              <div class="intel-label">Direction</div>
+              <div class="intel-value" id="direction">-</div>
+            </div>
+            <div class="intel-item">
+              <div class="intel-label">Score</div>
+              <div class="intel-value score" id="score">-</div>
+            </div>
+            <div class="intel-item">
+              <div class="intel-label">Probability</div>
+              <div class="intel-value probability" id="probability">-</div>
+            </div>
+            <div class="intel-item">
+              <div class="intel-label">Regime</div>
+              <div class="intel-value" id="regime">-</div>
+            </div>
+            <div class="intel-item">
+              <div class="intel-label">Confidence</div>
+              <div class="intel-value" id="confidence">-</div>
+            </div>
+            <div class="intel-item">
+              <div class="intel-label">Grade</div>
+              <div id="setupGrade" class="grade-badge grade-C">C</div>
+            </div>
+            <div class="intel-item">
+              <div class="intel-label">Timing</div>
+              <div class="intel-value" id="timing">-</div>
+            </div>
+          </div>
+          
+          <div class="signal-strength">
+            <div class="intel-label">Signal Strength</div>
+            <div class="strength-bar">
+              <div class="strength-fill" id="strengthFill" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="log-panel">
           <div class="panel-title">SCANNER LOG</div>
-          <pre id="log">Initializing Multi-Coin Scanner...</pre>
+          <pre id="log">Initializing SmartCrypto Pro Multi-Scanner...</pre>
         </div>
       </div>
     </main>
   </div>
 
   <script>
-    // ========== КОНФИГУРАЦИЯ ==========
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMH9lwpLr2E1ZmEbiqBzBsYaXjWAa9hpl4JkabaUjQr50V0PlMsSi1izCqdbzuWtB_/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0dsiut7O2QmJ_768zP592MNeUfRecKpevonkGpnimbafxCyhVtYmOKPNxhmVTDFI-/exec';
     
     let LOOP_SECONDS = 60;
     let ACTIVE_RISK = "AGGRESSIVE";
@@ -1054,312 +609,1147 @@
       "PEPEUSDT", "BONKUSDT", "INJUSDT", "PYTHUSDT", "APTUSDT"
     ];
 
-    // ========== СОСТОЯНИЕ СКАНЕРА ==========
     let isScanning = false;
     let scanResults = [];
     let loopTimer = null;
+    let currentSelectedCoin = null;
 
-    // ========== UI ЭЛЕМЕНТЫ ==========
     const resultsBody = document.getElementById('resultsBody');
     const scanProgress = document.getElementById('scanProgress');
     const scanStatus = document.getElementById('scanStatus');
     const logEl = document.getElementById('log');
     const btnScanAll = document.getElementById('btnScanAll');
     const btnSendToSheets = document.getElementById('btnSendToSheets');
+    const loopSelect = document.getElementById('loopSelect');
 
-    // ========== ЛОГИРОВАНИЕ ==========
+    const priceEl = document.getElementById('price');
+    const regimeEl = document.getElementById('regime');
+    const dirEl = document.getElementById('direction');
+    const scoreEl = document.getElementById('score');
+    const probabilityEl = document.getElementById('probability');
+    const confidenceEl = document.getElementById('confidence');
+    const timingEl = document.getElementById('timing');
+    const setupGradeEl = document.getElementById('setupGrade');
+    const strengthFill = document.getElementById('strengthFill');
+    const gaugeMask = document.getElementById('gaugeMask');
+    const gaugeValue = document.getElementById('gaugeValue');
+
     let logs = [];
     function addLog(msg) {
       const now = new Date();
       const t = now.toLocaleTimeString([], { hour12: false });
       logs.unshift(`[${t}] ${msg}`);
-      if (logs.length > 1000) logs.length = 1000;
-      logEl.textContent = logs.slice(0, 30).join('\n');
+      if (logs.length > 50) logs.length = 50;
+      logEl.textContent = logs.join('\n');
     }
 
-    // ========== ОСНОВНЫЕ ФУНКЦИИ СКАНЕРА ==========
-    
-    // Функция отправки в Google Sheets
-    async function sendToGoogleSheets(signalData) {
-      try {
-        const response = await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            sheet: 'signals',
-            coin: signalData.coin,
-            signal_type: signalData.signalType,
-            confidence: signalData.confidence,
-            scanner: 'SmartCryptoPro',
-            price: signalData.price,
-            timeframe: signalData.timeframe,
-            additional_data: {
-              score: signalData.score,
-              grade: signalData.grade,
-              timing: signalData.timing,
-              strength: signalData.strength,
-              regime: signalData.regime
-            }
-          })
-        });
+    class PredictiveEngine {
+      calculateRecommendedTiming(psychology, liquidity, whales, structure) {
+        const baseTime = ACTIVE_HORIZON === 'SHORT' ? 3 : ACTIVE_HORIZON === 'MEDIUM' ? 30 : 120;
+        const weights = [0.4, 0.3, 0.2, 0.1];
+        const score = (psychology * weights[0]) + (liquidity * weights[1]) + (whales * weights[2]) + (structure * weights[3]);
+        let multiplier = (score / 50);
+        multiplier = Math.max(0.5, Math.min(3, multiplier));
+        const timing = baseTime * multiplier;
+
+        if (ACTIVE_HORIZON === 'SHORT') return timing.toFixed(1) + " MIN";
+        if (ACTIVE_HORIZON === 'MEDIUM') return (timing / 60).toFixed(1) + " H";
+        return (timing / 60).toFixed(1) + " H";
+      }
+
+      analyzeWhales(candles, currentPrice) {
+        const volumes = candles.map(c => c.volume);
+        const recentVolume = volumes.slice(-10).reduce((a, b) => a + b, 0);
+        const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+        const volumeRatio = recentVolume / (avgVolume * 10);
+        let whaleScore = Math.min(100, volumeRatio * 80);
+        const volumeSpike = volumeRatio > 2 ? 20 : 0;
+        whaleScore += volumeSpike;
         
-        return await response.json();
-      } catch (error) {
-        console.error('Ошибка отправки в Google Sheets:', error);
-        addLog('❌ Ошибка отправки в Google Sheets');
-        return null;
+        return {
+          score: Math.round(whaleScore),
+          trend: volumeRatio > 1.2 ? '↑' : volumeRatio < 0.8 ? '↓' : '→'
+        };
+      }
+
+      analyzeLiquidity(candles, currentPrice) {
+        const highs = candles.map(c => c.high);
+        const lows = candles.map(c => c.low);
+        const volumes = candles.map(c => c.volume);
+        
+        const recentVolume = volumes.slice(-10).reduce((a, b) => a + b, 0);
+        const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length * 10;
+        const volumeRatio = recentVolume / avgVolume;
+        
+        const recentHigh = Math.max(...highs.slice(-5));
+        const recentLow = Math.min(...lows.slice(-5));
+        const spread = (recentHigh - recentLow) / recentLow;
+        
+        const priceChanges = [];
+        for (let i = 1; i < candles.length; i++) {
+          priceChanges.push(Math.abs(candles[i].close - candles[i-1].close) / candles[i-1].close);
+        }
+        const volatility = priceChanges.reduce((a, b) => a + b, 0) / priceChanges.length;
+        
+        let liquidityScore = 50;
+        if (volumeRatio > 1.5) liquidityScore += 25;
+        else if (volumeRatio > 1.2) liquidityScore += 15;
+        else if (volumeRatio < 0.5) liquidityScore -= 20;
+        
+        if (spread < 0.01) liquidityScore += 15;
+        else if (spread > 0.05) liquidityScore -= 15;
+        
+        if (volatility < 0.02) liquidityScore += 10;
+        else if (volatility > 0.05) liquidityScore -= 10;
+        
+        let trend = '→';
+        if (volumeRatio > 1.1 && spread < 0.02) trend = '↑';
+        else if (volumeRatio < 0.8 && spread > 0.03) trend = '↓';
+        
+        return {
+          score: Math.round(Math.max(0, Math.min(100, liquidityScore))),
+          trend: trend
+        };
+      }
+
+      analyzeSentiment(candles, momentum, regime) {
+        const closes = candles.map(c => c.close);
+        const rsi = this.calculateRSI(closes);
+        const lastRsi = rsi[rsi.length - 1];
+        
+        let sentimentScore = 50;
+        if (lastRsi < 30) sentimentScore += 25;
+        else if (lastRsi > 70) sentimentScore -= 25;
+        
+        sentimentScore += momentum.strength * 20;
+        
+        if (regime.regime === 'TRENDING') sentimentScore += 15;
+        else if (regime.regime === 'VOLATILE') sentimentScore -= 10;
+        
+        return {
+          score: Math.round(Math.max(0, Math.min(100, sentimentScore))),
+          trend: lastRsi < 40 ? '↑' : lastRsi > 60 ? '↓' : '→'
+        };
+      }
+
+      analyzeStructure(candles, patterns, currentPrice) {
+        let structureScore = 50;
+        structureScore += patterns.patternBoost * 60;
+        
+        const supportResistanceScore = this.analyzeSupportResistance(candles, currentPrice);
+        structureScore += supportResistanceScore;
+        
+        const trendScore = this.analyzeTrendConsistency(candles);
+        structureScore += trendScore;
+        
+        return {
+          score: Math.round(Math.max(0, Math.min(100, structureScore))),
+          trend: structureScore > 60 ? '↑' : structureScore < 40 ? '↓' : '→'
+        };
+      }
+
+      calculateRSI(closes, period = 14) {
+        if (closes.length < period + 1) return new Array(closes.length).fill(50);
+        
+        const gains = [], losses = [];
+        for (let i = 1; i < closes.length; i++) {
+          const change = closes[i] - closes[i-1];
+          gains.push(Math.max(change, 0));
+          losses.push(Math.max(-change, 0));
+        }
+        
+        const rsi = new Array(closes.length).fill(50);
+        let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        
+        for (let i = period; i < closes.length; i++) {
+          avgGain = ((avgGain * (period - 1)) + gains[i-1]) / period;
+          avgLoss = ((avgLoss * (period - 1)) + losses[i-1]) / period;
+          
+          const rs = avgLoss !== 0 ? avgGain / avgLoss : Infinity;
+          rsi[i] = 100 - (100 / (1 + rs));
+        }
+        
+        return rsi;
+      }
+
+      analyzeSupportResistance(candles, currentPrice) {
+        const highs = candles.map(c => c.high);
+        const lows = candles.map(c => c.low);
+        
+        const recentHigh = Math.max(...highs.slice(-10));
+        const recentLow = Math.min(...lows.slice(-10));
+        
+        const distanceToHigh = (recentHigh - currentPrice) / currentPrice;
+        const distanceToLow = (currentPrice - recentLow) / recentLow;
+        
+        if (distanceToHigh < 0.02) return -10;
+        if (distanceToLow < 0.02) return 10;
+        
+        return 0;
+      }
+
+      analyzeTrendConsistency(candles) {
+        const closes = candles.map(c => c.close);
+        const shortMA = this.ema(closes, 5);
+        const longMA = this.ema(closes, 20);
+        
+        const currentDiff = (shortMA[shortMA.length-1] - longMA[longMA.length-1]) / longMA[longMA.length-1];
+        const prevDiff = (shortMA[shortMA.length-2] - longMA[longMA.length-2]) / longMA[longMA.length-2];
+        
+        if (Math.sign(currentDiff) === Math.sign(prevDiff)) {
+          return Math.abs(currentDiff) > 0.02 ? 15 : 5;
+        }
+        
+        return -10;
+      }
+
+      ema(values, period) {
+        const v = values.map(Number);
+        if (v.length === 0) return [];
+        const alpha = 2.0 / (period + 1);
+        const e = new Array(v.length).fill(0);
+        e[0] = v[0];
+        for (let i = 1; i < v.length; i++) {
+          e[i] = alpha * v[i] + (1 - alpha) * e[i-1];
+        }
+        return e;
+      }
+
+      async predict(symbol, candles, momentum, regime, patterns, currentPrice) {
+        const prediction = {
+          whales: this.analyzeWhales(candles, currentPrice),
+          liquidity: this.analyzeLiquidity(candles, currentPrice),
+          sentiment: this.analyzeSentiment(candles, momentum, regime),
+          structure: this.analyzeStructure(candles, patterns, currentPrice)
+        };
+
+        const weights = { whales: 0.25, liquidity: 0.20, sentiment: 0.30, structure: 0.25 };
+        let totalScore = 0;
+        
+        for (const [metric, data] of Object.entries(prediction)) {
+          totalScore += data.score * weights[metric];
+        }
+
+        prediction.overall = Math.round(totalScore);
+        
+        prediction.recommendedTiming = this.calculateRecommendedTiming(
+          prediction.sentiment.score,
+          prediction.liquidity.score,
+          prediction.whales.score,
+          prediction.structure.score
+        );
+
+        return prediction;
       }
     }
 
-    // Анализ одного коина (сохранена оригинальная логика)
+    // ПОЛНАЯ ОРИГИНАЛЬНАЯ ВЕРСИЯ SMARTCRYPTO PRO
+    class MonsterEngine {
+      calculateExpectedDuration(regime, momentum, risk, horizon, strategy) {
+        const baseDurations = {
+          'TRENDING': 120, 'RANGING': 90, 'BREAKOUT': 60, 'VOLATILE': 30, 'TRANSITION': 90
+        };
+
+        let baseDuration = baseDurations[regime.regime] || 60;
+        
+        const riskMultipliers = { 'AGGRESSIVE': 0.3, 'STABLE': 1.0, 'CONSERVATIVE': 2.0 };
+        const horizonMultipliers = { 'SHORT': 0.1, 'MEDIUM': 1.0, 'LONG': 3.0 };
+        const strategyAdjustments = { 'MOMENTUM': 0.8, 'BREAKOUT': 0.6, 'MEANREV': 1.5 };
+
+        let duration = baseDuration * riskMultipliers[risk] * horizonMultipliers[horizon] * strategyAdjustments[strategy];
+        duration *= (1 - (momentum.strength * 0.5));
+        duration = Math.max(1, Math.min(duration, 4320));
+
+        return this.formatDuration(duration);
+      }
+
+      formatDuration(minutes) {
+        if (minutes < 2) return '1 minute';
+        if (minutes < 60) return `${Math.round(minutes)} minutes`;
+        if (minutes < 1440) return `${(minutes / 60).toFixed(1)} hours`;
+        return `${(minutes / 1440).toFixed(1)} days`;
+      }
+
+      async analyzeMomentumStacking(symbol, horizon, risk, strategy) {
+        const timeframeConfigs = {
+          'AGGRESSIVE_SHORT_MOMENTUM': { base: '1m', layers: { "1m": 10 } },
+          'AGGRESSIVE_SHORT_BREAKOUT': { base: '1m', layers: { "1m": 10 } },
+          'AGGRESSIVE_SHORT_MEANREV': { base: '1m', layers: { "1m": 10 } },
+          
+          'AGGRESSIVE_MEDIUM_MOMENTUM': { base: '1m', layers: { "1m": 10 } },
+          'AGGRESSIVE_MEDIUM_BREAKOUT': { base: '1m', layers: { "1m": 10 } },
+          'AGGRESSIVE_MEDIUM_MEANREV': { base: '1m', layers: { "1m": 10 } },
+          
+          'AGGRESSIVE_LONG_MOMENTUM': { base: '1m', layers: { "1m": 10 } },
+          'AGGRESSIVE_LONG_BREAKOUT': { base: '1m', layers: { "1m": 10 } },
+          'AGGRESSIVE_LONG_MEANREV': { base: '1m', layers: { "1m": 10 } },
+
+          'STABLE_SHORT_MOMENTUM': { base: '5m', layers: { "3m": 3, "5m": 4, "15m": 2 } },
+          'STABLE_SHORT_BREAKOUT': { base: '5m', layers: { "5m": 4, "15m": 3, "30m": 2 } },
+          'STABLE_SHORT_MEANREV': { base: '15m', layers: { "5m": 2, "15m": 4, "30m": 3 } },
+          
+          'STABLE_MEDIUM_MOMENTUM': { base: '15m', layers: { "5m": 2, "15m": 4, "1h": 3 } },
+          'STABLE_MEDIUM_BREAKOUT': { base: '15m', layers: { "15m": 4, "1h": 3, "4h": 2 } },
+          'STABLE_MEDIUM_MEANREV': { base: '1h', layers: { "15m": 2, "1h": 4, "4h": 3 } },
+          
+          'STABLE_LONG_MOMENTUM': { base: '1h', layers: { "15m": 2, "1h": 4, "4h": 3 } },
+          'STABLE_LONG_BREAKOUT': { base: '1h', layers: { "1h": 4, "4h": 3, "1d": 2 } },
+          'STABLE_LONG_MEANREV': { base: '4h', layers: { "1h": 2, "4h": 4, "1d": 3 } },
+
+          'CONSERVATIVE_SHORT_MOMENTUM': { base: '15m', layers: { "5m": 2, "15m": 4, "1h": 3 } },
+          'CONSERVATIVE_SHORT_BREAKOUT': { base: '15m', layers: { "15m": 4, "1h": 3, "4h": 2 } },
+          'CONSERVATIVE_SHORT_MEANREV': { base: '1h', layers: { "15m": 2, "1h": 4, "4h": 3 } },
+          
+          'CONSERVATIVE_MEDIUM_MOMENTUM': { base: '1h', layers: { "15m": 2, "1h": 4, "4h": 3 } },
+          'CONSERVATIVE_MEDIUM_BREAKOUT': { base: '1h', layers: { "1h": 4, "4h": 3, "1d": 2 } },
+          'CONSERVATIVE_MEDIUM_MEANREV': { base: '4h', layers: { "1h": 2, "4h": 4, "1d": 3 } },
+          
+          'CONSERVATIVE_LONG_MOMENTUM': { base: '4h', layers: { "1h": 2, "4h": 4, "1d": 3 } },
+          'CONSERVATIVE_LONG_BREAKOUT': { base: '4h', layers: { "4h": 4, "1d": 3, "1w": 2 } },
+          'CONSERVATIVE_LONG_MEANREV': { base: '1d', layers: { "4h": 2, "1d": 4, "1w": 3 } }
+        };
+
+        const configKey = `${risk}_${horizon}_${strategy}`;
+        const config = timeframeConfigs[configKey] || timeframeConfigs['STABLE_MEDIUM_BREAKOUT'];
+        
+        const layers = config.layers;
+        const analysis = { LONG: 0, SHORT: 0, totalWeight: 0, details: [] };
+
+        for (const [tf, weight] of Object.entries(layers)) {
+          try {
+            const candles = await this.fetchCandles(symbol, tf, 50);
+            if (candles.length < 20) continue;
+
+            const signal = this.analyzeTimeframe(candles, tf);
+            analysis[signal.direction] += signal.strength * weight;
+            analysis.totalWeight += weight;
+            analysis.details.push({ tf, direction: signal.direction, strength: signal.strength });
+          } catch (e) {
+            console.log(`TF ${tf} analysis failed: ${e.message}`);
+          }
+        }
+
+        const netMomentum = (analysis.LONG - analysis.SHORT) / Math.max(1, analysis.totalWeight);
+        const direction = netMomentum > 0.05 ? 'LONG' : netMomentum < -0.05 ? 'SHORT' : 'NEUTRAL';
+        
+        return {
+          direction,
+          strength: Math.abs(netMomentum),
+          consensus: { LONG: analysis.LONG, SHORT: analysis.SHORT },
+          details: analysis.details,
+          baseTimeframe: config.base
+        };
+      }
+
+      analyzeTimeframe(candles, timeframe) {
+        const closes = candles.map(c => c.close);
+        
+        const emaSignal = this.emaAnalysis(closes);
+        const rsiSignal = this.rsiAnalysis(closes);
+        const priceAction = this.priceActionAnalysis(candles);
+        
+        const longScore = (emaSignal.long * 0.4) + (rsiSignal.long * 0.35) + (priceAction.long * 0.25);
+        const shortScore = (emaSignal.short * 0.4) + (rsiSignal.short * 0.35) + (priceAction.short * 0.25);
+        
+        const direction = longScore > shortScore ? 'LONG' : 'SHORT';
+        const strength = Math.max(longScore, shortScore);
+        
+        return { direction, strength };
+      }
+
+      emaAnalysis(closes) {
+        const ema9 = this.ema(closes, 9);
+        const ema21 = this.ema(closes, 21);
+        const ema50 = this.ema(closes, 50);
+        
+        const price = closes[closes.length-1];
+        const above9 = price > ema9[ema9.length-1];
+        const above21 = price > ema21[ema21.length-1];
+        const above50 = price > ema50[ema50.length-1];
+        
+        const bullCount = [above9, above21, above50].filter(x => x).length;
+        const bearCount = 3 - bullCount;
+        
+        return { long: bullCount / 3, short: bearCount / 3 };
+      }
+
+      rsiAnalysis(closes) {
+        const rsi = this.calculateRSI(closes);
+        const lastRsi = rsi[rsi.length-1];
+        
+        let longStrength = 0, shortStrength = 0;
+        
+        if (lastRsi < 30) longStrength = 0.8;
+        else if (lastRsi < 45) longStrength = 0.6;
+        else if (lastRsi > 70) shortStrength = 0.8;
+        else if (lastRsi > 55) shortStrength = 0.6;
+        
+        return { long: longStrength, short: shortStrength };
+      }
+
+      priceActionAnalysis(candles) {
+        const closes = candles.map(c => c.close);
+        const highs = candles.map(c => c.high);
+        const lows = candles.map(c => c.low);
+        
+        const recentHigh = Math.max(...highs.slice(-10));
+        const recentLow = Math.min(...lows.slice(-10));
+        const currentClose = closes[closes.length-1];
+        
+        const nearHigh = (recentHigh - currentClose) / recentHigh < 0.01;
+        const nearLow = (currentClose - recentLow) / recentLow < 0.01;
+        
+        return { 
+          long: nearLow ? 0.8 : 0.3, 
+          short: nearHigh ? 0.8 : 0.3 
+        };
+      }
+
+      detectGeometricPatterns(candles) {
+        const patterns = {
+          triangles: this.detectTriangles(candles),
+          harmonics: this.detectHarmonicPatterns(candles),
+          headShoulders: this.detectHeadShoulders(candles),
+          doubleTopBottom: this.detectDoubleTopBottom(candles),
+          flagsPennants: this.detectFlagsPennants(candles),
+          wedges: this.detectWedgePatterns(candles)
+        };
+
+        let patternBoost = 0;
+        let patternComments = [];
+
+        const allPatterns = [];
+        
+        if (patterns.triangles.ascending) {
+          allPatterns.push({ type: 'ASCENDING_TRIANGLE', direction: 'BULLISH', boost: 0.12, message: "🔺 Ascending triangle - Bullish breakout likely" });
+        }
+        if (patterns.triangles.descending) {
+          allPatterns.push({ type: 'DESCENDING_TRIANGLE', direction: 'BEARISH', boost: 0.12, message: "🔻 Descending triangle - Bearish breakdown expected" });
+        }
+        if (patterns.triangles.symmetrical) {
+          allPatterns.push({ type: 'SYMMETRICAL_TRIANGLE', direction: 'NEUTRAL', boost: 0.08, message: "🔷 Symmetrical triangle - Consolidation before breakout" });
+        }
+
+        if (patterns.headShoulders.headAndShoulders) {
+          allPatterns.push({ type: 'HEAD_SHOULDERS', direction: 'BEARISH', boost: 0.20, message: "👤 Head & Shoulders - Major reversal pattern" });
+        }
+        if (patterns.headShoulders.inverseHeadAndShoulders) {
+          allPatterns.push({ type: 'INVERSE_HEAD_SHOULDERS', direction: 'BULLISH', boost: 0.20, message: "🔄 Inverse Head & Shoulders - Bullish reversal" });
+        }
+
+        if (patterns.doubleTopBottom.doubleTop) {
+          allPatterns.push({ type: 'DOUBLE_TOP', direction: 'BEARISH', boost: 0.15, message: "⛰️ Double Top - Bearish reversal pattern" });
+        }
+        if (patterns.doubleTopBottom.doubleBottom) {
+          allPatterns.push({ type: 'DOUBLE_BOTTOM', direction: 'BULLISH', boost: 0.15, message: "🏔️ Double Bottom - Bullish reversal pattern" });
+        }
+
+        if (patterns.flagsPennants.flag) {
+          allPatterns.push({ type: 'FLAG', direction: 'CONTINUATION', boost: 0.10, message: "🚩 Flag pattern - Continuation pattern" });
+        }
+        if (patterns.flagsPennants.pennant) {
+          allPatterns.push({ type: 'PENNANT', direction: 'CONTINUATION', boost: 0.10, message: "🚩 Pennant pattern - Continuation pattern" });
+        }
+
+        if (patterns.wedges.risingWedge) {
+          allPatterns.push({ type: 'RISING_WEDGE', direction: 'BEARISH', boost: 0.12, message: "⬆️ Rising Wedge - Bearish reversal pattern" });
+        }
+        if (patterns.wedges.fallingWedge) {
+          allPatterns.push({ type: 'FALLING_WEDGE', direction: 'BULLISH', boost: 0.12, message: "⬇️ Falling Wedge - Bullish reversal pattern" });
+        }
+
+        if (patterns.harmonics.bat) {
+          allPatterns.push({ type: 'BAT_HARMONIC', direction: 'REVERSAL', boost: 0.20, message: "🦇 Bat pattern - Precision reversal zone" });
+        }
+        if (patterns.harmonics.gartley) {
+          allPatterns.push({ type: 'GARTLEY_HARMONIC', direction: 'REVERSAL', boost: 0.18, message: "🦋 Gartley pattern - High probability reversal" });
+        }
+        if (patterns.harmonics.butterfly) {
+          allPatterns.push({ type: 'BUTTERFLY_HARMONIC', direction: 'REVERSAL', boost: 0.15, message: "🦋 Butterfly pattern - Extreme reversal zone" });
+        }
+
+        let filteredPatterns = [];
+        
+        const bullishPatterns = allPatterns.filter(p => 
+          p.direction === 'BULLISH' || p.direction === 'INVERSE_HEAD_SHOULDERS' || p.direction === 'DOUBLE_BOTTOM' || p.direction === 'FALLING_WEDGE'
+        );
+        
+        const bearishPatterns = allPatterns.filter(p => 
+          p.direction === 'BEARISH' || p.direction === 'HEAD_SHOULDERS' || p.direction === 'DOUBLE_TOP' || p.direction === 'RISING_WEDGE'
+        );
+
+        const neutralPatterns = allPatterns.filter(p => 
+          p.direction === 'NEUTRAL' || p.direction === 'CONTINUATION' || p.direction === 'REVERSAL'
+        );
+
+        if (bullishPatterns.length > 0 && bearishPatterns.length > 0) {
+          const strongestBullish = bullishPatterns.reduce((a, b) => a.boost > b.boost ? a : b);
+          const strongestBearish = bearishPatterns.reduce((a, b) => a.boost > b.boost ? a : b);
+          
+          if (strongestBullish.boost >= strongestBearish.boost) {
+            filteredPatterns = [strongestBullish];
+          } else {
+            filteredPatterns = [strongestBearish];
+          }
+          
+          if (neutralPatterns.length > 0 && filteredPatterns.length < 2) {
+            const strongestNeutral = neutralPatterns.reduce((a, b) => a.boost > b.boost ? a : b);
+            filteredPatterns.push(strongestNeutral);
+          }
+        } else {
+          allPatterns.sort((a, b) => b.boost - a.boost);
+          filteredPatterns = allPatterns.slice(0, 2);
+        }
+
+        patternBoost = filteredPatterns.reduce((total, pattern) => total + pattern.boost, 0);
+        patternComments = filteredPatterns.map(p => p.message);
+
+        return { patternBoost, patternComments, patterns };
+      }
+
+      detectTriangles(candles) {
+        if (candles.length < 30) return {};
+        const highs = candles.map(c => c.high);
+        const lows = candles.map(c => c.low);
+        
+        const recentHighs = highs.slice(-20);
+        const recentLows = lows.slice(-20);
+        const earlyHighs = highs.slice(-30, -10);
+        const earlyLows = lows.slice(-30, -10);
+        
+        const highRangeRecent = Math.max(...recentHighs) - Math.min(...recentHighs);
+        const lowRangeRecent = Math.max(...recentLows) - Math.min(...recentLows);
+        const highRangeEarly = Math.max(...earlyHighs) - Math.min(...earlyHighs);
+        const lowRangeEarly = Math.max(...earlyLows) - Math.min(...earlyLows);
+        
+        return {
+          ascending: lowRangeRecent < lowRangeEarly * 0.7,
+          descending: highRangeRecent < highRangeEarly * 0.7,
+          symmetrical: highRangeRecent < highRangeEarly * 0.6 && lowRangeRecent < lowRangeEarly * 0.6
+        };
+      }
+
+      detectHarmonicPatterns(candles) {
+        const closes = candles.map(c => c.close);
+        if (closes.length < 50) return {};
+        
+        const recentMove = (closes[closes.length-1] - closes[closes.length-20]) / closes[closes.length-20];
+        const volatility = this.calculateVolatility(closes);
+        
+        return {
+          bat: Math.abs(recentMove) > 0.08 && volatility > 0.02,
+          gartley: Math.abs(recentMove) > 0.12,
+          butterfly: Math.abs(recentMove) > 0.15
+        };
+      }
+
+      detectHeadShoulders(candles) {
+        if (candles.length < 60) return {};
+        
+        const highs = candles.map(c => c.high);
+        const lows = candles.map(c => c.low);
+        
+        const peaks = this.findPeaks(highs);
+        const troughs = this.findTroughs(lows);
+        
+        if (peaks.length < 3) return {};
+        
+        const recentPeaks = peaks.slice(-3);
+        const recentTroughs = troughs.slice(-2);
+        
+        const isHeadAndShoulders = (
+          recentPeaks.length === 3 &&
+          recentPeaks[1] > recentPeaks[0] &&
+          recentPeaks[1] > recentPeaks[2] &&
+          Math.abs(recentPeaks[0] - recentPeaks[2]) / recentPeaks[1] < 0.05
+        );
+        
+        const isInverseHeadAndShoulders = (
+          recentTroughs.length === 3 &&
+          recentTroughs[1] < recentTroughs[0] &&
+          recentTroughs[1] < recentTroughs[2] &&
+          Math.abs(recentTroughs[0] - recentTroughs[2]) / recentTroughs[1] < 0.05
+        );
+        
+        return {
+          headAndShoulders: isHeadAndShoulders,
+          inverseHeadAndShoulders: isInverseHeadAndShoulders
+        };
+      }
+
+      detectDoubleTopBottom(candles) {
+        if (candles.length < 40) return {};
+        
+        const window = Math.max(20, Math.floor(candles.length / 4));
+        if (candles.length < window) return {};
+          
+        const highs = candles.map(c => c.high);
+        const lows = candles.map(c => c.low);
+        
+        const peaks = this.findPeaks(highs);
+        const troughs = this.findTroughs(lows);
+        
+        if (peaks.length < 2 || troughs.length < 2) return {};
+        
+        const recentPeaks = peaks.slice(-2);
+        const recentTroughs = troughs.slice(-2);
+        
+        const isDoubleTop = (
+          recentPeaks.length === 2 &&
+          Math.abs(recentPeaks[0] - recentPeaks[1]) / recentPeaks[0] < 0.02
+        );
+        
+        const isDoubleBottom = (
+          recentTroughs.length === 2 &&
+          Math.abs(recentTroughs[0] - recentTroughs[1]) / recentTroughs[0] < 0.02
+        );
+        
+        return {
+          doubleTop: isDoubleTop,
+          doubleBottom: isDoubleBottom
+        };
+      }
+
+      detectFlagsPennants(candles) {
+        if (candles.length < 30) return {};
+        
+        const highs = candles.map(c => c.high);
+        const lows = candles.map(c => c.low);
+        
+        const recentHighs = highs.slice(-15);
+        const recentLows = lows.slice(-15);
+        const earlyHighs = highs.slice(-30, -15);
+        const earlyLows = lows.slice(-30, -15);
+        
+        const highRangeRecent = Math.max(...recentHighs) - Math.min(...recentHighs);
+        const lowRangeRecent = Math.max(...recentLows) - Math.min(...recentLows);
+        const highRangeEarly = Math.max(...earlyHighs) - Math.min(...earlyHighs);
+        const lowRangeEarly = Math.max(...earlyLows) - Math.min(...earlyLows);
+        
+        const isFlag = (
+          highRangeEarly > highRangeRecent * 2 &&
+          lowRangeEarly > lowRangeRecent * 2
+        );
+        
+        const isPennant = (
+          highRangeRecent < highRangeEarly * 0.5 &&
+          lowRangeRecent < lowRangeEarly * 0.5
+        );
+        
+        return {
+          flag: isFlag,
+          pennant: isPennant
+        };
+      }
+
+      detectWedgePatterns(candles) {
+        if (candles.length < 40) return {};
+        
+        const highs = candles.map(c => c.high);
+        const lows = candles.map(c => c.low);
+        
+        const highSlope = this.calculateSlope(highs.slice(-20));
+        const lowSlope = this.calculateSlope(lows.slice(-20));
+        
+        const isRisingWedge = highSlope > 0 && lowSlope > 0 && highSlope > lowSlope;
+        const isFallingWedge = highSlope < 0 && lowSlope < 0 && highSlope > lowSlope;
+        
+        return {
+          risingWedge: isRisingWedge,
+          fallingWedge: isFallingWedge
+        };
+      }
+
+      findPeaks(values) {
+        const peaks = [];
+        for (let i = 1; i < values.length - 1; i++) {
+          if (values[i] > values[i-1] && values[i] > values[i+1]) {
+            peaks.push(values[i]);
+          }
+        }
+        return peaks;
+      }
+
+      findTroughs(values) {
+        const troughs = [];
+        for (let i = 1; i < values.length - 1; i++) {
+          if (values[i] < values[i-1] && values[i] < values[i+1]) {
+            troughs.push(values[i]);
+          }
+        }
+        return troughs;
+      }
+
+      calculateSlope(values) {
+        if (values.length < 2) return 0;
+        const n = values.length;
+        const xMean = (n - 1) / 2;
+        const yMean = values.reduce((a, b) => a + b, 0) / n;
+        
+        let numerator = 0;
+        let denominator = 0;
+        
+        for (let i = 0; i < n; i++) {
+          numerator += (i - xMean) * (values[i] - yMean);
+          denominator += Math.pow(i - xMean, 2);
+        }
+        
+        return denominator !== 0 ? numerator / denominator : 0;
+      }
+
+      detectMarketRegime(candles) {
+        if (!candles || candles.length < 50) return { regime: 'UNKNOWN', confidence: 0 };
+        
+        const closes = candles.map(c => c.close);
+        const volumes = candles.map(c => c.volume);
+        
+        const returns = [];
+        for (let i = 1; i < closes.length; i++) {
+          returns.push((closes[i] - closes[i-1]) / closes[i-1]);
+        }
+        
+        const volatility = this.calculateVolatility(returns);
+        const trendStrength = this.calculateTrendStrength(closes);
+        
+        let regime = 'TRANSITION';
+        let confidence = 0.5;
+        let regimeComment = '';
+
+        if (trendStrength > 0.7 && volatility > 0.02) {
+          regime = 'TRENDING';
+          confidence = Math.min(0.9, trendStrength);
+          regimeComment = '📈 Strong trend - Ride momentum with trend-following';
+        } else if (volatility < 0.01 && trendStrength < 0.3) {
+          regime = 'RANGING';
+          confidence = 0.8;
+          regimeComment = '🔄 Market ranging - Perfect for mean reversion';
+        } else if (volatility > 0.03) {
+          regime = 'VOLATILE';
+          confidence = 0.6;
+          regimeComment = '⚡ High volatility - Manage risk carefully';
+        }
+
+        return { regime, confidence, comment: regimeComment };
+      }
+
+      calculateVolatility(returns) {
+        const mean = returns.reduce((a,b)=>a+b,0) / returns.length;
+        const variance = returns.reduce((a,b)=>a + Math.pow(b-mean,2),0) / returns.length;
+        return Math.sqrt(variance);
+      }
+
+      calculateTrendStrength(closes) {
+        if (closes.length < 20) return 0;
+        const shortMA = this.ema(closes, 9);
+        const longMA = this.ema(closes, 21);
+        const currentDiff = (shortMA[shortMA.length-1] - longMA[longMA.length-1]) / longMA[longMA.length-1];
+        return Math.min(1, Math.abs(currentDiff) * 50);
+      }
+
+      ema(values, period) {
+        const v = values.map(Number);
+        if (v.length === 0) return [];
+        const alpha = 2.0 / (period + 1);
+        const e = new Array(v.length).fill(0);
+        e[0] = v[0];
+        for (let i = 1; i < v.length; i++) {
+          e[i] = alpha * v[i] + (1 - alpha) * e[i-1];
+        }
+        return e;
+      }
+
+      calculateRSI(closes, period = 14) {
+        if (closes.length < period + 1) return new Array(closes.length).fill(50);
+        
+        const gains = [], losses = [];
+        for (let i = 1; i < closes.length; i++) {
+          const change = closes[i] - closes[i-1];
+          gains.push(Math.max(change, 0));
+          losses.push(Math.max(-change, 0));
+        }
+        
+        const rsi = new Array(closes.length).fill(50);
+        let avgGain = gains.slice(0, period).reduce((a,b)=>a+b,0) / period;
+        let avgLoss = losses.slice(0, period).reduce((a,b)=>a+b,0) / period;
+        
+        for (let i = period; i < closes.length; i++) {
+          avgGain = ((avgGain * (period - 1)) + gains[i-1]) / period;
+          avgLoss = ((avgLoss * (period - 1)) + losses[i-1]) / period;
+          
+          const rs = avgLoss !== 0 ? avgGain / avgLoss : Infinity;
+          rsi[i] = 100 - (100 / (1 + rs));
+        }
+        
+        return rsi;
+      }
+
+      async fetchCandles(symbol, interval, limit) {
+        try {
+          if (!interval || !limit) {
+            const mode = ACTIVE_RISK;
+            const horizon = ACTIVE_HORIZON;
+
+            if (mode === 'AGGRESSIVE') {
+              interval = '1m';
+              limit = 40;
+            } 
+            else if (horizon === 'MEDIUM') {
+              interval = '5m';
+              limit = 80;
+            } 
+            else {
+              interval = '15m';
+              limit = 150;
+            }
+          }
+
+          const binanceMap = { 
+            "1m":"1m", "3m":"3m", "5m":"5m", "15m":"15m", 
+            "30m":"30m", "1h":"1h", "4h":"4h", "1d":"1d", "1w":"1w" 
+          };
+          const bintv = binanceMap[interval] || "5m";
+
+          const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${bintv}&limit=${limit}`;
+          const r = await fetch(url, { cache: "no-store" });
+          if (!r.ok) throw new Error('Binance failed');
+          const j = await r.json();
+
+          return j.map(k => ({
+            time: Math.floor(Number(k[0]) / 1000),
+            open: Number(k[1]),
+            high: Number(k[2]),
+            low: Number(k[3]),
+            close: Number(k[4]),
+            volume: Number(k[5])
+          }));
+        } catch (e) {
+          console.warn(`[fetchCandles] ${symbol} ${interval || '?'} failed:`, e.message);
+          return [];
+        }
+      }
+    }
+
+    const predictiveEngine = new PredictiveEngine();
+    const tradingEngine = new MonsterEngine();
+
     async function analyzeCoin(coin) {
       try {
-        // Здесь должна быть оригинальная логика анализа из SmartCrypto Pro
-        // Для демонстрации используем упрощенную версию
+        const momentum = await tradingEngine.analyzeMomentumStacking(coin, ACTIVE_HORIZON, ACTIVE_RISK, ACTIVE_STRATEGY);
+        const baseTimeframe = momentum.baseTimeframe || '5m';
+        const candles = await tradingEngine.fetchCandles(coin, baseTimeframe, 100);
         
-        const candles = await fetchCandles(coin, '5m', 50);
         if (candles.length < 20) {
-          throw new Error('Недостаточно данных');
+          throw new Error('Insufficient data');
         }
 
         const currentPrice = candles[candles.length-1].close;
+        const regime = tradingEngine.detectMarketRegime(candles);
+        const patterns = tradingEngine.detectGeometricPatterns(candles);
+
+        const expectedDuration = tradingEngine.calculateExpectedDuration(regime, momentum, ACTIVE_RISK, ACTIVE_HORIZON, ACTIVE_STRATEGY);
+
+        let prediction;
+        try {
+          prediction = await predictiveEngine.predict(coin, candles, momentum, regime, patterns, currentPrice);
+        } catch (error) {
+          prediction = { overall: 50 };
+        }
+
+        const baseProbability = 0.5 + (momentum.strength - 0.5) * 0.3 + patterns.patternBoost;
+        const probability = Math.max(0.1, Math.min(0.95, baseProbability));
         
-        // Упрощенный анализ (замените на оригинальную логику SmartCrypto Pro)
-        const momentum = await analyzeMomentum(coin, candles);
-        const regime = detectMarketRegime(candles);
-        const patterns = detectPatterns(candles);
-        
-        const score = Math.round(Math.random() * 40 + 60); // 60-100
-        const probability = Math.round(Math.random() * 30 + 70); // 70-100
+        const score = Math.round((momentum.strength * 40) + (regime.confidence * 30) + (probability * 30));
         const grade = score >= 80 ? 'A' : score >= 60 ? 'B' : 'C';
-        const strength = Math.round(score * 0.8 + (grade === 'A' ? 20 : grade === 'B' ? 10 : 0));
-        
-        const timing = calculateTiming(regime, momentum);
-        
+        const signalStrength = Math.round(score * 0.8 + (grade === 'A' ? 20 : grade === 'B' ? 10 : 0));
+
         return {
-          coin: coin,
-          signalType: momentum.direction === 'LONG' ? 'BUY' : 'SELL',
-          direction: momentum.direction,
-          score: score,
-          probability: probability,
-          grade: grade,
-          timing: timing,
-          price: currentPrice,
-          strength: strength,
+          symbol: coin,
+          final_dir: momentum.direction,
+          overall_score: score,
+          probability: Math.round(probability * 100),
           regime: regime.regime,
-          timeframe: '5m',
-          confidence: probability
+          regime_confidence: Math.round(regime.confidence * 100),
+          consensus: momentum.consensus,
+          last_price: currentPrice,
+          confidence: `${Math.round(regime.confidence * 100)}%`,
+          expectedDuration,
+          setupGrade: grade,
+          SignalStrength: signalStrength,
+          baseTimeframe: baseTimeframe,
+          prediction: prediction,
+          patternComments: patterns.patternComments
         };
         
       } catch (error) {
-        addLog(`❌ Ошибка анализа ${coin}: ${error.message}`);
-        return null;
+        addLog(`❌ Analysis failed for ${coin}: ${error.message}`);
+        return {
+          symbol: coin,
+          final_dir: 'NEUTRAL',
+          overall_score: 0,
+          probability: 0,
+          regime: 'UNKNOWN',
+          last_price: null,
+          confidence: '0%',
+          setupGrade: 'C',
+          SignalStrength: 0
+        };
       }
     }
 
-    // Сканирование всех коинов
     async function scanAllCoins() {
-      if (isScanning) return;
+      if (isScanning) {
+        addLog('⚠️ Scan already in progress');
+        return;
+      }
       
       isScanning = true;
       scanResults = [];
       btnScanAll.disabled = true;
       btnScanAll.textContent = 'Scanning...';
       
-      addLog('🔍 Начинаю сканирование всех коинов...');
+      addLog('🔍 Starting multi-coin scan...');
       
       const totalCoins = TOP_COINS.length;
+      let completed = 0;
       
-      for (let i = 0; i < TOP_COINS.length; i++) {
-        const coin = TOP_COINS[i];
-        const progress = ((i + 1) / totalCoins) * 100;
+      for (const coin of TOP_COINS) {
+        if (!isScanning) break;
         
+        const progress = ((completed + 1) / totalCoins) * 100;
         scanProgress.style.width = `${progress}%`;
-        scanStatus.textContent = `Scanning ${coin} (${i + 1}/${totalCoins})`;
+        scanStatus.textContent = `Scanning ${coin} (${completed + 1}/${totalCoins})`;
         
         const result = await analyzeCoin(coin);
         if (result) {
           scanResults.push(result);
           updateResultsTable();
-          addLog(`✅ ${coin}: ${result.direction} | Score: ${result.score} | Grade: ${result.grade}`);
+          
+          let logMsg = `✅ ${coin}: ${result.final_dir} | Score: ${result.overall_score} | Grade: ${result.setupGrade}`;
+          if (result.patternComments && result.patternComments.length > 0) {
+            logMsg += ` | Patterns: ${result.patternComments[0]}`;
+          }
+          addLog(logMsg);
         }
         
-        // Задержка чтобы не превысить лимиты API
-        await new Promise(resolve => setTimeout(resolve, 500));
+        completed++;
+        
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
       
       isScanning = false;
       btnScanAll.disabled = false;
       btnScanAll.textContent = 'Scan All Coins';
       scanStatus.textContent = `Scan complete: ${scanResults.length} signals found`;
-      addLog(`🎯 Сканирование завершено: ${scanResults.length} сигналов найдено`);
+      addLog(`🎯 Scan complete: ${scanResults.length} signals found`);
+      
+      if (scanResults.length > 0) {
+        const bestSignal = scanResults.reduce((best, current) => 
+          current.overall_score > best.overall_score ? current : best
+        );
+        selectCoin(bestSignal.symbol);
+      }
     }
 
-    // Обновление таблицы результатов
     function updateResultsTable() {
       resultsBody.innerHTML = '';
       
-      scanResults.sort((a, b) => b.score - a.score);
+      scanResults.sort((a, b) => b.overall_score - a.overall_score);
       
       scanResults.forEach(result => {
         const row = document.createElement('tr');
+        row.style.cursor = 'pointer';
+        row.onclick = () => selectCoin(result.symbol);
+        if (currentSelectedCoin === result.symbol) {
+          row.style.background = 'rgba(59, 130, 246, 0.1)';
+        }
         
         row.innerHTML = `
-          <td><strong>${result.coin}</strong></td>
-          <td class="${result.direction === 'LONG' ? 'signal-long' : 'signal-short'}">
-            ${result.direction === 'LONG' ? '🟢 LONG' : '🔴 SHORT'}
+          <td><strong>${result.symbol}</strong></td>
+          <td class="${result.final_dir === 'LONG' ? 'signal-long' : 'signal-short'}">
+            ${result.final_dir === 'LONG' ? '🟢 LONG' : '🔴 SHORT'}
           </td>
-          <td>${result.score}</td>
+          <td>${result.overall_score}</td>
           <td>${result.probability}%</td>
-          <td><span class="grade-badge grade-${result.grade}">${result.grade}</span></td>
-          <td>${result.timing}</td>
-          <td>${Number(result.price).toFixed(6)}</td>
-          <td>
-            <button onclick="sendCoinToSheets('${result.coin}')" class="control-btn" style="padding: 4px 8px; font-size: 11px;">
-              📤 Send
-            </button>
-          </td>
+          <td><span class="grade-badge grade-${result.setupGrade}">${result.setupGrade}</span></td>
+          <td>${result.expectedDuration}</td>
+          <td>${result.last_price ? Number(result.last_price).toFixed(6) : '-'}</td>
         `;
         
         resultsBody.appendChild(row);
       });
     }
 
-    // Отправка конкретного коина в Sheets
-    async function sendCoinToSheets(coin) {
-      const result = scanResults.find(r => r.coin === coin);
+    function selectCoin(coin) {
+      currentSelectedCoin = coin;
+      const result = scanResults.find(r => r.symbol === coin);
       if (!result) return;
       
-      addLog(`📤 Отправка ${coin} в Google Sheets...`);
-      
-      const sheetResult = await sendToGoogleSheets(result);
-      if (sheetResult) {
-        addLog(`✅ ${coin} успешно отправлен в Google Sheets`);
-      }
+      updateIntelligenceUI(result);
+      updateResultsTable();
     }
 
-    // Отправка всех результатов в Sheets
-    async function sendAllToSheets() {
-      if (scanResults.length === 0) {
-        addLog('❌ Нет результатов для отправки');
-        return;
+    function updateIntelligenceUI(res) {
+      priceEl.innerText = res.last_price ? Number(res.last_price).toFixed(6) : '-';
+      regimeEl.innerText = res.regime || '-';
+      
+      if (res.final_dir === 'LONG') {
+        dirEl.innerHTML = `<span class="value-long">🔥 LONG</span>`;
+      } else if (res.final_dir === 'SHORT') {
+        dirEl.innerHTML = `<span class="value-short">💀 SHORT</span>`;
+      } else {
+        dirEl.innerHTML = `<span>-</span>`;
       }
       
-      addLog(`📤 Отправка ${scanResults.length} сигналов в Google Sheets...`);
+      scoreEl.innerHTML = `<span class="value-score">${res.overall_score}</span>`;
+      probabilityEl.innerHTML = `<span class="probability-badge">${res.probability || 0}%</span>`;
       
-      let successCount = 0;
-      for (const result of scanResults) {
-        if (result.score >= 70) { // Отправляем только качественные сигналы
-          const sheetResult = await sendToGoogleSheets(result);
-          if (sheetResult) successCount++;
-          
-          // Задержка чтобы не превысить лимиты
-          await new Promise(resolve => setTimeout(resolve, 1000));
+      confidenceEl.textContent = res.confidence || "-";
+      timingEl.textContent = res.expectedDuration || "-";
+      
+      setupGradeEl.textContent = res.setupGrade || 'C';
+      setupGradeEl.className = `grade-badge grade-${res.setupGrade || 'C'}`;
+      
+      if (res.SignalStrength !== undefined) {
+        const val = Math.round(res.SignalStrength);
+        strengthFill.style.width = val + '%';
+        
+        if (gaugeMask && gaugeValue) {
+          const rotation = (val / 100 * 180);
+          gaugeMask.style.transform = `rotate(${rotation}deg)`;
+          gaugeValue.textContent = val + '%';
         }
       }
-      
-      addLog(`✅ ${successCount}/${scanResults.length} сигналов отправлено в Google Sheets`);
     }
 
-    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+   // Функция отправки с детальным логированием
+// НОВАЯ функция отправки напрямую в Google Sheets через API
+async function sendToGoogleSheets(signalData) {
+  try {
+    addLog(`📤 Отправка ${signalData.symbol} напрямую в Google Sheets...`);
     
-    // Эти функции должны быть заменены на оригинальные из SmartCrypto Pro
-    async function fetchCandles(symbol, interval, limit) {
-      try {
-        const binanceMap = { 
-          "1m":"1m", "3m":"3m", "5m":"5m", "15m":"15m", 
-          "30m":"30m", "1h":"1h", "4h":"4h", "1d":"1d", "1w":"1w" 
-        };
-        const bintv = binanceMap[interval] || "5m";
+    // Твои данные для авторизации - ЗАМЕНИ НА СВОИ!
+    const SPREADSHEET_ID = '1blSF6XI60zXCb5IU2ybuzpBJhe7tCt8LbV7oJRxHMyA'; // ЗАМЕНИ на ID своей таблицы
+    const RANGE = 'signals!A:H';
+    
+    const rowData = [
+      new Date().toISOString(),
+      signalData.symbol,
+      signalData.final_dir === 'LONG' ? 'BUY' : 'SELL',
+      signalData.probability + '%',
+      'SmartCryptoPro',
+      String(signalData.last_price),
+      signalData.baseTimeframe,
+      JSON.stringify({
+        score: signalData.overall_score,
+        grade: signalData.setupGrade,
+        timing: signalData.expectedDuration,
+        strength: signalData.SignalStrength,
+        regime: signalData.regime,
+        pattern_comments: signalData.patternComments || []
+      })
+    ];
 
-        const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${bintv}&limit=${limit}`;
-        const r = await fetch(url, { cache: "no-store" });
-        if (!r.ok) throw new Error('Binance failed');
-        const j = await r.json();
+    addLog(`📦 Данные: ${JSON.stringify(rowData)}`);
 
-        return j.map(k => ({
-          time: Math.floor(Number(k[0]) / 1000),
-          open: Number(k[1]),
-          high: Number(k[2]),
-          low: Number(k[3]),
-          close: Number(k[4]),
-          volume: Number(k[5])
-        }));
-      } catch (e) {
-        console.warn(`[fetchCandles] ${symbol} ${interval} failed:`, e.message);
-        return [];
+    // Используем Google Sheets API v4
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}:append?valueInputOption=RAW`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        values: [rowData]
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Sheets API error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    addLog(`✅ Успешно отправлено в таблицу!`);
+    
+    return { success: true, message: 'Signal sent to Google Sheets' };
+    
+  } catch (error) {
+    addLog(`❌ Ошибка: ${error.message}`);
+    
+    // Fallback: попробуем сохранить в localStorage
+    try {
+      const signals = JSON.parse(localStorage.getItem('cryptoSignals') || '[]');
+      signals.push({
+        ...signalData,
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem('cryptoSignals', JSON.stringify(signals));
+      addLog(`💾 Сигнал сохранен локально (localStorage)`);
+    } catch (localError) {
+      addLog(`⚠️ Не удалось сохранить локально`);
+    }
+    
+    return { success: false, message: error.message };
+  }
+}
+
+    async function sendAllToSheets() {
+      if (scanResults.length === 0) {
+        addLog('❌ No results to send');
+        return;
       }
-    }
 
-    async function analyzeMomentum(symbol, candles) {
-      // Упрощенная версия - замените на оригинальную логику SmartCrypto Pro
-      const closes = candles.map(c => c.close);
-      const lastPrice = closes[closes.length-1];
-      const prevPrice = closes[closes.length-2];
-      
-      return {
-        direction: lastPrice > prevPrice ? 'LONG' : 'SHORT',
-        strength: Math.abs((lastPrice - prevPrice) / prevPrice) * 100
-      };
-    }
+      const qualitySignals = scanResults.filter(result => 
+        result.overall_score >= 60 && result.setupGrade !== 'C'
+      );
 
-    function detectMarketRegime(candles) {
-      // Упрощенная версия
-      const closes = candles.map(c => c.close);
-      const volatility = calculateVolatility(closes);
-      
-      return {
-        regime: volatility > 0.02 ? 'VOLATILE' : 'RANGING',
-        confidence: 0.7
-      };
-    }
-
-    function detectPatterns(candles) {
-      // Упрощенная версия
-      return {
-        patternBoost: Math.random() * 0.3,
-        patternComments: ['Pattern detected']
-      };
-    }
-
-    function calculateTiming(regime, momentum) {
-      const base = ACTIVE_HORIZON === 'SHORT' ? 3 : 
-                   ACTIVE_HORIZON === 'MEDIUM' ? 15 : 60;
-      
-      return `${base} MIN`;
-    }
-
-    function calculateVolatility(closes) {
-      if (closes.length < 2) return 0;
-      const returns = [];
-      for (let i = 1; i < closes.length; i++) {
-        returns.push(Math.abs(closes[i] - closes[i-1]) / closes[i-1]);
+      if (qualitySignals.length === 0) {
+        addLog('⚠️ No quality signals found (score >= 60, grade A/B)');
+        return;
       }
-      return returns.reduce((a, b) => a + b, 0) / returns.length;
+
+      addLog(`📤 Sending ${qualitySignals.length} quality signals to Google Sheets...`);
+      
+      let successCount = 0;
+      for (let i = 0; i < qualitySignals.length; i++) {
+        const result = qualitySignals[i];
+        const sendResult = await sendToGoogleSheets(result);
+        
+        if (sendResult.success) {
+          successCount++;
+          addLog(`✅ ${result.symbol} sent successfully`);
+        } else {
+          addLog(`❌ Failed to send ${result.symbol}: ${sendResult.message}`);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      addLog(`📊 Sheets update: ${successCount}/${qualitySignals.length} signals sent`);
     }
 
-    // ========== ИНИЦИАЛИЗАЦИЯ ==========
     function initScanner() {
-      addLog('🚀 Multi-Coin Scanner initialized');
+      addLog('🚀 SmartCrypto Pro Multi-Scanner initialized');
       
-      // Обработчики кнопок
       btnScanAll.addEventListener('click', scanAllCoins);
       btnSendToSheets.addEventListener('click', sendAllToSheets);
       
-      // Обработчики режимов (сохранены из оригинального кода)
       setupModeControls();
       
-      // Автозапуск сканирования
-      setTimeout(scanAllCoins, 2000);
+      loopSelect.addEventListener('change', () => {
+        LOOP_SECONDS = Number(loopSelect.value);
+        if (loopTimer) {
+          clearInterval(loopTimer);
+          loopTimer = setInterval(scanAllCoins, LOOP_SECONDS * 1000);
+        }
+      });
       
-      // Автоматическое сканирование по таймеру
+      setTimeout(scanAllCoins, 1000);
+      
       loopTimer = setInterval(scanAllCoins, LOOP_SECONDS * 1000);
     }
 
     function setupModeControls() {
-      // Реализация управления режимами из оригинального кода
       const riskButtons = {
         AGGRESSIVE: document.getElementById('riskAgg'),
         STABLE: document.getElementById('riskStable'),
@@ -1378,7 +1768,6 @@
         MEANREV: document.getElementById('stratMeanRev')
       };
       
-      // Биндинг обработчиков...
       Object.keys(riskButtons).forEach(risk => {
         riskButtons[risk].addEventListener('click', () => {
           ACTIVE_RISK = risk;
@@ -1389,10 +1778,27 @@
         });
       });
       
-      // Аналогично для horizon и strategy...
+      Object.keys(horizonButtons).forEach(horizon => {
+        horizonButtons[horizon].addEventListener('click', () => {
+          ACTIVE_HORIZON = horizon;
+          Object.keys(horizonButtons).forEach(k => {
+            horizonButtons[k].classList.toggle('active', k === horizon);
+          });
+          addLog(`⏰ Horizon: ${horizon}`);
+        });
+      });
+      
+      Object.keys(strategyButtons).forEach(strategy => {
+        strategyButtons[strategy].addEventListener('click', () => {
+          ACTIVE_STRATEGY = strategy;
+          Object.keys(strategyButtons).forEach(k => {
+            strategyButtons[k].classList.toggle('active', k === strategy);
+          });
+          addLog(`🎪 Strategy: ${strategy}`);
+        });
+      });
     }
 
-    // Запуск при загрузке
     window.addEventListener('load', initScanner);
   </script>
 </body>
