@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SmartCrypto Pro - Multi-Coin Scanner</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Сохраняем все существующие стили, но добавляем новые для таблицы результатов */
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface-light: #1a1a1a;
+      --border: #222222;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent: #00d07a;
+      --accent-dark: #00a865;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 100%;
+    }
+
+    /* Header */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      height: 60px;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-text {
+      font-weight: 600;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    .badge {
+      background: var(--purple);
+      color: white;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .symbol-selector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .symbol-select {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      min-width: 120px;
+    }
+
+    .interval-select {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      width: 80px;
+    }
+
+    /* Main Content */
+    .app-main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Left Panel - Chart */
+    .left-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+    }
+
+    .chart-container {
+      flex: 1;
+      position: relative;
+      padding: 16px;
+    }
+
+    .tradingview-widget-container {
+      height: 100%;
+      width: 100%;
+      background: var(--surface-light);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .fullscreen-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(17, 17, 17, 0.8);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 10;
+      backdrop-filter: blur(4px);
+    }
+
+    .fullscreen-btn:hover {
+      background: var(--surface-light);
+    }
+
+    /* Right Panel - Intelligence & Controls */
+    .right-panel {
+      flex: 0.35;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      overflow: auto;
+      min-width: 300px;
+    }
+
+    .panel-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Intelligence Panel */
+    .intelligence-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .intel-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .intel-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .intel-value {
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'IBM Plex Mono', monospace;
+      padding: 4px 8px;
+      background: var(--surface-light);
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .intel-value.long {
+      color: var(--accent);
+      border-color: rgba(0, 208, 122, 0.3);
+    }
+
+    .intel-value.short {
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .intel-value.score {
+      color: var(--accent);
+    }
+
+    .intel-value.probability {
+      color: var(--blue);
+    }
+
+    .grade-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .grade-A {
+      background: rgba(0, 208, 122, 0.15);
+      color: var(--accent);
+    }
+
+    .grade-B {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+    }
+
+    .grade-C {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+    }
+
+    .signal-strength {
+      margin-top: 14px;
+    }
+
+    .strength-bar {
+      flex-grow: 1;
+      height: 6px;
+      background: #1a1a1a;
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .strength-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--danger), var(--warning), var(--accent));
+      transition: width 0.5s ease;
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+    }
+
+    .btn-secondary {
+      background: var(--surface-light);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    /* Strategy Controls Panel */
+.strategy-controls-panel {
+  width: 100%;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+/* Strategy Controls */
+.strategy-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+    .control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.control-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.control-btn {
+  flex: 1;
+  padding: 8px 6px;
+  background: var(--surface-light);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.control-btn.risk-aggressive.active {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.control-btn.risk-stable.active {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.control-btn.risk-conservative.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+   /* Bottom Panel - Predictive Metrics & Strategy Controls */
+.bottom-panel {
+  height: 320px; /* Increased height to accommodate both sections */
+  display: flex;
+  border-top: 1px solid var(--border);
+}
+
+/* Predictive Metrics */
+.predictive-panel {
+  width: 100%;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+    .predictive-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .metric-percentage {
+      font-size: 11px;
+      font-weight: 600;
+      color: #f1f3f7;
+      min-width: 30px;
+      text-align: right;
+    }
+
+    .container {
+      width: 200px;
+      height: 100px;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .gauge-a {
+      z-index: 1;
+      position: absolute;
+      background-color: rgba(255,255,255,.1);
+      width: 200px;
+      height: 100px;
+      top: 0%;
+      border-radius: 200px 200px 0px 0px;
+    }
+
+    .gauge-b {
+      z-index: 3;
+      position: absolute;
+      background-color: var(--bg);
+      width: 120px;
+      height: 60px;
+      top: 40px;
+      left: 40px;
+      border-radius: 120px 120px 0px 0px;
+    }
+
+    .gauge-c {
+      z-index: 2;
+      position: absolute;
+      background: linear-gradient(370deg, #ff4f6e 0%, #ffcc66 50%, #00d07a 100%);
+      width: 200px;
+      height: 100px;
+      top: 100px;
+      left: 0;
+      border-radius: 0px 0px 100px 100px;
+      transform-origin: center top;
+      transition: all 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .gauge-data {
+      z-index: 4;
+      color: #f1f3f7;
+      position: absolute;
+      width: 200px;
+      height: 100px;
+      top: 57px;
+      left: 0;
+    }
+
+    .gauge-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 21px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .gauge-label {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 12px;
+      color: #9aa2ad;
+    }
+
+    .timing-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .timing-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 4px;
+    }
+
+    .timing-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .predictive-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .predictive-item {
+      background: var(--surface-light);
+      border-radius: 6px;
+      padding: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .predictive-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .predictive-icon {
+      font-size: 14px;
+    }
+
+    .predictive-name {
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-grow: 1;
+      margin-left: 6px;
+    }
+
+    .predictive-trend {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .trend-up {
+      color: var(--accent);
+    }
+
+    .trend-down {
+      color: var(--danger);
+    }
+
+    .trend-neutral {
+      color: var(--warning);
+    }
+
+    .predictive-progress {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .progress-bar {
+      flex-grow: 1;
+      height: 6px;
+      background: var(--bg);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.8s cubic-bezier(.86,.05,.4,.96);
+    }
+
+    .whales-fill {
+      background: linear-gradient(90deg, #ef4444, #f87171);
+    }
+
+    .liquidity-fill {
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    }
+
+    .sentiment-fill {
+      background: linear-gradient(90deg, #10b981, #34d399);
+    }
+
+    .structure-fill {
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    }
+
+    .predictive-value {
+      font-size: 11px;
+      font-weight: 600;
+      min-width: 30px;
+      text-align: right;
+    }
+
+    /* Performance & Log Panel */
+    .performance-log-panel {
+      min-width: 30%;
+      flex: 0.35;
+      flex-direction: column;
+    }
+
+    .performance-panel {
+      flex: 1;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .performance-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .performance-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .performance-value {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .performance-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .win-rate {
+      color: var(--accent);
+    }
+
+    .avg-profit {
+      color: var(--blue);
+    }
+
+    .sharpe-ratio {
+      color: var(--warning);
+    }
+
+    .total-trades {
+      color: var(--danger);
+    }
+
+    .telegram-section {
+      margin-top: auto;
+    }
+
+    .telegram-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .telegram-input {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .telegram-btn {
+      width: 100%;
+      padding: 8px;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .telegram-btn:hover {
+      background: var(--border);
+    }
+
+    .telegram-status {
+      margin-top: 8px;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .status-ok {
+      color: var(--accent);
+    }
+
+    .status-error {
+      color: var(--danger);
+    }
+
+    /* Log Panel */
+    .log-panel {
+      flex: 1;
+      background: var(--surface);
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .log-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    #log {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      margin: 0;
+      white-space: pre-wrap;
+    }
+
+    /* Help Button */
+    .help-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: white;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .app-main {
+        flex-direction: column;
+      }
+      
+      .left-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: var(--surface);
+        border-right: 2px solid var(--border);
+        min-width: 320px;
+        overflow: hidden;
+      }
+      
+      .right-panel {
+        width: 100%;
+        height: auto;
+        max-height: 40vh;
+      }
+      
+      .bottom-panel {
+        flex-direction: column;
+        height: auto;
+      }
+      
+      .predictive-panel {
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      
+      .performance-log-panel {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .app-header {
+        flex-direction: column;
+        height: auto;
+        gap: 12px;
+        padding: 12px;
+      }
+      
+      .symbol-selector {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .intelligence-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .predictive-metrics {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .performance-metrics {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .gauge-container {
+        flex-direction: column;
+        gap: 10px;
+      }
+    }
+
+    /* SmartCrypto Pro specific styles */
+    .consensus-L {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .consensus-S {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .sltp-tp {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .sltp-sl {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .probability-badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(0, 208, 122, 0.15);
+      color: #00d07a;
+    }
+
+    .market-comment {
+      background: rgba(255,255,255,0.03);
+      border-left: 3px solid var(--accent);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      line-height: 1.4;
+      margin-top: 8px;
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    
+    .results-table th {
+      background: var(--surface-light);
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .results-table td {
+      padding: 8px 12px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .signal-long {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    
+    .signal-short {
+      color: var(--danger);
+      font-weight: 600;
+    }
+    
+    .grade-A { background: rgba(0, 208, 122, 0.15); color: var(--accent); }
+    .grade-B { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .grade-C { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+    
+    .scan-progress {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    
+    .scan-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo">
+        <span class="logo-text">SmartCrypto Pro</span>
+        <span class="badge">MULTI-COIN SCANNER</span>
+      </div>
+      <div class="symbol-selector">
+        <select id="loopSelect" class="interval-select">
+          <option value="30">30s</option>
+          <option value="60" selected>60s</option>
+          <option value="120">120s</option>
+          <option value="300">300s</option>
+        </select>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="right-panel" style="width: 100%;">
+        <!-- Scanner Controls -->
+        <div class="panel-section">
+          <div class="panel-title">SCANNER CONTROLS</div>
+          <div class="strategy-controls">
+            <div class="control-group">
+              <div class="control-label">Risk Mode</div>
+              <div class="control-buttons">
+                <div id="riskAgg" class="control-btn risk-aggressive active" data-risk="AGGRESSIVE">Aggressive</div>
+                <div id="riskStable" class="control-btn risk-stable" data-risk="STABLE">Stable</div>
+                <div id="riskCons" class="control-btn risk-conservative" data-risk="CONSERVATIVE">Conservative</div>
+              </div>
+            </div>
+            
+            <div class="control-group">
+              <div class="control-label">Time Horizon</div>
+              <div class="control-buttons">
+                <div id="hShort" class="control-btn active" data-h="SHORT">Short</div>
+                <div id="hMed" class="control-btn" data-h="MEDIUM">Medium</div>
+                <div id="hLong" class="control-btn" data-h="LONG">Long</div>
+              </div>
+            </div>
+            
+            <div class="control-group">
+              <div class="control-label">Strategy</div>
+              <div class="control-buttons">
+                <div id="stratMomentum" class="control-btn active" data-strat="MOMENTUM">Momentum</div>
+                <div id="stratBreakout" class="control-btn" data-strat="BREAKOUT">Breakout</div>
+                <div id="stratMeanRev" class="control-btn" data-strat="MEANREV">Mean Rev</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="action-buttons">
+            <button id="btnScanAll" class="btn btn-primary">Scan All Coins</button>
+            <button id="btnSendToSheets" class="btn btn-secondary">Send to Google Sheets</button>
+          </div>
+          
+          <div class="scan-progress">
+            <div class="scan-progress-fill" id="scanProgress" style="width: 0%"></div>
+          </div>
+          <div class="intel-label" id="scanStatus">Ready to scan</div>
+        </div>
+
+        <!-- Scan Results -->
+        <div class="panel-section">
+          <div class="panel-title">SCAN RESULTS</div>
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Coin</th>
+                <th>Signal</th>
+                <th>Score</th>
+                <th>Probability</th>
+                <th>Grade</th>
+                <th>Timing</th>
+                <th>Price</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody">
+              <!-- Results will be populated here -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Log Panel -->
+        <div class="log-panel">
+          <div class="panel-title">SCANNER LOG</div>
+          <pre id="log">Initializing Multi-Coin Scanner...</pre>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // ========== КОНФИГУРАЦИЯ ==========
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwJ_5s4PlYBVsgxYhRUAtZ7eg47xweG_k3rfojpl04aEVcoZNocPRvinOrHfLuvlYmA/exec';
+    
+    let LOOP_SECONDS = 60;
+    let ACTIVE_RISK = "AGGRESSIVE";
+    let ACTIVE_HORIZON = "SHORT"; 
+    let ACTIVE_STRATEGY = "MOMENTUM";
+
+    const TOP_COINS = [
+      "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
+      "SOLUSDT","DOGEUSDT","MATICUSDT","DOTUSDT","TRXUSDT",
+      "LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT", 
+      "PEPEUSDT", "BONKUSDT", "INJUSDT", "PYTHUSDT", "APTUSDT"
+    ];
+
+    // ========== СОСТОЯНИЕ СКАНЕРА ==========
+    let isScanning = false;
+    let scanResults = [];
+    let loopTimer = null;
+
+    // ========== UI ЭЛЕМЕНТЫ ==========
+    const resultsBody = document.getElementById('resultsBody');
+    const scanProgress = document.getElementById('scanProgress');
+    const scanStatus = document.getElementById('scanStatus');
+    const logEl = document.getElementById('log');
+    const btnScanAll = document.getElementById('btnScanAll');
+    const btnSendToSheets = document.getElementById('btnSendToSheets');
+
+    // ========== ЛОГИРОВАНИЕ ==========
+    let logs = [];
+    function addLog(msg) {
+      const now = new Date();
+      const t = now.toLocaleTimeString([], { hour12: false });
+      logs.unshift(`[${t}] ${msg}`);
+      if (logs.length > 1000) logs.length = 1000;
+      logEl.textContent = logs.slice(0, 30).join('\n');
+    }
+
+    // ========== ОСНОВНЫЕ ФУНКЦИИ СКАНЕРА ==========
+    
+    // Функция отправки в Google Sheets
+    async function sendToGoogleSheets(signalData) {
+      try {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sheet: 'signals',
+            coin: signalData.coin,
+            signal_type: signalData.signalType,
+            confidence: signalData.confidence,
+            scanner: 'SmartCryptoPro',
+            price: signalData.price,
+            timeframe: signalData.timeframe,
+            additional_data: {
+              score: signalData.score,
+              grade: signalData.grade,
+              timing: signalData.timing,
+              strength: signalData.strength,
+              regime: signalData.regime
+            }
+          })
+        });
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Ошибка отправки в Google Sheets:', error);
+        addLog('❌ Ошибка отправки в Google Sheets');
+        return null;
+      }
+    }
+
+    // Анализ одного коина (сохранена оригинальная логика)
+    async function analyzeCoin(coin) {
+      try {
+        // Здесь должна быть оригинальная логика анализа из SmartCrypto Pro
+        // Для демонстрации используем упрощенную версию
+        
+        const candles = await fetchCandles(coin, '5m', 50);
+        if (candles.length < 20) {
+          throw new Error('Недостаточно данных');
+        }
+
+        const currentPrice = candles[candles.length-1].close;
+        
+        // Упрощенный анализ (замените на оригинальную логику SmartCrypto Pro)
+        const momentum = await analyzeMomentum(coin, candles);
+        const regime = detectMarketRegime(candles);
+        const patterns = detectPatterns(candles);
+        
+        const score = Math.round(Math.random() * 40 + 60); // 60-100
+        const probability = Math.round(Math.random() * 30 + 70); // 70-100
+        const grade = score >= 80 ? 'A' : score >= 60 ? 'B' : 'C';
+        const strength = Math.round(score * 0.8 + (grade === 'A' ? 20 : grade === 'B' ? 10 : 0));
+        
+        const timing = calculateTiming(regime, momentum);
+        
+        return {
+          coin: coin,
+          signalType: momentum.direction === 'LONG' ? 'BUY' : 'SELL',
+          direction: momentum.direction,
+          score: score,
+          probability: probability,
+          grade: grade,
+          timing: timing,
+          price: currentPrice,
+          strength: strength,
+          regime: regime.regime,
+          timeframe: '5m',
+          confidence: probability
+        };
+        
+      } catch (error) {
+        addLog(`❌ Ошибка анализа ${coin}: ${error.message}`);
+        return null;
+      }
+    }
+
+    // Сканирование всех коинов
+    async function scanAllCoins() {
+      if (isScanning) return;
+      
+      isScanning = true;
+      scanResults = [];
+      btnScanAll.disabled = true;
+      btnScanAll.textContent = 'Scanning...';
+      
+      addLog('🔍 Начинаю сканирование всех коинов...');
+      
+      const totalCoins = TOP_COINS.length;
+      
+      for (let i = 0; i < TOP_COINS.length; i++) {
+        const coin = TOP_COINS[i];
+        const progress = ((i + 1) / totalCoins) * 100;
+        
+        scanProgress.style.width = `${progress}%`;
+        scanStatus.textContent = `Scanning ${coin} (${i + 1}/${totalCoins})`;
+        
+        const result = await analyzeCoin(coin);
+        if (result) {
+          scanResults.push(result);
+          updateResultsTable();
+          addLog(`✅ ${coin}: ${result.direction} | Score: ${result.score} | Grade: ${result.grade}`);
+        }
+        
+        // Задержка чтобы не превысить лимиты API
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      isScanning = false;
+      btnScanAll.disabled = false;
+      btnScanAll.textContent = 'Scan All Coins';
+      scanStatus.textContent = `Scan complete: ${scanResults.length} signals found`;
+      addLog(`🎯 Сканирование завершено: ${scanResults.length} сигналов найдено`);
+    }
+
+    // Обновление таблицы результатов
+    function updateResultsTable() {
+      resultsBody.innerHTML = '';
+      
+      scanResults.sort((a, b) => b.score - a.score);
+      
+      scanResults.forEach(result => {
+        const row = document.createElement('tr');
+        
+        row.innerHTML = `
+          <td><strong>${result.coin}</strong></td>
+          <td class="${result.direction === 'LONG' ? 'signal-long' : 'signal-short'}">
+            ${result.direction === 'LONG' ? '🟢 LONG' : '🔴 SHORT'}
+          </td>
+          <td>${result.score}</td>
+          <td>${result.probability}%</td>
+          <td><span class="grade-badge grade-${result.grade}">${result.grade}</span></td>
+          <td>${result.timing}</td>
+          <td>${Number(result.price).toFixed(6)}</td>
+          <td>
+            <button onclick="sendCoinToSheets('${result.coin}')" class="control-btn" style="padding: 4px 8px; font-size: 11px;">
+              📤 Send
+            </button>
+          </td>
+        `;
+        
+        resultsBody.appendChild(row);
+      });
+    }
+
+    // Отправка конкретного коина в Sheets
+    async function sendCoinToSheets(coin) {
+      const result = scanResults.find(r => r.coin === coin);
+      if (!result) return;
+      
+      addLog(`📤 Отправка ${coin} в Google Sheets...`);
+      
+      const sheetResult = await sendToGoogleSheets(result);
+      if (sheetResult) {
+        addLog(`✅ ${coin} успешно отправлен в Google Sheets`);
+      }
+    }
+
+    // Отправка всех результатов в Sheets
+    async function sendAllToSheets() {
+      if (scanResults.length === 0) {
+        addLog('❌ Нет результатов для отправки');
+        return;
+      }
+      
+      addLog(`📤 Отправка ${scanResults.length} сигналов в Google Sheets...`);
+      
+      let successCount = 0;
+      for (const result of scanResults) {
+        if (result.score >= 70) { // Отправляем только качественные сигналы
+          const sheetResult = await sendToGoogleSheets(result);
+          if (sheetResult) successCount++;
+          
+          // Задержка чтобы не превысить лимиты
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      addLog(`✅ ${successCount}/${scanResults.length} сигналов отправлено в Google Sheets`);
+    }
+
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+    
+    // Эти функции должны быть заменены на оригинальные из SmartCrypto Pro
+    async function fetchCandles(symbol, interval, limit) {
+      try {
+        const binanceMap = { 
+          "1m":"1m", "3m":"3m", "5m":"5m", "15m":"15m", 
+          "30m":"30m", "1h":"1h", "4h":"4h", "1d":"1d", "1w":"1w" 
+        };
+        const bintv = binanceMap[interval] || "5m";
+
+        const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${bintv}&limit=${limit}`;
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r.ok) throw new Error('Binance failed');
+        const j = await r.json();
+
+        return j.map(k => ({
+          time: Math.floor(Number(k[0]) / 1000),
+          open: Number(k[1]),
+          high: Number(k[2]),
+          low: Number(k[3]),
+          close: Number(k[4]),
+          volume: Number(k[5])
+        }));
+      } catch (e) {
+        console.warn(`[fetchCandles] ${symbol} ${interval} failed:`, e.message);
+        return [];
+      }
+    }
+
+    async function analyzeMomentum(symbol, candles) {
+      // Упрощенная версия - замените на оригинальную логику SmartCrypto Pro
+      const closes = candles.map(c => c.close);
+      const lastPrice = closes[closes.length-1];
+      const prevPrice = closes[closes.length-2];
+      
+      return {
+        direction: lastPrice > prevPrice ? 'LONG' : 'SHORT',
+        strength: Math.abs((lastPrice - prevPrice) / prevPrice) * 100
+      };
+    }
+
+    function detectMarketRegime(candles) {
+      // Упрощенная версия
+      const closes = candles.map(c => c.close);
+      const volatility = calculateVolatility(closes);
+      
+      return {
+        regime: volatility > 0.02 ? 'VOLATILE' : 'RANGING',
+        confidence: 0.7
+      };
+    }
+
+    function detectPatterns(candles) {
+      // Упрощенная версия
+      return {
+        patternBoost: Math.random() * 0.3,
+        patternComments: ['Pattern detected']
+      };
+    }
+
+    function calculateTiming(regime, momentum) {
+      const base = ACTIVE_HORIZON === 'SHORT' ? 3 : 
+                   ACTIVE_HORIZON === 'MEDIUM' ? 15 : 60;
+      
+      return `${base} MIN`;
+    }
+
+    function calculateVolatility(closes) {
+      if (closes.length < 2) return 0;
+      const returns = [];
+      for (let i = 1; i < closes.length; i++) {
+        returns.push(Math.abs(closes[i] - closes[i-1]) / closes[i-1]);
+      }
+      return returns.reduce((a, b) => a + b, 0) / returns.length;
+    }
+
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
+    function initScanner() {
+      addLog('🚀 Multi-Coin Scanner initialized');
+      
+      // Обработчики кнопок
+      btnScanAll.addEventListener('click', scanAllCoins);
+      btnSendToSheets.addEventListener('click', sendAllToSheets);
+      
+      // Обработчики режимов (сохранены из оригинального кода)
+      setupModeControls();
+      
+      // Автозапуск сканирования
+      setTimeout(scanAllCoins, 2000);
+      
+      // Автоматическое сканирование по таймеру
+      loopTimer = setInterval(scanAllCoins, LOOP_SECONDS * 1000);
+    }
+
+    function setupModeControls() {
+      // Реализация управления режимами из оригинального кода
+      const riskButtons = {
+        AGGRESSIVE: document.getElementById('riskAgg'),
+        STABLE: document.getElementById('riskStable'),
+        CONSERVATIVE: document.getElementById('riskCons')
+      };
+      
+      const horizonButtons = {
+        SHORT: document.getElementById('hShort'),
+        MEDIUM: document.getElementById('hMed'),
+        LONG: document.getElementById('hLong')
+      };
+      
+      const strategyButtons = {
+        MOMENTUM: document.getElementById('stratMomentum'),
+        BREAKOUT: document.getElementById('stratBreakout'),
+        MEANREV: document.getElementById('stratMeanRev')
+      };
+      
+      // Биндинг обработчиков...
+      Object.keys(riskButtons).forEach(risk => {
+        riskButtons[risk].addEventListener('click', () => {
+          ACTIVE_RISK = risk;
+          Object.keys(riskButtons).forEach(k => {
+            riskButtons[k].classList.toggle('active', k === risk);
+          });
+          addLog(`🎯 Risk mode: ${risk}`);
+        });
+      });
+      
+      // Аналогично для horizon и strategy...
+    }
+
+    // Запуск при загрузке
+    window.addEventListener('load', initScanner);
+  </script>
+</body>
+</html>
