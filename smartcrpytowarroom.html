@@ -1307,7 +1307,7 @@
                     <option value="5000">5 seconds</option>
                     <option value="10000">10 seconds</option>
                     <option value="15000">15 seconds</option>
-                    <option value="30000">selected>10 seconds</option>
+                    <option value="30000">selected>30 seconds</option>
                 </select>
             </div>
             
@@ -1841,10 +1841,10 @@
     }
 
     scheduleSignalValidation(signal) {
-        console.log(`⏰ Scheduling validation for ${signal.data.coin} in 3 minutes...`);
+        console.log(`⏰ Scheduling validation for ${signal.data.coin} in 1 minutes...`);
         setTimeout(() => {
             this.validateSignalOutcome(signal);
-        }, 3 * 60 * 1000);
+        }, 1 * 60 * 1000);
     }
 
     async validateSignalOutcome(signal) {
