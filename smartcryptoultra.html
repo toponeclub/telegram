@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>SmartCrypto Pro - Multi Scanner</title>
+  <title>SmartCrypto Pro ULTRA</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="scanner-communicator.js"></script>
   <style>
     :root {
       --bg: #0a0a0a;
@@ -455,8 +456,8 @@
       </div>
       <div class="symbol-selector">
         <select id="loopSelect" class="interval-select" style="background: var(--surface-light); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 14px;">
-          <option value="30">30s</option>
-          <option value="60" selected>60s</option>
+          <option value="30" selected>30s</option>
+          <option value="60" >60s</option>
           <option value="120">120s</option>
           <option value="300">300s</option>
         </select>
@@ -498,7 +499,7 @@
           
           <div class="action-buttons">
             <button id="btnScanAll" class="btn btn-primary">Scan All Coins</button>
-            <button id="btnSendToSheets" class="btn btn-secondary">Send to Sheets</button>
+            <button id="btnSendToSheets" style="display: none" class="btn btn-secondary">Send to Sheets</button>
           </div>
           
           <div class="scan-progress">
@@ -595,8 +596,9 @@
   </div>
 
   <script>
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0dsiut7O2QmJ_768zP592MNeUfRecKpevonkGpnimbafxCyhVtYmOKPNxhmVTDFI-/exec';    
-    let LOOP_SECONDS = 60;
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0dsiut7O2QmJ_768zP592MNeUfRecKpevonkGpnimbafxCyhVtYmOKPNxhmVTDFI-/exec';
+    
+    let LOOP_SECONDS = 30;
     let ACTIVE_RISK = "AGGRESSIVE";
     let ACTIVE_HORIZON = "SHORT"; 
     let ACTIVE_STRATEGY = "MOMENTUM";
@@ -642,7 +644,151 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0dsiut7O2Qm
       logEl.textContent = logs.join('\n');
     }
 
-    class PredictiveEngine {
+   // Основная функция отправки в Google Sheets
+// Функция отправки с детальным логированием
+async function sendToGoogleSheets(signalData) {
+  try {
+    addLog(`📤 Начинаю отправку ${signalData.symbol} в Google Sheets...`);
+    
+    const payload = {
+      sheet: 'signals',
+      coin: signalData.symbol,
+      signal_type: signalData.final_dir === 'LONG' ? 'BUY' : 'SELL',
+      confidence: signalData.probability + '%',
+      scanner: 'SmartCryptoPro',
+      price: String(signalData.last_price),
+      timeframe: signalData.baseTimeframe,
+      additional_data: JSON.stringify({
+        score: signalData.overall_score,
+        grade: signalData.setupGrade,
+        timing: signalData.expectedDuration,
+        strength: signalData.SignalStrength,
+        regime: signalData.regime,
+        pattern_comments: signalData.patternComments || []
+      })
+    };
+
+    addLog(`📦 Данные для отправки: ${JSON.stringify(payload).substring(0, 200)}...`);
+
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    addLog(`📨 Статус ответа: ${response.status} ${response.statusText}`);
+    
+    const responseText = await response.text();
+    addLog(`📄 Ответ от сервера: ${responseText.substring(0, 300)}`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (e) {
+      throw new Error(`Invalid JSON response: ${responseText}`);
+    }
+
+    addLog(`✅ Ответ от Google Sheets: ${JSON.stringify(result)}`);
+    
+    if (result.status === 'success') {
+      return { success: true, message: 'Signal sent to Google Sheets' };
+    } else {
+      throw new Error(result.message || 'Unknown error from Google Sheets');
+    }
+  } catch (error) {
+    addLog(`❌ Ошибка отправки: ${error.message}`);
+    console.error('Full error:', error);
+    return { 
+      success: false, 
+      message: error.message 
+    };
+  }
+}
+
+
+// Тестовая функция для проверки подключения
+async function testGoogleSheetsConnection() {
+  try {
+    addLog('🧪 Testing Google Sheets connection...');
+    
+    const testPayload = {
+      sheet: 'signals',
+      coin: 'TEST_COIN',
+      signal_type: 'BUY',
+      confidence: '85%',
+      scanner: 'SmartCryptoPro-TEST',
+      price: '1000.00',
+      timeframe: '5m',
+      additional_data: JSON.stringify({ test: true, timestamp: new Date().toISOString() })
+    };
+
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(testPayload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    addLog('✅ Test connection successful: ' + JSON.stringify(result));
+    return { success: true, message: 'Connection test passed' };
+    
+  } catch (error) {
+    addLog('❌ Test connection failed: ' + error.message);
+    return { success: false, message: error.message };
+  }
+}
+
+
+    // ДОБАВЛЕНА ФУНКЦИЯ ОТПРАВКИ ВСЕХ РЕЗУЛЬТАТОВ
+    async function sendAllToSheets() {
+      if (scanResults.length === 0) {
+        addLog('❌ No results to send');
+        return;
+      }
+
+      const qualitySignals = scanResults.filter(result => 
+        result.overall_score >= 60 && result.setupGrade !== 'C'
+      );
+
+      if (qualitySignals.length === 0) {
+        addLog('⚠️ No quality signals found (score >= 60, grade A/B)');
+        return;
+      }
+
+      addLog(`📤 Sending ${qualitySignals.length} quality signals to Google Sheets...`);
+      
+      let successCount = 0;
+      for (let i = 0; i < qualitySignals.length; i++) {
+        const result = qualitySignals[i];
+        const sendResult = await sendToGoogleSheets(result);
+        
+        if (sendResult.success) {
+          successCount++;
+          addLog(`✅ ${result.symbol} sent successfully`);
+        } else {
+          addLog(`❌ Failed to send ${result.symbol}: ${sendResult.message}`);
+        }
+        
+        // Задержка между запросами чтобы не превысить лимиты
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      addLog(`📊 Sheets update: ${successCount}/${qualitySignals.length} signals sent`);
+    }
+
+   class PredictiveEngine {
       calculateRecommendedTiming(psychology, liquidity, whales, structure) {
         const baseTime = ACTIVE_HORIZON === 'SHORT' ? 3 : ACTIVE_HORIZON === 'MEDIUM' ? 30 : 120;
         const weights = [0.4, 0.3, 0.2, 0.1];
@@ -1621,66 +1767,34 @@ const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0dsiut7O2Qm
       }
     }
 
-  // СУПЕР-ПРОСТАЯ функция отправки
-async function sendToGoogleSheets(signalData) {
+    function doPost(e) {
   try {
-    console.log('🔄 Пытаюсь отправить:', signalData.symbol);
+    var data = JSON.parse(e.postData.contents);
     
-    // Только самые основные данные
-    const payload = {
-      sheet: 'signals',
-      coin: signalData.symbol,
-      signal_type: signalData.final_dir,
-      confidence: signalData.probability + '%',
-      scanner: 'SmartCryptoPro',
-      price: String(signalData.last_price),
-      timeframe: signalData.baseTimeframe,
-      additional_data: 'test'
-    };
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(data.sheet || 'signals');
+    
+    var rowData = [
+      new Date(),
+      data.coin || '',
+      data.signal_type || '',
+      data.confidence || '',
+      data.scanner || '',
+      data.price || '',
+      data.timeframe || '',
+      data.additional_data || ''
+    ];
 
-    console.log('📦 Отправляю данные:', payload);
-    
-    // Простой fetch запрос
-    const response = await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload)
-    });
+    sheet.appendRow(rowData);
 
-    const result = await response.json();
-    console.log('📨 Ответ от Google:', result);
-    
-    return result;
-    
+    return ContentService.createTextOutput(JSON.stringify({status: 'success'}))
+      .setMimeType(ContentService.MimeType.JSON);
+      
   } catch (error) {
-    console.log('❌ Ошибка:', error);
-    return {status: 'error', message: error.message};
-  }
-}
-
-// Простая функция отправки всех результатов
-async function sendAllToSheets() {
-  console.log('🎯 Начинаю отправку всех результатов...');
-  
-  if (scanResults.length === 0) {
-    console.log('📭 Нет результатов для отправки');
-    return;
-  }
-
-  // Берем только ПЕРВЫЙ результат для теста
-  const firstResult = scanResults[0];
-  console.log('🔄 Отправляю первый результат:', firstResult.symbol);
-  
-  const result = await sendToGoogleSheets(firstResult);
-  
-  if (result.status === 'success') {
-    console.log('✅ УСПЕХ! Данные отправлены в таблицу');
-    addLog('✅ Данные отправлены в Google Sheets!');
-  } else {
-    console.log('❌ ОШИБКА отправки:', result.message);
-    addLog('❌ Ошибка: ' + result.message);
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'error', 
+      message: error.toString()
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
@@ -1719,13 +1833,12 @@ async function sendAllToSheets() {
       addLog(`📊 Sheets update: ${successCount}/${qualitySignals.length} signals sent`);
     }
 
-    function initScanner() {
+     function initScanner() {
       addLog('🚀 SmartCrypto Pro Multi-Scanner initialized');
       
       btnScanAll.addEventListener('click', scanAllCoins);
-      btnSendToSheets.addEventListener('click', sendAllToSheets);
-      
-      setupModeControls();
+      btnSendToSheets.addEventListener('click', sendAllToSheets); // ИСПРАВЛЕНО: используем правильную функцию
+     setupModeControls();
       
       loopSelect.addEventListener('change', () => {
         LOOP_SECONDS = Number(loopSelect.value);
@@ -1791,6 +1904,88 @@ async function sendAllToSheets() {
     }
 
     window.addEventListener('load', initScanner);
+
+    setTimeout(testGoogleSheetsConnection, 3000);
+
+// ===========================================
+// WAR ROOM INTEGRATION FOR SMARTCRYPTO ULTRA
+// ===========================================
+
+// Инициализация коммуникатора
+const warRoomComms = new ScannerCommunicator('smartcrypto');
+
+// Функция отправки сигналов в War Room
+function sendToWarRoom(result) {
+    if (result.overall_score >= 60 && result.setupGrade !== 'C') {
+        const signalData = {
+            coin: result.symbol,
+            direction: result.final_dir,
+            confidence: result.probability,
+            price: result.last_price,
+            timeframe: result.baseTimeframe,
+            strength: result.SignalStrength,
+            volume: 0,
+            message: result.patternComments ? result.patternComments.join(', ') : '',
+            probability: result.probability,
+            score: result.overall_score
+        };
+
+        const success = warRoomComms.sendSignal(signalData);
+        if (success) {
+            console.log(`📤 [War Room] Signal sent for ${result.symbol}`);
+            addLog(`📤 War Room: ${result.symbol} ${result.final_dir} signal sent`);
+        }
+    }
+}
+
+// Модифицируем функцию scanAllCoins для отправки сигналов
+const originalScanAllCoins = scanAllCoins;
+scanAllCoins = async function() {
+    await originalScanAllCoins();
+    
+    // Отправляем качественные сигналы в War Room после сканирования
+    if (scanResults.length > 0) {
+        const qualitySignals = scanResults.filter(result => 
+            result.overall_score >= 69 && result.setupGrade !== 'C'
+        );
+        
+        qualitySignals.forEach(result => {
+            setTimeout(() => sendToWarRoom(result), 100);
+        });
+        
+        if (qualitySignals.length > 0) {
+            addLog(`📤 Sent ${qualitySignals.length} quality signals to War Room`);
+        }
+    }
+};
+
+// Добавляем тестовую кнопку
+function addWarRoomTestButton() {
+    const testBtn = document.createElement('button');
+    testBtn.textContent = '🧪 Test War Room';
+    testBtn.style.cssText = `
+        position: fixed;
+        bottom: 60px;
+        right: 20px;
+        padding: 8px 12px;
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1000;
+        font-size: 11px;
+    `;
+    testBtn.onclick = () => {
+        warRoomComms.sendTestSignal();
+        addLog('🧪 Test signal sent to War Room');
+    };
+    document.body.appendChild(testBtn);
+}
+
+// Инициализируем при загрузке
+setTimeout(addWarRoomTestButton, 2000);
+console.log('🔗 War Room integration ready for SmartCrypto Ultra');
   </script>
 </body>
 </html>
