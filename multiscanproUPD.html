@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>MultiScan Pro Monster</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔻</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="scanner-communicator.js"></script>
+
+  <style>
+    :root{
+      --bg:#0a0a0a; --surface:#111; --surface-light:#1a1a1a; --border:#222;
+      --text:#e2e8f0; --muted:#94a3b8; --accent:#00d07a; --danger:#ef4444; --warn:#f59e0b;
+      --blue:#3b82f6; --purple:#8b5cf6;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif;overflow:auto; overflow-x: hidden;
+  scrollbar-color: #2a2a2a #0a0a0a;
+  scrollbar-width: thin;}
+    .app{display:flex;flex-direction:column;height:100vh}
+    .header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+    .logo{display:flex;gap:10px;align-items:center;cursor:pointer}
+    .logo-text{font-weight:700;font-size:16px}
+    .badge{background:var(--purple);color:#fff;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px}
+    .controls{display:flex;gap:8px;align-items:center}
+    .select, .btn {background:var(--surface-light);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px}
+    .btn {cursor:pointer}
+    .main{display:flex;flex:1;min-height:0}
+    
+    /* 🔥 ПАНЕЛИ С РЕСАЙЗОМ */
+    .left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-right: 2px solid var(--border);
+      min-width: 300px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .right{
+      flex:0.45;
+      display:flex;
+      flex-direction:column;
+      background:var(--surface);
+      overflow:auto; 
+      min-width: 400px;
+      position: relative;
+      min-height: 450px;
+    }
+    
+    /* РЕСАЙЗЕРЫ */
+    .resizer {
+      position: absolute;
+      background: var(--border);
+      z-index: 100;
+      opacity: 0.35;
+    }
+    
+    .resizer.vertical {
+      width: 4px;
+      height: 100%;
+      right: -2px;
+      top: 0;
+      cursor: col-resize;
+      opacity: 0.35;
+    }
+    
+    .resizer.horizontal {
+      height: 4px;
+      width: 100%;
+      bottom: -2px;
+      left: 0;
+      cursor: row-resize;
+    }
+    
+    .resizer:hover {
+      background: var(--accent);
+    }
+    
+    .overview{
+      padding:12px;
+      border-bottom:1px solid var(--border);
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .watchlist-table{width:100%;border-collapse:collapse}
+    .coin-row{
+      display:grid;
+      grid-template-columns: 1fr 84px 80px 70px;
+      gap:45px;
+      align-items:center;
+      padding:10px;
+      border-radius:8px;
+      margin-bottom:6px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      cursor:pointer;
+      border:1px solid transparent
+    }
+    .coin-row:hover{
+      border-color:#2b2b2b;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent)
+    }
+    .coin-symbol{font-weight:700}
+    .coin-price{font-family: 'IBM Plex Mono', monospace;font-size:13px}
+    .small-muted{color:var(--muted);font-size:12px}
+    .arrow{font-size:18px;width:22px;text-align:center}
+    .arrow.up{color:var(--accent)}
+    .arrow.down{color:var(--danger)}
+    .arrow.flat{color:var(--warn)}
+    .spark{
+      width:98px;
+      height:28px;
+      border-radius:4px;
+      display:block;
+      opacity: 0.85;
+    }
+    
+    .filterbar{
+      display:flex;
+      gap:8px;
+      padding:4px 8px;
+      background:var(--surface-light);
+      border-radius:8px;
+      margin-bottom:10px
+    }
+    .filter-btn{
+      padding:6px 10px;
+      border-radius:6px;
+      background:transparent;
+      border:1px solid var(--border);
+      color:var(--muted);
+      cursor:pointer
+    }
+    .filter-btn.active{
+      border-color:var(--accent);
+      color:var(--text);
+      background:linear-gradient(180deg, rgba(0,208,122,0.06), transparent)
+    }
+   
+    .filter-btn[data-filter="short"].active {
+      border-color: #ff4b4b;
+      color: #fff;
+      background: linear-gradient(180deg, rgba(255,75,75,0.08), transparent);
+    }
+
+    /* ТРЕЙДИНГВЬЮ */
+    .tradingview-section {
+      flex: 0.70;
+      min-height: 150px;
+      max-height: 40vh;
+      display: flex;
+      flex-direction: column;
+     
+      position: relative;
+    }
+
+    .tradingview-container {
+      flex: 1;
+      background: var(--surface-light);
+       height: 100%;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tradingview-widget {
+      height: 100%;
+      width: 100%;
+    }
+
+    .fullscreen-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(17, 17, 17, 0.8);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 10;
+      backdrop-filter: blur(4px);
+    }
+
+    .fullscreen-btn:hover {
+      background: var(--surface-light);
+    }
+
+    /* ДЕТАЛЬНАЯ ПАНЕЛЬ */
+    .detail-panel{
+      padding:12px;
+      flex: 1;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .detail-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+
+    .detail-title{font-weight:700; font-size: 18px;}
+    .detail-subtitle{color: var(--muted); font-size: 12px;}
+
+    .signal-card{
+      padding:12px;
+      border-radius:8px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      border:1px solid var(--border);
+      cursor:pointer
+    }
+
+    .strength-bar{
+      height:8px;
+      background:var(--surface-light);
+      border-radius:6px;
+      overflow:hidden;
+      margin-top:8px
+    }
+    
+    .strength-fill{
+      height:100%;
+      background:linear-gradient(90deg,var(--danger),var(--warn),var(--accent));
+      transition:width .4s
+    }
+    
+    .log{
+      padding:10px;
+      height:160px;
+      overflow:auto;
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      border-radius:8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size:12px
+    }
+    
+    .mini-stats{
+      display:flex;
+      gap:8px;
+      margin-top:8px
+    }
+    
+    .stat{
+      flex:1;
+      padding:8px;
+      background:var(--surface-light);
+      border-radius:8px;
+      border:1px solid var(--border);
+      text-align:center
+    }
+    
+    .header-right{display:flex;gap:8px;align-items:center}
+    .help-btn{
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      padding:6px;
+      border-radius:8px;
+      cursor:pointer
+    }
+   
+    /* СТАТУС СОЕДИНЕНИЯ */
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-left: 12px;
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+    }
+
+    .connection-dot.connected {
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.4); }
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-left: 6px;
+      box-shadow: 0 0 6px var(--accent);
+      animation: pulse 1.5s infinite;
+    }
+
+    /* АНИМАЦИИ */
+    .signal-pulse {
+      animation: signalPulse 2s ease-in-out;
+    }
+
+    @keyframes signalPulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    /* ВКЛАДКИ */
+    .tab-buttons {
+      display: flex;
+      gap: 6px;
+      margin: 0 20px;
+    }
+
+    .tab-btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+      border-color: var(--accent);
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(0,208,122,0.06), transparent);
+    }
+
+    /* TELEGRAM */
+    .telegram-section {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .telegram-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .telegram-input {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .telegram-btn {
+      width: 100%;
+      padding: 8px;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .telegram-btn:hover {
+      background: var(--border);
+    }
+
+    .telegram-status {
+      margin-top: 8px;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .status-ok {
+      color: var(--accent);
+    }
+
+    .status-error {
+      color: var(--danger);
+    }
+
+    /* CHARTS PANEL */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 4px;
+      height: 100%;
+      padding: 6px;
+      background: var(--surface);
+    }
+
+    .chart-window {
+      background: var(--surface-light);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      min-height: 200px;
+    }
+
+    /* АДАПТИВНОСТЬ */
+    @media (max-width: 1000px) { 
+      .right { width: 360px } 
+      .left { min-width: 0 } 
+    }
+    
+    @media (max-width: 760px) { 
+      .main { flex-direction: column } 
+      .right { width: 100%; height: 380px } 
+      .left { border-right: none } 
+      .tradingview-section { display: none; }
+      .coin-row { gap: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="logo" onclick="location.reload()">
+        <div class="logo-text">MultiScan Pro</div>
+        <div class="badge">GAUSSIAN EDITION</div>
+        <div class="connection-status" id="connectionStatus">
+          <div class="connection-dot connected"></div>
+          <span>LIVE</span>
+        </div>
+      </div>
+
+      <div class="tab-buttons" style="display: none">
+        <button class="tab-btn active" data-tab="scanner">Scanner</button>
+        <button class="tab-btn" data-tab="app3">CoinGlass</button>
+        <button class="tab-btn" data-tab="charts">4 Charts</button>
+        <button class="tab-btn" data-tab="app4">Strategy Test</button>
+      </div>
+
+      <div class="header-right">
+        <div class="controls">
+          <select id="intervalSelect" class="select">
+            <option value="1m"><selected>1m</option>
+            <option value="5m">5m</option>
+            <option value="15m">15m</option>
+            <option value="1h">1h</option>
+            <option value="4h">4h</option>
+          </select>
+          <button id="helpBtn" class="help-btn">?</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCANNER PANEL -->
+    <div id="scannerPanel" class="main" style="display:flex;">
+      <!-- LEFT PANEL -->
+      <div class="left">
+        <!-- TradingView Chart -->
+        <div class="tradingview-section">
+          <div class="tradingview-container">
+            <div id="tvContainer" class="tradingview-widget"></div>
+            <button id="btnFullscreen" class="fullscreen-btn" title="Fullscreen">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="resizer horizontal"></div>
+        </div>
+
+        <!-- Watchlist -->
+        <div class="overview">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div class="small-muted" id="overviewStatus">0 active</div>
+          </div>
+
+          <div class="filterbar" id="filterBar">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="long">Only Long</button>
+            <button class="filter-btn" data-filter="short">Only Short</button>
+            <button class="filter-btn" data-filter="active">Active</button>
+            <div style="flex:1"></div>
+            <label class="small-muted" style="align-self:center;font-size:12px">Strength ≥</label>
+            <input id="strengthThresh" type="number" value="60" min="0" max="100" style="width:60px;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface-light);color:var(--text)">
+          </div>
+ <div class="resizer vertical"></div>
+
+          <div id="watchlistContainer">
+            <!-- rows injected here -->
+          </div>
+        </div>
+      </div>
+      
+     
+      <!-- RIGHT PANEL -->
+      <div class="right">
+        <div style="padding:12px;border-bottom:1px solid var(--border);flex:1;display:flex;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-weight:700">Signal Details</div>
+            <div class="small-muted">Mode: <span id="globalModeText">Dual</span></div>
+          </div>
+          
+          <div class="detail-panel" id="detailPanel">
+            <div class="detail-header">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;gap:12px">
+                <div style="flex:1;min-width:200px">
+                  <div class="detail-title" id="detailTitle" style="font-size:16px;line-height:1.2">Select a coin</div>
+                  <div class="detail-subtitle" id="detailSubtitle" style="font-size:12px;line-height:1.2">Chart loads automatically</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Signal Section -->
+            <div style="margin-bottom:16px">
+              <div style="text-align:center;padding:12px 0;margin-bottom:8px">
+                <div style="font-size:2.8rem;margin-bottom:6px" id="signalIcon">⚡</div>
+                <div style="font-size:0.9rem;color:var(--muted)" id="signalStatus">No signal</div>
+              </div>
+
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                  <div>
+                    <div class="small-muted" style="margin-bottom:2px">Signal</div>
+                    <div style="font-weight:700;font-size:15px" id="detailSignalText">—</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div class="small-muted" style="margin-bottom:2px">Strength</div>
+                    <div id="detailStrength" style="font-weight:700;font-size:13px;color:var(--blue)">0%</div>
+                  </div>
+                </div>
+                <div class="strength-bar" style="margin-bottom:8px">
+                  <div class="strength-fill" id="detailStrengthFill" style="width:0%"></div>
+                </div>
+                <div class="small-muted" style="line-height:1.3;min-height:32px" id="detailDesc">—</div>
+                
+                <!-- Market Stats -->
+                <div style="margin:12px 0 8px 0;padding:10px;background:var(--surface-light);border-radius:8px;border:1px solid var(--border)">
+                  <div class="small-muted" style="text-align:center;margin-bottom:6px">Market Stats</div>
+                  <div style="display:flex;justify-content:space-around;gap:8px">
+                    <div style="text-align:center;flex:1">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">Price</div>
+                      <div id="detailPrice" style="font-weight:700;font-size:13px;color:var(--accent)">$--</div>
+                    </div>
+                    <div style="text-align:center;flex:1;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">RSI</div>
+                      <div id="detailRsi" style="font-weight:700;font-size:13px;color:var(--warn)">--</div>
+                    </div>
+                    <div style="display: none;text-align:center;flex:1">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">Strength</div>
+                      <div id="detailStrength"  style="font-weight:700;font-size:13px;color:var(--blue)">0%</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="small-muted" style="margin-bottom:4px">Recent Activity</div>
+              <div id="detailMiniLog" style="font-family:monospace;font-size:11px;max-height:70px;overflow:auto;background:var(--surface-light);padding:8px;border-radius:6px;border:1px solid var(--border);line-height:1.3"></div>
+            </div>
+          </div>
+
+          <!-- Telegram Settings -->
+          <div class="telegram-section">
+            <div style="font-weight:700;margin-bottom:8px">Telegram Alerts</div>
+            <div class="telegram-inputs">
+              <input id="tgToken" class="telegram-input" placeholder="Bot Token">
+              <input id="tgChat" class="telegram-input" placeholder="Chat ID">
+            </div>
+            <button id="btnTgTestConn" class="telegram-btn">Test Connection</button>
+            <div id="tgStatus" class="telegram-status"></div>
+          </div>
+
+          <!-- Activity Log -->
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+            <div style="font-weight:700">Activity Log</div>
+            <div class="log" id="mainLog"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- APP 3 PANEL -->
+<div id="app3Panel" class="main" style="display:none;flex-direction:column;height:100vh;">
+  <div style="height:100%;width:100%;border:none;background:var(--surface);">
+    <iframe 
+      id="coinglassFrame"
+      src="https://www.coinglass.com/tv/Binance_BTCUSDT" 
+      style="width:100%;height:100%;border:none;background:var(--surface);"
+      frameborder="0"
+      allowfullscreen>
+    </iframe>
+  </div>
+</div>
+
+    <!-- CHARTS PANEL -->
+    <div id="chartsPanel" class="main" style="display:none;">
+      <div class="charts-grid">
+        <div class="chart-window"><div id="tvChart1" style="height:100%;width:100%"></div></div>
+        <div class="chart-window"><div id="tvChart2" style="height:100%;width:100%"></div></div>
+        <div class="chart-window"><div id="tvChart3" style="height:100%;width:100%"></div></div>
+        <div class="chart-window"><div id="tvChart4" style="height:100%;width:100%"></div></div>
+      </div>
+    </div>
+
+    
+
+     <!-- APP 4 PANEL -->
+<div id="app4Panel" class="main" style="display:none;flex-direction:column;height:100vh;">
+  <div style="height:100%;width:100%;border:none;background:var(--surface);">
+    <iframe 
+      id="coinglassFrame"
+      src="https://www.t1prime.com/strategytester.html" 
+      style="width:100%;height:100%;border:none;background:var(--surface);"
+      frameborder="0"
+      allowfullscreen>
+    </iframe>
+  </div>
+</div>
+
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <script>
+  // ========== Config ==========
+  const WATCHLIST = [
+    "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
+    "SOLUSDT","DOGEUSDT","MATICUSDT","DOTUSDT","TRXUSDT",
+    "LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT", 
+    "PEPEUSDT", "BONKUSDT", "INJUSDT", "APTUSDT"
+  ];
+  
+  const DEFAULT_INTERVAL = '5m';
+  const UPDATE_BATCH_MS = 10000; // 10 секунд
+  const CANDLES_LIMIT = 100;
+  
+  // State
+  let mode = 'dual';
+  let interval = DEFAULT_INTERVAL;
+  let isRunning = true; // Всегда работает
+  let watchers = {};
+  let updateTimer = null;
+  let tradingviewLoaded = false;
+  let currentDetail = null;
+  let tvWidget = null;
+  let lastTelegramSignal = {};
+
+  // Utils
+  function q(id){return document.getElementById(id)}
+  
+  function addMainLog(text, cls='info'){
+    const el = q('mainLog');
+    const node = document.createElement('div');
+    const t = new Date().toLocaleTimeString();
+    node.innerHTML = `<span style="color:var(--muted)">[${t}]</span> ${text}`;
+    el.appendChild(node);
+    el.scrollTop = el.scrollHeight;
+    while(el.children.length>200) el.removeChild(el.firstChild);
+  }
+
+  // 🔥 ОБНОВЛЕНИЕ СИГНАЛА
+  function updateSignalIcon(sym) {
+    const icon = q('signalIcon');
+    const status = q('signalStatus');
+    const watcher = watchers[sym];
+    
+    if (!watcher) {
+      icon.textContent = '⚡';
+      icon.style.color = 'var(--muted)';
+      status.textContent = 'Select a coin';
+      return;
+    }
+
+    const long = watcher.signalLong;
+    const short = watcher.signalShort;
+    const maxStrength = Math.max(long.strength || 0, short.strength || 0);
+
+    if (long.action === 'BUY' && long.strength >= 70) {
+      icon.textContent = '📈';
+      icon.style.color = 'var(--accent)';
+      status.textContent = `BUY SIGNAL • ${long.strength}%`;
+    } else if (short.action === 'SELL' && short.strength >= 70) {
+      icon.textContent = '📉';
+      icon.style.color = 'var(--danger)';
+      status.textContent = `SELL SIGNAL • ${short.strength}%`;
+    } else {
+      icon.textContent = '⚡';
+      icon.style.color = 'var(--warn)';
+      status.textContent = `AWAITING ENTRY ${maxStrength}%`;
+    }
+  }
+
+  // Initial render of watchlist UI
+  function renderWatchlistUI(){
+    const container = q('watchlistContainer');
+    container.innerHTML = '';
+    WATCHLIST.forEach(sym=>{
+      const row = document.createElement('div');
+      row.className = 'coin-row';
+      row.id = `row-${sym}`;
+      row.innerHTML = `
+        <div>
+          <div class="coin-symbol">${sym.replace('USDT','/USDT')}</div>
+          <div class="small-muted" id="sub-${sym}">--</div>
+        </div>
+        <div class="coin-price" id="price-${sym}">—</div>
+        <canvas class="spark" id="spark-${sym}"></canvas>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="arrow" id="arrow-${sym}">—</div>
+          <div class="small-muted" id="str-${sym}">—</div>
+        </div>
+      `;
+      row.addEventListener('click', (e)=>{
+        if(e.target.tagName.toLowerCase()!=='button') openDetailFor(sym);
+      });
+      container.appendChild(row);
+      
+      watchers[sym] = {
+        candles: [],
+        lastPrice: null,
+        signalLong: {action:'HOLD', strength:0},
+        signalShort: {action:'HOLD', strength:0},
+        sparkPoints: [],
+        lastLong: 'HOLD',
+        lastShort: 'HOLD'
+      };
+      drawSpark(sym);
+    });
+    updateOverviewStatus();
+  }
+
+  function updateOverviewStatus(){
+    const active = Object.values(watchers).filter(w=> 
+      (w.signalLong && w.signalLong.action!=='HOLD' && w.signalLong.strength>=+q('strengthThresh').value) || 
+      (w.signalShort && w.signalShort.action!=='HOLD' && w.signalShort.strength>=+q('strengthThresh').value)
+    ).length;
+    
+    const filter = q('filterBar').querySelector('.filter-btn.active').dataset.filter;
+    q('overviewStatus').textContent = `${active} active • ${filter}`;
+  }
+
+  // СПАРКЛАЙНЫ
+  function drawSpark(sym){
+    const canvas = q(`spark-${sym}`);
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width = canvas.clientWidth * devicePixelRatio;
+    const H = canvas.height = canvas.clientHeight * devicePixelRatio;
+    ctx.clearRect(0,0,W,H);
+    
+    const pts = watchers[sym].sparkPoints || [];
+    if(pts.length<2){
+      ctx.strokeStyle = '#2b2b2b';
+      ctx.lineWidth = 2*devicePixelRatio;
+      ctx.beginPath(); 
+      ctx.moveTo(2*devicePixelRatio,H/2); 
+      ctx.lineTo(W-2*devicePixelRatio,H/2); 
+      ctx.stroke();
+      return;
+    }
+    
+    const min = Math.min(...pts), max = Math.max(...pts);
+    const len = pts.length;
+    ctx.lineWidth = 2*devicePixelRatio;
+    
+    const slope = pts[pts.length-1] - pts[0];
+    const styles = getComputedStyle(document.documentElement);
+    const accentColor = styles.getPropertyValue('--accent').trim();
+    const dangerColor = styles.getPropertyValue('--danger').trim(); 
+    const warnColor = styles.getPropertyValue('--warn').trim();
+
+    ctx.strokeStyle = slope>0 ? accentColor : slope<0 ? dangerColor : warnColor;
+    
+    ctx.beginPath();
+    for(let i=0;i<len;i++){
+      const x = (i/(len-1))*(W-4*devicePixelRatio) + 2*devicePixelRatio;
+      const y = max===min ? H/2 : H - ((pts[i]-min)/(max-min))*(H-4*devicePixelRatio) - 2*devicePixelRatio;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+
+  // 🔥 РАБОЧИЙ FETCH CANDLES
+  async function fetchCandles(symbol, intv, limit = CANDLES_LIMIT){
+    try {
+      const resp = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${intv}&limit=${limit}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        return data.map(d => ({
+          ts: d[0], 
+          open: +d[1], 
+          high: +d[2], 
+          low: +d[3], 
+          close: +d[4], 
+          vol: +d[5]
+        }));
+      }
+    } catch (e) {
+      console.log(`API недоступен для ${symbol}, используем симуляцию`);
+    }
+
+    // СИМУЛЯЦИЯ С РЕАЛИСТИЧНЫМИ ДАННЫМИ
+    const arr = [];
+    let lastPrice = watchers[symbol]?.lastPrice || (symbol === 'BTCUSDT' ? 50000 : 
+                   symbol === 'ETHUSDT' ? 3000 : 
+                   symbol === 'BNBUSDT' ? 600 : 100);
+    
+    for(let i = 0; i < limit; i++){
+      const volatility = symbol === 'BTCUSDT' ? 0.002 : 0.004;
+      const change = (Math.random() - 0.5) * (lastPrice * volatility);
+      const close = Math.max(0.0001, lastPrice + change);
+      
+      arr.push({
+        ts: Date.now() - (limit - i) * 60000,
+        open: lastPrice,
+        high: Math.max(lastPrice, close) * (1 + Math.random() * 0.01),
+        low: Math.min(lastPrice, close) * (1 - Math.random() * 0.01),
+        close: close,
+        vol: Math.random() * 1000 + 100
+      });
+      lastPrice = close;
+    }
+    return arr;
+  }
+
+  // ИНДИКАТОРЫ
+  function calcGaussian(candles, period=14, multiplier=1.414){
+    if(!candles || candles.length<period) return null;
+    const recent = candles.slice(-period).map(c=>c.close);
+    const mean = recent.reduce((a,b)=>a+b,0)/period;
+    const variance = recent.reduce((a,b)=>a+Math.pow(b-mean,2),0)/period;
+    const sd = Math.sqrt(variance);
+    const high = mean + sd*multiplier;
+    const low = mean - sd*multiplier;
+    const filter = mean;
+    const current = candles[candles.length-1].close;
+    let state='neutral'; 
+    if(current>high) state='bullish'; 
+    if(current<low) state='bearish';
+    return {high,low,filter,state};
+  }
+
+  function calcRSI(closes, period=14){
+    if(closes.length<period+1) return Array(closes.length).fill(50);
+    const gains=[], losses=[];
+    for(let i=1;i<closes.length;i++){ 
+      const d=closes[i]-closes[i-1]; 
+      gains.push(Math.max(d,0)); 
+      losses.push(Math.max(-d,0)); 
+    }
+    let avgG = gains.slice(0,period).reduce((a,b)=>a+b,0)/period;
+    let avgL = losses.slice(0,period).reduce((a,b)=>a+b,0)/period;
+    const rsi = new Array(closes.length).fill(50);
+    for(let i=period;i<closes.length;i++){
+      avgG = ((avgG*(period-1))+gains[i-1])/period;
+      avgL = ((avgL*(period-1))+losses[i-1])/period;
+      const rs = avgL===0?100:avgG/avgL;
+      rsi[i] = 100 - (100/(1+rs));
+    }
+    return rsi;
+  }
+
+  function calcStochRsi(candles, rsiLen=14, stochLen=14){
+    const closes = candles.map(c=>c.close);
+    const rsiArr = calcRSI(closes, rsiLen);
+    if(rsiArr.length<stochLen) return {k:50,d:50};
+    const recent = rsiArr.slice(-stochLen);
+    const cur = rsiArr[rsiArr.length-1];
+    const low = Math.min(...recent), high = Math.max(...recent);
+    const k = high===low?50:((cur-low)/(high-low))*100;
+    const d = k;
+    return {k,d};
+  }
+
+  // 🔥 УЛУЧШЕННАЯ ГЕНЕРАЦИЯ СИГНАЛОВ
+  function generateSignalFor(symbol){
+    const state = watchers[symbol];
+    const candles = state.candles;
+    
+    if(!candles || candles.length < 20) return;
+    
+    const gauss = calcGaussian(candles);
+    const stoch = calcStochRsi(candles);
+    const price = candles[candles.length-1].close;
+
+    // LONG LOGIC
+    let long = {action:'HOLD', strength:0, desc:'-'};
+    if(gauss && gauss.state==='bullish' && (stoch.k>80 || stoch.k<20)){
+      const strengthCalc = 60 + Math.floor(Math.abs(price-gauss.high)/gauss.high*2000) + (stoch.k>80?10:5);
+      long = {
+        action:'BUY', 
+        strength: Math.min(95, strengthCalc), 
+        desc:`Gaussian bullish + Stoch extreme (${stoch.k.toFixed(1)})`
+      };
+    } else if(price < gauss.high && state.lastLong==='BUY'){
+      long = {action:'SELL', strength:70, desc:'Price dipped below high band'};
+    }
+    
+    // SHORT LOGIC
+    let short = {action:'HOLD', strength:0, desc:'-'};
+    if(gauss && gauss.state==='bearish' && (stoch.k<20 || stoch.k>80)){
+      const strengthCalc = 60 + Math.floor(Math.abs(gauss.low-price)/gauss.low*2000) + (stoch.k<20?10:5);
+      short = {
+        action:'SELL', 
+        strength: Math.min(95, strengthCalc), 
+        desc:`Gaussian bearish + Stoch extreme (${stoch.k.toFixed(1)})`
+      };
+    } else if(price > gauss.low && state.lastShort==='SELL'){
+      short = {action:'BUY', strength:68, desc:'Price rose above low band'};
+    }
+    
+    // UPDATE STATE
+    if(long.action==='BUY') state.lastLong='BUY'; 
+    if(long.action==='SELL') state.lastLong='SELL';
+    if(short.action==='SELL') state.lastShort='SELL'; 
+    if(short.action==='BUY') state.lastShort='BUY';
+    
+    state.signalLong = long;
+    state.signalShort = short;
+    
+    const pts = candles.slice(-20).map(c=>c.close);
+    state.sparkPoints = pts;
+    state.lastPrice = price;
+
+    // TELEGRAM ALERTS
+    if ((long.strength > 75 && long.action === 'BUY') || (short.strength > 75 && short.action === 'SELL')) {
+      const signalType = long.strength > short.strength ? 'LONG' : 'SHORT';
+      const strength = Math.max(long.strength, short.strength);
+      
+      const signalKey = `${symbol}_${signalType}`;
+      if (!lastTelegramSignal[signalKey] || lastTelegramSignal[signalKey] < strength - 5) {
+        sendTelegramSignal(symbol, signalType, strength, price, stoch.k);
+        lastTelegramSignal[signalKey] = strength;
+      }
+    }
+  }
+
+  function renderRow(sym){
+    const s = watchers[sym];
+    if(!s) return;
+    
+    q(`price-${sym}`).textContent = s.lastPrice ? `$${(+s.lastPrice).toFixed(2)}` : '—';
+    
+    const longActive = s.signalLong && s.signalLong.action==='BUY' && s.signalLong.strength>=+q('strengthThresh').value;
+    const shortActive = s.signalShort && s.signalShort.action==='SELL' && s.signalShort.strength>=+q('strengthThresh').value;
+    const arrowEl = q(`arrow-${sym}`);
+    const strEl = q(`str-${sym}`);
+    
+    if(longActive && shortActive){
+      arrowEl.className='arrow flat';
+      arrowEl.textContent='↕';
+      strEl.textContent = `L${s.signalLong.strength}% / S${s.signalShort.strength}%`;
+    } else if(longActive){
+      arrowEl.className='arrow up';
+      arrowEl.textContent='↑';
+      strEl.textContent = `${s.signalLong.strength}%`;
+    } else if(shortActive){
+      arrowEl.className='arrow down';
+      arrowEl.textContent='↓';
+      strEl.textContent = `${s.signalShort.strength}%`;
+    } else {
+      arrowEl.className='arrow flat';
+      arrowEl.textContent='→';
+      strEl.textContent = '—';
+    }
+    
+    q(`sub-${sym}`).textContent = s.lastPrice ? 
+      `${s.candles.length} candles • ${new Date(s.candles[s.candles.length-1].ts).toLocaleTimeString()}` : '--';
+    
+    drawSpark(sym);
+  }
+
+  function refreshWatchlist(){
+    const filter = document.querySelector('.filter-btn.active').dataset.filter;
+    WATCHLIST.forEach(sym=>{
+      const row = q(`row-${sym}`);
+      const s = watchers[sym];
+      const longActive = s.signalLong && s.signalLong.action==='BUY' && s.signalLong.strength>=+q('strengthThresh').value;
+      const shortActive = s.signalShort && s.signalShort.action==='SELL' && s.signalShort.strength>=+q('strengthThresh').value;
+      let show = true;
+      
+      if(filter==='long') show = longActive;
+      if(filter==='short') show = shortActive;
+      if(filter==='active') show = (longActive||shortActive);
+      
+      row.style.display = show ? 'grid' : 'none';
+      renderRow(sym);
+    });
+    
+    updateOverviewStatus();
+  }
+
+  // 🔥 ОСНОВНОЙ ЦИКЛ СКАНИРОВАНИЯ
+  async function scanLoop(){
+    if(!isRunning) return;
+    
+    try {
+      const promises = WATCHLIST.map(async (sym) => {
+        try {
+          const candles = await fetchCandles(sym, interval, CANDLES_LIMIT);
+          
+          if (!candles || candles.length === 0) {
+            console.warn(`No data for ${sym}`);
+            return;
+          }
+          
+          const lastCandle = candles[candles.length - 1];
+          if (!lastCandle || !lastCandle.close) return;
+          
+          watchers[sym].candles = candles;
+          watchers[sym].lastPrice = lastCandle.close;
+          generateSignalFor(sym);
+          renderRow(sym);
+          
+        } catch (err) {
+          console.error(`Error for ${sym}:`, err);
+        }
+      });
+
+      await Promise.all(promises);
+      refreshWatchlist();
+      
+      // ОБНОВЛЕНИЕ ДЕТАЛЕЙ ЕСЛИ ОТКРЫТЫ
+      if (currentDetail && watchers[currentDetail]) {
+        const watcher = watchers[currentDetail];
+        q('detailPrice').textContent = watcher.lastPrice ? `$${watcher.lastPrice.toFixed(2)}` : '--';
+        
+        if(watcher.candles && watcher.candles.length > 0){
+          const stoch = calcStochRsi(watcher.candles);
+          q('detailRsi').textContent = Math.round(stoch.k);
+        }
+        
+        const maxStrength = Math.max(watcher.signalLong.strength || 0, watcher.signalShort.strength || 0);
+        q('detailStrength').textContent = `${maxStrength}%`;
+        q('detailStrengthFill').style.width = `${maxStrength}%`;
+      }
+      
+    } catch (error) {
+      console.error('Scan error:', error);
+    }
+    
+    if (isRunning) {
+      updateTimer = setTimeout(scanLoop, UPDATE_BATCH_MS);
+    }
+  }
+
+  // ДЕТАЛЬНАЯ ИНФОРМАЦИЯ
+  function openDetailFor(sym){
+    currentDetail = sym;
+    const watcher = watchers[sym];
+    
+    // АНИМАЦИЯ
+    const detailPanel = q('detailPanel');
+    detailPanel.classList.add('signal-pulse');
+    setTimeout(() => detailPanel.classList.remove('signal-pulse'), 2000);
+    
+    updateSignalIcon(sym);
+    
+    // ОБНОВЛЕНИЕ UI
+    q('detailTitle').textContent = sym.replace('USDT','/USDT');
+    q('detailSubtitle').textContent = `Interval: ${interval} • ${watcher?.candles?.length || 0} candles`;
+    q('detailPrice').textContent = watcher?.lastPrice ? `$${(+watcher.lastPrice).toFixed(2)}` : '--';
+    
+    if(watcher?.candles?.length){ 
+      const stoch = calcStochRsi(watcher.candles); 
+      q('detailRsi').textContent = Math.round(stoch.k); 
+    } else {
+      q('detailRsi').textContent = '--';
+    }
+    
+    q('detailSignalText').textContent = `${watcher?.signalLong?.action || '-'}/${watcher?.signalShort?.action || '-'}`;
+    
+    const maxStrength = Math.max(watcher?.signalLong?.strength||0, watcher?.signalShort?.strength||0);
+    q('detailStrength').textContent = `${maxStrength}%`;
+    q('detailStrengthFill').style.width = `${maxStrength}%`;
+    
+    const longDesc = watcher?.signalLong?.desc || 'NO DATA';
+    const shortDesc = watcher?.signalShort?.desc || 'NO DATA';
+    q('detailDesc').textContent = `L: ${longDesc} | S: ${shortDesc}`;
+    
+    q('detailMiniLog').innerHTML = `<div>${new Date().toLocaleTimeString()} • Loaded ${sym}</div>`;
+    
+    loadTradingViewChart(sym);
+  }
+
+  // 🔥 СОРТИРОВКА ТОЛЬКО ДЛЯ АКТИВНОЙ СЕКЦИИ
+function refreshWatchlist(){
+    const filter = document.querySelector('.filter-btn.active').dataset.filter;
+    WATCHLIST.forEach(sym=>{
+        const row = q(`row-${sym}`);
+        const s = watchers[sym];
+        const longActive = s.signalLong && s.signalLong.action==='BUY' && s.signalLong.strength>=+q('strengthThresh').value;
+        const shortActive = s.signalShort && s.signalShort.action==='SELL' && s.signalShort.strength>=+q('strengthThresh').value;
+        let show = true;
+        
+        if(filter==='long') show = longActive;
+        if(filter==='short') show = shortActive;
+        if(filter==='active') show = (longActive||shortActive);
+        
+        row.style.display = show ? 'grid' : 'none';
+        renderRow(sym);
+    });
+    
+    // 🔥 СОРТИРОВКА ТОЛЬКО ДЛЯ АКТИВНОЙ СЕКЦИИ
+    if (filter === 'active') {
+        sortActiveByStrength();
+    }
+    
+    updateOverviewStatus();
+}
+
+// 🔥 СОРТИРОВКА АКТИВНЫХ СИГНАЛОВ ПО СИЛЕ
+function sortActiveByStrength() {
+    const container = q('watchlistContainer');
+    const visibleRows = Array.from(container.querySelectorAll('.coin-row[style*="display: grid"]'));
+    
+    // Сортируем только видимые (активные) строки по силе сигнала (по убыванию)
+    visibleRows.sort((a, b) => {
+        const symA = a.id.replace('row-', '');
+        const symB = b.id.replace('row-', '');
+        const watcherA = watchers[symA];
+        const watcherB = watchers[symB];
+        
+        // Вычисляем максимальную силу сигнала для каждого символа
+        const strengthA = Math.max(
+            watcherA?.signalLong?.strength || 0, 
+            watcherA?.signalShort?.strength || 0
+        );
+        const strengthB = Math.max(
+            watcherB?.signalLong?.strength || 0, 
+            watcherB?.signalShort?.strength || 0
+        );
+        
+        return strengthB - strengthA; // По убыванию
+    });
+    
+    // Перемещаем отсортированные строки обратно в контейнер
+    visibleRows.forEach(row => container.appendChild(row));
+}
+
+  // TRADINGVIEW
+  function loadTradingViewChart(symbol) {
+    if (!tradingviewLoaded) {
+      tradingviewLoaded = true;
+    }
+    initTradingViewWidget(symbol);
+  }
+
+  function initTradingViewWidget(symbol) {
+    try {
+      if (tvWidget) {
+        try { tvWidget.remove(); } catch(e) {}
+      }
+      
+      const intervalMap = {
+        '1m': '1', '5m': '5', '15m': '15', '1h': '60', '4h': '240'
+      };
+      
+      const tvInterval = intervalMap[interval] || '5';
+      
+      tvWidget = new TradingView.widget({
+        autosize: true,
+        symbol: `BINANCE:${symbol}`,
+        interval: tvInterval,
+        timezone: 'Etc/UTC',
+        style: 3,
+        theme: 'dark',
+        container_id: 'tvContainer',
+        studies: ['RSI@tv-basicstudies'],
+        locale: 'en',
+        toolbar_bg: '#111111',
+        enable_publishing: false,
+        allow_symbol_change: false,
+        hide_side_toolbar: false
+      });
+      
+    } catch(e) {
+      q('tvContainer').innerHTML = '<div style="color:var(--muted); padding:20px; text-align:center">Chart error</div>';
+    }
+  }
+
+  // TELEGRAM
+  async function sendTelegramSignal(symbol, signalType, strength, price, stochRsi) {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) return;
+
+    const message = `🚀 ${symbol} SIGNAL ${signalType}\n` +
+                   `💰 Price: $${price.toFixed(2)}\n` +
+                   `⚡ Strength: ${strength}%\n` +
+                   `📊 Stoch RSI: ${stochRsi.toFixed(1)}`;
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+      
+      const data = await response.json();
+      if (data.ok) {
+        addMainLog(`Telegram ${signalType} signal sent for ${symbol}`);
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Signal sent</span>';
+      }
+    } catch (error) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Network error</span>';
+    }
+  }
+
+  async function testTelegramConnection() {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">Enter credentials</span>';
+      return;
+    }
+    
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const data = await response.json();
+      
+      if (data.ok) {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Connected</span>';
+      } else {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-error">Invalid token</span>';
+      }
+    } catch (error) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Connection failed</span>';
+    }
+  }
+
+  // 🔥 РЕСАЙЗИНГ ПАНЕЛЕЙ
+  function initResizeHandlers() {
+    const leftPanel = document.querySelector('.left');
+    const rightPanel = document.querySelector('.right');
+    const tradingViewSection = document.querySelector('.tradingview-section');
+    const overviewSection = document.querySelector('.overview');
+    
+    const verticalResizer = document.querySelector('.resizer.vertical');
+    const horizontalResizer = document.querySelector('.resizer.horizontal');
+    
+    let isVerticalResizing = false;
+    let isHorizontalResizing = false;
+    
+    // ВЕРТИКАЛЬНЫЙ РЕСАЙЗ (лево-право)
+    verticalResizer.addEventListener('mousedown', function(e) {
+      isVerticalResizing = true;
+      document.addEventListener('mousemove', handleVerticalResize);
+      document.addEventListener('mouseup', stopVerticalResize);
+      e.preventDefault();
+    });
+    
+    function handleVerticalResize(e) {
+      if (!isVerticalResizing) return;
+      
+      const containerRect = document.querySelector('.main').getBoundingClientRect();
+      const leftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      
+      if (leftWidth > 20 && leftWidth < 80) {
+        leftPanel.style.flex = `0 0 ${leftWidth}%`;
+        rightPanel.style.flex = `0 0 ${100 - leftWidth}%`;
+      }
+    }
+    
+    function stopVerticalResize() {
+      isVerticalResizing = false;
+      document.removeEventListener('mousemove', handleVerticalResize);
+      document.removeEventListener('mouseup', stopVerticalResize);
+    }
+    
+    // ГОРИЗОНТАЛЬНЫЙ РЕСАЙЗ (верх-низ в левой панели)
+    horizontalResizer.addEventListener('mousedown', function(e) {
+      isHorizontalResizing = true;
+      document.addEventListener('mousemove', handleHorizontalResize);
+      document.addEventListener('mouseup', stopHorizontalResize);
+      e.preventDefault();
+    });
+    
+    function handleHorizontalResize(e) {
+      if (!isHorizontalResizing) return;
+      
+      const leftRect = leftPanel.getBoundingClientRect();
+      const tvHeight = ((e.clientY - leftRect.top) / leftRect.height) * 100;
+      
+      if (tvHeight > 10 && tvHeight < 50) {
+        tradingViewSection.style.flex = `0 0 ${tvHeight}%`;
+        overviewSection.style.flex = `0 0 ${100 - tvHeight}%`;
+      }
+    }
+    
+    function stopHorizontalResize() {
+      isHorizontalResizing = false;
+      document.removeEventListener('mousemove', handleHorizontalResize);
+      document.removeEventListener('mouseup', stopHorizontalResize);
+    }
+  }
+
+  // 🔥 ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+  function initTabHandlers() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const tab = this.dataset.tab;
+        document.getElementById('scannerPanel').style.display = tab === 'scanner' ? 'flex' : 'none';
+        document.getElementById('chartsPanel').style.display = tab === 'charts' ? 'block' : 'none';
+        document.getElementById('app3Panel').style.display = tab === 'app3' ? 'flex' : 'none';
+        document.getElementById('app4Panel').style.display = tab === 'app4' ? 'flex' : 'none';
+        
+        if (tab === 'charts') {
+          setTimeout(loadCharts, 100);
+        }
+      });
+    });
+  }
+
+  function loadCharts() {
+    const chartConfigs = [
+      { container: 'tvChart1', symbol: 'BTCUSDT' },
+      { container: 'tvChart2', symbol: 'ETHUSDT' },
+      { container: 'tvChart3', symbol: 'BNBUSDT' },
+      { container: 'tvChart4', symbol: 'SOLUSDT' }
+    ];
+    
+    chartConfigs.forEach((config, index) => {
+      setTimeout(() => {
+        if (window.TradingView) {
+          try {
+            new TradingView.widget({
+              autosize: true,
+              symbol: `BINANCE:${config.symbol}`,
+              interval: '5',
+              timezone: 'Etc/UTC',
+              theme: 'dark',
+              container_id: config.container,
+              studies: ['StochasticRSI@tv-basicstudies','RSI@tv-basicstudies'],
+              locale: 'en'
+            });
+          } catch(e) {
+            console.error('Chart error:', e);
+          }
+        }
+      }, index * 500);
+    });
+  }
+
+  // FULLSCREEN
+  q('btnFullscreen').addEventListener('click', () => {
+    const chartContainer = document.querySelector('.tradingview-container');
+    if (!document.fullscreenElement) {
+      chartContainer.requestFullscreen().catch(err => {
+        console.log(`Fullscreen error: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
+  // ИНИЦИАЛИЗАЦИЯ
+  document.addEventListener('DOMContentLoaded', ()=>{
+    renderWatchlistUI();
+    initResizeHandlers();
+    initTabHandlers();
+    
+    // ФИЛЬТРЫ
+    document.querySelectorAll('.filter-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        refreshWatchlist();
+      });
+    });
+    
+    // ИНТЕРВАЛ
+    q('intervalSelect').addEventListener('change', function() {
+      interval = this.value;
+      if (currentDetail) {
+        loadTradingViewChart(currentDetail);
+      }
+    });
+
+    // TELEGRAM
+    q('btnTgTestConn').addEventListener('click', testTelegramConnection);
+
+    // HELP
+    q('helpBtn').addEventListener('click', () => {
+      alert(`🚀 MULTISCAN PRO - TRADING ASSISTANT
+
+📊 FEATURES:
+• Scans 19 cryptocurrencies in real-time
+• Gaussian Channel + Stochastic RSI strategy
+• BUY/SELL signals with strength percentage
+• Auto-Telegram alerts for strong signals
+• Live TradingView charts
+• 4 multi-chart view
+
+🎯 HOW TO USE:
+1. Select coins from the watchlist
+2. Use filters: All/Long/Short/Active  
+3. Set strength threshold (60%+ recommended)
+4. Monitor signals in real-time
+
+⚡ STRATEGY:
+BUY when: Gaussian bullish + Stoch RSI extreme
+SELL when: Gaussian bearish + Stoch RSI extreme`);
+    });
+
+    q('strengthThresh').addEventListener('change', ()=> refreshWatchlist());
+
+    addMainLog('MultiScan Pro initialized');
+    addMainLog(`Monitoring ${WATCHLIST.length} coins every 10 seconds`);
+    
+    // АВТОСТАРТ
+    setTimeout(()=>{
+      interval = q('intervalSelect').value || interval;
+      scanLoop();
+      if (WATCHLIST.includes('BTCUSDT')) {
+        openDetailFor('BTCUSDT');
+      }
+    }, 1000);
+  });
+
+  window.openDetailFor = openDetailFor;
+// ===========================================
+// WAR ROOM INTEGRATION FOR GAUSSIAN
+// ===========================================
+
+// Инициализация коммуникатора
+const warRoomComms = new ScannerCommunicator('gaussian');
+
+// Функция отправки сигналов в War Room
+function sendToWarRoom(symbol, signal, price, timeframe) {
+    if (signal.strength >= 71) {
+        const signalData = {
+            coin: symbol,
+            direction: signal.action === 'BUY' ? 'LONG' : 'SHORT',
+            confidence: signal.strength,
+            price: price,
+            timeframe: timeframe,
+            strength: signal.strength,
+            volume: 0,
+            message: signal.desc,
+            probability: signal.strength,
+            score: signal.strength
+        };
+        
+        const success = warRoomComms.sendSignal(signalData);
+        if (success) {
+            console.log(`📤 [War Room] ${signal.action} signal sent for ${symbol}`);
+        }
+    }
+}
+
+// Модифицируем функцию generateSignalFor для отправки сигналов
+const originalGenerateSignalFor = generateSignalFor;
+generateSignalFor = function(symbol) {
+    originalGenerateSignalFor(symbol);
+    
+    const state = watchers[symbol];
+    if (!state) return;
+    
+    // Проверяем LONG сигнал
+    if (state.signalLong && state.signalLong.action === 'BUY' && state.signalLong.strength >= 71) {
+        setTimeout(() => sendToWarRoom(symbol, state.signalLong, state.lastPrice, interval), 100);
+    }
+    
+    // Проверяем SHORT сигнал  
+    if (state.signalShort && state.signalShort.action === 'SELL' && state.signalShort.strength >= 71) {
+        setTimeout(() => sendToWarRoom(symbol, state.signalShort, state.lastPrice, interval), 100);
+    }
+};
+
+// Добавляем тестовую кнопку
+function addWarRoomTestButton() {
+    const testBtn = document.createElement('button');
+    testBtn.textContent = '🧪 Test War Room';
+    testBtn.style.cssText = `
+        position: fixed;
+        bottom: 60px;
+        right: 20px;
+        padding: 8px 12px;
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        z-index: 1000;
+        font-size: 11px;
+    `;
+    testBtn.onclick = () => {
+        warRoomComms.sendTestSignal();
+        addMainLog('🧪 Test signal sent to War Room');
+    };
+    document.body.appendChild(testBtn);
+}
+
+// Инициализируем при загрузке
+setTimeout(addWarRoomTestButton, 2000);
+console.log('🔗 War Room integration ready for Gaussian');
+
+  </script>
+</body>
+</html>
