@@ -655,7 +655,7 @@ async function sendToGoogleSheets(signalData) {
       coin: signalData.symbol,
       signal_type: signalData.final_dir === 'LONG' ? 'BUY' : 'SELL',
       confidence: signalData.probability + '%',
-      scanner: 'SmartCryptoPro',
+      scanner: 'ultrascan',
       price: String(signalData.last_price),
       timeframe: signalData.baseTimeframe,
       additional_data: JSON.stringify({
@@ -722,7 +722,7 @@ async function testGoogleSheetsConnection() {
       coin: 'TEST_COIN',
       signal_type: 'BUY',
       confidence: '85%',
-      scanner: 'SmartCryptoPro-TEST',
+      scanner: 'ultrascan',
       price: '1000.00',
       timeframe: '5m',
       additional_data: JSON.stringify({ test: true, timestamp: new Date().toISOString() })
@@ -1912,7 +1912,7 @@ async function testGoogleSheetsConnection() {
 // ===========================================
 
 // Инициализация коммуникатора
-const warRoomComms = new ScannerCommunicator('smartcrypto');
+const warRoomComms = new ScannerCommunicator('ultrascan');
 
 // Функция отправки сигналов в War Room
 function sendToWarRoom(result) {
