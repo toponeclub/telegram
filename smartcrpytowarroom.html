@@ -1041,8 +1041,8 @@
                 <button class="tab-btn active" data-tab="dashboard">
                     DASHBOARD
                 </button>
-                <button class="tab-btn" data-tab="smartcrypto" >
-                    <div class="tab-indicator online" data-tab="smartcrypto" style="display: none"></div>
+                <button class="tab-btn" data-tab="smartcryptopro">
+                    <div class="tab-indicator online" style="display: none"></div>
                     SMART CRYPTO
                 </button>
                 <button class="tab-btn" data-tab="ultrascan">
@@ -1271,8 +1271,12 @@
             </div>
 
             <!-- App Views -->
-            <div id="smartcryptoView" class="hidden" style="width: 100%; height: 100%;">
-                <iframe class="app-frame" id="smartcryptoFrame" src="about:blank"></iframe>
+            <div id="smartcryptoproView" class="hidden" style="width: 100%; height: 100%;">
+                <iframe class="app-frame" id="smartcryptoproFrame" src="https://www.t1prime.com/smartcryptopro"></iframe>
+            </div>
+
+            <div id="ultrascanView" class="hidden" style="width: 100%; height: 100%;">
+                <iframe class="app-frame" id="ultrascanFrame" src="about:blank"></iframe>
             </div>
 
             <div id="alligatorView" class="hidden" style="width: 100%; height: 100%;">
@@ -1347,10 +1351,9 @@
             TELEGRAM_CHAT_ID: 'YOUR_CHAT_ID',
             UPDATE_INTERVAL: 10000,
             SCANNER_URLS: {
-                smartcrypto: 'https://www.t1prime.com/smartcryptoultra',
                 alligator: 'https://www.t1prime.com/multiscanproalligator', 
                 gaussian: 'https://www.t1prime.com/multiscanproUPD',
-                ultrascan: 'YOUR_ULTRASCAN_URL',  // 🔥 НОВЫЙ СКАНЕР
+                ultrascan: 'https://www.t1prime.com/smartcryptoultra',  // 🔥 НОВЫЙ СКАНЕР
                 coinglass: 'https://www.coinglass.com/tv/Bitget_ETHUSDT_UMCBL'
             },
             COINS: [
@@ -1811,23 +1814,29 @@
 
         class PerformanceTracker {
     constructor() {
-        this.storageKey = 'warRoomPerformanceData'; // 🔥 Сохраняем в localStorage
-        this.loadStats();
+        this.storageKey = 'warRoomPerformanceData';
+        this.stats = {
+            totalSignals: 0,
+            successfulSignals: 0,
+            autoCorrections: 0,
+            scannerStats: {},
+            signalHistory: []
+        };
+        this.loadStats(); // 🔥 ЗАГРУЖАЕМ ДАННЫЕ ПРИ СОЗДАНИИ!
     }
 
     loadStats() {
         const saved = localStorage.getItem(this.storageKey);
         if (saved) {
             this.stats = JSON.parse(saved);
-            console.log('📊 Loaded performance data:', this.stats);
-        } else {
-            this.reset();
+            console.log('📊 Loaded performance data from storage');
         }
     }
 
     saveStats() {
         localStorage.setItem(this.storageKey, JSON.stringify(this.stats));
     }
+
 
     // 🔥 РЕАЛЬНАЯ ПРОВЕРКА СИГНАЛОВ - через 3 минуты смотрим цену
     scheduleSignalValidation(signal) {
@@ -1859,11 +1868,11 @@
     }
 
     async getCurrentPrice(symbol) {
-        // Заглушка - в реальности запрос к Binance API
-        const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-        const data = await response.json();
-        return parseFloat(data.price);
-    }
+        // ✅ ЭТО РЕАЛЬНЫЙ ЗАПРОС К BINANCE, НЕ ЗАГЛУШКА!
+    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+    const data = await response.json();
+    return parseFloat(data.price);
+}
 
     trackSignal(signal, outcome) {
         this.stats.totalSignals++;
