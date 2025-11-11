@@ -1812,7 +1812,7 @@
             }
         }
 
-        class PerformanceTracker {
+       class PerformanceTracker {
     constructor() {
         this.storageKey = 'warRoomPerformanceData';
         this.stats = {
@@ -1822,34 +1822,40 @@
             scannerStats: {},
             signalHistory: []
         };
-        this.loadStats(); // 🔥 ЗАГРУЖАЕМ ДАННЫЕ ПРИ СОЗДАНИИ!
+        this.loadStats(); // 🔥 ЗАГРУЖАЕМ ДАННЫЕ ПРИ СТАРТЕ
     }
 
     loadStats() {
         const saved = localStorage.getItem(this.storageKey);
         if (saved) {
             this.stats = JSON.parse(saved);
-            console.log('📊 Loaded performance data from storage');
+            console.log('📊 Loaded performance data from storage:', this.stats);
+        } else {
+            console.log('📊 No saved performance data, starting fresh');
         }
     }
 
     saveStats() {
         localStorage.setItem(this.storageKey, JSON.stringify(this.stats));
+        console.log('💾 Performance data saved');
     }
 
-
-    // 🔥 РЕАЛЬНАЯ ПРОВЕРКА СИГНАЛОВ - через 3 минуты смотрим цену
     scheduleSignalValidation(signal) {
+        console.log(`⏰ Scheduling validation for ${signal.data.coin} in 3 minutes...`);
         setTimeout(() => {
             this.validateSignalOutcome(signal);
-        }, 3 * 60 * 1000); // 3 минуты
+        }, 3 * 60 * 1000);
     }
 
     async validateSignalOutcome(signal) {
         try {
+            console.log(`⏰ Validating signal: ${signal.data.coin} ${signal.data.direction}...`);
+            
             const currentPrice = await this.getCurrentPrice(signal.data.coin);
             const signalPrice = signal.data.price;
             const direction = signal.data.direction;
+            
+            console.log(`💰 Price check: ${signalPrice} -> ${currentPrice}`);
             
             let outcome = 'neutral';
             const priceChange = ((currentPrice - signalPrice) / signalPrice) * 100;
@@ -1863,16 +1869,16 @@
             console.log(`✅ Signal validation: ${signal.data.coin} ${direction} - ${outcome} (${priceChange.toFixed(2)}%)`);
             
         } catch (error) {
-            console.error('Error validating signal:', error);
+            console.error('❌ Error validating signal:', error);
         }
     }
 
     async getCurrentPrice(symbol) {
-        // ✅ ЭТО РЕАЛЬНЫЙ ЗАПРОС К BINANCE, НЕ ЗАГЛУШКА!
-    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-    const data = await response.json();
-    return parseFloat(data.price);
-}
+        // ✅ ЭТО РЕАЛЬНЫЙ ЗАПРОС К BINANCE API!
+        const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+        const data = await response.json();
+        return parseFloat(data.price);
+    }
 
     trackSignal(signal, outcome) {
         this.stats.totalSignals++;
@@ -1901,99 +1907,68 @@
         });
         
         this.stats.signalHistory = this.stats.signalHistory.slice(-1000);
-        this.saveStats(); // 🔥 Сохраняем после каждого обновления
-        this.applyAutoCorrection(scanner); // 🔥 Применяем автокоррекцию
+        this.saveStats(); // 🔥 СОХРАНЯЕМ ПОСЛЕ КАЖДОГО ОБНОВЛЕНИЯ
+        this.applyAutoCorrection(scanner);
     }
 
-    // 🔥 РЕАЛЬНАЯ АВТОКОРРЕКЦИЯ
     applyAutoCorrection(scanner) {
         const scannerData = this.stats.scannerStats[scanner];
-        if (!scannerData || scannerData.total < 10) return; // Ждем минимум 10 сигналов
+        if (!scannerData || scannerData.total < 10) return;
         
         const accuracy = scannerData.accuracy;
         
         if (accuracy < 40) {
-            // Сканер очень плохой - снижаем его вес
             console.log(`🔻 Reducing weight for ${scanner} (accuracy: ${accuracy.toFixed(1)}%)`);
             this.stats.autoCorrections++;
         } else if (accuracy > 80) {
-            // Сканер отличный - повышаем его вес  
             console.log(`🔺 Boosting weight for ${scanner} (accuracy: ${accuracy.toFixed(1)}%)`);
             this.stats.autoCorrections++;
         }
+        this.saveStats(); // 🔥 СОХРАНЯЕМ ПОСЛЕ АВТОКОРРЕКЦИИ
     }
 
+    getPerformanceStats() {
+        const overallAccuracy = this.stats.totalSignals > 0 ? 
+            (this.stats.successfulSignals / this.stats.totalSignals) * 100 : 0;
+        
+        const scannerStats = {};
+        Object.keys(this.stats.scannerStats).forEach(scanner => {
+            const data = this.stats.scannerStats[scanner];
+            scannerStats[scanner] = {
+                accuracy: Math.round(data.accuracy),
+                success: data.successful,
+                total: data.total,
+                avgConfidence: this.calculateAvgConfidence(scanner)
+            };
+        });
+        
+        return {
+            overallAccuracy: Math.round(overallAccuracy),
+            totalSignals: this.stats.totalSignals,
+            autoCorrections: this.stats.autoCorrections,
+            scanners: scannerStats
+        };
+    }
 
-            trackSignal(signal, outcome) {
-                this.stats.totalSignals++;
-                if (outcome === 'success') this.stats.successfulSignals++;
-                
-                const scanner = signal.scanner;
-                if (!this.stats.scannerStats[scanner]) {
-                    this.stats.scannerStats[scanner] = { total: 0, successful: 0 };
-                }
-                
-                this.stats.scannerStats[scanner].total++;
-                if (outcome === 'success') this.stats.scannerStats[scanner].successful++;
-                
-                this.stats.signalHistory.push({
-                    timestamp: Date.now(),
-                    scanner: scanner,
-                    coin: signal.data.coin,
-                    direction: signal.data.direction,
-                    confidence: signal.data.confidence,
-                    outcome: outcome
-                });
-                
-                // Keep only last 1000 signals
-                this.stats.signalHistory = this.stats.signalHistory.slice(-1000);
-            }
+    calculateAvgConfidence(scanner) {
+        const scannerSignals = this.stats.signalHistory.filter(s => s.scanner === scanner);
+        if (scannerSignals.length === 0) return 0;
+        
+        const totalConfidence = scannerSignals.reduce((sum, signal) => sum + signal.confidence, 0);
+        return Math.round(totalConfidence / scannerSignals.length);
+    }
 
-            trackAutoCorrection() {
-                this.stats.autoCorrections++;
-            }
-
-            getPerformanceStats() {
-                const overallAccuracy = this.stats.totalSignals > 0 ? 
-                    (this.stats.successfulSignals / this.stats.totalSignals) * 100 : 0;
-                
-                const scannerStats = {};
-                Object.keys(this.stats.scannerStats).forEach(scanner => {
-                    const data = this.stats.scannerStats[scanner];
-                    scannerStats[scanner] = {
-                        accuracy: data.total > 0 ? (data.successful / data.total) * 100 : 0,
-                        success: data.successful,
-                        total: data.total,
-                        avgConfidence: this.calculateAvgConfidence(scanner)
-                    };
-                });
-                
-                return {
-                    overallAccuracy: Math.round(overallAccuracy),
-                    totalSignals: this.stats.totalSignals,
-                    autoCorrections: this.stats.autoCorrections,
-                    scanners: scannerStats
-                };
-            }
-
-            calculateAvgConfidence(scanner) {
-                const scannerSignals = this.stats.signalHistory.filter(s => s.scanner === scanner);
-                if (scannerSignals.length === 0) return 0;
-                
-                const totalConfidence = scannerSignals.reduce((sum, signal) => sum + signal.confidence, 0);
-                return Math.round(totalConfidence / scannerSignals.length);
-            }
-
-            reset() {
-                this.stats = {
-                    totalSignals: 0,
-                    successfulSignals: 0,
-                    autoCorrections: 0,
-                    scannerStats: {},
-                    signalHistory: []
-                };
-            }
-        }
+    reset() {
+        this.stats = {
+            totalSignals: 0,
+            successfulSignals: 0,
+            autoCorrections: 0,
+            scannerStats: {},
+            signalHistory: []
+        };
+        this.saveStats(); // 🔥 СОХРАНЯЕМ ПУСТЫЕ ДАННЫЕ
+    }
+}
 
         // Scanner Signal Receiver
         class ScannerDataReceiver {
@@ -2049,15 +2024,16 @@
                 // Track performance
                 if (window.performanceTracker) {
                     // Simulate outcome for demo (in real app, track actual results)
-                    const outcome = Math.random() > 0.3 ? 'success' : 'failure';
-                    window.performanceTracker.trackSignal(signal, outcome);
-                }
-                
-                warRoomState.alerts = this.alertDetector.checkForAlerts(warRoomState.coinsData);
-                refreshUI();
-                updatePerformanceUI();
-            }
-
+                      // 🔥 НА ЭТОТ - РЕАЛЬНАЯ ПРОВЕРКА ЧЕРЕЗ 3 МИНУТЫ:
+    if (window.performanceTracker) {
+        window.performanceTracker.scheduleSignalValidation(signal);
+    }
+    
+    warRoomState.alerts = this.alertDetector.checkForAlerts(warRoomState.coinsData);
+    refreshUI();
+    updatePerformanceUI();
+}
+}
             checkTelegramCondition(signal) {
                 const coinSymbol = signal.data.coin;
                 if (!warRoomState.coinsData[coinSymbol]) return;
