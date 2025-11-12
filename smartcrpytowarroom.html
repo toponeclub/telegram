@@ -171,9 +171,9 @@
         /* Global Metrics Panel - с ховерами */
         .global-metrics {
             display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 10px;
-            padding: 12px 16px;
+           padding: 8px 16px; /* было 12px 16px */
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px; /* было 10px */
             background: var(--surface);
             border-bottom: 1px solid var(--border);
         }
@@ -181,7 +181,8 @@
         .metric-card {
             background: var(--surface-light);
             border-radius: 8px;
-            padding: 12px;
+            padding: 8px; /* было 12px */
+            min-height: 60px; /* фиксируем высоту */
             border: 1px solid var(--border);
             text-align: center;
             transition: all 0.3s ease;
@@ -211,9 +212,10 @@
         }
 
         .metric-value {
-            font-size: 18px;
+            
             font-weight: 700;
-            margin-bottom: 4px;
+             font-size: 16px; /* было 18px */
+    margin-bottom: 2px; /* было 4px */
             font-family: 'IBM Plex Mono', monospace;
             background: linear-gradient(135deg, var(--accent), var(--blue));
             -webkit-background-clip: text;
@@ -229,7 +231,7 @@
         }
 
         .metric-label {
-            font-size: 10px;
+             font-size: 9px; /* было 10px */
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -237,8 +239,8 @@
         }
 
         .metric-trend {
-            font-size: 9px;
-            margin-top: 4px;
+            font-size: 8px; /* было 9px */
+            margin-top: 2px; /* было 4px */
         }
 
         .trend-up {
@@ -248,6 +250,23 @@
         .trend-down {
             color: var(--danger);
         }
+
+        /* На мобилках еще меньше */
+@media (max-width: 768px) {
+    .global-metrics {
+        padding: 6px 12px;
+        gap: 6px;
+    }
+    
+    .metric-card {
+        padding: 6px;
+        min-height: 50px;
+    }
+    
+    .metric-value {
+        font-size: 14px;
+    }
+}
 
         /* Left Panel */
         .left-panel {
@@ -761,8 +780,8 @@
             background: var(--surface-light);
             border-radius: 6px;
             border: 1px solid var(--border);
-            min-height: 73px;
-            max-height: 73px;
+            min-height: 65px;
+            max-height: 85px;
             overflow: hidden;
         }
 
@@ -1057,6 +1076,10 @@
                     <div class="tab-indicator online" style="display: none"></div>
                     GAUSSIAN
                 </button>
+                 <button class="tab-btn" data-tab="ichimoku">
+                    <div class="tab-indicator online" style="display: none"></div>
+                    ☁️ ICHIMOKU
+                </button>
                 <button class="tab-btn" data-tab="coinglass">
                     <div class="tab-indicator online" style="display: none"></div>
                     CHARTS
@@ -1287,6 +1310,10 @@
                 <iframe class="app-frame" id="gaussianFrame" src="about:blank"></iframe>
             </div>
 
+             <div id="ichimokuView" class="hidden" style="width: 100%; height: 100%;">
+                <iframe class="app-frame" id="ichimokuFrame" src="about:blank"></iframe>
+            </div>
+
             <div id="coinglassView" class="hidden" style="width: 100%; height: 100%;">
                 <iframe class="app-frame" id="coinglassFrame" src="https://www.coinglass.com/tv/Bitget_BTCUSDT_UMCBL"></iframe>
             </div>
@@ -1354,6 +1381,7 @@
                 alligator: 'https://www.t1prime.com/multiscanproalligator', 
                 gaussian: 'https://www.t1prime.com/multiscanproUPD',
                 ultrascan: 'https://www.t1prime.com/smartcryptoultra',  // 🔥 НОВЫЙ СКАНЕР
+                ichimoku: 'https://www.t1prime.com/ichimokuhybrid',  // 🔥 НОВЫЙ СКАНЕР
                 coinglass: 'https://www.coinglass.com/tv/Bitget_ETHUSDT_UMCBL'
             },
             COINS: [
@@ -1600,49 +1628,64 @@
         }
 
         function calculateAggregatedSignal(signals) {
-            const activeSignals = getActiveSignals(signals);
-            
-            if (activeSignals.length === 0) {
-                return {
-                    direction: 'NEUTRAL',
-                    strength: 0,
-                    confidence: 0,
-                    agreement: "0/0",
-                    agreementRatio: 0,
-                    lastUpdate: Date.now(),
-                    age: 0
-                };
-            }
-            
-            const longSignals = activeSignals.filter(s => s.direction === 'LONG');
-            const shortSignals = activeSignals.filter(s => s.direction === 'SHORT');
-            
-            const mainDirection = longSignals.length > shortSignals.length ? 'LONG' : 
-                                 shortSignals.length > longSignals.length ? 'SHORT' : 'NEUTRAL';
-            
-            const directionSignals = mainDirection === 'LONG' ? longSignals : 
-                                    mainDirection === 'SHORT' ? shortSignals : [];
-            
-            const strength = directionSignals.length > 0 ? 
-                directionSignals.reduce((sum, signal) => sum + (signal.strength || signal.confidence || 50), 0) / directionSignals.length : 0;
-            
-            const totalScanners = Object.keys(signals).length;
-            const agreementRatio = directionSignals.length / Math.max(1, totalScanners);
-            const baseConfidence = strength * agreementRatio;
-            
-            const warRoomBoost = agreementRatio > 0.5 ? 10 : 0;
-            const finalConfidence = Math.min(100, baseConfidence + warRoomBoost);
-            
-            return {
-                direction: mainDirection,
-                strength: Math.round(strength),
-                confidence: Math.round(finalConfidence),
-                agreement: `${directionSignals.length}/${totalScanners}`,
-                agreementRatio: agreementRatio,
-                lastUpdate: Date.now(),
-                age: 0
-            };
-        }
+    const activeSignals = getActiveSignals(signals);
+    
+    if (activeSignals.length === 0) {
+        return {
+            direction: 'NEUTRAL',
+            strength: 0,
+            confidence: 0,
+            agreement: "0/0",
+            agreementRatio: 0,
+            lastUpdate: Date.now(),
+            age: 0
+        };
+    }
+    
+    // ПОЛУЧАЕМ ВЕСА ОТ ПЕРФОРМАНС-ТРЕКЕРА
+    const weights = window.performanceTracker?.calculateOptimalWeights() || {};
+    
+    const weightedSignals = activeSignals.map(signal => {
+        const weight = weights[signal.scanner] || 0.5;
+        return {
+            ...signal,
+            weight: weight,
+            weightedConfidence: signal.confidence * weight
+        };
+    });
+
+    const longSignals = weightedSignals.filter(s => s.direction === 'LONG');
+    const shortSignals = weightedSignals.filter(s => s.direction === 'SHORT');
+    
+    const longWeight = longSignals.reduce((sum, s) => sum + s.weightedConfidence, 0);
+    const shortWeight = shortSignals.reduce((sum, s) => sum + s.weightedConfidence, 0);
+    
+    const mainDirection = longWeight > shortWeight ? 'LONG' : 
+                         shortWeight > longWeight ? 'SHORT' : 'NEUTRAL';
+    
+    const directionSignals = mainDirection === 'LONG' ? longSignals : 
+                            mainDirection === 'SHORT' ? shortSignals : [];
+    
+    const strength = directionSignals.length > 0 ? 
+        directionSignals.reduce((sum, signal) => sum + (signal.strength || signal.confidence || 50), 0) / directionSignals.length : 0;
+    
+    const totalScanners = Object.keys(signals).length;
+    const agreementRatio = directionSignals.length / Math.max(1, totalScanners);
+    const baseConfidence = strength * agreementRatio;
+    
+    const warRoomBoost = agreementRatio > 0.5 ? 10 : 0;
+    const finalConfidence = Math.min(100, baseConfidence + warRoomBoost);
+    
+    return {
+        direction: mainDirection,
+        strength: Math.round(strength),
+        confidence: Math.round(finalConfidence),
+        agreement: `${directionSignals.length}/${totalScanners}`,
+        agreementRatio: agreementRatio,
+        lastUpdate: Date.now(),
+        age: 0
+    };
+}
 
         function passesRiskFilter(aggregatedSignal) {
             const riskLevel = warRoomState.riskLevel;
@@ -1822,7 +1865,7 @@
             scannerStats: {},
             signalHistory: []
         };
-        this.loadStats(); // 🔥 ЗАГРУЖАЕМ ДАННЫЕ ПРИ СТАРТЕ
+        this.loadStats();
     }
 
     loadStats() {
@@ -1840,11 +1883,41 @@
         console.log('💾 Performance data saved');
     }
 
-    scheduleSignalValidation(signal) {
-        console.log(`⏰ Scheduling validation for ${signal.data.coin} in 1 minutes...`);
-        setTimeout(() => {
-            this.validateSignalOutcome(signal);
-        }, 1 * 60 * 1000);
+    // НОВЫЕ МЕТОДЫ ДЛЯ АДАПТИВНОЙ СИСТЕМЫ
+    getCoinType(symbol) {
+        const majors = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
+        const largeCaps = ['ADAUSDT', 'SOLUSDT', 'XRPUSDT', 'DOTUSDT', 'LINKUSDT', 'LTCUSDT', 'BCHUSDT', 'AVAXUSDT', 'UNIUSDT'];
+        
+        if (majors.includes(symbol)) return 'MAJOR';
+        if (largeCaps.includes(symbol)) return 'LARGE_CAP';
+        return 'ALTCOIN';
+    }
+
+    getAdaptiveThreshold(coin, timeframe, volatility) {
+        const coinType = this.getCoinType(coin);
+        const baseThresholds = {
+            'MAJOR': { '1m': 0.2, '5m': 0.5, '1h': 1.5, '4h': 3.0 },
+            'LARGE_CAP': { '1m': 0.3, '5m': 0.8, '1h': 2.0, '4h': 4.0 },
+            'ALTCOIN': { '1m': 0.5, '5m': 1.5, '1h': 4.0, '4h': 8.0 }
+        };
+        
+        const baseThreshold = baseThresholds[coinType][timeframe] || baseThresholds[coinType]['1h'];
+        const volatilityMultiplier = volatility > 5 ? 1.5 : 1.0;
+        
+        return baseThreshold * volatilityMultiplier;
+    }
+
+    calculateOutcome(direction, priceChange, threshold) {
+        if (direction === 'LONG') {
+            if (priceChange > threshold * 2) return { outcome: 'high_success', successLevel: 2 };
+            if (priceChange > threshold) return { outcome: 'success', successLevel: 1 };
+            if (priceChange < -threshold) return { outcome: 'failure', successLevel: -1 };
+        } else if (direction === 'SHORT') {
+            if (priceChange < -threshold * 2) return { outcome: 'high_success', successLevel: 2 };
+            if (priceChange < -threshold) return { outcome: 'success', successLevel: 1 };
+            if (priceChange > threshold) return { outcome: 'failure', successLevel: -1 };
+        }
+        return { outcome: 'neutral', successLevel: 0 };
     }
 
     async validateSignalOutcome(signal) {
@@ -1857,15 +1930,18 @@
             
             console.log(`💰 Price check: ${signalPrice} -> ${currentPrice}`);
             
-            let outcome = 'neutral';
             const priceChange = ((currentPrice - signalPrice) / signalPrice) * 100;
             
-            if (direction === 'LONG' && priceChange > 0.5) outcome = 'success';
-            else if (direction === 'LONG' && priceChange < -0.5) outcome = 'failure';
-            else if (direction === 'SHORT' && priceChange < -0.5) outcome = 'success'; 
-            else if (direction === 'SHORT' && priceChange > 0.5) outcome = 'failure';
+            // НОВАЯ АДАПТИВНАЯ ЛОГИКА
+            const threshold = this.getAdaptiveThreshold(
+                signal.data.coin,
+                signal.data.timeframe || '1h',
+                warRoomState.globalMetrics.volatility
+            );
+
+            const { outcome, successLevel } = this.calculateOutcome(direction, priceChange, threshold);
             
-            this.trackSignal(signal, outcome);
+            this.trackSignalWithContext(signal, outcome, successLevel, priceChange);
             console.log(`✅ Signal validation: ${signal.data.coin} ${direction} - ${outcome} (${priceChange.toFixed(2)}%)`);
             
         } catch (error) {
@@ -1874,57 +1950,185 @@
     }
 
     async getCurrentPrice(symbol) {
-        // ✅ ЭТО РЕАЛЬНЫЙ ЗАПРОС К BINANCE API!
-        const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
-        const data = await response.json();
-        return parseFloat(data.price);
+        try {
+            const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+            const data = await response.json();
+            return parseFloat(data.price);
+        } catch (error) {
+            console.error('Binance API error:', error);
+            return warRoomState.coinsData[symbol]?.price?.price || 0;
+        }
+    }
+
+    trackSignalWithContext(signal, outcome, successLevel, actualMove) {
+        const context = {
+            timestamp: Date.now(),
+            market_volatility: warRoomState.globalMetrics.volatility,
+            fear_greed: warRoomState.marketData.fearGreed,
+            btc_dominance: warRoomState.marketData.btcDominance,
+            timeframe: signal.data.timeframe || '1h',
+            signal_strength: signal.data.confidence,
+            volume: warRoomState.coinsData[signal.data.coin]?.price?.volume || 0,
+            coin_type: this.getCoinType(signal.data.coin)
+        };
+
+        this.updateDetailedStats(signal.scanner, outcome, successLevel, actualMove, context);
+    }
+
+    updateDetailedStats(scanner, outcome, successLevel, actualMove, context) {
+        // ИНИЦИАЛИЗАЦИЯ ЕСЛИ НЕТУ
+        if (!this.stats.scannerStats[scanner]) {
+            this.stats.scannerStats[scanner] = {
+                overall: { total: 0, successful: 0, accuracy: 0 },
+                by_timeframe: {},
+                by_strength: {},
+                by_market_regime: {}
+            };
+        }
+
+        const scannerStats = this.stats.scannerStats[scanner];
+        
+        // ОБЩАЯ СТАТИСТИКА
+        scannerStats.overall.total++;
+        if (successLevel > 0) scannerStats.overall.successful++;
+        scannerStats.overall.accuracy = (scannerStats.overall.successful / scannerStats.overall.total) * 100;
+
+        // ПО ТАЙМФРЕЙМАМ
+        const timeframe = context.timeframe;
+        if (!scannerStats.by_timeframe[timeframe]) {
+            scannerStats.by_timeframe[timeframe] = { total: 0, successful: 0, accuracy: 0 };
+        }
+        scannerStats.by_timeframe[timeframe].total++;
+        if (successLevel > 0) scannerStats.by_timeframe[timeframe].successful++;
+        scannerStats.by_timeframe[timeframe].accuracy = 
+            (scannerStats.by_timeframe[timeframe].successful / scannerStats.by_timeframe[timeframe].total) * 100;
+
+        // ПО СИЛЕ СИГНАЛА
+        const strength = context.signal_strength >= 90 ? 'very_strong_90-100' :
+                         context.signal_strength >= 70 ? 'strong_70-90' : 'weak_50-70';
+        
+        if (!scannerStats.by_strength[strength]) {
+            scannerStats.by_strength[strength] = { total: 0, successful: 0, accuracy: 0 };
+        }
+        scannerStats.by_strength[strength].total++;
+        if (successLevel > 0) scannerStats.by_strength[strength].successful++;
+        scannerStats.by_strength[strength].accuracy = 
+            (scannerStats.by_strength[strength].successful / scannerStats.by_strength[strength].total) * 100;
+
+        // ПО РЫНОЧНОМУ РЕЖИМУ
+        const regime = context.market_volatility > 5 ? 'high_volatility' : 'low_volatility';
+        if (!scannerStats.by_market_regime[regime]) {
+            scannerStats.by_market_regime[regime] = { total: 0, successful: 0, accuracy: 0 };
+        }
+        scannerStats.by_market_regime[regime].total++;
+        if (successLevel > 0) scannerStats.by_market_regime[regime].successful++;
+        scannerStats.by_market_regime[regime].accuracy = 
+            (scannerStats.by_market_regime[regime].successful / scannerStats.by_market_regime[regime].total) * 100;
+
+        // Сохраняем историю
+        this.stats.signalHistory.push({
+            timestamp: context.timestamp,
+            scanner: scanner,
+            coin: context.coin_type,
+            direction: outcome,
+            confidence: context.signal_strength,
+            outcome: outcome,
+            actualMove: actualMove,
+            context: context
+        });
+        this.stats.signalHistory = this.stats.signalHistory.slice(-1000);
+
+        // Общие счетчики
+        this.stats.totalSignals++;
+        if (successLevel > 0) this.stats.successfulSignals++;
+
+        this.saveStats();
+    }
+
+    calculateTimeframeConsistency(scanner) {
+        const scannerStats = this.stats.scannerStats[scanner];
+        if (!scannerStats || !scannerStats.by_timeframe) return 0.7;
+        
+        const timeframes = Object.values(scannerStats.by_timeframe);
+        if (timeframes.length < 2) return 0.7;
+        
+        const accuracies = timeframes.map(tf => tf.accuracy).filter(acc => !isNaN(acc));
+        const avgAccuracy = accuracies.reduce((a, b) => a + b, 0) / accuracies.length;
+        
+        const variance = accuracies.reduce((sum, acc) => sum + Math.pow(acc - avgAccuracy, 2), 0) / accuracies.length;
+        const consistency = 1.0 - (variance / 2500);
+        
+        return Math.max(0.3, consistency);
+    }
+
+    calculateStabilityScore(scanner) {
+        const recentSignals = this.stats.signalHistory
+            .filter(s => s.scanner === scanner)
+            .slice(-10);
+
+        if (recentSignals.length < 5) return 0.8;
+
+        const recentSuccess = recentSignals.filter(s => s.outcome === 'success' || s.outcome === 'high_success').length;
+        const recentAccuracy = recentSuccess / recentSignals.length;
+
+        const overallAccuracy = this.stats.scannerStats[scanner]?.overall?.accuracy / 100 || 0;
+
+        const deviation = Math.abs(recentAccuracy - overallAccuracy);
+        return Math.max(0.5, 1.0 - deviation);
+    }
+
+    calculateOptimalWeights() {
+        const weights = {};
+        const scanners = Object.keys(this.stats.scannerStats);
+        
+        scanners.forEach(scanner => {
+            const stats = this.stats.scannerStats[scanner];
+            
+            if (!stats.overall || stats.overall.total < 5) {
+                weights[scanner] = 0.5;
+                return;
+            }
+
+            let weight = stats.overall.accuracy / 100;
+
+            // КОРРЕКЦИИ
+            const dataConfidence = Math.min(1.0, stats.overall.total / 50);
+            weight *= dataConfidence;
+
+            const timeframeConsistency = this.calculateTimeframeConsistency(scanner);
+            weight *= timeframeConsistency;
+
+            const stability = this.calculateStabilityScore(scanner);
+            weight *= stability;
+
+            weights[scanner] = Math.min(1.0, Math.max(0.1, weight));
+        });
+
+        return this.normalizeWeights(weights);
+    }
+
+    normalizeWeights(weights) {
+        const total = Object.values(weights).reduce((sum, w) => sum + w, 0);
+        if (total === 0) return weights;
+
+        const normalized = {};
+        Object.keys(weights).forEach(scanner => {
+            normalized[scanner] = weights[scanner] / total;
+        });
+        return normalized;
+    }
+
+    // СТАРЫЕ МЕТОДЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ
+    scheduleSignalValidation(signal) {
+        console.log(`⏰ Scheduling validation for ${signal.data.coin} in 1 minutes...`);
+        setTimeout(() => {
+            this.validateSignalOutcome(signal);
+        }, 1 * 60 * 1000);
     }
 
     trackSignal(signal, outcome) {
-        this.stats.totalSignals++;
-        if (outcome === 'success') this.stats.successfulSignals++;
-        
-        const scanner = signal.scanner;
-        if (!this.stats.scannerStats[scanner]) {
-            this.stats.scannerStats[scanner] = { total: 0, successful: 0, accuracy: 0 };
-        }
-        
-        this.stats.scannerStats[scanner].total++;
-        if (outcome === 'success') this.stats.scannerStats[scanner].successful++;
-        
-        // Пересчитываем accuracy
-        this.stats.scannerStats[scanner].accuracy = 
-            (this.stats.scannerStats[scanner].successful / this.stats.scannerStats[scanner].total) * 100;
-        
-        this.stats.signalHistory.push({
-            timestamp: Date.now(),
-            scanner: scanner,
-            coin: signal.data.coin,
-            direction: signal.data.direction,
-            confidence: signal.data.confidence,
-            outcome: outcome,
-            signalPrice: signal.data.price
-        });
-        
-        this.stats.signalHistory = this.stats.signalHistory.slice(-1000);
-        this.saveStats(); // 🔥 СОХРАНЯЕМ ПОСЛЕ КАЖДОГО ОБНОВЛЕНИЯ
-        this.applyAutoCorrection(scanner);
-    }
-
-    applyAutoCorrection(scanner) {
-        const scannerData = this.stats.scannerStats[scanner];
-        if (!scannerData || scannerData.total < 10) return;
-        
-        const accuracy = scannerData.accuracy;
-        
-        if (accuracy < 40) {
-            console.log(`🔻 Reducing weight for ${scanner} (accuracy: ${accuracy.toFixed(1)}%)`);
-            this.stats.autoCorrections++;
-        } else if (accuracy > 80) {
-            console.log(`🔺 Boosting weight for ${scanner} (accuracy: ${accuracy.toFixed(1)}%)`);
-            this.stats.autoCorrections++;
-        }
-        this.saveStats(); // 🔥 СОХРАНЯЕМ ПОСЛЕ АВТОКОРРЕКЦИИ
+        // Старый метод для обратной совместимости
+        console.warn('trackSignal is deprecated, use trackSignalWithContext');
     }
 
     getPerformanceStats() {
@@ -1935,10 +2139,12 @@
         Object.keys(this.stats.scannerStats).forEach(scanner => {
             const data = this.stats.scannerStats[scanner];
             scannerStats[scanner] = {
-                accuracy: Math.round(data.accuracy),
-                success: data.successful,
-                total: data.total,
-                avgConfidence: this.calculateAvgConfidence(scanner)
+                accuracy: Math.round(data.overall.accuracy),
+                success: data.overall.successful,
+                total: data.overall.total,
+                by_timeframe: data.by_timeframe,
+                by_strength: data.by_strength,
+                by_market_regime: data.by_market_regime
             };
         });
         
@@ -1950,14 +2156,6 @@
         };
     }
 
-    calculateAvgConfidence(scanner) {
-        const scannerSignals = this.stats.signalHistory.filter(s => s.scanner === scanner);
-        if (scannerSignals.length === 0) return 0;
-        
-        const totalConfidence = scannerSignals.reduce((sum, signal) => sum + signal.confidence, 0);
-        return Math.round(totalConfidence / scannerSignals.length);
-    }
-
     reset() {
         this.stats = {
             totalSignals: 0,
@@ -1966,7 +2164,7 @@
             scannerStats: {},
             signalHistory: []
         };
-        this.saveStats(); // 🔥 СОХРАНЯЕМ ПУСТЫЕ ДАННЫЕ
+        this.saveStats();
     }
 }
 
@@ -2788,6 +2986,66 @@
             uiManager.updateCoinCards(warRoomState.coinsData, warRoomState.filters);
             uiManager.updateAlerts(warRoomState.alerts);
         }
+
+        function updateScannerModes() {
+    const modeConfig = {
+        // 🔥 КОНФИГ ДЛЯ ULTRA SCAN
+        ultrascan: {
+            scalping: { time_horizon: 'short', aggression: 'high' },
+            swing: { time_horizon: 'medium', aggression: 'medium' },
+            position: { time_horizon: 'long', aggression: 'low' }
+        },
+        // 🔥 КОНФИГ ДЛЯ ALLIGATOR (если нужно)
+        //alligator: {
+           // scalping: { timeframe: '1m', speed: 'fast' },
+            //swing: { timeframe: '15m', speed: 'normal' },
+           // position: { timeframe: '1h', speed: 'slow' }
+        //},
+        // 🔥 КОНФИГ ДЛЯ GAUSSIAN (если нужно)
+        //gaussian: {
+            //scalping: { sensitivity: 'high', period: 'short' },
+            //swing: { sensitivity: 'medium', period: 'medium' },
+           // position: { sensitivity: 'low', period: 'long' }
+        }
+    //};
+
+    // 🔥 КОНФИГ ДЛЯ ICHIMOKU (если нужно)
+        //ichimoku: {
+            //scalping: { sensitivity: 'aggressive'},
+            // position: { sensitivity: 'conservative'}
+        //}
+    //};
+    
+    // Отправляем команды КАЖДОМУ сканеру с его настройками
+    Object.keys(CONFIG.SCANNER_URLS).forEach(scannerName => {
+        const scannerConfig = modeConfig[scannerName];
+        if (!scannerConfig) {
+            console.log(`⚠️ No config for scanner: ${scannerName}`);
+            return;
+        }
+        
+        const config = scannerConfig[warRoomState.tradingStyle];
+        if (!config) {
+            console.log(`⚠️ No ${warRoomState.tradingStyle} config for ${scannerName}`);
+            return;
+        }
+        
+        const command = {
+            type: 'MODE_CHANGE',
+            scanner: scannerName,
+            mode: warRoomState.tradingStyle,
+            config: config,
+            timestamp: Date.now()
+        };
+        
+        // Сохраняем команду в localStorage
+        const scannerCommands = JSON.parse(localStorage.getItem('scanner_commands') || '{}');
+        scannerCommands[scannerName] = command;
+        localStorage.setItem('scanner_commands', JSON.stringify(scannerCommands));
+        
+        console.log(`📡 Sent mode change to ${scannerName}:`, config);
+    });
+}
 
         // Initialize War Room
         function initializeWarRoom() {
