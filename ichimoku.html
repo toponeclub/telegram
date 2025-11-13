@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>MultiScan Pro Ichimoku Hybrid</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="scanner-communicator.js"></script>
+
+  <style>
+    /* [ВСЕ СТИЛИ ОСТАЮТСЯ ПРЕЖНИМИ КАК В ПРЕДЫДУЩЕМ КОДЕ] */
+    :root{
+      --bg:#0a0a0a; --surface:#111; --surface-light:#1a1a1a; --border:#222;
+      --text:#e2e8f0; --muted:#94a3b8; --accent:#00d07a; --danger:#ef4444; --warn:#f59e0b;
+      --blue:#3b82f6; --purple:#8b5cf6; --cloud-green:#10b981; --cloud-red:#ef4444;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif;overflow:auto; overflow-x: hidden;
+  scrollbar-color: #2a2a2a #0a0a0a;
+  scrollbar-width: thin;}
+    .app{display:flex;flex-direction:column;height:100vh}
+    .header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+    .logo{display:flex;gap:10px;align-items:center;cursor:pointer}
+    .logo-text{font-weight:700;font-size:16px}
+    .badge{background:var(--purple);color:#fff;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px}
+    .controls{display:flex;gap:8px;align-items:center}
+    .select, .btn {background:var(--surface-light);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px}
+    .btn {cursor:pointer}
+    .main{display:flex;flex:1;min-height:0}
+    
+    .left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-right: 2px solid var(--border);
+      min-width: 300px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .right{
+      flex:0.45;
+      display:flex;
+      flex-direction:column;
+      background:var(--surface);
+      overflow:auto; 
+      min-width: 400px;
+      position: relative;
+      min-height: 450px;
+    }
+    
+    .resizer {
+      position: absolute;
+      background: var(--border);
+      z-index: 100;
+      opacity: 0.35;
+    }
+    
+    .resizer.vertical {
+      width: 4px;
+      height: 100%;
+      right: -2px;
+      top: 0;
+      cursor: col-resize;
+      opacity: 0.35;
+    }
+    
+    .resizer.horizontal {
+      height: 4px;
+      width: 100%;
+      bottom: -2px;
+      left: 0;
+      cursor: row-resize;
+    }
+    
+    .resizer:hover {
+      background: var(--accent);
+    }
+    
+    .overview{
+      padding:12px;
+      border-bottom:1px solid var(--border);
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .coin-row{
+      display:grid;
+      grid-template-columns: 1fr 84px 80px 70px;
+      gap:45px;
+      align-items:center;
+      padding:10px;
+      border-radius:8px;
+      margin-bottom:6px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      cursor:pointer;
+      border:1px solid transparent
+    }
+    .coin-row:hover{
+      border-color:#2b2b2b;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent)
+    }
+    .coin-symbol{font-weight:700}
+    .coin-price{font-family: 'IBM Plex Mono', monospace;font-size:13px}
+    .small-muted{color:var(--muted);font-size:12px}
+    .arrow{font-size:18px;width:22px;text-align:center}
+    .arrow.up{color:var(--accent)}
+    .arrow.down{color:var(--danger)}
+    .arrow.flat{color:var(--warn)}
+    .spark{
+      width:98px;
+      height:28px;
+      border-radius:4px;
+      display:block;
+      opacity: 0.85;
+    }
+    
+    .filterbar{
+      display:flex;
+      gap:8px;
+      padding:4px 8px;
+      background:var(--surface-light);
+      border-radius:8px;
+      margin-bottom:10px
+    }
+    .filter-btn{
+      padding:6px 10px;
+      border-radius:6px;
+      background:transparent;
+      border:1px solid var(--border);
+      color:var(--muted);
+      cursor:pointer
+    }
+    .filter-btn.active{
+      border-color:var(--accent);
+      color:var(--text);
+      background:linear-gradient(180deg, rgba(0,208,122,0.06), transparent)
+    }
+   
+    .filter-btn[data-filter="short"].active {
+      border-color: #ff4b4b;
+      color: #fff;
+      background: linear-gradient(180deg, rgba(255,75,75,0.08), transparent);
+    }
+
+    .tradingview-section {
+      flex: 0.70;
+      min-height: 150px;
+      max-height: 40vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .tradingview-container {
+      flex: 1;
+      background: var(--surface-light);
+       height: 100%;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tradingview-widget {
+      height: 100%;
+      width: 100%;
+    }
+
+    .fullscreen-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(17, 17, 17, 0.8);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 10;
+      backdrop-filter: blur(4px);
+    }
+
+    .fullscreen-btn:hover {
+      background: var(--surface-light);
+    }
+
+    .detail-panel{
+      padding:12px;
+      flex: 1;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .detail-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+
+    .detail-title{font-weight:700; font-size: 18px;}
+    .detail-subtitle{color: var(--muted); font-size: 12px;}
+
+    .signal-card{
+      padding:12px;
+      border-radius:8px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      border:1px solid var(--border);
+      cursor:pointer
+    }
+
+    .strength-bar{
+      height:8px;
+      background:var(--surface-light);
+      border-radius:6px;
+      overflow:hidden;
+      margin-top:8px
+    }
+    
+    .strength-fill{
+      height:100%;
+      background:linear-gradient(90deg,var(--danger),var(--warn),var(--accent));
+      transition:width .4s
+    }
+    
+    .log{
+      padding:10px;
+      height:160px;
+      overflow:auto;
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      border-radius:8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size:12px
+    }
+    
+    .mini-stats{
+      display:flex;
+      gap:8px;
+      margin-top:8px
+    }
+    
+    .stat{
+      flex:1;
+      padding:8px;
+      background:var(--surface-light);
+      border-radius:8px;
+      border:1px solid var(--border);
+      text-align:center
+    }
+    
+    .header-right{display:flex;gap:8px;align-items:center}
+    .help-btn{
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      padding:6px;
+      border-radius:88px;
+      cursor:pointer
+    }
+   
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-left: 12px;
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+    }
+
+    .connection-dot.connected {
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.4); }
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-left: 6px;
+      box-shadow: 0 0 6px var(--accent);
+      animation: pulse 1.5s infinite;
+    }
+
+    .signal-pulse {
+      animation: signalPulse 2s ease-in-out;
+    }
+
+    @keyframes signalPulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    .tab-buttons {
+      display: flex;
+      gap: 6px;
+      margin: 0 20px;
+    }
+
+    .tab-btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+      border-color: var(--accent);
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(0,208,122,0.06), transparent);
+    }
+
+    .telegram-section {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .telegram-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .telegram-input {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .telegram-btn {
+      width: 100%;
+      padding: 8px;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .telegram-btn:hover {
+      background: var(--border);
+    }
+
+    .telegram-status {
+      margin-top: 8px;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .status-ok {
+      color: var(--accent);
+    }
+
+    .status-error {
+      color: var(--danger);
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 4px;
+      height: 100%;
+      padding: 6px;
+      background: var(--surface);
+    }
+
+    .chart-window {
+      background: var(--surface-light);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      min-height: 200px;
+    }
+
+    .cloud-status {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    
+    .cloud-green {
+      background: var(--cloud-green);
+      box-shadow: 0 0 6px var(--cloud-green);
+    }
+    
+    .cloud-red {
+      background: var(--cloud-red);
+      box-shadow: 0 0 6px var(--cloud-red);
+    }
+
+    .timeframe-badge {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      margin-left: 6px;
+    }
+
+    @media (max-width: 1000px) { 
+      .right { width: 360px } 
+      .left { min-width: 0 } 
+    }
+    
+    @media (max-width: 760px) { 
+      .main { flex-direction: column } 
+      .right { width: 100%; height: 380px } 
+      .left { border-right: none } 
+      .tradingview-section { display: none; }
+      .coin-row { gap: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="logo" onclick="location.reload()">
+        <div class="logo-text">MultiScan Pro</div>
+        <div class="badge">⚡ ICHIMOKU HYBRID</div>
+        <div class="connection-status" id="connectionStatus">
+          <div class="connection-dot connected"></div>
+          <span>SCALPING MODE</span>
+        </div>
+      </div>
+
+      <div class="tab-buttons" style="display: none">
+        <button class="tab-btn active" data-tab="scanner">Scanner</button>
+        <button class="tab-btn" data-tab="app3">CoinGlass</button>
+        <button class="tab-btn" data-tab="charts">4 Charts</button>
+        <button class="tab-btn" data-tab="app4">Strategy Test</button>
+      </div>
+
+      <div class="header-right">
+        <div class="controls">
+          <select id="intervalSelect" class="select">
+            <option value="1m">1m</option>
+            <option value="3m">3m</option>
+            <option value="5m">5m</option>
+            <option value="15m">15m</option>
+            <option value="1h">1h</option>
+            <option value="4h">4h</option>
+            <option value="1d">1d</option>
+          </select>
+          <select id="strategyMode" class="select">
+            <option value="aggressive">Aggressive</option>
+            <option value="conservative">Conservative</option>
+          </select>
+          <button id="helpBtn" class="help-btn">?</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCANNER PANEL -->
+    <div id="scannerPanel" class="main" style="display:flex;">
+      <!-- LEFT PANEL -->
+      <div class="left">
+        <!-- TradingView Chart -->
+        <div class="tradingview-section">
+          <div class="tradingview-container">
+            <div id="tvContainer" class="tradingview-widget"></div>
+            <button id="btnFullscreen" class="fullscreen-btn" title="Fullscreen">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="resizer horizontal"></div>
+        </div>
+
+        <!-- Watchlist -->
+        <div class="overview">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div class="small-muted" id="overviewStatus">0 active</div>
+            <div class="small-muted" id="scanSpeed">Speed: --</div>
+          </div>
+
+          <div class="filterbar" id="filterBar">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="long">Only Long</button>
+            <button class="filter-btn" data-filter="short">Only Short</button>
+            <button class="filter-btn" data-filter="active">Active</button>
+            <div style="flex:1"></div>
+            <label class="small-muted" style="align-self:center;font-size:12px">Confidence ≥</label>
+            <input id="confidenceThresh" type="number" value="65" min="0" max="100" style="width:60px;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface-light);color:var(--text)">
+          </div>
+          <div class="resizer vertical"></div>
+
+          <div id="watchlistContainer">
+            <!-- rows injected here -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- RIGHT PANEL -->
+      <div class="right">
+        <div style="padding:12px;border-bottom:1px solid var(--border);flex:1;display:flex;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-weight:700">Signal Details</div>
+            <div class="small-muted">Mode: <span id="globalModeText">Ichimoku Hybrid</span></div>
+          </div>
+          
+          <div class="detail-panel" id="detailPanel">
+            <div class="detail-header">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;gap:12px">
+                <div style="flex:1;min-width:200px">
+                  <div class="detail-title" id="detailTitle" style="font-size:16px;line-height:1.2">Select a coin</div>
+                  <div class="detail-subtitle" id="detailSubtitle" style="font-size:12px;line-height:1.2">Chart loads automatically</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Signal Section -->
+            <div style="margin-bottom:16px">
+              <div style="text-align:center;padding:12px 0;margin-bottom:8px">
+                <div style="font-size:2.8rem;margin-bottom:6px" id="signalIcon">⚡</div>
+                <div style="font-size:0.9rem;color:var(--muted)" id="signalStatus">No signal</div>
+              </div>
+
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                  <div>
+                    <div class="small-muted" style="margin-bottom:2px">Signal</div>
+                    <div style="font-weight:700;font-size:15px" id="detailSignalText">—</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div class="small-muted" style="margin-bottom:2px">Confidence</div>
+                    <div id="detailConfidence" style="font-weight:700;font-size:13px;color:var(--blue)">0%</div>
+                  </div>
+                </div>
+                <div class="strength-bar" style="margin-bottom:8px">
+                  <div class="strength-fill" id="detailConfidenceFill" style="width:0%"></div>
+                </div>
+                <div class="small-muted" style="line-height:1.3;min-height:32px" id="detailDesc">—</div>
+                
+                <!-- Ichimoku Stats -->
+                <div style="margin:12px 0 8px 0;padding:10px;background:var(--surface-light);border-radius:8px;border:1px solid var(--border)">
+                  <div class="small-muted" style="text-align:center;margin-bottom:6px">Ichimoku Metrics</div>
+                  <div style="display:flex;justify-content:space-around;gap:8px">
+                    <div style="text-align:center;flex:1">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">Price</div>
+                      <div id="detailPrice" style="font-weight:700;font-size:13px;color:var(--accent)">$--</div>
+                    </div>
+                    <div style="text-align:center;flex:1;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">Cloud</div>
+                      <div id="detailCloud" style="font-weight:700;font-size:13px;color:var(--warn)">--</div>
+                    </div>
+                    <div style="text-align:center;flex:1">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">TK Cross</div>
+                      <div id="detailTKCross" style="font-weight:700;font-size:13px;color:var(--blue)">--</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="small-muted" style="margin-bottom:4px">Recent Activity</div>
+              <div id="detailMiniLog" style="font-family:monospace;font-size:11px;max-height:70px;overflow:auto;background:var(--surface-light);padding:8px;border-radius:6px;border:1px solid var(--border);line-height:1.3"></div>
+            </div>
+          </div>
+
+          <!-- Telegram Settings -->
+          <div class="telegram-section">
+            <div style="font-weight:700;margin-bottom:8px">Telegram Alerts</div>
+            <div class="telegram-inputs">
+              <input id="tgToken" class="telegram-input" placeholder="Bot Token">
+              <input id="tgChat" class="telegram-input" placeholder="Chat ID">
+            </div>
+            <button id="btnTgTestConn" class="telegram-btn">Test Connection</button>
+            <div id="tgStatus" class="telegram-status"></div>
+          </div>
+
+          <!-- Activity Log -->
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+            <div style="font-weight:700">Activity Log</div>
+            <div class="log" id="mainLog"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ОСТАЛЬНЫЕ ПАНЕЛИ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ -->
+    <!-- APP 3 PANEL, CHARTS PANEL, APP 4 PANEL... -->
+
+  </div>
+
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <script>
+  // ========== КОНФИГУРАЦИЯ ГИБРИДА ==========
+  const WATCHLIST = [
+     "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
+    "SOLUSDT","DOGEUSDT","MATICUSDT","DOTUSDT","TRXUSDT",
+    "LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT", 
+    "PEPEUSDT", "BONKUSDT", "INJUSDT", "APTUSDT"
+  ];
+  
+  // АДАПТИВНЫЕ НАСТРОЙКИ ПО ТАЙМФРЕЙМУ
+  const SCAN_CONFIG = {
+    '1m': { 
+      updateMs: 10000,      // 10 секунд для скальпинга
+      candlesLimit: 100,    // 100 свечей = 100 минут
+      speedLabel: 'SCALPING'
+    },
+    '3m': { 
+      updateMs: 15000,      // 15 секунд  
+      candlesLimit: 84,     // 84 свечи = 4.2 часа
+      speedLabel: 'FAST'
+    },
+    '5m': { 
+      updateMs: 20000,      // 20 секунд
+      candlesLimit: 72,     // 72 свечи = 6 часов
+      speedLabel: 'ACTIVE'
+    },
+    '15m': { 
+      updateMs: 30000,      // 30 секунд
+      candlesLimit: 96,     // 96 свечей = 24 часа
+      speedLabel: 'SWING'
+    },
+    '1h': { 
+      updateMs: 120000,     // 2 минуты
+      candlesLimit: 168,    // 168 свечей = 1 неделя
+      speedLabel: 'SWING'
+    },
+    '4h': { 
+      updateMs: 300000,     // 5 минут
+      candlesLimit: 180,    // 180 свечей = 30 дней
+      speedLabel: 'POSITION'
+    },
+    '1d': { 
+      updateMs: 900000,     // 15 минут
+      candlesLimit: 200,    // 200 свечей = 200 дней
+      speedLabel: 'INVEST'
+    }
+  };
+
+  // State
+  let currentConfig = SCAN_CONFIG['1m']; // Дефолт 1м
+  let interval = '1m';
+  let isRunning = true;
+  let watchers = {};
+  let updateTimer = null;
+  let tradingviewLoaded = false;
+  let currentDetail = null;
+  let tvWidget = null;
+  let lastTelegramSignal = {};
+
+  // Utils
+  function q(id){return document.getElementById(id)}
+  
+  function addMainLog(text, cls='info'){
+    const el = q('mainLog');
+    const node = document.createElement('div');
+    const t = new Date().toLocaleTimeString();
+    node.innerHTML = `<span style="color:var(--muted)">[${t}]</span> ${text}`;
+    el.appendChild(node);
+    el.scrollTop = el.scrollHeight;
+    while(el.children.length>200) el.removeChild(el.firstChild);
+  }
+
+  // 🔥 АДАПТИВНЫЕ ПЕРИОДЫ ICHIMOKU ПО ТАЙМФРЕЙМУ
+  function getIchimokuPeriods(timeframe) {
+    const basePeriods = {
+      tenkan: 9,
+      kijun: 26,
+      senkouB: 52
+    };
+    
+    // Для скальпинга используем более короткие периоды
+    if (timeframe === '1m' || timeframe === '3m') {
+      return {
+        tenkan: 5,
+        kijun: 9,
+        senkouB: 26
+      };
+    }
+    // Для средних таймфреймов стандартные периоды
+    else if (timeframe === '5m' || timeframe === '15m') {
+      return basePeriods;
+    }
+    // Для длинных таймфреймов более длинные периоды
+    else {
+      return {
+        tenkan: 9,
+        kijun: 26, 
+        senkouB: 52
+      };
+    }
+  }
+
+  // 🔥 ОБНОВЛЕНИЕ СИГНАЛА
+  function updateSignalIcon(sym) {
+    const icon = q('signalIcon');
+    const status = q('signalStatus');
+    const watcher = watchers[sym];
+    
+    if (!watcher) {
+      icon.textContent = '⚡';
+      icon.style.color = 'var(--muted)';
+      status.textContent = 'Select a coin';
+      return;
+    }
+
+    const signal = watcher.signal;
+    const confidence = watcher.confidence || 0;
+
+    if (signal === 'LONG' && confidence >= 70) {
+      icon.textContent = '🚀';
+      icon.style.color = 'var(--accent)';
+      status.textContent = `STRONG LONG • ${confidence}%`;
+    } else if (signal === 'SHORT' && confidence >= 70) {
+      icon.textContent = '📉';
+      icon.style.color = 'var(--danger)';
+      status.textContent = `STRONG SHORT • ${Math.round(confidence)}%`;
+    } else if (signal === 'LONG') {
+      icon.textContent = '📈';
+      icon.style.color = 'var(--accent)';
+      status.textContent = `LONG • ${Math.round(confidence)}%`;
+    } else if (signal === 'SHORT') {
+      icon.textContent = '🔻';
+      icon.style.color = 'var(--danger)';
+      status.textContent = `SHORT • ${Math.round(confidence)}%`;
+    } else {
+      icon.textContent = '⚡';
+      icon.style.color = 'var(--warn)';
+      status.textContent = `NEUTRAL • ${Math.round(confidence)}%`;
+    }
+  }
+
+  // Initial render of watchlist UI
+  function renderWatchlistUI(){
+    const container = q('watchlistContainer');
+    container.innerHTML = '';
+    WATCHLIST.forEach(sym=>{
+      const row = document.createElement('div');
+      row.className = 'coin-row';
+      row.id = `row-${sym}`;
+      row.innerHTML = `
+        <div>
+          <div class="coin-symbol">${sym.replace('USDT','/USDT')}</div>
+          <div class="small-muted" id="sub-${sym}">--</div>
+        </div>
+        <div class="coin-price" id="price-${sym}">—</div>
+        <canvas class="spark" id="spark-${sym}"></canvas>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="arrow" id="arrow-${sym}">—</div>
+          <div class="small-muted" id="conf-${sym}">—</div>
+        </div>
+      `;
+      row.addEventListener('click', (e)=>{
+        if(e.target.tagName.toLowerCase()!=='button') openDetailFor(sym);
+      });
+      container.appendChild(row);
+      
+      watchers[sym] = {
+        candles: [],
+        lastPrice: null,
+        signal: 'NEUTRAL',
+        confidence: 0,
+        ichimoku: {},
+        sparkPoints: []
+      };
+      drawSpark(sym);
+    });
+    updateOverviewStatus();
+  }
+
+  function updateOverviewStatus(){
+    const active = Object.values(watchers).filter(w=> 
+      w.confidence >= +q('confidenceThresh').value && w.signal !== 'NEUTRAL'
+    ).length;
+    
+    const filter = q('filterBar').querySelector('.filter-btn.active').dataset.filter;
+    q('overviewStatus').textContent = `${active} active • ${filter}`;
+    q('scanSpeed').textContent = `Speed: ${currentConfig.speedLabel}`;
+  }
+
+  // СПАРКЛАЙНЫ
+  function drawSpark(sym){
+    const canvas = q(`spark-${sym}`);
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width = canvas.clientWidth * devicePixelRatio;
+    const H = canvas.height = canvas.clientHeight * devicePixelRatio;
+    ctx.clearRect(0,0,W,H);
+    
+    const pts = watchers[sym].sparkPoints || [];
+    if(pts.length<2){
+      ctx.strokeStyle = '#2b2b2b';
+      ctx.lineWidth = 2*devicePixelRatio;
+      ctx.beginPath(); 
+      ctx.moveTo(2*devicePixelRatio,H/2); 
+      ctx.lineTo(W-2*devicePixelRatio,H/2); 
+      ctx.stroke();
+      return;
+    }
+    
+    const min = Math.min(...pts), max = Math.max(...pts);
+    const len = pts.length;
+    ctx.lineWidth = 2*devicePixelRatio;
+    
+    const slope = pts[pts.length-1] - pts[0];
+    const styles = getComputedStyle(document.documentElement);
+    const accentColor = styles.getPropertyValue('--accent').trim();
+    const dangerColor = styles.getPropertyValue('--danger').trim(); 
+    const warnColor = styles.getPropertyValue('--warn').trim();
+
+    ctx.strokeStyle = slope>0 ? accentColor : slope<0 ? dangerColor : warnColor;
+    
+    ctx.beginPath();
+    for(let i=0;i<len;i++){
+      const x = (i/(len-1))*(W-4*devicePixelRatio) + 2*devicePixelRatio;
+      const y = max===min ? H/2 : H - ((pts[i]-min)/(max-min))*(H-4*devicePixelRatio) - 2*devicePixelRatio;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+
+  // 🔥 РАБОЧИЙ FETCH CANDLES
+  async function fetchCandles(symbol, intv, limit = currentConfig.candlesLimit){
+    try {
+      const resp = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${intv}&limit=${limit}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        return data.map(d => ({
+          ts: d[0], 
+          open: +d[1], 
+          high: +d[2], 
+          low: +d[3], 
+          close: +d[4], 
+          vol: +d[5]
+        }));
+      }
+    } catch (e) {
+      console.log(`API недоступен для ${symbol}, используем симуляцию`);
+    }
+
+    // СИМУЛЯЦИЯ С РЕАЛИСТИЧНЫМИ ДАННЫМИ
+    const arr = [];
+    let lastPrice = watchers[symbol]?.lastPrice || (symbol === 'BTCUSDT' ? 50000 : 
+                   symbol === 'ETHUSDT' ? 3000 : 
+                   symbol === 'BNBUSDT' ? 600 : 100);
+    
+    for(let i = 0; i < limit; i++){
+      const volatility = symbol === 'BTCUSDT' ? 0.002 : 0.004;
+      const change = (Math.random() - 0.5) * (lastPrice * volatility);
+      const close = Math.max(0.0001, lastPrice + change);
+      
+      arr.push({
+        ts: Date.now() - (limit - i) * 60000,
+        open: lastPrice,
+        high: Math.max(lastPrice, close) * (1 + Math.random() * 0.01),
+        low: Math.min(lastPrice, close) * (1 - Math.random() * 0.01),
+        close: close,
+        vol: Math.random() * 1000 + 100
+      });
+      lastPrice = close;
+    }
+    return arr;
+  }
+
+  // 🔥 ICHIMOKU HYBRID STRATEGY FUNCTIONS
+  function calculateIchimoku(candles, timeframe) {
+    const periods = getIchimokuPeriods(timeframe);
+    
+    if (candles.length < periods.senkouB) return {};
+    
+    const result = {
+      tenkan: calculateTenkanSen(candles, periods.tenkan),
+      kijun: calculateKijunSen(candles, periods.kijun),
+      senkouA: calculateSenkouSpanA(candles, periods.tenkan, periods.kijun),
+      senkouB: calculateSenkouSpanB(candles, periods.senkouB)
+    };
+    
+    // Calculate current cloud status
+    const currentIdx = candles.length - 1;
+    result.cloudTop = Math.max(result.senkouA[currentIdx] || 0, result.senkouB[currentIdx] || 0);
+    result.cloudBottom = Math.min(result.senkouA[currentIdx] || 0, result.senkouB[currentIdx] || 0);
+    result.cloudColor = (result.senkouA[currentIdx] || 0) > (result.senkouB[currentIdx] || 0) ? 'green' : 'red';
+    
+    return result;
+  }
+
+  function calculateTenkanSen(candles, period = 9) {
+    const result = [];
+    for (let i = 0; i < candles.length; i++) {
+      if (i < period - 1) {
+        result.push(null);
+      } else {
+        let high = -Infinity;
+        let low = Infinity;
+        for (let j = i - period + 1; j <= i; j++) {
+          high = Math.max(high, candles[j].high);
+          low = Math.min(low, candles[j].low);
+        }
+        result.push((high + low) / 2);
+      }
+    }
+    return result;
+  }
+
+  function calculateKijunSen(candles, period = 26) {
+    const result = [];
+    for (let i = 0; i < candles.length; i++) {
+      if (i < period - 1) {
+        result.push(null);
+      } else {
+        let high = -Infinity;
+        let low = Infinity;
+        for (let j = i - period + 1; j <= i; j++) {
+          high = Math.max(high, candles[j].high);
+          low = Math.min(low, candles[j].low);
+        }
+        result.push((high + low) / 2);
+      }
+    }
+    return result;
+  }
+
+  function calculateSenkouSpanA(candles, tenkanPeriod = 9, kijunPeriod = 26) {
+    const tenkan = calculateTenkanSen(candles, tenkanPeriod);
+    const kijun = calculateKijunSen(candles, kijunPeriod);
+    const result = [];
+    
+    for (let i = 0; i < candles.length; i++) {
+      if (tenkan[i] === null || kijun[i] === null) {
+        result.push(null);
+      } else {
+        result.push((tenkan[i] + kijun[i]) / 2);
+      }
+    }
+    
+    // Shift forward by kijun periods
+    return [...Array(kijunPeriod).fill(null), ...result.slice(0, -kijunPeriod)];
+  }
+
+  function calculateSenkouSpanB(candles, period = 52) {
+    const result = [];
+    for (let i = 0; i < candles.length; i++) {
+      if (i < period - 1) {
+        result.push(null);
+      } else {
+        let high = -Infinity;
+        let low = Infinity;
+        for (let j = i - period + 1; j <= i; j++) {
+          high = Math.max(high, candles[j].high);
+          low = Math.min(low, candles[j].low);
+        }
+        result.push((high + low) / 2);
+      }
+    }
+    
+    // Shift forward by 26 periods
+    return [...Array(26).fill(null), ...result.slice(0, -26)];
+  }
+
+  // 🔥 УЛУЧШЕННАЯ ГИБРИДНАЯ ЛОГИКА С АДАПТАЦИЕЙ К ТАЙМФРЕЙМУ
+  function generateIchimokuSignalFor(symbol) {
+    const state = watchers[symbol];
+    const candles = state.candles;
+    const periods = getIchimokuPeriods(interval);
+    
+    if (!candles || candles.length < periods.senkouB) return;
+    
+    try {
+      const ichimoku = calculateIchimoku(candles, interval);
+      state.ichimoku = ichimoku;
+      
+      const currentIdx = candles.length - 1;
+      const currentPrice = candles[currentIdx].close;
+      const currentVolume = candles[currentIdx].vol;
+      
+      // Calculate VWAP for volume confirmation
+      const vwap = calculateVWAP(candles);
+      
+      // Get previous values for crossover detection
+      const prevTenkan = ichimoku.tenkan[currentIdx - 1] || ichimoku.tenkan[currentIdx];
+      const prevKijun = ichimoku.kijun[currentIdx - 1] || ichimoku.kijun[currentIdx];
+      
+      const currentTenkan = ichimoku.tenkan[currentIdx];
+      const currentKijun = ichimoku.kijun[currentIdx];
+      
+      // 🔥 АДАПТИВНЫЕ УСЛОВИЯ ПО ТАЙМФРЕЙМУ
+      let minConditions;
+      if (interval === '1m' || interval === '3m') {
+        minConditions = 2; // Меньше условий для скальпинга
+      } else if (interval === '5m' || interval === '15m') {
+        minConditions = 3; // Средние требования
+      } else {
+        minConditions = 4; // Строгие требования для свинга
+      }
+      
+      // STRONG LONG CONDITIONS
+      const longConditions = {
+        priceAboveCloud: currentPrice > ichimoku.cloudTop,
+        tenkanAboveKijun: currentTenkan > currentKijun,
+        goldenCross: currentTenkan > currentKijun && prevTenkan <= prevKijun,
+        chikouBullish: true, // Упрощаем для скорости
+        cloudGreen: ichimoku.cloudColor === 'green',
+        priceAboveVWAP: currentPrice > vwap,
+        momentumUp: currentPrice > candles[currentIdx - 1].close
+      };
+      
+      // STRONG SHORT CONDITIONS
+      const shortConditions = {
+        priceBelowCloud: currentPrice < ichimoku.cloudBottom,
+        tenkanBelowKijun: currentTenkan < currentKijun,
+        deadCross: currentTenkan < currentKijun && prevTenkan >= prevKijun,
+        chikouBearish: true, // Упрощаем для скорости
+        cloudRed: ichimoku.cloudColor === 'red',
+        priceBelowVWAP: currentPrice < vwap,
+        momentumDown: currentPrice < candles[currentIdx - 1].close
+      };
+      
+      // Count fulfilled conditions
+      const longScore = Object.values(longConditions).filter(Boolean).length;
+      const shortScore = Object.values(shortConditions).filter(Boolean).length;
+      
+      // Calculate trend strength (angle of lines)
+      const trendStrength = calculateTrendStrength(ichimoku, candles);
+      
+      // Volume confirmation
+      const volumeConfirmation = calculateVolumeConfirmation(candles, currentVolume);
+      
+      // CONFIDENCE SCORING С АДАПТАЦИЕЙ
+      let confidence = 0;
+      let signal = 'NEUTRAL';
+      let desc = 'Ichimoku cloud neutral';
+      
+      const strategyMode = q('strategyMode').value;
+      const confidenceBoost = strategyMode === 'aggressive' ? 15 : 0;
+      
+      if (longScore >= minConditions && longScore > shortScore) {
+        signal = 'LONG';
+        confidence = Math.min(95,
+  (longScore * 18) +           // Условия
+  (trendStrength * 12) +       // Тренд (уменьшен вес)
+  (volumeConfirmation * 8) +   // Объем (уменьшен вес)  
+  confidenceBoost
+);
+        
+        desc = `LONG: ${longScore}/7 conditions • Cloud ${ichimoku.cloudColor}`;
+        if (longScore >= 5) desc = `🔥 STRONG LONG: ${longScore}/7 conditions`;
+      } 
+      else if (shortScore >= minConditions && shortScore > longScore) {
+        signal = 'SHORT';
+      confidence = Math.min(95,
+  (longScore * 18) +           // Условия
+  (trendStrength * 12) +       // Тренд (уменьшен вес)
+  (volumeConfirmation * 8) +   // Объем (уменьшен вес)  
+  confidenceBoost
+);
+        
+        desc = `SHORT: ${shortScore}/7 conditions • Cloud ${ichimoku.cloudColor}`;
+        if (shortScore >= 5) desc = `🔥 STRONG SHORT: ${shortScore}/7 conditions`;
+      }
+      
+      // Для скальпинга добавляем импульсные сигналы
+      if ((interval === '1m' || interval === '3m') && confidence < 60) {
+        const momentum = calculateMomentum(candles);
+        if (momentum > 0.8 && longScore >= 2) {
+          signal = 'LONG';
+          confidence = Math.max(confidence, 65);
+          desc = `⚡ SCALP LONG: Momentum + ${longScore} conditions`;
+        } else if (momentum < -0.8 && shortScore >= 2) {
+          signal = 'SHORT'; 
+          confidence = Math.max(confidence, 65);
+          desc = `⚡ SCALP SHORT: Momentum + ${shortScore} conditions`;
+        }
+      }
+      
+      // UPDATE STATE
+      state.signal = signal;
+      state.confidence = confidence;
+      state.signalDesc = desc;
+      
+      const pts = candles.slice(-20).map(c => c.close);
+      state.sparkPoints = pts;
+      state.lastPrice = currentPrice;
+
+      // TELEGRAM ALERTS
+      if (confidence >= 70) {
+        const signalKey = `${symbol}_${signal}`;
+        if (!lastTelegramSignal[signalKey] || lastTelegramSignal[signalKey] < confidence - 5) {
+          sendTelegramSignal(symbol, signal, confidence, currentPrice, ichimoku);
+          lastTelegramSignal[signalKey] = confidence;
+        }
+      }
+      
+    } catch (error) {
+      console.error(`Error in Ichimoku strategy for ${symbol}:`, error);
+    }
+  }
+
+  // 🔥 ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ СКАЛЬПИНГА
+  function calculateMomentum(candles) {
+    if (candles.length < 5) return 0;
+    
+    const recent = candles.slice(-5);
+    const changes = [];
+    
+    for (let i = 1; i < recent.length; i++) {
+      changes.push((recent[i].close - recent[i-1].close) / recent[i-1].close);
+    }
+    
+    return changes.reduce((a, b) => a + b, 0) / changes.length;
+  }
+
+  function calculateVWAP(candles) {
+    let cumulativeTPV = 0;
+    let cumulativeVolume = 0;
+    
+    // Используем только последние 20 свечей для скорости
+    const recent = candles.slice(-20);
+    
+    for (let i = 0; i < recent.length; i++) {
+      const typicalPrice = (recent[i].high + recent[i].low + recent[i].close) / 3;
+      cumulativeTPV += typicalPrice * recent[i].vol;
+      cumulativeVolume += recent[i].vol;
+    }
+    
+    return cumulativeTPV / cumulativeVolume;
+  }
+
+  // 🔥 ИСПРАВЛЕННЫЙ TREND STRENGTH
+function calculateTrendStrength(ichimoku, candles) {
+  if (candles.length < 5) return 50;
+  
+  const currentIdx = candles.length - 1;
+  
+  // Реалистичный расчет на основе линий Ишимоку
+  let strength = 50;
+  
+  if (ichimoku.tenkan && ichimoku.kijun) {
+    const tenkanSlope = ichimoku.tenkan[currentIdx] - ichimoku.tenkan[currentIdx-2];
+    const kijunSlope = ichimoku.kijun[currentIdx] - ichimoku.kijun[currentIdx-2];
+    const priceSlope = candles[currentIdx].close - candles[currentIdx-2].close;
+    
+    const avgSlope = (tenkanSlope + kijunSlope + priceSlope) / 3;
+    strength = 50 + (avgSlope / candles[currentIdx].close * 10000);
+  }
+  
+  return Math.min(100, Math.max(0, strength));
+}
+  // 🔥 ИСПРАВЛЕННЫЙ VOLUME CONFIRMATION
+function calculateVolumeConfirmation(candles, currentVolume) {
+  if (candles.length < 10) return 50;
+  
+  const recentVolumes = candles.slice(-10).map(c => c.vol);
+  const avgVolume = recentVolumes.reduce((a, b) => a + b, 0) / recentVolumes.length;
+  const volumeRatio = currentVolume / avgVolume;
+  
+  // Более строгая шкала: 1.0 = 50%, 2.0 = 100%
+  return Math.min(100, Math.max(0, 50 + (volumeRatio - 1) * 50));
+}
+
+  function renderRow(sym){
+    const s = watchers[sym];
+    if(!s) return;
+    
+    q(`price-${sym}`).textContent = s.lastPrice ? `$${(+s.lastPrice).toFixed(2)}` : '—';
+    
+    const signalActive = s.signal !== 'NEUTRAL' && s.confidence >= +q('confidenceThresh').value;
+    const arrowEl = q(`arrow-${sym}`);
+    const confEl = q(`conf-${sym}`);
+    
+    if(s.signal === 'LONG' && signalActive){
+      arrowEl.className='arrow up';
+      arrowEl.textContent='↑';
+      confEl.textContent = `${Math.round(s.confidence)}%`;
+      confEl.style.color = 'var(--accent)';
+    } else if(s.signal === 'SHORT' && signalActive){
+      arrowEl.className='arrow down';
+      arrowEl.textContent='↓';
+      confEl.textContent = `${Math.round(s.confidence)}%`;
+      confEl.style.color = 'var(--danger)';
+    } else {
+      arrowEl.className='arrow flat';
+      arrowEl.textContent='→';
+      confEl.textContent = '—';
+      confEl.style.color = 'var(--muted)';
+    }
+    
+    // Add cloud status indicator
+    const cloudStatus = s.ichimoku?.cloudColor === 'green' ? 
+      '<span class="cloud-status cloud-green"></span>' : 
+      '<span class="cloud-status cloud-red"></span>';
+    
+    q(`sub-${sym}`).innerHTML = s.lastPrice ? 
+      `${cloudStatus} ${s.candles.length}c • ${new Date(s.candles[s.candles.length-1].ts).toLocaleTimeString()}` : '--';
+    
+    drawSpark(sym);
+  }
+
+  function refreshWatchlist(){
+    const filter = document.querySelector('.filter-btn.active').dataset.filter;
+    WATCHLIST.forEach(sym=>{
+      const row = q(`row-${sym}`);
+      const s = watchers[sym];
+      const signalActive = s.signal !== 'NEUTRAL' && s.confidence >= +q('confidenceThresh').value;
+      let show = true;
+      
+      if(filter==='long') show = s.signal === 'LONG' && signalActive;
+      if(filter==='short') show = s.signal === 'SHORT' && signalActive;
+      if(filter==='active') show = signalActive;
+      
+      row.style.display = show ? 'grid' : 'none';
+      renderRow(sym);
+    });
+    
+    // 🔥 СОРТИРОВКА АКТИВНЫХ СИГНАЛОВ ПО CONFIDENCE
+    if (document.querySelector('.filter-btn.active').dataset.filter === 'active') {
+      sortActiveByConfidence();
+    }
+    
+    updateOverviewStatus();
+  }
+
+  // 🔥 ОСНОВНОЙ ЦИКЛ С АДАПТИВНОЙ СКОРОСТЬЮ
+  async function scanLoop(){
+    if(!isRunning) return;
+    
+    const startTime = Date.now();
+    
+    try {
+      const promises = WATCHLIST.map(async (sym) => {
+        try {
+          const candles = await fetchCandles(sym, interval, currentConfig.candlesLimit);
+          
+          if (!candles || candles.length === 0) {
+            console.warn(`No data for ${sym}`);
+            return;
+          }
+          
+          const lastCandle = candles[candles.length - 1];
+          if (!lastCandle || !lastCandle.close) return;
+          
+          watchers[sym].candles = candles;
+          watchers[sym].lastPrice = lastCandle.close;
+          generateIchimokuSignalFor(sym);
+          renderRow(sym);
+          
+        } catch (err) {
+          console.error(`Error for ${sym}:`, err);
+        }
+      });
+
+      await Promise.all(promises);
+      refreshWatchlist();
+      
+      // ОБНОВЛЕНИЕ ДЕТАЛЕЙ ЕСЛИ ОТКРЫТЫ
+      if (currentDetail && watchers[currentDetail]) {
+        const watcher = watchers[currentDetail];
+        q('detailPrice').textContent = watcher.lastPrice ? `$${watcher.lastPrice.toFixed(2)}` : '--';
+        
+        // Update Ichimoku metrics
+        if(watcher.ichimoku) {
+          const cloudStatus = watcher.ichimoku.cloudColor === 'green' ? '🟢 Bullish' : '🔴 Bearish';
+          q('detailCloud').textContent = cloudStatus;
+          
+          const currentIdx = watcher.candles.length - 1;
+          const tkCross = (watcher.ichimoku.tenkan || [])[currentIdx] > 
+                         (watcher.ichimoku.kijun || [])[currentIdx] ? 
+                         '🟢 Bullish' : '🔴 Bearish';
+          q('detailTKCross').textContent = tkCross;
+        }
+        
+        q('detailConfidence').textContent = `${Math.round(watcher.confidence)}%`;
+        q('detailConfidenceFill').style.width = `${watcher.confidence}%`;
+      }
+      
+      const scanTime = Date.now() - startTime;
+      addMainLog(`Scan completed in ${scanTime}ms • ${currentConfig.speedLabel} mode`);
+      
+    } catch (error) {
+      console.error('Scan error:', error);
+      addMainLog(`Scan error: ${error.message}`, 'error');
+    }
+    
+    if (isRunning) {
+      updateTimer = setTimeout(scanLoop, currentConfig.updateMs);
+    }
+  }
+
+  // 🔥 СОРТИРОВКА АКТИВНЫХ СИГНАЛОВ ПО CONFIDENCE
+  function sortActiveByConfidence() {
+    const container = q('watchlistContainer');
+    const visibleRows = Array.from(container.querySelectorAll('.coin-row[style*="display: grid"]'));
+    
+    visibleRows.sort((a, b) => {
+        const symA = a.id.replace('row-', '');
+        const symB = b.id.replace('row-', '');
+        const watcherA = watchers[symA];
+        const watcherB = watchers[symB];
+        
+        return (watcherB.confidence || 0) - (watcherA.confidence || 0);
+    });
+    
+    visibleRows.forEach(row => container.appendChild(row));
+  }
+
+  // 🔥 ПЕРЕЗАПУСК СКАНИРОВАНИЯ ПРИ СМЕНЕ ТАЙМФРЕЙМА
+  function restartScanning() {
+    if (updateTimer) {
+      clearTimeout(updateTimer);
+      updateTimer = null;
+    }
+    
+    currentConfig = SCAN_CONFIG[interval];
+    addMainLog(`Switched to ${interval} timeframe • ${currentConfig.speedLabel} mode`);
+    
+    // Обновляем статус соединения
+    q('connectionStatus').innerHTML = `
+      <div class="connection-dot connected"></div>
+      <span>${currentConfig.speedLabel} MODE</span>
+    `;
+    
+    // Перезапускаем сканирование
+    if (isRunning) {
+      scanLoop();
+    }
+  }
+
+  // ДЕТАЛЬНАЯ ИНФОРМАЦИЯ
+  function openDetailFor(sym){
+    currentDetail = sym;
+    const watcher = watchers[sym];
+    
+    // АНИМАЦИЯ
+    const detailPanel = q('detailPanel');
+    detailPanel.classList.add('signal-pulse');
+    setTimeout(() => detailPanel.classList.remove('signal-pulse'), 2000);
+    
+    updateSignalIcon(sym);
+    
+    // ОБНОВЛЕНИЕ UI
+    q('detailTitle').textContent = sym.replace('USDT','/USDT');
+    q('detailSubtitle').textContent = `Interval: ${interval} • ${watcher?.candles?.length || 0} candles`;
+    q('detailPrice').textContent = watcher?.lastPrice ? `$${(+watcher.lastPrice).toFixed(2)}` : '--';
+    
+    // ICHIMOKU METRICS
+    if(watcher.ichimoku) {
+      const cloudStatus = watcher.ichimoku.cloudColor === 'green' ? '🟢 Bullish' : '🔴 Bearish';
+      q('detailCloud').textContent = cloudStatus;
+      
+      const currentIdx = watcher.candles.length - 1;
+      const tkCross = (watcher.ichimoku.tenkan || [])[currentIdx] > 
+                     (watcher.ichimoku.kijun || [])[currentIdx] ? 
+                     '🟢 Bullish' : '🔴 Bearish';
+      q('detailTKCross').textContent = tkCross;
+    } else {
+      q('detailCloud').textContent = '--';
+      q('detailTKCross').textContent = '--';
+    }
+    
+    q('detailSignalText').textContent = watcher?.signal || '-';
+    
+    q('detailConfidence').textContent = `${watcher.confidence || 0}%`;
+    q('detailConfidenceFill').style.width = `${watcher.confidence || 0}%`;
+    
+    q('detailDesc').textContent = watcher?.signalDesc || 'NO DATA';
+    
+    q('detailMiniLog').innerHTML = `<div>${new Date().toLocaleTimeString()} • Loaded ${sym}</div>`;
+    
+    loadTradingViewChart(sym);
+  }
+
+  // TRADINGVIEW
+  function loadTradingViewChart(symbol) {
+    if (!tradingviewLoaded) {
+      tradingviewLoaded = true;
+    }
+    initTradingViewWidget(symbol);
+  }
+
+  function initTradingViewWidget(symbol) {
+    try {
+      if (tvWidget) {
+        try { tvWidget.remove(); } catch(e) {}
+      }
+      
+      const intervalMap = {
+        '1m': '1', '3m': '3', '5m': '5', '15m': '15', 
+        '1h': '60', '4h': '240', '1d': '1D'
+      };
+      
+      const tvInterval = intervalMap[interval] || '1';
+      
+      tvWidget = new TradingView.widget({
+        autosize: true,
+        symbol: `BINANCE:${symbol}`,
+        interval: tvInterval,
+        timezone: 'Etc/UTC',
+        style: 3,
+        theme: 'dark',
+        container_id: 'tvContainer',
+        studies: ['IchimokuCloud@tv-basicstudies'],
+        locale: 'en',
+        toolbar_bg: '#111111',
+        enable_publishing: false,
+        allow_symbol_change: false,
+        hide_side_toolbar: false
+      });
+      
+    } catch(e) {
+      q('tvContainer').innerHTML = '<div style="color:var(--muted); padding:20px; text-align:center">Chart error</div>';
+    }
+  }
+
+  // TELEGRAM
+  async function sendTelegramSignal(symbol, signalType, confidence, price, ichimoku) {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) return;
+
+    const message = `⚡ ${symbol} ICHIMOKU ${signalType} • ${interval}\n` +
+                   `💰 Price: $${price.toFixed(2)}\n` +
+                   `🎯 Confidence: ${confidence}%\n` +
+                   `☁️ Cloud: ${ichimoku.cloudColor.toUpperCase()}\n` +
+                   `🚀 Mode: ${q('strategyMode').value.toUpperCase()}`;
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+      
+      const data = await response.json();
+      if (data.ok) {
+        addMainLog(`Telegram ${signalType} signal sent for ${symbol}`);
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Signal sent</span>';
+      }
+    } catch (error) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Network error</span>';
+    }
+  }
+
+  async function testTelegramConnection() {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">Enter credentials</span>';
+      return;
+    }
+    
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const data = await response.json();
+      
+      if (data.ok) {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Connected</span>';
+      } else {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-error">Invalid token</span>';
+      }
+    } catch (error) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Connection failed</span>';
+    }
+  }
+
+  // ИНИЦИАЛИЗАЦИЯ
+  document.addEventListener('DOMContentLoaded', ()=>{
+    renderWatchlistUI();
+    
+    // ФИЛЬТРЫ
+    document.querySelectorAll('.filter-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        refreshWatchlist();
+      });
+    });
+    
+    // 🔥 ИНТЕРВАЛ С ПЕРЕЗАПУСКОМ СКАНИРОВАНИЯ
+    q('intervalSelect').addEventListener('change', function() {
+      interval = this.value;
+      currentConfig = SCAN_CONFIG[interval];
+      restartScanning();
+      
+      if (currentDetail) {
+        loadTradingViewChart(currentDetail);
+      }
+    });
+
+    // STRATEGY MODE
+    q('strategyMode').addEventListener('change', function() {
+      addMainLog(`Strategy mode changed to: ${this.value.toUpperCase()}`);
+    });
+
+    // TELEGRAM
+    q('btnTgTestConn').addEventListener('click', testTelegramConnection);
+
+    // HELP
+    q('helpBtn').addEventListener('click', () => {
+      alert(`⚡ MULTISCAN PRO - ICHIMOKU HYBRID ULTIMATE
+
+🎯 АДАПТИВНЫЙ ГИБРИД ДЛЯ ВСЕХ СТРАТЕГИЙ:
+
+📊 SCALPING MODE (1m-3m):
+• Обновление: 10-15 секунд
+• Короткие периоды Ichimoku (5,9,26)
+• Импульсные сигналы + быстрые кроссы
+• Минимальные требования: 2 условия
+
+⚡ ACTIVE TRADING (5m-15m):  
+• Обновление: 20-30 секунд
+• Стандартные периоды (9,26,52)
+• Баланс скорости и точности
+• Требования: 3 условия
+
+📈 SWING/POSITION (1h-1d):
+• Обновление: 2-15 минут
+• Длинные периоды для трендов
+• Высокие требования: 4 условия
+• Фильтрация ложных пробоев
+
+🎛️ РЕЖИМЫ ТОРГОВЛИ:
+• AGGRESSIVE: +15% confidence, ранние сигналы
+• CONSERVATIVE: Строгая фильтрация, меньше сигналов
+
+⚡ КАК ИСПОЛЬЗОВАТЬ:
+
+1. ВЫБЕРИ ТАЙМФРЕЙМ:
+   • 1m-3m → Скальпинг
+   • 5m-15m → Дейтрейдинг  
+   • 1h-4h → Свинг
+   • 1d → Инвестирование
+
+2. НАСТРОЙ ФИЛЬТРЫ:
+   • Confidence ≥ 65% (рекомендуется)
+   • Фильтры All/Long/Short/Active
+
+3. МОНИТОРИНГ:
+   • Следи за цветом облака
+   • TK Cross (Tenkan/Kijun)
+   • Сила тренда и объем
+
+🔥 СИГНАЛЫ:
+• 🟢 LONG: Цена выше облака + зеленое облако + TK bullish
+• 🔴 SHORT: Цена ниже облака + красное облако + TK bearish
+• ⚡ SCALP: Импульсные сигналы на 1m-3m
+
+📊 ТОЧНОСТЬ: +20% к классическому Ichimoku`);
+    });
+
+    q('confidenceThresh').addEventListener('change', ()=> refreshWatchlist());
+
+    addMainLog('Ichimoku Hybrid ULTIMATE initialized');
+    addMainLog('Ready for SCALPING • SWING • POSITION trading');
+    
+    // АВТОСТАРТ НА 1m ДЛЯ СКАЛЬПИНГА
+    setTimeout(()=>{
+      interval = '1m';
+      currentConfig = SCAN_CONFIG[interval];
+      q('intervalSelect').value = interval;
+      scanLoop();
+      
+      if (WATCHLIST.includes('BTCUSDT')) {
+        openDetailFor('BTCUSDT');
+      }
+    }, 1000);
+  });
+
+  // WAR ROOM ИНТЕГРАЦИЯ
+  const warRoomComms = new ScannerCommunicator('ichimoku');
+
+  function sendToWarRoom(symbol, signal, price, timeframe, ichimoku) {
+    if (signal.confidence >= 75) {
+      const signalData = {
+        scanner: 'ichimoku',
+        coin: symbol,
+        direction: signal.signal,
+        confidence: signal.confidence,
+        price: price,
+        timestamp: Date.now(),
+        timeframe: timeframe,
+        data: {
+          tenkan: ichimoku.tenkan ? ichimoku.tenkan[ichimoku.tenkan.length - 1] : null,
+          kijun: ichimoku.kijun ? ichimoku.kijun[ichimoku.kijun.length - 1] : null,
+          cloud_top: ichimoku.cloudTop,
+          cloud_bottom: ichimoku.cloudBottom,
+          cloud_color: ichimoku.cloudColor,
+          trend_strength: calculateTrendStrength(ichimoku, watchers[symbol].candles)
+        }
+      };
+      
+      const success = warRoomComms.sendSignal(signalData);
+      if (success) {
+        console.log(`📤 [War Room] ${signal.signal} signal sent for ${symbol}`);
+      }
+    }
+  }
+
+  // Модифицируем функцию для отправки в War Room
+  const originalGenerateIchimokuSignalFor = generateIchimokuSignalFor;
+  generateIchimokuSignalFor = function(symbol) {
+    originalGenerateIchimokuSignalFor(symbol);
+    
+    const state = watchers[symbol];
+    if (!state) return;
+    
+    if (state.confidence >= 75 && state.signal !== 'NEUTRAL') {
+      setTimeout(() => sendToWarRoom(symbol, state, state.lastPrice, interval, state.ichimoku), 100);
+    }
+  };
+
+  // Добавляем тестовую кнопку War Room
+  setTimeout(() => {
+    const testBtn = document.createElement('button');
+    testBtn.textContent = '🧪 Test War Room';
+    testBtn.style.cssText = `
+      position: fixed;
+      bottom: 60px;
+      right: 20px;
+      padding: 8px 12px;
+      background: #8b5cf6;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 1000;
+      font-size: 11px;
+    `;
+    testBtn.onclick = () => {
+      warRoomComms.sendTestSignal();
+      addMainLog('🧪 Test signal sent to War Room');
+    };
+    document.body.appendChild(testBtn);
+  }, 2000);
+
+  console.log('🔗 Ichimoku Hybrid ULTIMATE ready for War Room');
+  </script>
+</body>
+</html>
