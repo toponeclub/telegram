@@ -426,6 +426,397 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* ==================== MOBILE RESPONSIVE STYLES ==================== */
+@media (max-width: 768px) {
+    .container {
+        padding: 4px;
+        gap: 4px;
+        min-height: 100vh;
+        height: auto;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 6px;
+    }
+
+    .symbol-info {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .exchange-selector {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .select {
+        flex: 1;
+        min-width: 0;
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+
+    .price {
+        font-size: 16px;
+        min-width: 100px;
+        text-align: center;
+    }
+
+    .change {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+
+    .controls {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .timeframe-selector {
+        order: 1;
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 2px;
+        padding: 3px;
+    }
+
+    .timeframe-btn {
+        padding: 6px 4px;
+        font-size: 10px;
+        min-width: 28px;
+        flex: 1;
+        max-width: 45px;
+    }
+
+    .drawing-tools {
+        order: 2;
+        flex: 1;
+        justify-content: center;
+        max-width: 200px;
+    }
+
+    .drawing-btn {
+        padding: 6px 8px;
+        font-size: 10px;
+        min-width: 40px;
+    }
+
+    .btn {
+        padding: 6px 8px;
+        font-size: 11px;
+        flex: 1;
+        min-width: 60px;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .fullscreen-btn {
+        padding: 6px 8px;
+        font-size: 11px;
+        min-width: 40px;
+    }
+
+    .chart-section {
+        border-radius: 6px;
+        min-height: 400px;
+        height: 60vh;
+    }
+
+    .chart-controls {
+        padding: 6px;
+        gap: 4px;
+    }
+
+    .chart-btn {
+        padding: 6px 8px;
+        font-size: 10px;
+        flex: 1;
+        min-width: 60px;
+    }
+
+    .status-bar {
+        padding: 4px 6px;
+        font-size: 10px;
+        flex-wrap: wrap;
+    }
+
+    .right-controls {
+        flex: 1;
+        justify-content: flex-end;
+    }
+
+    /* Touch improvements */
+    .btn, .chart-btn, .timeframe-btn, .drawing-btn, .fullscreen-btn {
+        min-height: 32px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .select {
+        min-height: 32px;
+        touch-action: manipulation;
+    }
+
+    /* Panels positioning for mobile */
+    .indicator-panel,
+    .settings-panel {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        right: auto;
+        width: 90vw;
+        max-width: 300px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .indicator-item,
+    .settings-item {
+        padding: 8px 0;
+        font-size: 14px;
+    }
+
+    .settings-input {
+        width: 70px;
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 2px;
+        gap: 2px;
+    }
+
+    .header {
+        padding: 4px 6px;
+        gap: 6px;
+    }
+
+    .symbol-info {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .exchange-selector {
+        min-width: 100%;
+        justify-content: space-between;
+    }
+
+    .select {
+        flex: 1;
+        margin: 0 1px;
+    }
+
+    .price-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+
+    .price {
+        font-size: 14px;
+        min-width: auto;
+        flex: 1;
+    }
+
+    .change {
+        font-size: 10px;
+        flex: 0 0 auto;
+    }
+
+    .controls {
+        gap: 4px;
+    }
+
+    .timeframe-selector {
+        gap: 1px;
+        padding: 2px;
+    }
+
+    .timeframe-btn {
+        padding: 5px 2px;
+        font-size: 9px;
+        min-width: 24px;
+        max-width: 35px;
+    }
+
+    .drawing-tools {
+        max-width: 150px;
+    }
+
+    .drawing-btn {
+        padding: 5px 4px;
+        font-size: 9px;
+        min-width: 35px;
+    }
+
+    .btn {
+        padding: 5px 4px;
+        font-size: 10px;
+        min-width: 50px;
+    }
+
+    .fullscreen-btn {
+        padding: 5px 6px;
+        font-size: 10px;
+        min-width: 35px;
+    }
+
+    .chart-section {
+        min-height: 300px;
+        height: 50vh;
+    }
+
+    .chart-controls {
+        padding: 4px;
+    }
+
+    .chart-btn {
+        padding: 5px 4px;
+        font-size: 9px;
+        min-width: 50px;
+    }
+
+    /* Improved touch targets */
+    .btn, .chart-btn, .timeframe-btn, .drawing-btn, .fullscreen-btn {
+        min-height: 36px;
+    }
+
+    .select {
+        min-height: 36px;
+    }
+
+    /* Better scrolling for panels */
+    .indicator-panel,
+    .settings-panel {
+        width: 95vw;
+        max-height: 70vh;
+    }
+}
+
+/* Landscape orientation improvements */
+@media (max-width: 768px) and (orientation: landscape) {
+    .container {
+        padding: 3px;
+        gap: 3px;
+    }
+
+    .header {
+        flex-direction: row;
+        padding: 4px 6px;
+    }
+
+    .symbol-info {
+        flex: 1;
+        flex-direction: row;
+        justify-content: flex-start;
+    }
+
+    .exchange-selector {
+        flex: 0 0 auto;
+        min-width: auto;
+    }
+
+    .price-info {
+        flex: 0 0 auto;
+        margin-left: 8px;
+    }
+
+    .controls {
+        flex: 1;
+        justify-content: flex-end;
+    }
+
+    .timeframe-selector {
+        order: 0;
+        width: auto;
+        flex: 1;
+        max-width: 250px;
+    }
+
+    .chart-section {
+        height: calc(100vh - 120px);
+        min-height: 200px;
+    }
+}
+
+/* High-resolution devices */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        padding: 6px;
+    }
+
+    .header {
+        padding: 6px 10px;
+    }
+
+    .timeframe-btn {
+        padding: 4px 6px;
+        font-size: 10px;
+    }
+
+    .btn {
+        padding: 5px 10px;
+        font-size: 11px;
+    }
+
+    .chart-section {
+        min-height: 500px;
+    }
+}
+
+/* Prevent zoom on input for mobile */
+@media (max-width: 768px) {
+    select:focus,
+    input:focus {
+        font-size: 16px !important;
+    }
+}
+
+/* Smooth transitions for all interactive elements */
+.btn, .chart-btn, .timeframe-btn, .drawing-btn, .fullscreen-btn, .select {
+    transition: all 0.2s ease-in-out;
+    transform: translateZ(0);
+}
+
+/* Active state improvements for touch */
+.btn:active, .chart-btn:active, .timeframe-btn:active, 
+.drawing-btn:active, .fullscreen-btn:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+}
+
+/* Loading overlay improvements for mobile */
+.loading-overlay {
+    font-size: 16px;
+    gap: 16px;
+}
+
+.loading-overlay .spinner {
+    width: 32px;
+    height: 32px;
+}
+
+/* Status bar text sizing for mobile */
+@media (max-width: 480px) {
+    #marketStatus,
+    #lastUpdate {
+        font-size: 9px;
+    }
+}
     </style>
 </head>
 <body>
