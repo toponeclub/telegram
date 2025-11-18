@@ -426,7 +426,7 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        /* ==================== MOBILE RESPONSIVE STYLES ==================== */
+/* ==================== MOBILE RESPONSIVE STYLES ==================== */
 @media (max-width: 768px) {
     .container {
         padding: 4px;
@@ -817,6 +817,27 @@
         font-size: 9px;
     }
 }
+
+  /* СКРОЛЛБАРЫ В ТЕМНОМ СТИЛЕ */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+        
     </style>
 </head>
 <body>
@@ -836,26 +857,31 @@
                         <option value="futures">Futures</option>
                     </select>
                     <select class="select" id="symbolSelect">
-                        <option value="BTCUSDT">BTC/USDT</option>
-                        <option value="ETHUSDT">ETH/USDT</option>
-                        <option value="BNBUSDT">BNB/USDT</option>
-                        <option value="SOLUSDT">SOL/USDT</option>
-                        <option value="XRPUSDT">XRP/USDT</option>
-                        <option value="ADAUSDT">ADA/USDT</option>
-                        <option value="DOGEUSDT">DOGE/USDT</option>
-                        <option value="AVAXUSDT">AVAX/USDT</option>
-                        <option value="DOTUSDT">DOT/USDT</option>
-                        <option value="MATICUSDT">MATIC/USDT</option>
-                        <option value="LINKUSDT">LINK/USDT</option>
-                        <option value="LTCUSDT">LTC/USDT</option>
-                        <option value="BCHUSDT">BCH/USDT</option>
-                        <option value="ATOMUSDT">ATOM/USDT</option>
-                        <option value="ETCUSDT">ETC/USDT</option>
-                        <option value="XLMUSDT">XLM/USDT</option>
-                        <option value="FILUSDT">FIL/USDT</option>
-                        <option value="APTUSDT">APT/USDT</option>
-                        <option value="ARBUSDT">ARB/USDT</option>
-                        <option value="NEARUSDT">NEAR/USDT</option>
+                     <option value="BTCUSDT">BTC/USDT</option>
+<option value="ETHUSDT">ETH/USDT</option>
+<option value="BNBUSDT">BNB/USDT</option>
+<option value="XRPUSDT">XRP/USDT</option>
+<option value="ADAUSDT">ADA/USDT</option>
+<option value="SOLUSDT">SOL/USDT</option>
+<option value="DOGEUSDT">DOGE/USDT</option>
+<option value="MATICUSDT">MATIC/USDT</option>
+<option value="DOTUSDT">DOT/USDT</option>
+<option value="TRXUSDT">TRX/USDT</option>
+<option value="LINKUSDT">LINK/USDT</option>
+<option value="LTCUSDT">LTC/USDT</option>
+<option value="BCHUSDT">BCH/USDT</option>
+<option value="AVAXUSDT">AVAX/USDT</option>
+<option value="UNIUSDT">UNI/USDT</option>
+<option value="PEPEUSDT">PEPE/USDT</option>
+<option value="BONKUSDT">BONK/USDT</option>
+<option value="INJUSDT">INJ/USDT</option>
+<option value="APTUSDT">APT/USDT</option>
+<option value="ATOMUSDT">ATOM/USDT</option>
+<option value="FILUSDT">FIL/USDT</option>
+<option value="ETCUSDT">ETC/USDT</option>
+<option value="XLMUSDT">XLM/USDT</option>
+<option value="ARBUSDT">ARB/USDT</option>
+<option value="TONUSDT">TON/USDT</option>
                     </select>
                 </div>
                 <div class="price" id="currentPrice">$0.00</div>
