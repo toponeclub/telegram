@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced Real-Time Trading Chart</title>
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         :root {
             --bg: #0a0a0a;
@@ -889,9 +890,9 @@
             </div>
             <div class="controls">
                 <div class="timeframe-selector">
-                    <button class="timeframe-btn active" data-tf="1m">1m</button>
+                    <button class="timeframe-btn" data-tf="1m">1m</button>
                     <button class="timeframe-btn" data-tf="3m">3m</button>
-                    <button class="timeframe-btn" data-tf="5m">5m</button>
+                    <button class="timeframe-btn active" data-tf="5m">5m</button>
                     <button class="timeframe-btn" data-tf="15m">15m</button>
                     <button class="timeframe-btn" data-tf="30m">30m</button>
                     <button class="timeframe-btn" data-tf="1h">1h</button>
@@ -1058,6 +1059,212 @@
         let drawingTool = null;
         let drawingObjects = [];
 
+        let bitgetApiKey = 'bg_9699df750ffc62bb08c1b6f6884e13cd';
+let bitgetSecretKey = '107c8e7f5cdbc0974161351c32ff0fbf7054f9eeaeb30ea06551c4caeb56e8a4';
+let bitgetPassphrase = '24545759';
+
+// ==================== URL PARAMETERS HANDLING ====================
+function getUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+        symbol: params.get('symbol') || null,
+        timeframe: params.get('timeframe') || null,
+        exchange: params.get('exchange') || null,
+        marketType: params.get('marketType') || params.get('type') || null
+    };
+}
+
+function applyUrlParams() {
+    const urlParams = getUrlParams();
+    let changed = false;
+
+    // Apply symbol parameter
+    if (urlParams.symbol) {
+        const symbolSelect = document.getElementById('symbolSelect');
+        const symbolValue = urlParams.symbol.toUpperCase();
+        
+        // Check if symbol exists in options
+        let symbolExists = false;
+        for (let option of symbolSelect.options) {
+            if (option.value === symbolValue) {
+                symbolExists = true;
+                break;
+            }
+        }
+        
+        if (symbolExists) {
+            symbolSelect.value = symbolValue;
+            currentSymbol = symbolValue;
+            changed = true;
+            console.log(`✅ Symbol set from URL: ${symbolValue}`);
+        } else {
+            console.warn(`⚠️ Symbol not found in options: ${symbolValue}`);
+        }
+    }
+
+    // Apply timeframe parameter
+    if (urlParams.timeframe) {
+        const timeframe = urlParams.timeframe.toLowerCase();
+        const validTimeframes = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '1d', '1w'];
+        
+        if (validTimeframes.includes(timeframe)) {
+            const timeframeBtn = document.querySelector(`.timeframe-btn[data-tf="${timeframe}"]`);
+            if (timeframeBtn) {
+                // Remove active class from all timeframe buttons
+                document.querySelectorAll('.timeframe-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                // Add active class to target button
+                timeframeBtn.classList.add('active');
+                currentTimeframe = timeframe;
+                changed = true;
+                console.log(`✅ Timeframe set from URL: ${timeframe}`);
+            }
+        } else {
+            console.warn(`⚠️ Invalid timeframe: ${timeframe}`);
+        }
+    }
+
+    // Apply exchange parameter
+    if (urlParams.exchange) {
+        const exchange = urlParams.exchange.toLowerCase();
+        const exchangeSelect = document.getElementById('exchangeSelect');
+        
+        if (exchangeSelect.querySelector(`option[value="${exchange}"]`)) {
+            exchangeSelect.value = exchange;
+            currentExchange = exchange;
+            changed = true;
+            console.log(`✅ Exchange set from URL: ${exchange}`);
+        } else {
+            console.warn(`⚠️ Exchange not supported: ${exchange}`);
+        }
+    }
+
+    // Apply market type parameter
+    if (urlParams.marketType) {
+        const marketType = urlParams.marketType.toLowerCase();
+        const marketTypeSelect = document.getElementById('marketType');
+        
+        if (marketTypeSelect.querySelector(`option[value="${marketType}"]`)) {
+            marketTypeSelect.value = marketType;
+            currentMarketType = marketType;
+            changed = true;
+            console.log(`✅ Market type set from URL: ${marketType}`);
+        } else {
+            console.warn(`⚠️ Market type not supported: ${marketType}`);
+        }
+    }
+
+    return changed;
+}
+
+function updateQuantview(symbol) {
+    const quantviewFrame = document.getElementById('quantviewFrame');
+    if (quantviewFrame) {
+        const newUrl = `https://t1prime.com/widget?symbol=${symbol}`;
+        if (quantviewFrame.src !== newUrl) {
+            quantviewFrame.src = newUrl;
+            console.log(`✅ Quantview updated to: ${symbol}`);
+        }
+    }
+}
+
+// ==================== MODIFIED INITIALIZATION ====================
+window.addEventListener('load', function() {
+    initializeChart();
+    
+    // Apply URL parameters before loading data
+    const paramsChanged = applyUrlParams();
+    
+    loadChartData();
+    
+    // Update Quantview if symbol was changed via URL
+    if (paramsChanged) {
+        // Small delay to ensure chart is loaded
+        setTimeout(() => {
+            updateQuantview(currentSymbol);
+        }, 1000);
+    }
+});
+
+// ==================== MODIFIED SYMBOL CHANGE HANDLER ====================
+document.getElementById('symbolSelect').addEventListener('change', function() {
+    currentSymbol = this.value;
+    loadChartData();
+    updateQuantview(currentSymbol);
+});
+
+// ==================== URL SYNC FUNCTION (OPTIONAL) ====================
+function updateBrowserUrl() {
+    const params = new URLSearchParams();
+    params.set('symbol', currentSymbol);
+    params.set('timeframe', currentTimeframe);
+    params.set('exchange', currentExchange);
+    params.set('marketType', currentMarketType);
+    
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, '', newUrl);
+    console.log(`📍 URL updated: ${newUrl}`);
+}
+
+// Call this function whenever settings change
+function onSettingsChange() {
+    updateBrowserUrl();
+}
+
+// ==================== ENHANCED EVENT HANDLERS ====================
+// Modify existing event handlers to sync URL
+document.querySelectorAll('.timeframe-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.timeframe-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        currentTimeframe = this.getAttribute('data-tf');
+        loadChartData();
+        onSettingsChange(); // Sync URL
+    });
+});
+
+document.getElementById('exchangeSelect').addEventListener('change', function() {
+    currentExchange = this.value;
+    loadChartData();
+    onSettingsChange(); // Sync URL
+});
+
+document.getElementById('marketType').addEventListener('change', function() {
+    currentMarketType = this.value;
+    loadChartData();
+    onSettingsChange(); // Sync URL
+});
+
+
+
+// ==================== BITGET SIGNATURE ====================
+function createBitgetSignature(timestamp, method, requestPath, queryString = '') {
+    let message = timestamp + method.toUpperCase() + requestPath;
+    
+    if (queryString) {
+        message += "?" + queryString;
+    }
+    
+    // HMAC SHA256 + Base64
+    const signature = CryptoJS.HmacSHA256(message, bitgetSecretKey);
+    return CryptoJS.enc.Base64.stringify(signature);
+}
+
+function getBitgetAuthHeaders(method, requestPath, queryParams = '') {
+    const timestamp = Date.now().toString();
+    const signature = createBitgetSignature(timestamp, method, requestPath, queryParams);
+    
+    return {
+        'ACCESS-KEY': bitgetApiKey,
+        'ACCESS-SIGN': signature,
+        'ACCESS-TIMESTAMP': timestamp,
+        'ACCESS-PASSPHRASE': bitgetPassphrase,
+        'Content-Type': 'application/json'
+    };
+}
+
         // ==================== EXCHANGE CONFIGURATION ====================
         const exchangeConfigs = {
             binance: {
@@ -1070,16 +1277,16 @@
                     ws: 'wss://fstream.binance.com/ws/'
                 }
             },
-            bitget: {
-                spot: {
-                    rest: 'https://api.bitget.com/api/spot/v1/market/candles',
-                    ws: 'wss://ws.bitget.com/spot/v1/stream'
-                },
-                futures: {
-                    rest: 'https://api.bitget.com/api/mix/v1/market/candles',
-                    ws: 'wss://ws.bitget.com/mix/v1/stream'
-                }
-            },
+           bitget: {
+    spot: {
+        rest: 'https://api.bitget.com/api/spot/v1/market/candles',
+        ws: 'wss://ws.bitget.com/spot/v1/stream'
+    },
+    futures: {
+    rest: 'https://api.bitget.com/api/v2/mix/market/candles',
+    ws: 'wss://ws.bitget.com/v2/ws/public' // ДОБАВЬ /public
+}
+},
             kucoin: {
                 spot: {
                     rest: 'https://api.kucoin.com/api/v1/market/candles',
@@ -1243,6 +1450,22 @@
             return chart;
         }
 
+        function getBitgetTimeframe(tf) {
+    // Bitget V2 поддерживает только: 1m,3m,5m,15m,30m,1H,4H,6H,12H,1D,1W,1M
+    switch(tf) {
+        case '1m': return '1m';
+        case '3m': return '3m';
+        case '5m': return '5m';
+        case '15m': return '15m';
+        case '30m': return '30m';
+        case '1h': return '1H';
+        case '4h': return '4H';
+        case '1d': return '1D';
+        case '1w': return '1W';
+        default: return '1m';
+    }
+}
+
         function initializeDrawingTools() {
             let isDrawing = false;
             let startPoint = null;
@@ -1329,10 +1552,20 @@
                     case 'binance':
                         url = `${config.rest}?symbol=${currentSymbol}&interval=${currentTimeframe}&limit=${candleLimit}`;
                         break;
-                    case 'bitget':
-                        const bitgetTimeframe = currentTimeframe.replace('m', 'min').replace('h', 'H').replace('d', 'D').replace('w', 'W');
-                        url = `${config.rest}?symbol=${currentSymbol}&granularity=${bitgetTimeframe}&limit=${candleLimit}`;
-                        break;
+               
+case 'bitget':
+    const bitgetTimeframe = getBitgetTimeframe(currentTimeframe); // Новая функция
+    
+    if (currentMarketType === 'futures') {
+        url = `https://api.bitget.com/api/v2/mix/market/candles?symbol=${currentSymbol}&productType=usdt-futures&granularity=${bitgetTimeframe}&limit=10`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log('Bitget response:', data);
+        return parseExchangeData(data);
+    }
+    break;
+        
                     case 'kucoin':
                         const kucoinTimeframe = currentTimeframe;
                         const endTime = Date.now();
@@ -1373,15 +1606,28 @@
                         close: parseFloat(item[4]),
                         volume: parseFloat(item[5])
                     }));
-                case 'bitget':
-                    return data.data.map(item => ({
-                        timestamp: parseFloat(item[0]),
-                        open: parseFloat(item[1]),
-                        high: parseFloat(item[2]),
-                        low: parseFloat(item[3]),
-                        close: parseFloat(item[4]),
-                        volume: parseFloat(item[5])
-                    })).reverse();
+               case 'bitget':
+
+               // V2 API response format
+    console.log('Bitget RAW response:', data); // ДОБАВЬ ЭТУ СТРОКУ
+
+    // V2 API response format
+    if (data && data.code === '00000' && data.data) {
+        return data.data.map(item => ({
+            timestamp: parseFloat(item[0]) / 1000, // ДЕЛИ НА 1000 для секунд!
+            open: parseFloat(item[1]),
+            high: parseFloat(item[2]),
+            low: parseFloat(item[3]),
+            close: parseFloat(item[4]),
+            volume: parseFloat(item[5])
+        })).reverse();
+    } else if (data && data.code) {
+        console.error('Bitget API error:', data.code, data.msg);
+        return [];
+    } else {
+        console.error('Bitget API unexpected format:', data);
+        return [];
+    }
                 case 'kucoin':
                     return data.data.map(item => ({
                         timestamp: parseFloat(item[0]) * 1000,
@@ -1415,6 +1661,11 @@
         }
 
         function connectWebSocket() {
+             return;
+             if (currentExchange === 'bitget' && currentMarketType === 'futures') {
+        console.log('Skipping WebSocket for Bitget futures for now');
+        return; // ПРОПУСТИ WebSocket пока
+            }
             if (wsConnection) {
                 wsConnection.close();
             }
@@ -1430,8 +1681,30 @@
                     wsUrl += streamName;
                     break;
                 case 'bitget':
-                    wsUrl = config.ws;
-                    break;
+    if (currentMarketType === 'futures') {
+        // Public WebSocket V2 - не требует авторизации
+        const subscribeMsg = {
+    "op": "subscribe",
+    "args": [{
+        "instType": "MC",
+        "channel": `candle${getBitgetTimeframe(currentTimeframe)}`,
+        "instId": currentSymbol
+    }]
+};
+        wsConnection.send(JSON.stringify(subscribeMsg));
+    } else {
+        // Spot WebSocket V1
+        const subscribeMsg = {
+            op: "subscribe",
+            args: [{
+                instType: 'SP',
+                channel: `candle${currentTimeframe}`,
+                instId: currentSymbol
+            }]
+        };
+        wsConnection.send(JSON.stringify(subscribeMsg));
+    }
+    break;
                 case 'kucoin':
                     initializeKuCoinWebSocket();
                     return;
@@ -1487,7 +1760,7 @@
 
             wsConnection.onclose = () => {
                 updateMarketStatus('Disconnected - Reconnecting...');
-                setTimeout(() => connectWebSocket(), 5000);
+               
             };
         }
 
@@ -1511,21 +1784,59 @@
                     updateRealTimeData(newCandle);
                     break;
                     
-                case 'bitget':
-                    if (message.data && message.data[0]) {
-                        const data = message.data[0];
-                        const newCandle = {
-                            timestamp: parseFloat(data[0]),
-                            open: parseFloat(data[1]),
-                            high: parseFloat(data[2]),
-                            low: parseFloat(data[3]),
-                            close: parseFloat(data[4]),
-                            volume: parseFloat(data[5]),
-                            isFinal: true
-                        };
-                        updateRealTimeData(newCandle);
-                    }
-                    break;
+            case 'bitget':
+    console.log('=== BITGET DATA DEBUG ===');
+    console.log('Full response:', data);
+    console.log('Response code:', data?.code);
+    console.log('Has data array:', Array.isArray(data?.data));
+    console.log('Data length:', data?.data?.length);
+    
+    if (data && data.data && data.data[0]) {
+        console.log('First candle:', data.data[0]);
+        console.log('First candle timestamp:', data.data[0][0]);
+        console.log('First candle OHLC:', data.data[0][1], data.data[0][2], data.data[0][3], data.data[0][4]);
+    }
+    
+    if (data && data.code === '00000' && data.data) {
+        const candles = data.data.map(item => {
+            // Проверяем каждое значение
+            const timestamp = parseFloat(item[0]);
+            const open = parseFloat(item[1]);
+            const high = parseFloat(item[2]);
+            const low = parseFloat(item[3]);
+            const close = parseFloat(item[4]);
+            
+            console.log('Parsing candle:', { timestamp, open, high, low, close });
+            
+            return {
+                time: timestamp / 1000,
+                open: open,
+                high: high,
+                low: low,
+                close: close
+            };
+        }).reverse();
+        
+        return candles;
+    }
+
+     else {
+        // V1 WebSocket для spot
+        if (message.data && message.data[0]) {
+            const data = message.data[0];
+            const newCandle = {
+                timestamp: parseFloat(data[0]),
+                open: parseFloat(data[1]),
+                high: parseFloat(data[2]),
+                low: parseFloat(data[3]),
+                close: parseFloat(data[4]),
+                volume: parseFloat(data[5]),
+                isFinal: true
+            };
+            updateRealTimeData(newCandle);
+        }
+    }
+    break;
                 case 'bybit':
                     if (message.topic && message.topic.includes('kline') && message.data) {
                         const data = message.data[0];
@@ -1661,16 +1972,17 @@
         }
 
         function updateAllSeries() {
-            if (marketData.length === 0) return;
-            
-            const currentCandle = marketData[marketData.length - 1];
-            const chartData = marketData.map(item => ({
-                time: item.timestamp / 1000,
-                open: item.open,
-                high: item.high,
-                low: item.low,
-                close: item.close,
-            }));
+    if (marketData.length === 0) return;
+    
+    const chartData = marketData.map(item => ({
+        time: item.timestamp / 1000, // УБЕДИСЬ ЧТО В СЕКУНДАХ!
+        open: item.open,
+        high: item.high, 
+        low: item.low,
+        close: item.close,
+    }));
+    
+    console.log('Chart data to display:', chartData[0]); // ПЕРВАЯ СВЕЧА ДЛЯ ЧАРТА
 
             const lineData = marketData.map(item => ({
                 time: item.timestamp / 1000,
@@ -2404,6 +2716,53 @@
                 }
             }, 100);
         });
+
+        // ==================== DIRECT SYMBOL IN PATH SUPPORT ====================
+function handleDirectSymbolPath() {
+    const path = window.location.pathname;
+    // Check for patterns like /widget/BTCUSDT or /widget/ethusdt
+    const symbolMatch = path.match(/\/([a-zA-Z0-9]+)$/);
+    
+    if (symbolMatch && symbolMatch[1]) {
+        const symbolFromPath = symbolMatch[1].toUpperCase();
+        const symbolSelect = document.getElementById('symbolSelect');
+        
+        // Check if symbol exists
+        for (let option of symbolSelect.options) {
+            if (option.value === symbolFromPath) {
+                symbolSelect.value = symbolFromPath;
+                currentSymbol = symbolFromPath;
+                console.log(`✅ Symbol set from path: ${symbolFromPath}`);
+                
+                // Reload chart with new symbol
+                setTimeout(() => {
+                    loadChartData();
+                    updateQuantview(currentSymbol);
+                }, 100);
+                break;
+            }
+        }
+    }
+}
+
+// Call this in load event
+window.addEventListener('load', function() {
+    initializeChart();
+    
+    // Handle direct symbol in path first
+    handleDirectSymbolPath();
+    
+    // Then apply URL parameters
+    const paramsChanged = applyUrlParams();
+    
+    loadChartData();
+    
+    if (paramsChanged) {
+        setTimeout(() => {
+            updateQuantview(currentSymbol);
+        }, 1000);
+    }
+});
     </script>
 </body>
 </html>
