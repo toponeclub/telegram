@@ -8,10 +8,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         :root {
-            --bg: #0a0a0a;
-            --surface: #111;
-            --surface-light: #1a1a1a;
-            --border: #222;
+            --bg: #050505;
+            --surface: rgb(3, 0, 0);
+            --surface-light: #000a0bf1;
+            --border: #0a0202ea;
             --text: #e2e8f0;
             --muted: #94a3b8;
             --accent: #00AB84;
@@ -143,6 +143,8 @@
         }
 
         .timeframe-selector {
+           justify-content: space-between;
+    margin: 0 auto; /* ← И ЭТУ ДЛЯ ЦЕНТРИРОВАНИЯ */
             display: flex;
             gap: 4px;
             background: var(--surface-light);
@@ -163,7 +165,7 @@
 
         .timeframe-btn.active {
             background: var(--accent);
-            color: black;
+            color: rgb(9, 9, 9);
         }
 
         .chart-section {
@@ -204,9 +206,21 @@
         }
 
         #priceChart {
+            cursor: crosshair;
             flex: 1;
             width: 100%;
         }
+
+        /* Убираем крестик с шкал */
+.tv-price-scale,
+.tv-time-scale {
+    cursor: default !important;
+}
+
+/* Крестик только в области данных */
+.tv-chart {
+    cursor: crosshair;
+}
 
         .status-bar {
             padding: 6px 8px;
@@ -930,8 +944,8 @@
             </div>
             
             <div id="priceChart"></div>
-            
-            <div class="status-bar">
+               </div>
+            <div class="status-bar"  style="display: none">
                 <div id="marketStatus">Connecting to exchange...</div>
                 <div class="right-controls">
                     <div id="lastUpdate">Last: --:--:--</div>
@@ -1328,7 +1342,7 @@ function getBitgetAuthHeaders(method, requestPath, queryParams = '') {
                 width: chartContainer.clientWidth,
                 height: chartContainer.clientHeight,
                 layout: {
-                    background: { color: '#111' },
+                    background: { color: '--surface' },
                     textColor: '#94a3b8',
                 },
                 grid: {
@@ -1339,17 +1353,17 @@ function getBitgetAuthHeaders(method, requestPath, queryParams = '') {
                     mode: crosshairMode,
                     vertLine: {
                         width: 1,
-                        color: 'rgba(42, 46, 57, 0.8)',
-                        style: 2,
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        style: 3,
                     },
                     horzLine: {
                         width: 1,
-                        color: 'rgba(42, 46, 57, 0.8)',
-                        style: 2,
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        style: 3,
                     },
                 },
                 rightPriceScale: {
-                    borderColor: 'rgba(42, 46, 57, 0.8)',
+                    borderColor: 'rgba(42, 46, 57, 0.1)',
                     scaleMargins: {
                         top: 0.1,
                         bottom: 0.4,
@@ -1360,7 +1374,7 @@ function getBitgetAuthHeaders(method, requestPath, queryParams = '') {
                     visible: false,
                 },
                 timeScale: {
-                    borderColor: 'rgba(42, 46, 57, 0.8)',
+                    borderColor: 'rgba(42, 46, 57, 0.5)',
                     timeVisible: true,
                     secondsVisible: false,
                     rightOffset: 12,
@@ -1398,8 +1412,8 @@ function getBitgetAuthHeaders(method, requestPath, queryParams = '') {
             });
 
             areaSeries = chart.addAreaSeries({
-                topColor: 'rgba(59, 130, 246, 0.4)',
-                bottomColor: 'rgba(59, 130, 246, 0.1)',
+                topColor: 'rgba(59, 130, 246, 0.23)',
+                bottomColor: 'rgba(59, 130, 246, 0.05)',
                 lineColor: '#3b82f6',
                 lineWidth: 2,
                 visible: false
@@ -1997,13 +2011,13 @@ case 'bitget':
             const barData = marketData.map(item => ({
                 time: item.timestamp / 1000,
                 value: item.close,
-                color: item.close >= item.open ? 'rgba(0, 171, 132, 0.8)' : 'rgba(239, 68, 68, 0.8)',
+                color: item.close >= item.open ? 'rgba(0, 171, 132, 0.55)' : 'rgba(239, 68, 68, 0.55)',
             }));
 
             const volumeData = marketData.map(item => ({
                 time: item.timestamp / 1000,
                 value: item.volume,
-                color: item.close >= item.open ? 'rgba(0, 171, 132, 0.8)' : 'rgba(239, 68, 68, 0.8)',
+                color: item.close >= item.open ? 'rgba(0, 171, 132, 0.55)' : 'rgba(239, 68, 68, 0.55)',
             }));
 
             // Update the active series
@@ -2026,6 +2040,8 @@ case 'bitget':
                 volumeSeries.setData([]);
             }
         }
+
+       
 
         function updatePriceDisplay(price) {
             const priceElement = document.getElementById('currentPrice');
@@ -2574,23 +2590,28 @@ case 'bitget':
                         },
                     }
                 });
-            } else {
-                chart.applyOptions({
+            } else { 
+                chart.applyOptions({ 
                     layout: {
-                        background: { color: '#111' },
-                        textColor: '#94a3b8',
+                    background: { color: '--surface' },
+                    textColor: '#94a3b8',
+                },
+                grid: {
+                    vertLines: { color: 'rgba(42, 46, 57, 0.6)' },
+                    horzLines: { color: 'rgba(42, 46, 57, 0.6)' },
+                },
+                crosshair: {
+                    mode: crosshairMode,
+                    vertLine: {
+                        width: 1,
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        style: 3,
                     },
-                    grid: {
-                        vertLines: { color: 'rgba(42, 46, 57, 0.5)' },
-                        horzLines: { color: 'rgba(42, 46, 57, 0.5)' },
+                    horzLine: {
+                        width: 1,
+                        color: 'rgba(255, 255, 255, 0.6)',
+                        style: 3,
                     },
-                    crosshair: {
-                        vertLine: {
-                            color: 'rgba(42, 46, 57, 0.8)',
-                        },
-                        horzLine: {
-                            color: 'rgba(42, 46, 57, 0.8)',
-                        },
                     }
                 });
             }
