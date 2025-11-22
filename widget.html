@@ -7,11 +7,11 @@
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        :root {
-            --bg: #050505;
-            --surface: rgb(3, 0, 0);
-            --surface-light: #000a0bf1;
-            --border: #0a0202ea;
+         :root {
+            --bg: #010101;
+            --surface: #0a0a0a;
+            --surface-light: #121212;
+            --border: #1a1a1a;
             --text: #e2e8f0;
             --muted: #94a3b8;
             --accent: #00AB84;
@@ -27,23 +27,41 @@
             box-sizing: border-box;
         }
 
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            height: 100vh;
-            overflow: hidden;
-        }
+        /* Убедись что body тоже растягивается */
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    width: 100vw; /* ← ДОБАВЬ */
+    overflow: hidden;
+    margin: 0; /* ← УБЕДИСЬ ЧТО ЕСТЬ */
+    padding: 0; /* ← УБЕДИСЬ ЧТО ЕСТЬ */
+}
 
-        body.fullscreen {
-            padding: 0;
-        }
+       /* ЯДЕРНЫЙ ФИКС ДЛЯ ФУЛСКРИНА */
+body.fullscreen {
+    padding: 0 !important;
+    margin: 0 !important;
+}
 
-        body.fullscreen .container {
-            height: 100vh;
-            padding: 0;
-            border-radius: 0;
-        }
+body.fullscreen .container {
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+}
+
+body.fullscreen .chart-section {
+    border: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+}
+
+/* Гарантия что график займет ВСЕ пространство */
+body.fullscreen #priceChart {
+    flex: 1 !important;
+    min-height: 100% !important;
+}
 
         .container {
             display: flex;
@@ -224,7 +242,7 @@
 
         .status-bar {
             padding: 6px 8px;
-            background: var(--surface);
+            background: var(--bg);
             border-top: 1px solid var(--border);
             font-size: 11px;
             display: flex;
@@ -904,9 +922,9 @@
             </div>
             <div class="controls">
                 <div class="timeframe-selector">
-                    <button class="timeframe-btn" data-tf="1m">1m</button>
+                    <button class="timeframe-btn active" data-tf="1m">1m</button>
                     <button class="timeframe-btn" data-tf="3m">3m</button>
-                    <button class="timeframe-btn active" data-tf="5m">5m</button>
+                    <button class="timeframe-btn" data-tf="5m">5m</button>
                     <button class="timeframe-btn" data-tf="15m">15m</button>
                     <button class="timeframe-btn" data-tf="30m">30m</button>
                     <button class="timeframe-btn" data-tf="1h">1h</button>
@@ -945,7 +963,7 @@
             
             <div id="priceChart"></div>
                </div>
-            <div class="status-bar"  style="display: none">
+            <div class="status-bar">
                 <div id="marketStatus">Connecting to exchange...</div>
                 <div class="right-controls">
                     <div id="lastUpdate">Last: --:--:--</div>
@@ -1407,7 +1425,7 @@ function getBitgetAuthHeaders(method, requestPath, queryParams = '') {
 
             lineSeries = chart.addLineSeries({
                 color: '#3b82f6',
-                lineWidth: 2,
+                lineWidth: 2.1,
                 visible: false
             });
 
@@ -1415,7 +1433,7 @@ function getBitgetAuthHeaders(method, requestPath, queryParams = '') {
                 topColor: 'rgba(59, 130, 246, 0.23)',
                 bottomColor: 'rgba(59, 130, 246, 0.05)',
                 lineColor: '#3b82f6',
-                lineWidth: 2,
+                lineWidth: 2.1,
                 visible: false
             });
 
@@ -1674,131 +1692,128 @@ case 'bitget':
             }
         }
 
-        function connectWebSocket() {
-             return;
-             if (currentExchange === 'bitget' && currentMarketType === 'futures') {
-        console.log('Skipping WebSocket for Bitget futures for now');
-        return; // ПРОПУСТИ WebSocket пока
-            }
-            if (wsConnection) {
-                wsConnection.close();
-            }
+        let reconnectAttempts = 0;
+let reconnectTimeout = null;
 
-            const config = exchangeConfigs[currentExchange][currentMarketType];
-            let wsUrl = config.ws;
-
-            switch(currentExchange) {
-                case 'binance':
-                    const streamName = currentMarketType === 'futures' 
-                        ? `${currentSymbol.toLowerCase()}@kline_${currentTimeframe}`
-                        : `${currentSymbol.toLowerCase()}@kline_${currentTimeframe}`;
-                    wsUrl += streamName;
-                    break;
-                case 'bitget':
-    if (currentMarketType === 'futures') {
-        // Public WebSocket V2 - не требует авторизации
-        const subscribeMsg = {
-    "op": "subscribe",
-    "args": [{
-        "instType": "MC",
-        "channel": `candle${getBitgetTimeframe(currentTimeframe)}`,
-        "instId": currentSymbol
-    }]
-};
-        wsConnection.send(JSON.stringify(subscribeMsg));
-    } else {
-        // Spot WebSocket V1
-        const subscribeMsg = {
-            op: "subscribe",
-            args: [{
-                instType: 'SP',
-                channel: `candle${currentTimeframe}`,
-                instId: currentSymbol
-            }]
-        };
-        wsConnection.send(JSON.stringify(subscribeMsg));
+function connectWebSocket() {
+    if (wsConnection) {
+        wsConnection.close();
     }
-    break;
-                case 'kucoin':
-                    initializeKuCoinWebSocket();
-                    return;
-                case 'bybit':
-                    wsUrl = config.ws;
-                    break;
-                case 'okx':
-                    wsUrl = config.ws;
-                    break;
-            }
 
-            wsConnection = new WebSocket(wsUrl);
+    const config = exchangeConfigs[currentExchange][currentMarketType];
+    let wsUrl = config.ws;
 
-            wsConnection.onopen = () => {
-                if (currentExchange === 'bitget') {
-                    const subscribeMsg = {
-                        op: "subscribe",
-                        args: [{
-                            instType: currentMarketType === 'futures' ? 'UMCBL' : 'SP',
-                            channel: `candle${currentTimeframe}`,
-                            instId: currentSymbol
-                        }]
-                    };
-                    wsConnection.send(JSON.stringify(subscribeMsg));
-                } else if (currentExchange === 'bybit') {
-                    const subscribeMsg = {
-                        op: "subscribe",
-                        args: [`kline.${currentTimeframe}.${currentSymbol}`]
-                    };
-                    wsConnection.send(JSON.stringify(subscribeMsg));
-                } else if (currentExchange === 'okx') {
-                    const subscribeMsg = {
-                        op: "subscribe",
-                        args: [{
-                            channel: 'candle' + currentTimeframe,
-                            instId: currentSymbol
-                        }]
-                    };
-                    wsConnection.send(JSON.stringify(subscribeMsg));
-                }
-                updateMarketStatus(`Connected to ${currentExchange.toUpperCase()}`);
+    switch(currentExchange) {
+        case 'binance':
+            const streamName = currentMarketType === 'futures' 
+                ? `${currentSymbol.toLowerCase()}@kline_${currentTimeframe}`
+                : `${currentSymbol.toLowerCase()}@kline_${currentTimeframe}`;
+            wsUrl += streamName;
+            break;
+        case 'bitget':
+            wsUrl = config.ws;
+            break;
+        case 'kucoin':
+            initializeKuCoinWebSocket();
+            return;
+        case 'bybit':
+            wsUrl = config.ws;
+            break;
+        case 'okx':
+            wsUrl = config.ws;
+            break;
+    }
+
+    wsConnection = new WebSocket(wsUrl);
+
+    wsConnection.onopen = () => {
+        reconnectAttempts = 0; // Сброс счетчика при успешном подключении
+        
+        if (currentExchange === 'bitget') {
+            const subscribeMsg = {
+                op: "subscribe",
+                args: [{
+                    instType: currentMarketType === 'futures' ? 'UMCBL' : 'SP',
+                    channel: `candle${currentTimeframe}`,
+                    instId: currentSymbol
+                }]
             };
-
-            wsConnection.onmessage = (event) => {
-                const message = JSON.parse(event.data);
-                processWebSocketMessage(message);
+            wsConnection.send(JSON.stringify(subscribeMsg));
+        } else if (currentExchange === 'bybit') {
+            const subscribeMsg = {
+                op: "subscribe",
+                args: [`kline.${currentTimeframe}.${currentSymbol}`]
             };
-
-            wsConnection.onerror = (error) => {
-                updateMarketStatus('Connection error');
-                console.error('WebSocket error:', error);
+            wsConnection.send(JSON.stringify(subscribeMsg));
+        } else if (currentExchange === 'okx') {
+            const subscribeMsg = {
+                op: "subscribe",
+                args: [{
+                    channel: 'candle' + currentTimeframe,
+                    instId: currentSymbol
+                }]
             };
-
-            wsConnection.onclose = () => {
-                updateMarketStatus('Disconnected - Reconnecting...');
-               
-            };
+            wsConnection.send(JSON.stringify(subscribeMsg));
         }
+        updateMarketStatus(`Live • ${currentExchange.toUpperCase()}`);
+    };
+
+    wsConnection.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        processWebSocketMessage(message);
+    };
+
+    wsConnection.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        // Не показываем ошибку пользователю, только в консоль
+    };
+
+    wsConnection.onclose = () => {
+        // Увеличиваем задержку с каждой попыткой (exponential backoff)
+        reconnectAttempts++;
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Макс 30 сек
+        
+        console.log(`WebSocket closed. Reconnecting in ${delay/1000}s...`);
+        
+        // Показываем статус только если долго не можем подключиться
+        if (reconnectAttempts > 2) {
+            updateMarketStatus(`Reconnecting...`);
+        }
+        
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = setTimeout(() => connectWebSocket(), delay);
+    };
+}
 
         function processWebSocketMessage(message) {
-            let kline;
+    console.log('📨 WebSocket message:', currentExchange, message);
+    
+    switch(currentExchange) {
+        case 'binance':
+            // Binance sends data in 'k' property
+            const kline = message.k;
+            if (!kline) {
+                console.warn('⚠️ No kline data in Binance message:', message);
+                return;
+            }
             
-            switch(currentExchange) {
-                case 'binance':
-                    kline = message.k;
-                    if (!kline) return;
-                    
-                    const newCandle = {
-                        timestamp: kline.t,
-                        open: parseFloat(kline.o),
-                        high: parseFloat(kline.h),
-                        low: parseFloat(kline.l),
-                        close: parseFloat(kline.c),
-                        volume: parseFloat(kline.v),
-                        isFinal: kline.x
-                    };
-                    updateRealTimeData(newCandle);
-                    break;
-                    
-            case 'bitget':
+            console.log('✅ Binance kline:', kline);
+            
+            const newCandle = {
+                timestamp: kline.t, // Already in milliseconds
+                open: parseFloat(kline.o),
+                high: parseFloat(kline.h),
+                low: parseFloat(kline.l),
+                close: parseFloat(kline.c),
+                volume: parseFloat(kline.v),
+                isFinal: kline.x
+            };
+            
+            console.log('📊 Update with candle:', newCandle);
+            updateRealTimeData(newCandle);
+            break;
+            
+        case 'bitget':
     console.log('=== BITGET DATA DEBUG ===');
     console.log('Full response:', data);
     console.log('Response code:', data?.code);
@@ -1810,6 +1825,7 @@ case 'bitget':
         console.log('First candle timestamp:', data.data[0][0]);
         console.log('First candle OHLC:', data.data[0][1], data.data[0][2], data.data[0][3], data.data[0][4]);
     }
+    
     
     if (data && data.code === '00000' && data.data) {
         const candles = data.data.map(item => {
@@ -1833,6 +1849,7 @@ case 'bitget':
         
         return candles;
     }
+    
 
      else {
         // V1 WebSocket для spot
@@ -1934,16 +1951,22 @@ case 'bitget':
             };
         }
 
-        function updateRealTimeData(candle) {
-            if (!baseSeries) return;
+       function updateRealTimeData(candle) {
+    console.log('🔄 updateRealTimeData called with:', candle);
+    
+    if (!baseSeries) {
+        console.error('❌ baseSeries is null!');
+        return;
+    }
 
-            const chartData = {
-                time: candle.timestamp / 1000,
-                open: candle.open,
-                high: candle.high,
-                low: candle.low,
-                close: candle.close,
-            };
+    const chartData = {
+        time: candle.timestamp / 1000,
+        open: candle.open,
+        high: candle.high,
+        low: candle.low,
+        close: candle.close,
+    };
+
 
             const lineData = {
                 time: candle.timestamp / 1000,
@@ -1985,11 +2008,18 @@ case 'bitget':
             updateIndicators();
         }
 
-        function updateAllSeries() {
-    if (marketData.length === 0) return;
+       function updateAllSeries() {
+    if (marketData.length === 0) {
+     const currentCandle = marketData[marketData.length - 1];
+        console.warn('⚠️ No market data to display');
+        return;
+    }
+    
+    console.log('📈 Updating chart with', marketData.length, 'candles');
+    console.log('Last candle:', marketData[marketData.length - 1]);
     
     const chartData = marketData.map(item => ({
-        time: item.timestamp / 1000, // УБЕДИСЬ ЧТО В СЕКУНДАХ!
+        time: item.timestamp / 1000,
         open: item.open,
         high: item.high, 
         low: item.low,
