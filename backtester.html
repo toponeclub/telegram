@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Trading Backtester</title>
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.0.1/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        :root {
+            --bg: #010101;
+            --surface: #0a0a0a;
+            --surface-light: #121212;
+            --border: #1a1a1a;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #00AB84;
+            --danger: #ef4444;
+            --warn: #f59e0b;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            grid-template-rows: auto 1fr auto;
+            height: 100vh;
+            gap: 8px;
+            padding: 8px;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .sidebar {
+            grid-row: 2 / 3;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-container {
+            grid-row: 2 / 3;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stats-bar {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 8px;
+            padding: 8px;
+            background: var(--surface);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card {
+            background: var(--surface-light);
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        .stat-value.positive {
+            color: var(--accent);
+        }
+
+        .stat-value.negative {
+            color: var(--danger);
+        }
+
+        .section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--accent);
+        }
+
+        .btn {
+            width: 100%;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .btn:hover {
+            background: var(--border);
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            color: black;
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+
+        .btn.danger {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .label {
+            display: block;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .input, .select, .textarea {
+            width: 100%;
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+
+        .textarea {
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+
+        #priceChart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .log-container {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-entry.buy {
+            color: var(--accent);
+        }
+
+        .log-entry.sell {
+            color: var(--danger);
+        }
+
+        .log-entry.info {
+            color: var(--muted);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-indicator.idle {
+            background: var(--muted);
+        }
+
+        .status-indicator.running {
+            background: var(--accent);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-indicator.error {
+            background: var(--danger);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--surface-light);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .example-code {
+            font-size: 10px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .controls-row .btn {
+            flex: 1;
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">📊 Trading Backtester</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText" style="font-size: 13px;">Ready</span>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="section">
+                <div class="section-title">1. Generate Market Data</div>
+                <div class="input-group">
+                    <label class="label">Number of Candles</label>
+                    <input type="number" class="input" id="candleCount" value="1000" min="100" max="10000">
+                </div>
+                <div class="input-group">
+                    <label class="label">Starting Price</label>
+                    <input type="number" class="input" id="startPrice" value="50000" min="1">
+                </div>
+                <div class="input-group">
+                    <label class="label">Volatility (%)</label>
+                    <input type="number" class="input" id="volatility" value="2" min="0.1" max="10" step="0.1">
+                </div>
+                <div class="controls-row">
+                    <button class="btn primary" id="generateBtn">🎲 Generate Market</button>
+<button class="btn" id="loadRealDataBtn" style="background: var(--blue); color: white;">📥 Load Real Data</button>
+<div class="input-group"> </div>   </div>
+    <label class="label">Select Cryptocurrency</label>
+    <select class="select" id="cryptoSelect">
+        <option value="BTCUSDT">BTC/USDT</option>
+        <option value="ETHUSDT">ETH/USDT</option>
+        <option value="BNBUSDT">BNB/USDT</option>
+        <option value="SOLUSDT">SOL/USDT</option>
+        <option value="XRPUSDT">XRP/USDT</option>
+        <option value="ADAUSDT">ADA/USDT</option>
+        <option value="AVAXUSDT">AVAX/USDT</option>
+        <option value="DOTUSDT">DOT/USDT</option>
+        <option value="DOGEUSDT">DOGE/USDT</option>
+        <option value="TRXUSDT">TRX/USDT</option>
+        <option value="LINKUSDT">LINK/USDT</option>
+        <option value="MATICUSDT">MATIC/USDT</option>
+        <option value="LTCUSDT">LTC/USDT</option>
+        <option value="BCHUSDT">BCH/USDT</option>
+        <option value="ATOMUSDT">ATOM/USDT</option>
+        <option value="ETCUSDT">ETC/USDT</option>
+        <option value="XLMUSDT">XLM/USDT</option>
+        <option value="FILUSDT">FIL/USDT</option>
+        <option value="ALGOUSDT">ALGO/USDT</option>
+        <option value="EOSUSDT">EOS/USDT</option>
+        <option value="XTZUSDT">XTZ/USDT</option>
+        <option value="AAVEUSDT">AAVE/USDT</option>
+        <option value="MKRUSDT">MKR/USDT</option>
+        <option value="COMPUSDT">COMP/USDT</option>
+        <option value="YFIUSDT">YFI/USDT</option>
+        <option value="SUSHIUSDT">SUSHI/USDT</option>
+        <option value="SNXUSDT">SNX/USDT</option>
+        <option value="CRVUSDT">CRV/USDT</option>
+        <option value="UNIUSDT">UNI/USDT</option>
+        <option value="NEARUSDT">NEAR/USDT</option>
+    </select>           
+            </div>
+
+            <div class="section">
+                <div class="section-title">2. Trading Strategy Code</div>
+                <div class="input-group">
+                    <label class="label">Your Strategy (JavaScript)</label>
+                    <textarea class="textarea" id="strategyCode" placeholder="Enter your trading strategy code...">// Available data:
+// candles - array of all candles up to current
+// currentCandle - current candle object
+// indicators - {sma20, ema12, rsi, macd}
+// 
+// Use: buy(amount) or sell(amount)
+
+// Example: Simple SMA Crossover
+if (candles.length < 50) return;
+
+const sma20 = indicators.sma20[indicators.sma20.length - 1];
+const sma50 = calculateSMA(candles, 50);
+const prevSma20 = indicators.sma20[indicators.sma20.length - 2];
+const prevSma50 = calculateSMA(candles.slice(0, -1), 50);
+
+// Buy signal: SMA20 crosses above SMA50
+if (prevSma20 < prevSma50 && sma20 > sma50) {
+    if (position === 0) {
+        buy(balance * 0.95); // Use 95% of balance
+    }
+}
+
+// Sell signal: SMA20 crosses below SMA50
+if (prevSma20 > prevSma50 && sma20 < sma50) {
+    if (position > 0) {
+        sell(position); // Sell all
+    }
+}</textarea>
+                    <div class="example-code">
+                        Variables: candles, currentCandle, indicators, balance, position<br>
+                        Functions: buy(amount), sell(amount), calculateSMA(data, period)
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="label">Initial Balance ($)</label>
+                    <input type="number" class="input" id="initialBalance" value="10000" min="100">
+                </div>
+                <div class="input-group">
+                    <label class="label">Commission (%)</label>
+                    <input type="number" class="input" id="commission" value="0.1" min="0" max="1" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label class="label">Spread (%)</label>
+                    <input type="number" class="input" id="spread" value="0.05" min="0" max="1" step="0.01">
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">3. Run Backtest</div>
+                <div class="controls-row">
+                    <button class="btn primary" id="runBtn">▶️ Run</button>
+                    <button class="btn danger" id="stopBtn" style="display: none;">⏹️ Stop</button>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Trade Log</div>
+                <div class="log-container" id="tradeLog">
+                    <div class="log-entry info">No trades yet...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div id="priceChart"></div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-label">Total P&L</div>
+                <div class="stat-value" id="totalPnl">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Return %</div>
+                <div class="stat-value" id="returnPercent">0.00%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Win Rate</div>
+                <div class="stat-value" id="winRate">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Trades</div>
+                <div class="stat-value" id="totalTrades">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Max Drawdown</div>
+                <div class="stat-value negative" id="maxDrawdown">0.00%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sharpe Ratio</div>
+                <div class="stat-value" id="sharpeRatio">0.00</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-group">
+    <label class="label">Max Risk Per Trade (%)</label>
+    <input type="number" class="input" id="maxRiskPerTrade" value="2" min="0.1" max="10" step="0.1">
+</div>
+<div class="input-group">
+    <label class="label">Max Drawdown (%)</label>
+    <input type="number" class="input" id="maxDrawdown" value="15" min="1" max="50" step="1">
+</div>
+<div class="input-group">
+    <label class="label">Max Position Size (%)</label>
+    <input type="number" class="input" id="maxPositionSize" value="30" min="5" max="100" step="1">
+</div>
+<div class="input-group">
+    <label class="label">Slippage (%)</label>
+    <input type="number" class="input" id="slippage" value="0.1" min="0" max="1" step="0.01">
+</div>
+
+    <script>
+       // ==================== ADVANCED TRADING BACKTESTER ====================
+let chart = null;
+let candlestickSeries = null;
+let volumeSeries = null;
+let indicatorSeries = [];
+let marketData = [];
+let isRunning = false;
+let stopRequested = false;
+
+// Trading state with advanced risk management
+let balance = 10000;
+let position = 0;
+let trades = [];
+let equity = [];
+let buyMarkers = [];
+let sellMarkers = [];
+let riskManager = null;
+
+class RiskManager {
+    constructor(maxRiskPerTrade = 0.02, maxDrawdown = 0.15, maxPositionSize = 0.3) {
+        this.maxRiskPerTrade = maxRiskPerTrade;
+        this.maxDrawdown = maxDrawdown;
+        this.maxPositionSize = maxPositionSize;
+        this.peakEquity = balance;
+    }
+    
+    calculatePositionSize(currentBalance, entryPrice, stopLossPrice) {
+        const riskAmount = currentBalance * this.maxRiskPerTrade;
+        const riskPerUnit = Math.abs(entryPrice - stopLossPrice);
+        const positionSize = riskAmount / riskPerUnit;
+        const maxSize = (currentBalance * this.maxPositionSize) / entryPrice;
+        return Math.min(positionSize, maxSize);
+    }
+    
+    checkDrawdown(currentEquity) {
+        if (currentEquity > this.peakEquity) {
+            this.peakEquity = currentEquity;
+        }
+        const drawdown = (this.peakEquity - currentEquity) / this.peakEquity;
+        return drawdown > this.maxDrawdown;
+    }
+}
+
+// Advanced Indicators with caching
+class IndicatorCalculator {
+    static calculateSMA(data, period) {
+        if (data.length < period) return Array(data.length).fill(null);
+        return data.map((_, idx) => {
+            if (idx < period - 1) return null;
+            const slice = data.slice(idx - period + 1, idx + 1);
+            const sum = slice.reduce((acc, candle) => acc + candle.close, 0);
+            return sum / period;
+        });
+    }
+
+    static calculateEMA(data, period) {
+        if (data.length < period) return Array(data.length).fill(null);
+        const k = 2 / (period + 1);
+        const ema = [];
+        
+        // First EMA is SMA
+        let sma = 0;
+        for (let i = 0; i < period; i++) {
+            sma += data[i].close;
+        }
+        ema[period - 1] = sma / period;
+        
+        // Subsequent EMA values
+        for (let i = period; i < data.length; i++) {
+            ema[i] = data[i].close * k + ema[i - 1] * (1 - k);
+        }
+        
+        // Fill initial values
+        for (let i = 0; i < period - 1; i++) {
+            ema[i] = null;
+        }
+        
+        return ema;
+    }
+
+    static calculateRSI(data, period = 14) {
+        if (data.length < period + 1) return Array(data.length).fill(null);
+        
+        const rsi = Array(data.length).fill(null);
+        const gains = [];
+        const losses = [];
+        
+        for (let i = 1; i < data.length; i++) {
+            const change = data[i].close - data[i - 1].close;
+            gains.push(change > 0 ? change : 0);
+            losses.push(change < 0 ? Math.abs(change) : 0);
+        }
+        
+        let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+        
+        rsi[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+        
+        for (let i = period + 1; i < data.length; i++) {
+            avgGain = (avgGain * (period - 1) + gains[i - 1]) / period;
+            avgLoss = (avgLoss * (period - 1) + losses[i - 1]) / period;
+            rsi[i] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+        }
+        
+        return rsi;
+    }
+
+    static calculateMACD(data, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) {
+        if (data.length < slowPeriod) {
+            return {
+                macd: Array(data.length).fill(null),
+                signal: Array(data.length).fill(null),
+                histogram: Array(data.length).fill(null)
+            };
+        }
+        
+        const fastEMA = this.calculateEMA(data, fastPeriod);
+        const slowEMA = this.calculateEMA(data, slowPeriod);
+        
+        const macdLine = fastEMA.map((fast, idx) => {
+            if (fast === null || slowEMA[idx] === null) return null;
+            return fast - slowEMA[idx];
+        });
+        
+        // Convert MACD line to candle-like format for EMA calculation
+        const macdData = macdLine.map((value, idx) => ({
+            close: value || 0,
+            time: data[idx].time
+        }));
+        
+        const signalLine = this.calculateEMA(macdData, signalPeriod);
+        
+        const histogram = macdLine.map((macd, idx) => {
+            if (macd === null || signalLine[idx] === null) return null;
+            return macd - signalLine[idx];
+        });
+        
+        return { macd: macdLine, signal: signalLine, histogram };
+    }
+
+    static calculateBollingerBands(data, period = 20, stdDev = 2) {
+        if (data.length < period) {
+            return {
+                upper: Array(data.length).fill(null),
+                middle: Array(data.length).fill(null),
+                lower: Array(data.length).fill(null)
+            };
+        }
+        
+        const middle = this.calculateSMA(data, period);
+        const upper = [];
+        const lower = [];
+        
+        for (let i = period - 1; i < data.length; i++) {
+            const slice = data.slice(i - period + 1, i + 1);
+            const mean = middle[i];
+            const variance = slice.reduce((acc, candle) => {
+                return acc + Math.pow(candle.close - mean, 2);
+            }, 0) / period;
+            const standardDeviation = Math.sqrt(variance);
+            
+            upper[i] = mean + (standardDeviation * stdDev);
+            lower[i] = mean - (standardDeviation * stdDev);
+        }
+        
+        // Fill initial values
+        for (let i = 0; i < period - 1; i++) {
+            upper[i] = null;
+            lower[i] = null;
+        }
+        
+        return { upper, middle, lower };
+    }
+
+    static calculateStochastic(data, period = 14, smoothK = 3, smoothD = 3) {
+        if (data.length < period) {
+            return {
+                k: Array(data.length).fill(null),
+                d: Array(data.length).fill(null)
+            };
+        }
+        
+        const k = [];
+        
+        for (let i = period - 1; i < data.length; i++) {
+            const slice = data.slice(i - period + 1, i + 1);
+            const highestHigh = Math.max(...slice.map(c => c.high));
+            const lowestLow = Math.min(...slice.map(c => c.low));
+            const currentClose = data[i].close;
+            
+            k[i] = ((currentClose - lowestLow) / (highestHigh - lowestLow)) * 100;
+        }
+        
+        // Smooth %K
+        const smoothedK = this.calculateSMA(
+            k.map((value, idx) => ({ close: value || 0, time: data[idx].time })),
+            smoothK
+        );
+        
+        // %D (signal line) - SMA of smoothed %K
+        const d = this.calculateSMA(
+            smoothedK.map((value, idx) => ({ close: value || 0, time: data[idx].time })),
+            smoothD
+        );
+        
+        return { k: smoothedK, d };
+    }
+
+    static calculateOBV(data) {
+        if (data.length < 2) return Array(data.length).fill(0);
+        
+        const obv = [data[0].volume];
+        
+        for (let i = 1; i < data.length; i++) {
+            if (data[i].close > data[i - 1].close) {
+                obv[i] = obv[i - 1] + data[i].volume;
+            } else if (data[i].close < data[i - 1].close) {
+                obv[i] = obv[i - 1] - data[i].volume;
+            } else {
+                obv[i] = obv[i - 1];
+            }
+        }
+        
+        return obv;
+    }
+
+    static calculateATR(data, period = 14) {
+        if (data.length < period + 1) return Array(data.length).fill(null);
+        
+        const trueRanges = [0];
+        for (let i = 1; i < data.length; i++) {
+            const tr = Math.max(
+                data[i].high - data[i].low,
+                Math.abs(data[i].high - data[i - 1].close),
+                Math.abs(data[i].low - data[i - 1].close)
+            );
+            trueRanges.push(tr);
+        }
+        
+        const atr = Array(data.length).fill(null);
+        let sum = trueRanges.slice(1, period + 1).reduce((a, b) => a + b, 0);
+        atr[period] = sum / period;
+        
+        for (let i = period + 1; i < data.length; i++) {
+            atr[i] = (atr[i - 1] * (period - 1) + trueRanges[i]) / period;
+        }
+        
+        return atr;
+    }
+}
+
+function calculateAllIndicators(data) {
+    return {
+        sma20: IndicatorCalculator.calculateSMA(data, 20),
+        sma50: IndicatorCalculator.calculateSMA(data, 50),
+        ema12: IndicatorCalculator.calculateEMA(data, 12),
+        ema26: IndicatorCalculator.calculateEMA(data, 26),
+        rsi: IndicatorCalculator.calculateRSI(data, 14),
+        ...IndicatorCalculator.calculateMACD(data),
+        ...IndicatorCalculator.calculateBollingerBands(data),
+        ...IndicatorCalculator.calculateStochastic(data),
+        obv: IndicatorCalculator.calculateOBV(data),
+        atr: IndicatorCalculator.calculateATR(data)
+    };
+}
+
+// Enhanced backtesting with slippage and realistic execution
+async function runBacktest() {
+    if (marketData.length === 0) {
+        alert('Please generate or load market data first!');
+        return;
+    }
+
+    // Reset state
+    balance = parseFloat(document.getElementById('initialBalance').value);
+    position = 0;
+    trades = [];
+    equity = [balance];
+    buyMarkers = [];
+    sellMarkers = [];
+    isRunning = true;
+    stopRequested = false;
+
+    // Initialize risk manager
+    riskManager = new RiskManager(
+        parseFloat(document.getElementById('maxRiskPerTrade').value) / 100,
+        parseFloat(document.getElementById('maxDrawdown').value) / 100,
+        parseFloat(document.getElementById('maxPositionSize').value) / 100
+    );
+
+    updateStatus('running', 'Running backtest...');
+    document.getElementById('runBtn').style.display = 'none';
+    document.getElementById('stopBtn').style.display = 'block';
+    clearLog();
+
+    const strategyCode = document.getElementById('strategyCode').value;
+    const commissionRate = parseFloat(document.getElementById('commission').value) / 100;
+    const spreadRate = parseFloat(document.getElementById('spread').value) / 100;
+    const slippageRate = parseFloat(document.getElementById('slippage').value) / 100;
+    
+    // Calculate all indicators
+    const allIndicators = calculateAllIndicators(marketData);
+
+    for (let i = 0; i < marketData.length; i++) {
+        if (stopRequested) {
+            updateStatus('idle', 'Stopped');
+            break;
+        }
+
+        const candles = marketData.slice(0, i + 1);
+        const currentCandle = marketData[i];
+        
+        // Prepare indicators up to current candle
+        const indicators = {};
+        Object.keys(allIndicators).forEach(key => {
+            indicators[key] = allIndicators[key].slice(0, i + 1);
+        });
+
+        try {
+            await executeStrategy(
+                strategyCode, 
+                candles, 
+                currentCandle, 
+                indicators, 
+                commissionRate, 
+                spreadRate,
+                slippageRate
+            );
+        } catch (error) {
+            logTrade(`Strategy Error: ${error.message}`, 'info');
+            updateStatus('error', 'Strategy Error');
+            break;
+        }
+
+        // Update equity and check risk
+        const currentEquity = balance + (position * currentCandle.close);
+        equity.push(currentEquity);
+
+        // Check for maximum drawdown breach
+        if (riskManager.checkDrawdown(currentEquity)) {
+            logTrade(`MAX DRAWDOWN BREACH - Closing all positions`, 'info');
+            if (position > 0) {
+                const executionPrice = currentCandle.close * (1 - spreadRate - slippageRate);
+                const amount = position * executionPrice;
+                const commissionFee = amount * commissionRate;
+                
+                balance += (amount - commissionFee);
+                position = 0;
+                
+                trades.push({
+                    type: 'sell',
+                    time: currentCandle.time,
+                    price: executionPrice,
+                    amount: amount,
+                    quantity: position,
+                    commission: commissionFee,
+                    reason: 'DRAWDOWN_LIMIT'
+                });
+            }
+            break;
+        }
+
+        const progress = ((i + 1) / marketData.length) * 100;
+        document.getElementById('progressFill').style.width = `${progress}%`;
+
+        if (i % 10 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 1));
+        }
+    }
+
+    isRunning = false;
+    document.getElementById('runBtn').style.display = 'block';
+    document.getElementById('stopBtn').style.display = 'none';
+    
+    if (!stopRequested) {
+        updateStatus('idle', 'Completed');
+        displayAdvancedResults();
+        displayMarkers();
+    }
+}
+
+async function executeStrategy(code, candles, currentCandle, indicators, commissionRate, spreadRate, slippageRate) {
+    // Enhanced trading functions with slippage
+    const buy = (amount, stopLossPrice = null) => {
+        if (balance < amount) {
+            logTrade(`Insufficient balance: $${balance.toFixed(2)}`, 'info');
+            return 0;
+        }
+        
+        // Realistic execution with slippage
+        const slippage = (Math.random() * slippageRate * 2) - slippageRate; // Random slippage ±slippageRate
+        const executionPrice = currentCandle.close * (1 + spreadRate + slippage);
+        const quantity = amount / executionPrice;
+        const commissionFee = amount * commissionRate;
+        
+        // Position sizing with risk management
+        let finalQuantity = quantity;
+        if (stopLossPrice && riskManager) {
+            const riskAdjustedQuantity = riskManager.calculatePositionSize(
+                balance, 
+                executionPrice, 
+                stopLossPrice
+            );
+            finalQuantity = Math.min(quantity, riskAdjustedQuantity);
+        }
+        
+        const finalAmount = finalQuantity * executionPrice;
+        const finalCommission = finalAmount * commissionRate;
+        
+        position += finalQuantity;
+        balance -= (finalAmount + finalCommission);
+        
+        trades.push({
+            type: 'buy',
+            time: currentCandle.time,
+            price: executionPrice,
+            amount: finalAmount,
+            quantity: finalQuantity,
+            commission: finalCommission,
+            stopLoss: stopLossPrice,
+            slippage: slippage
+        });
+        
+        buyMarkers.push({
+            time: currentCandle.time,
+            position: 'belowBar',
+            color: '#00AB84',
+            shape: 'arrowUp',
+            text: `B $${executionPrice.toFixed(2)}`
+        });
+        
+        logTrade(`BUY: ${finalQuantity.toFixed(6)} @ $${executionPrice.toFixed(2)} (slippage: ${(slippage*100).toFixed(3)}%, fee: $${finalCommission.toFixed(2)})`, 'buy');
+        
+        return finalQuantity;
+    };
+
+    const sell = (quantity, stopLossPrice = null) => {
+        if (position < quantity) {
+            quantity = position; // Sell all available
+        }
+        
+        if (quantity <= 0) return 0;
+
+        // Realistic execution with slippage
+        const slippage = (Math.random() * slippageRate * 2) - slippageRate;
+        const executionPrice = currentCandle.close * (1 - spreadRate + slippage);
+        const amount = quantity * executionPrice;
+        const commissionFee = amount * commissionRate;
+        
+        position -= quantity;
+        balance += (amount - commissionFee);
+        
+        trades.push({
+            type: 'sell',
+            time: currentCandle.time,
+            price: executionPrice,
+            amount: amount,
+            quantity: quantity,
+            commission: commissionFee,
+            stopLoss: stopLossPrice,
+            slippage: slippage
+        });
+        
+        sellMarkers.push({
+            time: currentCandle.time,
+            position: 'aboveBar',
+            color: '#ef4444',
+            shape: 'arrowDown',
+            text: `S $${executionPrice.toFixed(2)}`
+        });
+        
+        logTrade(`SELL: ${quantity.toFixed(6)} @ $${executionPrice.toFixed(2)} (slippage: ${(slippage*100).toFixed(3)}%, fee: $${commissionFee.toFixed(2)})`, 'sell');
+        
+        return quantity;
+    };
+
+    // Risk management functions
+    const calculatePosition = (riskPercent, entryPrice, stopLossPrice) => {
+        return riskManager.calculatePositionSize(balance, entryPrice, stopLossPrice);
+    };
+
+    const checkDrawdown = () => {
+        const currentEquity = balance + (position * currentCandle.close);
+        return riskManager.checkDrawdown(currentEquity);
+    };
+
+    // Enhanced indicator functions
+    const calculateSMA = (data, period) => IndicatorCalculator.calculateSMA(data, period);
+    const calculateEMA = (data, period) => IndicatorCalculator.calculateEMA(data, period);
+    const calculateRSI = (data, period) => IndicatorCalculator.calculateRSI(data, period);
+    const calculateMACD = (data) => IndicatorCalculator.calculateMACD(data);
+    const calculateBollingerBands = (data, period, stdDev) => IndicatorCalculator.calculateBollingerBands(data, period, stdDev);
+    const calculateStochastic = (data, period, smoothK, smoothD) => IndicatorCalculator.calculateStochastic(data, period, smoothK, smoothD);
+
+    // Execute user strategy
+    const userFunction = new Function(
+        'candles', 'currentCandle', 'indicators', 'balance', 'position', 
+        'buy', 'sell', 'calculateSMA', 'calculateEMA', 'calculateRSI', 
+        'calculateMACD', 'calculateBollingerBands', 'calculateStochastic',
+        'calculatePosition', 'checkDrawdown',
+        code
+    );
+
+    userFunction(
+        candles, currentCandle, indicators, balance, position,
+        buy, sell, calculateSMA, calculateEMA, calculateRSI,
+        calculateMACD, calculateBollingerBands, calculateStochastic,
+        calculatePosition, checkDrawdown
+    );
+}
+        // ==================== CHART INITIALIZATION ====================
+        function initializeChart() {
+            const chartContainer = document.getElementById('priceChart');
+            
+            chart = LightweightCharts.createChart(chartContainer, {
+                width: chartContainer.clientWidth,
+                height: chartContainer.clientHeight,
+                layout: {
+                    background: { color: '#0a0a0a' },
+                    textColor: '#94a3b8',
+                },
+                grid: {
+                    vertLines: { color: 'rgba(42, 46, 57, 0.6)' },
+                    horzLines: { color: 'rgba(42, 46, 57, 0.6)' },
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode.Normal,
+                },
+                rightPriceScale: {
+                    borderColor: 'rgba(42, 46, 57, 0.1)',
+                },
+                timeScale: {
+                    borderColor: 'rgba(42, 46, 57, 0.5)',
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+            });
+
+            candlestickSeries = chart.addCandlestickSeries({
+                upColor: '#00AB84',
+                downColor: '#ef4444',
+                borderDownColor: '#ef4444',
+                borderUpColor: '#00AB84',
+                wickDownColor: '#ef4444',
+                wickUpColor: '#00AB84',
+            });
+
+            volumeSeries = chart.addHistogramSeries({
+                color: '#00AB84',
+                priceFormat: { type: 'volume' },
+                priceScaleId: 'volume',
+            });
+
+            chart.priceScale('volume').applyOptions({
+                scaleMargins: { top: 0.8, bottom: 0 },
+            });
+
+            window.addEventListener('resize', () => {
+                chart.applyOptions({
+                    width: chartContainer.clientWidth,
+                    height: chartContainer.clientHeight
+                });
+            });
+        }
+
+        // ==================== REALISTIC MARKET DATA GENERATOR ====================
+        function generateMarketData(candles, startPrice, baseVolatility) {
+            const data = [];
+            let price = startPrice;
+            const startTime = Math.floor(Date.now() / 1000) - (candles * 60);
+            
+            let currentVolatility = baseVolatility;
+            let volatilityRegime = Math.random() > 0.7 ? 'high' : 'normal';
+            let trendDirection = Math.random() > 0.5 ? 1 : -1;
+            let trendStrength = 0.001;
+            
+            for (let i = 0; i < candles; i++) {
+                // Смена режима волатильности (кластеризация)
+                if (Math.random() < 0.02) {
+                    volatilityRegime = volatilityRegime === 'high' ? 'normal' : 'high';
+                }
+                
+                // Смена тренда
+                if (Math.random() < 0.01) {
+                    trendDirection *= -1;
+                    trendStrength = 0.0005 + Math.random() * 0.002;
+                }
+                
+                // Динамическая волатильность
+                currentVolatility = volatilityRegime === 'high' ? 
+                    baseVolatility * 2.5 : baseVolatility;
+                
+                const timestamp = startTime + (i * 60);
+                
+                // Реалистичный тренд + шум
+                const trend = trendDirection * trendStrength;
+                const noise = (Math.random() - 0.5) * (currentVolatility / 100);
+                const marketMove = trend + noise;
+                
+                price = price * (1 + marketMove);
+                
+                // Гэпы (2% вероятность)
+                let gap = 0;
+                if (Math.random() < 0.02) {
+                    gap = (Math.random() - 0.5) * (currentVolatility / 50);
+                    price = price * (1 + gap);
+                }
+                
+                // Генерация OHLC с реалистичными соотношениями
+                const open = price;
+                const close = price * (1 + (Math.random() - 0.5) * (currentVolatility / 100));
+                
+                // High/Low зависят от направления движения
+                const isUp = close >= open;
+                const range = Math.abs(close - open) || price * 0.001;
+                
+                const high = isUp ? 
+                    close + range * (0.3 + Math.random() * 0.7) :
+                    open + range * (0.1 + Math.random() * 0.4);
+                    
+                const low = isUp ? 
+                    open - range * (0.1 + Math.random() * 0.4) :
+                    close - range * (0.3 + Math.random() * 0.7);
+                
+                // Объем коррелирует с волатильностью
+                const baseVolume = 500000;
+                const volume = baseVolume * (1 + currentVolatility * 10) * (0.8 + Math.random() * 0.4);
+                
+                data.push({
+                    time: timestamp,
+                    open: open,
+                    high: high,
+                    low: low,
+                    close: close,
+                    volume: volume,
+                    volatility: currentVolatility
+                });
+                
+                price = close;
+            }
+            
+            return data;
+        }
+
+        // ==================== REAL MARKET DATA LOADER ====================
+        async function loadRealMarketData(symbol = 'BTCUSDT', interval = '1m', limit = 1000) {
+            try {
+                updateStatus('running', 'Loading real market data...');
+                const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+                const klines = await response.json();
+                
+                const data = klines.map(k => ({
+                    time: Math.floor(k[0] / 1000),
+                    open: parseFloat(k[1]),
+                    high: parseFloat(k[2]),
+                    low: parseFloat(k[3]),
+                    close: parseFloat(k[4]),
+                    volume: parseFloat(k[5])
+                }));
+                
+                updateStatus('idle', `Loaded ${data.length} real candles`);
+                return data;
+            } catch (error) {
+                logTrade(`Failed to load real data: ${error.message}`, 'info');
+                updateStatus('error', 'Failed to load real data');
+                // Fallback to generated data
+                return generateMarketData(limit, 50000, 2);
+            }
+        }
+
+        // ==================== ACCURATE INDICATORS ====================
+        function calculateSMA(data, period) {
+            if (data.length < period) return null;
+            const sum = data.slice(-period).reduce((acc, candle) => acc + candle.close, 0);
+            return sum / period;
+        }
+
+        function calculateEMA(data, period) {
+            if (data.length < period) return Array(data.length).fill(null);
+            
+            const ema = [];
+            const k = 2 / (period + 1);
+            
+            // First EMA value = SMA
+            let smaSum = 0;
+            for (let i = 0; i < period; i++) {
+                smaSum += data[i].close;
+            }
+            ema[period - 1] = smaSum / period;
+            
+            // Subsequent EMA values
+            for (let i = period; i < data.length; i++) {
+                ema[i] = data[i].close * k + ema[i - 1] * (1 - k);
+            }
+            
+            // Fill initial values with null
+            for (let i = 0; i < period - 1; i++) {
+                ema[i] = null;
+            }
+            
+            return ema;
+        }
+
+        function calculateRSI(data, period = 14) {
+            if (data.length < period + 1) return Array(data.length).fill(null);
+            
+            const rsi = Array(data.length).fill(null);
+            const gains = [];
+            const losses = [];
+            
+            // Calculate changes
+            for (let i = 1; i < data.length; i++) {
+                const change = data[i].close - data[i - 1].close;
+                gains.push(change > 0 ? change : 0);
+                losses.push(change < 0 ? -change : 0);
+            }
+            
+            // First average values
+            let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+            let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+            
+            rsi[period] = avgLoss === 0 ? 100 : 100 - (100 / (1 + avgGain / avgLoss));
+            
+            // Moving averages for remaining points
+            for (let i = period + 1; i < data.length; i++) {
+                avgGain = (avgGain * (period - 1) + gains[i - 1]) / period;
+                avgLoss = (avgLoss * (period - 1) + losses[i - 1]) / period;
+                
+                if (avgLoss === 0) {
+                    rsi[i] = 100;
+                } else {
+                    const rs = avgGain / avgLoss;
+                    rsi[i] = 100 - (100 / (1 + rs));
+                }
+            }
+            
+            return rsi;
+        }
+
+        function calculateAllIndicators(data) {
+            return {
+                sma20: data.map((_, i) => calculateSMA(data.slice(0, i + 1), 20)),
+                ema12: calculateEMA(data, 12),
+                rsi: calculateRSI(data, 14),
+            };
+        }
+
+        // ==================== ADVANCED BACKTESTING ENGINE ====================
+        async function runBacktest() {
+            if (marketData.length === 0) {
+                alert('Please generate market data first!');
+                return;
+            }
+
+            // Reset state
+            balance = parseFloat(document.getElementById('initialBalance').value);
+            position = 0;
+            trades = [];
+            equity = [balance];
+            buyMarkers = [];
+            sellMarkers = [];
+            isRunning = true;
+            stopRequested = false;
+
+            updateStatus('running', 'Running backtest...');
+            document.getElementById('runBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            clearLog();
+
+            const strategyCode = document.getElementById('strategyCode').value;
+            const commissionRate = parseFloat(document.getElementById('commission').value) / 100;
+            const spreadRate = parseFloat(document.getElementById('spread').value) / 100;
+            
+            // Calculate indicators for all data
+            const allIndicators = calculateAllIndicators(marketData);
+
+            // Execute strategy for each candle
+            for (let i = 0; i < marketData.length; i++) {
+                if (stopRequested) {
+                    updateStatus('idle', 'Stopped');
+                    break;
+                }
+
+                const candles = marketData.slice(0, i + 1);
+                const currentCandle = marketData[i];
+                
+                const indicators = {
+                    sma20: allIndicators.sma20.slice(0, i + 1),
+                    ema12: allIndicators.ema12.slice(0, i + 1),
+                    rsi: allIndicators.rsi.slice(0, i + 1),
+                };
+
+                // Execute user strategy in safe context
+                try {
+                    await executeStrategy(strategyCode, candles, currentCandle, indicators, commissionRate, spreadRate);
+                } catch (error) {
+                    logTrade(`Error: ${error.message}`, 'info');
+                    updateStatus('error', 'Strategy Error');
+                    break;
+                }
+
+                // Update equity curve
+                const currentEquity = balance + (position * currentCandle.close);
+                equity.push(currentEquity);
+
+                // Update progress
+                const progress = ((i + 1) / marketData.length) * 100;
+                document.getElementById('progressFill').style.width = `${progress}%`;
+
+                // Throttle for visualization (every 10 candles)
+                if (i % 10 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 1));
+                }
+            }
+
+            isRunning = false;
+            document.getElementById('runBtn').style.display = 'block';
+            document.getElementById('stopBtn').style.display = 'none';
+            
+            if (!stopRequested) {
+                updateStatus('idle', 'Completed');
+                displayAdvancedResults();
+                displayMarkers();
+            }
+        }
+
+        async function executeStrategy(code, candles, currentCandle, indicators, commissionRate, spreadRate) {
+            // Trading functions with realistic execution
+            const buy = (amount) => {
+                if (balance < amount) {
+                    logTrade(`Insufficient balance: $${balance.toFixed(2)}`, 'info');
+                    return;
+                }
+                
+                // Execution price with spread (buy at ask price)
+                const executionPrice = currentCandle.close * (1 + spreadRate);
+                const quantity = amount / executionPrice;
+                const commissionFee = amount * commissionRate;
+                
+                position += quantity;
+                balance -= (amount + commissionFee);
+                
+                trades.push({
+                    type: 'buy',
+                    time: currentCandle.time,
+                    price: executionPrice,
+                    amount: amount,
+                    quantity: quantity,
+                    commission: commissionFee
+                });
+                
+                buyMarkers.push({
+                    time: currentCandle.time,
+                    position: 'belowBar',
+                    color: '#00AB84',
+                    shape: 'arrowUp',
+                    text: `B $${executionPrice.toFixed(2)}`
+                });
+                
+                logTrade(`BUY: ${quantity.toFixed(6)} @ $${executionPrice.toFixed(2)} (fee: $${commissionFee.toFixed(2)})`, 'buy');
+            };
+
+            const sell = (quantity) => {
+                if (position < quantity) {
+                    logTrade(`Insufficient position: ${position.toFixed(6)}`, 'info');
+                    return;
+                }
+                
+                // Execution price with spread (sell at bid price)
+                const executionPrice = currentCandle.close * (1 - spreadRate);
+                const amount = quantity * executionPrice;
+                const commissionFee = amount * commissionRate;
+                
+                position -= quantity;
+                balance += (amount - commissionFee);
+                
+                trades.push({
+                    type: 'sell',
+                    time: currentCandle.time,
+                    price: executionPrice,
+                    amount: amount,
+                    quantity: quantity,
+                    commission: commissionFee
+                });
+                
+                sellMarkers.push({
+                    time: currentCandle.time,
+                    position: 'aboveBar',
+                    color: '#ef4444',
+                    shape: 'arrowDown',
+                    text: `S $${executionPrice.toFixed(2)}`
+                });
+                
+                logTrade(`SELL: ${quantity.toFixed(6)} @ $${executionPrice.toFixed(2)} (fee: $${commissionFee.toFixed(2)})`, 'sell');
+            };
+
+            // Execute user code in controlled environment
+            const userFunction = new Function(
+                'candles', 'currentCandle', 'indicators', 'balance', 'position', 
+                'buy', 'sell', 'calculateSMA',
+                code
+            );
+
+            userFunction(candles, currentCandle, indicators, balance, position, buy, sell, calculateSMA);
+        }
+
+        // ==================== ADVANCED RESULTS & METRICS ====================
+        function displayAdvancedResults() {
+            const finalEquity = equity[equity.length - 1];
+            const initialBalance = parseFloat(document.getElementById('initialBalance').value);
+            const totalReturn = finalEquity - initialBalance;
+            const returnPercent = (totalReturn / initialBalance) * 100;
+
+            // Calculate win rate
+            let wins = 0;
+            let totalTradePairs = 0;
+            for (let i = 1; i < trades.length; i++) {
+                if (trades[i].type === 'sell' && trades[i-1].type === 'buy') {
+                    totalTradePairs++;
+                    if (trades[i].price > trades[i-1].price) wins++;
+                }
+            }
+            const winRate = totalTradePairs > 0 ? (wins / totalTradePairs) * 100 : 0;
+
+            // Calculate max drawdown
+            let maxEquity = initialBalance;
+            let maxDrawdown = 0;
+            for (const eq of equity) {
+                if (eq > maxEquity) maxEquity = eq;
+                const drawdown = ((maxEquity - eq) / maxEquity) * 100;
+                if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+            }
+
+            // Calculate Sharpe Ratio
+            const sharpeRatio = calculateSharpeRatio(equity);
+
+            // Update stats
+            document.getElementById('totalPnl').textContent = `$${totalReturn.toFixed(2)}`;
+            document.getElementById('totalPnl').className = `stat-value ${totalReturn >= 0 ? 'positive' : 'negative'}`;
+            
+            document.getElementById('returnPercent').textContent = `${returnPercent.toFixed(2)}%`;
+            document.getElementById('returnPercent').className = `stat-value ${returnPercent >= 0 ? 'positive' : 'negative'}`;
+            
+            document.getElementById('winRate').textContent = `${winRate.toFixed(1)}%`;
+            document.getElementById('totalTrades').textContent = trades.length;
+            document.getElementById('maxDrawdown').textContent = `${maxDrawdown.toFixed(2)}%`;
+            document.getElementById('sharpeRatio').textContent = sharpeRatio.toFixed(2);
+        }
+
+        function calculateSharpeRatio(equityCurve) {
+            if (equityCurve.length < 2) return 0;
+            
+            const returns = [];
+            for (let i = 1; i < equityCurve.length; i++) {
+                returns.push((equityCurve[i] - equityCurve[i-1]) / equityCurve[i-1]);
+            }
+            
+            const avgReturn = returns.reduce((a, b) => a + b, 0) / returns.length;
+            const stdDev = Math.sqrt(returns.reduce((a, b) => a + Math.pow(b - avgReturn, 2), 0) / returns.length);
+            
+            return stdDev === 0 ? 0 : (avgReturn / stdDev) * Math.sqrt(365);
+        }
+
+        function displayMarkers() {
+            const allMarkers = [...buyMarkers, ...sellMarkers];
+            allMarkers.sort((a, b) => a.time - b.time);
+            
+            if (allMarkers.length > 0) {
+                candlestickSeries.setMarkers(allMarkers);
+            }
+        }
+
+        function logTrade(message, type = 'info') {
+            const logContainer = document.getElementById('tradeLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('tradeLog').innerHTML = '<div class="log-entry info">Starting backtest...</div>';
+        }
+
+        function updateStatus(status, text) {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.className = `status-indicator ${status}`;
+            document.getElementById('statusText').textContent = text;
+        }
+
+        // ==================== EVENT HANDLERS ====================
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            const count = parseInt(document.getElementById('candleCount').value);
+            const startPrice = parseFloat(document.getElementById('startPrice').value);
+            const volatility = parseFloat(document.getElementById('volatility').value);
+
+            updateStatus('running', 'Generating market...');
+            
+            setTimeout(() => {
+                marketData = generateMarketData(count, startPrice, volatility);
+                
+                const chartData = marketData.map(d => ({
+                    time: d.time,
+                    open: d.open,
+                    high: d.high,
+                    low: d.low,
+                    close: d.close
+                }));
+                
+                const volumeData = marketData.map(d => ({
+                    time: d.time,
+                    value: d.volume,
+                    color: d.close >= d.open ? 'rgba(0, 171, 132, 0.5)' : 'rgba(239, 68, 68, 0.5)'
+                }));
+                
+                candlestickSeries.setData(chartData);
+                volumeSeries.setData(volumeData);
+                chart.timeScale().fitContent();
+                
+                updateStatus('idle', `Generated ${count} candles`);
+                logTrade(`Market generated: ${count} candles`, 'info');
+            }, 100);
+        });
+
+       document.getElementById('loadRealDataBtn').addEventListener('click', async () => {
+    const count = parseInt(document.getElementById('candleCount').value);
+    const selectedCrypto = document.getElementById('cryptoSelect').value;
+    marketData = await loadRealMarketData(selectedCrypto, '1m', count);
+            
+            const chartData = marketData.map(d => ({
+                time: d.time,
+                open: d.open,
+                high: d.high,
+                low: d.low,
+                close: d.close
+            }));
+            
+            const volumeData = marketData.map(d => ({
+                time: d.time,
+                value: d.volume,
+                color: d.close >= d.open ? 'rgba(0, 171, 132, 0.5)' : 'rgba(239, 68, 68, 0.5)'
+            }));
+            
+            candlestickSeries.setData(chartData);
+            volumeSeries.setData(volumeData);
+            chart.timeScale().fitContent();
+            
+            logTrade(`Real market data loaded: ${marketData.length} candles`, 'info');
+        });
+
+        document.getElementById('runBtn').addEventListener('click', runBacktest);
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            stopRequested = true;
+            updateStatus('idle', 'Stopping...');
+        });
+
+        // ==================== INITIALIZATION ====================
+        window.addEventListener('load', () => {
+            initializeChart();
+            updateStatus('idle', 'Ready');
+        });
+    </script>
+</body>
+</html>
