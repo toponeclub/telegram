@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="widgetTitle">Futuristic Crypto Sparkline Widget</title>
+    
+    <style>
+        /* CSS и внешний вид (без изменений) */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
+        }
+        
+        body {
+            background: #0a0e17;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .sparkline-container {
+            width: 100%;
+            max-width: 800px;
+            min-width: 300px;
+            height: 500px; 
+            background: linear-gradient(145deg, #131a2a, #0c111f);
+            border-radius: 24px;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05); 
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(80, 100, 150, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .coin-selector-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .title {
+            color: #e0e6f0;
+            font-size: 24px; 
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-right: 15px;
+        }
+        
+        #coinSelect {
+            background: #131a2a;
+            color: #e0e6f0;
+            border: 1px solid rgba(80, 100, 150, 0.3);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 14px;
+            cursor: pointer;
+            appearance: none;
+            outline: none;
+        }
+
+        #coinSelect:hover {
+            border-color: #506496;
+        }
+        
+        .price-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        
+        .current-price {
+            color: #e0e6f0;
+            font-size: 30px; 
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .price-change {
+            font-size: 16px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 8px;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .chart-metrics {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+            gap: 15px;
+            font-size: 14px;
+            color: #a0b0d0;
+        }
+
+        .metric-item strong {
+            color: #e0e6f0;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+        
+        .chart-area {
+            position: relative;
+            height: 300px; 
+            background: rgba(10, 15, 25, 0.4);
+            border-radius: 16px;
+            padding: 10px;
+            overflow: hidden;
+            margin-bottom: 10px; 
+        }
+
+        #sparklineChart {
+            width: 100%;
+            height: 100%;
+            display: block; 
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #a0b0d0;
+            font-size: 18px;
+            z-index: 10;
+        }
+        
+        .timeframe-selector {
+            display: flex;
+            justify-content: center;
+            background: rgba(30, 40, 60, 0.7);
+            border-radius: 12px;
+            overflow: hidden;
+            width: fit-content;
+            margin: 0 auto;
+        }
+        
+        .timeframe {
+            padding: 8px 16px;
+            color: #a0b0d0;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .timeframe.active {
+            background: #3a86ff; 
+            color: #e0e6f0;
+            font-weight: 600;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Стили для Hover Tooltip */
+        #hoverTooltip {
+            position: absolute;
+            background: rgba(40, 50, 70, 0.95);
+            color: #e0e6f0;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            pointer-events: none;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+            transform: translate(-50%, -100%); 
+            z-index: 20;
+            border: 1px solid rgba(80, 100, 150, 0.5);
+            line-height: 1.5; 
+        }
+        
+        #hoverTooltip .price {
+            font-weight: 700;
+            color: #fff;
+            margin-right: 5px;
+        }
+        
+        #hoverTooltip .time {
+            color: #a0b0d0;
+            font-size: 12px;
+        }
+        
+        .glow-effect {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(80px); 
+            opacity: 0.1; 
+            z-index: 0;
+        }
+        
+        .glow-1 {
+            background: #3a86ff;
+            top: -100px;
+            right: -100px;
+        }
+        
+        .glow-2 {
+            background: #8338ec;
+            bottom: -100px;
+            left: -100px;
+        }
+
+        .data-source {
+            position: absolute;
+            bottom: 10px;
+            left: 25px;
+            color: rgba(160, 180, 220, 0.6);
+            font-size: 12px;
+        }
+
+        ::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #2f2f2f; /* Фон дорожки */
+}
+::-webkit-scrollbar-thumb {
+  background: #5a5a5a; /* Сама полоса */
+  border-radius: 4px;
+}
+
+
+    </style>
+</head>
+<body>
+    <div class="sparkline-container">
+        <div class="glow-effect glow-1"></div>
+        <div class="glow-effect glow-2"></div>
+        
+        <div class="header">
+            <div class="coin-selector-group">
+                <div class="title" id="coinName">BTCUSDT</div>
+                <select id="coinSelect"></select>
+            </div>
+            <div class="price-info">
+                <div class="current-price">Loading...</div>
+                <div class="price-change">-.-%</div>
+            </div>
+        </div>
+
+        <div class="chart-metrics">
+            <div class="metric-item">High (24h): <strong id="highPrice">--.--</strong></div>
+            <div class="metric-item">Low (24h): <strong id="lowPrice">--.--</strong></div>
+        </div>
+        
+        <div class="chart-area">
+            <div class="loading" id="loadingState">Loading chart data...</div>
+            <canvas id="sparklineChart"></canvas>
+            
+            <div id="hoverTooltip"></div>
+
+            <div class="data-source">Data: Binance API</div>
+        </div>
+
+        <div class="timeframe-selector">
+            <div class="timeframe active" data-interval="1h" data-limit="24">24H</div>
+            <div class="timeframe" data-interval="4h" data-limit="42">7D</div>
+            <div class="timeframe" data-interval="1d" data-limit="30">1M</div>
+            <div class="timeframe" data-interval="1w" data-limit="52">1Y</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Константы и глобальные переменные ---
+        const API_BASE = 'https://api.binance.com/api/v3';
+        const currency = 'USDT';
+        const DPI = window.devicePixelRatio || 1; 
+        
+        let currentCoinId = 'BTCUSDT'; 
+        let priceData = []; 
+        let rawPrices = []; 
+        let animationFrameId = null; 
+        let lastMouseX = -1;
+        
+        // Переменные для анимации пульсации
+        let pulseAnimationFrameId = null;
+        let pulseTimeStart = null;
+        const PULSE_DURATION = 2000; // 2 секунды
+
+        const SYMBOL_NAMES = {
+'BTCUSDT': 'BITCOIN',
+'ETHUSDT': 'ETHEREUM',
+'BNBUSDT': 'BNB',
+'XRPUSDT': 'RIPPLE',
+'ADAUSDT': 'CARDANO',
+'SOLUSDT': 'SOLANA',
+'DOGEUSDT': 'DOGECOIN',
+'MATICUSDT': 'POLYGON',
+'DOTUSDT': 'POLKADOT',
+'TRXUSDT': 'TRON',
+'LINKUSDT': 'CHAINLINK',
+'LTCUSDT': 'LITECOIN',
+'BCHUSDT': 'BITCOIN CASH',
+'AVAXUSDT': 'AVALANCHE',
+'UNIUSDT': 'UNISWAP',
+'PEPEUSDT': 'PEPE',
+'BONKUSDT': 'BONK',
+'INJUSDT': 'INJECTIVE',
+'APTUSDT': 'APTOS',
+'ATOMUSDT': 'COSMOS',
+'FILUSDT': 'FILECOIN',
+'ETCUSDT': 'ETHEREUM CLASSIC',
+'XLMUSDT': 'STELLAR',
+'ARBUSDT': 'ARBITRUM',
+'TONUSDT': 'TON',
+        };
+
+        const elements = {
+            widgetTitle: document.getElementById('widgetTitle'),
+            coinName: document.getElementById('coinName'),
+            currentPrice: document.querySelector('.current-price'),
+            priceChange: document.querySelector('.price-change'),
+            highPrice: document.getElementById('highPrice'),
+            lowPrice: document.getElementById('lowPrice'),
+            timeframes: document.querySelectorAll('.timeframe'),
+            loadingState: document.getElementById('loadingState'),
+            coinSelect: document.getElementById('coinSelect'),
+            canvas: document.getElementById('sparklineChart'),
+            tooltip: document.getElementById('hoverTooltip'),
+            chartArea: document.querySelector('.chart-area')
+        };
+        const ctx = elements.canvas.getContext('2d');
+        
+        let config = {
+            interval: '1h', 
+            limit: 24,      
+            padding: { top: 10, right: 10, bottom: 10, left: 10 }, 
+            hoverLineColor: 'rgba(255, 255, 255, 0.4)'
+        };
+
+        // --- Utility Functions ---
+        function formatPrice(price) {
+            const numPrice = parseFloat(price);
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD', 
+                minimumFractionDigits: 2,
+                maximumFractionDigits: numPrice > 100 ? 2 : 8
+            }).format(numPrice);
+        }
+        
+        function formatDate(timestamp) {
+            return new Date(timestamp).toLocaleTimeString('en-US', {
+                hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric'
+            });
+        }
+        
+        function setLoading(isLoading) {
+            elements.loadingState.style.display = isLoading ? 'block' : 'none';
+        }
+
+        // --- API Calls (Binance) ---
+
+        function getSupportedSymbols() {
+            return Object.keys(SYMBOL_NAMES).map(symbol => ({
+                id: symbol,
+                name: SYMBOL_NAMES[symbol]
+            }));
+        }
+
+        async function fetchChartData(symbol, interval, limit) {
+            setLoading(true);
+            try {
+                const url = `${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                setLoading(false);
+                return data.map(kline => [parseInt(kline[0]), parseFloat(kline[4])]); 
+            } catch (error) {
+                console.error("Error fetching chart data from Binance:", error);
+                setLoading(false);
+                return [];
+            }
+        }
+
+        async function fetchMarketData(symbol) {
+            try {
+                const url = `${API_BASE}/ticker/24hr?symbol=${symbol}`;
+                const response = await fetch(url);
+                return await response.json();
+            } catch (error) {
+                console.error("Error fetching market data from Binance:", error);
+                return null;
+            }
+        }
+        
+        function updatePriceDisplay(marketData) {
+            if (!marketData || marketData.code) { 
+                elements.currentPrice.textContent = 'Data Error';
+                elements.priceChange.textContent = '--';
+                elements.highPrice.textContent = '--';
+                elements.lowPrice.textContent = '--';
+                return;
+            }
+
+            const price = parseFloat(marketData.lastPrice);
+            const change24h = parseFloat(marketData.priceChangePercent);
+            const high24h = parseFloat(marketData.highPrice);
+            const low24h = parseFloat(marketData.lowPrice);
+            
+            elements.currentPrice.textContent = formatPrice(price);
+            
+            const isUptrend = change24h >= 0;
+            const trendColor = isUptrend ? '#00ff88' : '#ff3366';
+            const bgColor = isUptrend ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255, 51, 102, 0.1)';
+            const changeText = `${isUptrend ? '+' : ''}${change24h ? change24h.toFixed(2) : '0.00'}% (24h)`;
+            
+            elements.priceChange.textContent = changeText;
+            elements.priceChange.style.color = trendColor;
+            elements.priceChange.style.background = bgColor;
+
+            elements.highPrice.textContent = formatPrice(high24h);
+            elements.lowPrice.textContent = formatPrice(low24h);
+        }
+        
+        /**
+         * Основная функция рисования графика. 
+         * Если hoverX > -1, возвращает данные для тултипа.
+         */
+        function drawSparkline(hoverX = -1, pulseScale = 1) {
+            const prices = rawPrices;
+            if (prices.length === 0) return;
+
+            const rect = elements.canvas.parentElement.getBoundingClientRect();
+            const cssWidth = rect.width;
+            const cssHeight = rect.height;
+            
+            elements.canvas.width = cssWidth * DPI;
+            elements.canvas.height = cssHeight * DPI;
+            ctx.scale(DPI, DPI);
+
+            const width = cssWidth - config.padding.left - config.padding.right;
+            const height = cssHeight - config.padding.top - config.padding.bottom;
+            
+            const max = Math.max(...prices);
+            const min = Math.min(...prices);
+            const range = max - min;
+            
+            const isUptrend = prices[prices.length - 1] >= prices[0];
+            const lineColor = isUptrend ? '#00ff88' : '#ff3366';
+
+            ctx.clearRect(0, 0, cssWidth * DPI, cssHeight * DPI);
+            
+            if (prices.length < 2 || range <= 0) {
+                ctx.fillStyle = '#a0b0d0';
+                ctx.fillText("Data not sufficient for graph.", 50, 50);
+                return;
+            }
+
+            const xScale = width / (prices.length - 1);
+            const yScale = height / range;
+
+            const getCanvasY = (price) => config.padding.top + height - (price - min) * yScale;
+            const getCanvasX = (index) => config.padding.left + index * xScale;
+            
+            // 1. Рисование области под линией (Area)
+            ctx.beginPath();
+            ctx.moveTo(config.padding.left, cssHeight - config.padding.bottom);
+
+            ctx.lineTo(getCanvasX(0), getCanvasY(prices[0]));
+            for (let i = 0; i < prices.length - 1; i++) {
+                const p1 = { x: getCanvasX(i), y: getCanvasY(prices[i]) };
+                const p2 = { x: getCanvasX(i + 1), y: getCanvasY(prices[i + 1]) };
+                const cpX = (p1.x + p2.x) / 2;
+                const cpY = p1.y; 
+                ctx.quadraticCurveTo(cpX, cpY, p2.x, p2.y);
+            }
+            
+            ctx.lineTo(config.padding.left + width, cssHeight - config.padding.bottom);
+            ctx.closePath();
+            
+            const areaGradient = ctx.createLinearGradient(0, config.padding.top, 0, cssHeight - config.padding.bottom);
+            areaGradient.addColorStop(0, lineColor + '40');
+            areaGradient.addColorStop(1, lineColor + '05');
+            
+            ctx.fillStyle = areaGradient;
+            ctx.fill();
+
+            // 2. Рисование линии графика (Line)
+            ctx.beginPath();
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 2;
+            ctx.shadowColor = lineColor; 
+            ctx.shadowBlur = 10;
+            
+            ctx.moveTo(getCanvasX(0), getCanvasY(prices[0]));
+            for (let i = 0; i < prices.length - 1; i++) {
+                const p1 = { x: getCanvasX(i), y: getCanvasY(prices[i]) };
+                const p2 = { x: getCanvasX(i + 1), y: getCanvasY(prices[i + 1]) };
+                const cpX = (p1.x + p2.x) / 2;
+                const cpY = p1.y;
+                ctx.quadraticCurveTo(cpX, cpY, p2.x, p2.y);
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // 3. Координаты последней точки
+            const lastX = getCanvasX(prices.length - 1);
+            const lastY = getCanvasY(prices[prices.length - 1]);
+            
+            // 4. Рисование анимированной пульсации
+            if (pulseScale > 1) {
+                 ctx.beginPath();
+                 const outerRadius = 12 * pulseScale;
+                 const opacity = 0.8 / pulseScale; // Уменьшаем прозрачность по мере расширения
+                 ctx.arc(lastX, lastY, outerRadius, 0, Math.PI * 2);
+                 ctx.strokeStyle = lineColor + Math.round(opacity * 255).toString(16).padStart(2, '0');
+                 ctx.lineWidth = 2 * (2 - pulseScale); // Толщина уменьшается
+                 ctx.stroke();
+            }
+            
+            // 5. Рисование внешнего кольца (стандартного)
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, 1, 0, Math.PI * 2);
+            ctx.strokeStyle = lineColor + '80';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 6. Рисование внутренней точки
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, 6, 0, Math.PI * 2);
+            ctx.fillStyle = lineColor;
+            ctx.fill();
+            
+            // 7. Рисование курсора наведения (Hover)
+            if (hoverX > -1) {
+                const graphMouseX = hoverX - config.padding.left;
+                
+                const index = Math.min(
+                    Math.round(graphMouseX / xScale), 
+                    prices.length - 1
+                );
+                const price = prices[index];
+                const timestamp = priceData[index][0];
+
+                const pointX = getCanvasX(index);
+                const pointY = getCanvasY(price);
+                
+                // Вертикальная линия
+                ctx.beginPath();
+                ctx.strokeStyle = config.hoverLineColor;
+                ctx.lineWidth = 1;
+                ctx.moveTo(pointX, config.padding.top);
+                ctx.lineTo(pointX, cssHeight - config.padding.bottom);
+                ctx.stroke();
+                
+                // Точка на линии
+                ctx.beginPath();
+                ctx.arc(pointX, pointY, 6, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.fill();
+
+                return { pointX, pointY, price, timestamp };
+            }
+        }
+        
+        /**
+         * Цикл анимации пульсации.
+         */
+        function animatePulse(timestamp) {
+            if (!pulseTimeStart) {
+                pulseTimeStart = timestamp;
+            }
+
+            const elapsed = timestamp - pulseTimeStart;
+let progress = elapsed / PULSE_DURATION; // Линейный прогресс (0 до 1)
+ 
+if (progress >= 1) {
+    progress = 1; // Завершение анимации
+    drawSparkline(lastMouseX, 1.0); // Финальная отрисовка без пульсации
+    window.cancelAnimationFrame(pulseAnimationFrameId);
+    pulseAnimationFrameId = null;
+    return; // Останавливаем выполнение
+}
+            
+            // Используем синусоиду для плавного изменения масштаба от 1 до 2 и обратно
+            // В данном случае, нам нужно только расширение, так что 1.0 до 1.5
+            // Плавно пульсируем от 1.0 до 1.5 и сразу сбрасываем.
+            const minScale = 1.0;
+            const maxScale = 1.5; // Будет увеличиваться сильнее, прежде чем исчезнет
+            let pulseScale = 1;
+            
+            // Начинаем новый цикл пульсации каждые 2 секунды
+            if (elapsed < PULSE_DURATION) {
+                pulseScale = minScale + (maxScale - minScale) * Math.sin(progress * Math.PI); // Плавное расширение
+            }
+            
+            // Рисуем график с текущим масштабом пульсации
+            drawSparkline(lastMouseX, pulseScale);
+
+            // Продолжаем цикл анимации
+            pulseAnimationFrameId = window.requestAnimationFrame(animatePulse);
+        }
+
+        // --- Hover (Tooltip) Logic ---
+        function handleMouseMove(e) {
+            lastMouseX = e.clientX;
+            if (!animationFrameId) {
+                animationFrameId = window.requestAnimationFrame(processHover);
+            }
+        }
+
+        function processHover() {
+            animationFrameId = null;
+
+            if (rawPrices.length === 0) return;
+            
+            const rect = elements.canvas.getBoundingClientRect();
+            const mouseX = lastMouseX - rect.left; 
+
+            // Сбрасываем пульсацию при наведении, чтобы курсор был виден лучше
+            if (pulseAnimationFrameId) {
+                window.cancelAnimationFrame(pulseAnimationFrameId);
+                pulseAnimationFrameId = null;
+                pulseTimeStart = null;
+            }
+
+            const hoverData = drawSparkline(mouseX, 1); // Рисуем без пульсации при наведении
+            
+            if (hoverData) {
+                const { pointX, pointY, price, timestamp } = hoverData;
+                
+                const priceHtml = `<span class="price">${formatPrice(price)}</span>`;
+                const timeHtml = `<span class="time">${formatDate(timestamp)}</span>`;
+                
+                elements.tooltip.innerHTML = `${priceHtml} <br> ${timeHtml}`;
+                
+                const canvasOffsetTop = elements.canvas.offsetTop;
+                const canvasOffsetLeft = elements.canvas.offsetLeft;
+                
+                elements.tooltip.style.left = `${pointX + canvasOffsetLeft}px`;
+                elements.tooltip.style.top = `${pointY + canvasOffsetTop}px`;
+                elements.tooltip.style.opacity = '1';
+            } else {
+                handleMouseOut();
+            }
+        }
+
+        function handleMouseOut() {
+            if (animationFrameId) {
+                window.cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+            elements.tooltip.style.opacity = '0';
+            lastMouseX = -1;
+            
+            // Возобновляем пульсацию при уходе курсора
+            if (!pulseAnimationFrameId) {
+                pulseAnimationFrameId = window.requestAnimationFrame(animatePulse);
+            }
+        }
+
+        // --- Initialization Logic ---
+        async function updateWidget(symbol) {
+            elements.coinName.textContent = symbol;
+            elements.widgetTitle.textContent = `${SYMBOL_NAMES[symbol] || symbol} Crypto Widget`;
+
+            const marketData = await fetchMarketData(symbol);
+            updatePriceDisplay(marketData);
+
+            priceData = await fetchChartData(symbol, config.interval, config.limit);
+            rawPrices = priceData.map(p => p[1]);
+
+            // Запускаем пульсацию после загрузки данных
+            if (!pulseAnimationFrameId) {
+                 pulseAnimationFrameId = window.requestAnimationFrame(animatePulse);
+            }
+        }
+
+        function populateCoinSelect() {
+            const symbols = getSupportedSymbols();
+            elements.coinSelect.innerHTML = '';
+            
+            symbols.forEach(coin => {
+                const option = document.createElement('option');
+                option.value = coin.id;
+                option.textContent = `${coin.id} - ${coin.name}`;
+                elements.coinSelect.appendChild(option);
+            });
+            
+            updateWidget(currentCoinId);
+        }
+
+        // --- Event Listeners ---
+        elements.timeframes.forEach(timeframe => {
+            timeframe.addEventListener('click', function() {
+                elements.timeframes.forEach(tf => tf.classList.remove('active'));
+                this.classList.add('active');
+                
+                config.interval = this.getAttribute('data-interval');
+                config.limit = parseInt(this.getAttribute('data-limit'));
+                
+                updateWidget(currentCoinId);
+            });
+        });
+
+        elements.coinSelect.addEventListener('change', (e) => {
+            currentCoinId = e.target.value;
+            updateWidget(currentCoinId);
+        });
+
+        elements.canvas.addEventListener('mousemove', handleMouseMove);
+        elements.canvas.addEventListener('mouseout', handleMouseOut);
+        
+        window.addEventListener('resize', () => {
+             clearTimeout(window.resizeTimer);
+             window.resizeTimer = setTimeout(() => {
+                 drawSparkline(lastMouseX, pulseAnimationFrameId ? 1.0 : 1.0); // Просто перерисовываем
+             }, 100);
+        });
+
+
+        // --- Инициализация ---
+        document.addEventListener('DOMContentLoaded', populateCoinSelect);
+    </script>
+</body>
+</html>
