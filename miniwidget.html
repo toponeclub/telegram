@@ -7,6 +7,9 @@
     
     <style>
         /* CSS и внешний вид (без изменений) */
+
+
+
         * {
             margin: 0;
             padding: 0;
@@ -14,14 +17,32 @@
             font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
         }
         
-        body {
-            background: #0a0e17;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
+/* Базовые стили */
+body {
+    background: #1e1e2d;
+    color: #f0f0f0;
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+/* --- Основной контейнер виджета --- */
+.crypto-widget-container {
+    width: 90%; /* Ширина на десктопе */
+    max-width: 400px; /* Максимальная ширина для десктопа */
+    /* *** ВАЖНО: Адаптация для мобильных *** */
+    width: 100%; /* Занимает всю ширину на маленьких экранах */
+    max-width: none; /* Убираем ограничение на max-width для мобильных */
+    
+    background: #27293d;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    box-sizing: border-box;
+}
         
         .sparkline-container {
             width: 100%;
@@ -38,14 +59,22 @@
             overflow: hidden;
             border: 1px solid rgba(80, 100, 150, 0.2);
             transition: all 0.3s ease;
+            
         }
         
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+    /* --- Заголовок и Выбор монеты --- */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#widgetTitle {
+    font-size: 1.2em;
+    margin: 0;
+    font-weight: 600;
+}
 
         .coin-selector-group {
             display: flex;
@@ -61,15 +90,12 @@
         }
         
         #coinSelect {
-            background: #131a2a;
-            color: #e0e6f0;
-            border: 1px solid rgba(80, 100, 150, 0.3);
-            border-radius: 8px;
-            padding: 6px 10px;
-            font-size: 14px;
-            cursor: pointer;
-            appearance: none;
-            outline: none;
+           padding: 5px;
+    border-radius: 5px;
+    background: #33364f;
+    color: #f0f0f0;
+    border: 1px solid #444;
+            
         }
 
         #coinSelect:hover {
@@ -77,25 +103,35 @@
         }
         
         .price-info {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
+           
+            margin-bottom: 15px;
         }
         
-        .current-price {
-            color: #e0e6f0;
-            font-size: 30px; 
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
+        #coinName {
+    font-size: 0.8em;
+    color: #a0a0a0;
+}
+
+      .current-price {
+    font-size: 1.8em;
+    font-weight: bold;
+    margin: 0;
+}
+
+.price-change {
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+        .current-price-group {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
         
-        .price-change {
-            font-size: 16px;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 8px;
-            transition: background 0.3s, color 0.3s;
-        }
+        
 
         .chart-metrics {
             display: flex;
@@ -114,12 +150,14 @@
         
         .chart-area {
             position: relative;
-            height: 300px; 
+            height: 310px;
             background: rgba(10, 15, 25, 0.4);
             border-radius: 16px;
-            padding: 10px;
+            padding: 29px;
             overflow: hidden;
-            margin-bottom: 10px; 
+            margin-bottom: 18px; 
+            
+            
         }
 
         #sparklineChart {
@@ -138,15 +176,27 @@
             z-index: 10;
         }
         
-        .timeframe-selector {
-            display: flex;
-            justify-content: center;
-            background: rgba(30, 40, 60, 0.7);
-            border-radius: 12px;
-            overflow: hidden;
-            width: fit-content;
-            margin: 0 auto;
-        }
+      .timeframe-selector {
+    /* 1. Макет: Включаем Flexbox для центрирования кнопок */
+    display: flex;
+    justify-content: center; /* Центрирует содержимое (кнопки) по горизонтали */
+    
+    /* 2. Визуальные стили: */
+    background: rgba(30, 40, 60, 0.7);
+    border-radius: 12px;
+    overflow: hidden; /* Полезно, если кнопки выходят за границы */
+
+    /* 3. Ширина и позиционирование: */
+    width: 50%; /* Занимаем всю доступную ширину (ключевое изменение) */
+    
+    /* margin-top: auto; - Если вы используете Flexbox на родителе, эта строка может помочь в выравнивании по низу. */
+    margin: 0 auto; /* Эта строка не нужна, так как width: 100%, но не мешает */
+    padding: 1px 0; /* Добавляем вертикальный отступ */
+    
+    /* 4. Z-index и предотвращение перекрытия: */
+    position: relative;
+    z-index: 5; /* Гарантируем, что этот блок выше графика */
+}
         
         .timeframe {
             padding: 8px 16px;
@@ -176,10 +226,12 @@
             opacity: 0;
             transition: opacity 0.1s ease;
             transform: translate(-50%, -100%); 
-            z-index: 20;
+            
             border: 1px solid rgba(80, 100, 150, 0.5);
             line-height: 1.5; 
         }
+
+        
         
         #hoverTooltip .price {
             font-weight: 700;
@@ -233,6 +285,100 @@
   border-radius: 4px;
 }
 
+.loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #a0a0a0;
+}
+
+/* --- Тултип --- */
+.tooltip {
+    position: absolute;
+    background: #333;
+    color: white;
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 0.8em;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+    transform: translate(-50%, calc(-100% - 10px));
+    z-index: 10;
+    text-align: center;
+}
+.tooltip .price { font-weight: bold; color: #00ff88; }
+.tooltip .time { color: #a0a0a0; }
+
+
+/* --- Таймфреймы --- */
+.timeframes-container {
+    display: flex;
+    justify-content: space-around;
+    padding: 5px 0;
+    margin-bottom: 10px;
+    background: #33364f;
+    border-radius: 8px;
+    position: relative; /* Добавьте, чтобы гарантировать, что он находится на своем уровне */
+    z-index: 5;         /* Установите z-index выше, чем у других элементов */
+    overflow: hidden;   /* Если overflow не нужен, уберите его */
+    padding: 5px 0;
+    margin-top: auto;
+}
+
+.timeframe {
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 0.85em;
+    color: #a0a0a0;
+    transition: color 0.2s;
+}
+
+.timeframe.active {
+    color: #00ff88;
+    font-weight: bold;
+}
+
+/* --- 24H High/Low --- */
+.summary-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+    color: #a0a0a0;
+}
+
+.summary-info p {
+    margin: 0;
+}
+
+.summary-info span {
+    color: #f0f0f0;
+    font-weight: 600;
+}
+
+/* *** MEDIA QUERY: Адаптация для очень маленьких экранов (телефоны) *** */
+@media (max-width: 480px) {
+    .crypto-widget-container {
+        padding: 8px 12px; /* На мобильном это нормально */
+        border-radius: 0; 
+        min-height: 100vh;
+    }
+    
+    .current-price {
+        font-size: 1.3em; /* Немного крупнее для лучшей видимости */
+    }
+    
+   
+    
+ 
+    
+    .timeframe {
+        font-size: 1em;
+        padding: 8px 12px;
+    }
+}
+
 
     </style>
 </head>
@@ -240,10 +386,12 @@
     <div class="sparkline-container">
         <div class="glow-effect glow-1"></div>
         <div class="glow-effect glow-2"></div>
+
+
         
         <div class="header">
             <div class="coin-selector-group">
-                <div class="title" id="coinName">BTCUSDT</div>
+                <div style="display:none" class="title" id="coinName">BTCUSDT</div>
                 <select id="coinSelect"></select>
             </div>
             <div class="price-info">
@@ -252,12 +400,17 @@
             </div>
         </div>
 
-        <div class="chart-metrics">
+         <div class="chart-metrics">
             <div class="metric-item">High (24h): <strong id="highPrice">--.--</strong></div>
             <div class="metric-item">Low (24h): <strong id="lowPrice">--.--</strong></div>
         </div>
+
+        
+
+       
         
         <div class="chart-area">
+            
             <div class="loading" id="loadingState">Loading chart data...</div>
             <canvas id="sparklineChart"></canvas>
             
@@ -265,13 +418,15 @@
 
             <div class="data-source">Data: Binance API</div>
         </div>
-
-        <div class="timeframe-selector">
+  <div class="timeframe-selector">
+            
             <div class="timeframe active" data-interval="1h" data-limit="24">24H</div>
             <div class="timeframe" data-interval="4h" data-limit="42">7D</div>
             <div class="timeframe" data-interval="1d" data-limit="30">1M</div>
             <div class="timeframe" data-interval="1w" data-limit="52">1Y</div>
         </div>
+      
+        
     </div>
 
     <script>
