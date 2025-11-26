@@ -581,6 +581,31 @@ body {
             elements.highPrice.textContent = formatPrice(high24h);
             elements.lowPrice.textContent = formatPrice(low24h);
         }
+
+       // --- Initialization Logic ---
+function getCoinFromPath() {
+    const path = window.location.pathname; // например: "/miniwidget/btcusdt"
+    const parts = path.split('/');
+    const coinSymbol = parts[parts.length - 1].toUpperCase(); // последняя часть пути
+    
+    if (SYMBOL_NAMES[coinSymbol]) {
+        return coinSymbol;
+    }
+    return null;
+}
+
+function initializeWidget() {
+    populateCoinSelect();
+    
+    // Пробуем получить монету из пути URL
+    const pathCoin = getCoinFromPath();
+    if (pathCoin) {
+        currentCoinId = pathCoin;
+        elements.coinSelect.value = currentCoinId;
+    }
+    
+    updateWidget(currentCoinId);
+}
         
         /**
          * Основная функция рисования графика. 
@@ -880,7 +905,7 @@ if (progress >= 1) {
 
 
         // --- Инициализация ---
-        document.addEventListener('DOMContentLoaded', populateCoinSelect);
+        document.addEventListener('DOMContentLoaded', initializeWidget);
     </script>
 </body>
 </html>
