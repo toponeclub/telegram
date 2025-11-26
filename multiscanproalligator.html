@@ -426,16 +426,7 @@
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="header">
-      <div class="logo" onclick="location.reload()">
-        <div class="logo-text">MultiScan Pro</div>
-        <div class="badge">🐊 EDITION</div>
-        <div class="connection-status" id="connectionStatus">
-          <div class="connection-dot connected"></div>
-          <span>LIVE</span>
-        </div>
-      </div>
+  
 
       <div class="tab-buttons" style="display: none">
         <button class="tab-btn active" data-tab="scanner">Scanner</button>
@@ -444,19 +435,7 @@
         <button class="tab-btn" data-tab="app4">Strategy Test</button>
       </div>
 
-      <div class="header-right">
-        <div class="controls">
-          <select id="intervalSelect" class="select">
-            <option value="1m" selected>1m</option>
-            <option value="5m">5m</option>
-            <option value="15m">15m</option>
-            <option value="1h">1h</option>
-            <option value="4h">4h</option>
-          </select>
-          <button id="helpBtn" class="help-btn">?</button>
-        </div>
-      </div>
-    </div>
+  
 
     <!-- SCANNER PANEL -->
     <div id="scannerPanel" class="main" style="display:flex;">
@@ -479,17 +458,33 @@
         <div class="overview">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
             <div class="small-muted" id="overviewStatus">0 active</div>
+            
           </div>
 
           <div class="filterbar" id="filterBar">
+            
             <button class="filter-btn active" data-filter="all">All</button>
             <button class="filter-btn" data-filter="long">Only Long</button>
             <button class="filter-btn" data-filter="short">Only Short</button>
             <button class="filter-btn" data-filter="active">Active</button>
+               <div style="flex:0.5"></div>
+             <div class="controls">
+          <select id="intervalSelect" class="select">
+            <option value="1m" selected>1m</option>
+            <option value="5m">5m</option>
+            <option value="15m">15m</option>
+            <option value="1h">1h</option>
+            <option value="4h">4h</option>
+          </select>
+          <button id="helpBtn" class="help-btn">?</button>
+        </div>
+      
             <div style="flex:1"></div>
+            
             <label class="small-muted" style="align-self:center;font-size:12px">Strength ≥</label>
             <input id="strengthThresh" type="number" value="60" min="0" max="100" style="width:60px;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface-light);color:var(--text)">
           </div>
+          
  <div class="resizer vertical"></div>
 
           <div id="watchlistContainer">
@@ -629,7 +624,16 @@
     </iframe>
   </div>
 </div>
-
+<div class="app">
+    <div class="header">
+      <div class="logo" onclick="location.reload()">
+        <div class="logo-text">MultiScan Pro</div>
+        <div class="badge">🐊 EDITION</div>
+        <div class="connection-status" id="connectionStatus">
+          <div class="connection-dot connected"></div>
+          <span>LIVE</span>
+        </div>
+      </div>
 
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 
@@ -1560,7 +1564,7 @@ const warRoomComms = new ScannerCommunicator('alligator');
 
 // Функция отправки сигналов в War Room
 function sendToWarRoom(symbol, signal, price, timeframe) {
-    if (signal.strength >= 73) {
+    if (signal.strength >= 91) {
         const signalData = {
             coin: symbol,
             direction: signal.action === 'BUY' ? 'LONG' :  'SHORT',
