@@ -3,480 +3,389 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="widgetTitle">Futuristic Crypto Sparkline Widget</title>
+    <title id="widgetTitle">AetherStream Core: Crypto Data</title>
     
     <style>
-        /* CSS и внешний вид (без изменений) */
+        /* --- AetherStream Core Variables (FROM 3-2) --- */
+        :root {
+            --color-bg-deep: #080c18; /* Глубокий, почти черный фон */
+            --color-bg-glass: rgba(18, 26, 45, 0.4); /* Полупрозрачный фон */
+            --color-border-neon: rgba(58, 134, 255, 0.4); /* Неоновая рамка */
+            --color-accent-neon: #3a86ff; /* Основной неоновый синий */
+            --color-text-main: #e0f0ff;
+            --color-text-dim: #7084a0;
+            --color-gain: #00ff88; /* Cyber Green */
+            --color-loss: #ff3366; /* Neon Pink */
+            --glow-gain: 0 0 10px #00ff88;
+            --glow-loss: 0 0 10px #ff3366;
+            --font-digital: 'Share Tech Mono', monospace;
+        }
 
+        /* --- Custom Font Import (Digital/Tech Look) --- */
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap');
 
-
+        /* --- Базовые стили и Reset (FROM 3-2) --- */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
-        
-/* Базовые стили */
-body {
-    background: #1e1e2d;
-    color: #f0f0f0;
-    font-family: sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-}
 
-/* --- Основной контейнер виджета --- */
-.crypto-widget-container {
-    width: 90%; /* Ширина на десктопе */
-    max-width: 400px; /* Максимальная ширина для десктопа */
-    /* *** ВАЖНО: Адаптация для мобильных *** */
-    width: 100%; /* Занимает всю ширину на маленьких экранах */
-    max-width: none; /* Убираем ограничение на max-width для мобильных */
-    
-    background: #27293d;
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    box-sizing: border-box;
-}
-        
-        .sparkline-container {
-            width: 100%;
-            max-width: 800px;
-            min-width: 300px;
-            height: 500px; 
-            background: linear-gradient(145deg, #131a2a, #0c111f);
-            border-radius: 24px;
+        body {
+            background: var(--color-bg-deep);
+            color: var(--color-text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden; 
+        }
+
+        /* --- Фоны с градиентами (FROM 3-2) --- */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50vh;
+            left: -50vw;
+            width: 200vw;
+            height: 200vh;
+            background: radial-gradient(circle at 10% 90%, rgba(58, 134, 255, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 90% 10%, rgba(131, 56, 236, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* --- Основной контейнер виджета (FROM 3-2) --- */
+        .aetherstream-core {
+            width: 90%;
+            max-width: 480px;
+            min-width: 320px;
+            
+            background: var(--color-bg-glass);
+            border-radius: 20px;
+            border: 1px solid var(--color-border-neon);
+            
+            /* Glassmorphism Effect */
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            
             box-shadow: 
-                0 10px 30px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05); 
+                0 0 30px rgba(58, 134, 255, 0.2), 
+                0 4px 60px rgba(0, 0, 0, 0.5); 
+                
             padding: 25px;
             position: relative;
             overflow: hidden;
-            border: 1px solid rgba(80, 100, 150, 0.2);
-            transition: all 0.3s ease;
-            
+            transition: transform 0.3s ease-in-out;
         }
         
-    /* --- Заголовок и Выбор монеты --- */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
+  /* .aetherstream-core:hover {
+       
+         transform: translateY(-5px);
+         box-shadow: 0 0 40px var(--color-accent-neon), 0 4px 60px rgba(0, 0, 0, 0.6);
+       
+      }*/
 
-#widgetTitle {
-    font-size: 1.2em;
-    margin: 0;
-    font-weight: 600;
-}
-
-        .coin-selector-group {
+        /* --- Шапка: Цена и Переключатель (FROM 3-2) --- */
+        .header-dynamic {
             display: flex;
-            align-items: center;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
         }
 
-        .title {
-            color: #e0e6f0;
-            font-size: 24px; 
+        .price-display {
+            line-height: 1;
+        }
+        
+        .current-price {
+            font-family: var(--font-digital);
+            font-size: 2.5em;
+            font-weight: 700;
+            color: var(--color-text-main);
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+            margin-bottom: 5px;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+
+        .price-change {
+            font-size: 0.9em;
             font-weight: 600;
-            letter-spacing: 0.5px;
-            margin-right: 15px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        /* --- Coin Selector (FROM 3-2) --- */
+        .coin-selector-container {
+            position: relative;
+            display: inline-block;
         }
         
         #coinSelect {
-           padding: 5px;
-    border-radius: 5px;
-    background: #33364f;
-    color: #f0f0f0;
-    border: 1px solid #444;
-            
-        }
-
-        #coinSelect:hover {
-            border-color: #506496;
-        }
-        
-        .price-info {
-           
-            margin-bottom: 15px;
-        }
-        
-        #coinName {
-    font-size: 0.8em;
-    color: #a0a0a0;
-}
-
-      .current-price {
-    font-size: 1.8em;
-    font-weight: bold;
-    margin: 0;
-}
-
-.price-change {
-    padding: 3px 6px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    font-weight: 600;
-}
-
-        .current-price-group {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-}
-        
-        
-
-        .chart-metrics {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 10px;
-            gap: 15px;
-            font-size: 14px;
-            color: #a0b0d0;
-        }
-
-        .metric-item strong {
-            color: #e0e6f0;
+            appearance: none; 
+            background: var(--color-bg-glass);
+            color: var(--color-text-main);
+            font-family: var(--font-digital);
+            font-size: 1.1em;
             font-weight: 600;
-            margin-left: 5px;
+            padding: 8px 30px 8px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--color-border-neon);
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
         }
         
+        #coinSelect:hover {
+            border-color: var(--color-accent-neon);
+            box-shadow: 0 0 15px rgba(58, 134, 255, 0.5);
+        }
+
+        .coin-selector-container::after {
+            content: '▼';
+            font-size: 0.7em;
+            color: var(--color-accent-neon);
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        /* --- Chart Area & Metrics (FROM 3-2) --- */
         .chart-area {
             position: relative;
-            height: 310px;
-            background: rgba(10, 15, 25, 0.4);
+            height: 320px; 
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 16px;
-            padding: 29px;
+            padding: 10px; 
             overflow: hidden;
-            margin-bottom: 18px; 
-            
-            
+            margin: 20px 0; 
+            border: 1px solid rgba(100, 150, 200, 0.1);
+            /* Убеждаемся, что touch-события обрабатываются внутри */
+            touch-action: none; 
         }
-
+        
         #sparklineChart {
             width: 100%;
             height: 100%;
             display: block; 
         }
-        
+
         .loading {
+            font-family: var(--font-digital);
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #a0b0d0;
-            font-size: 18px;
+            color: var(--color-accent-neon);
+            text-shadow: 0 0 8px var(--color-accent-neon);
+            font-size: 1.1em;
             z-index: 10;
         }
-        
-      .timeframe-selector {
-    /* 1. Макет: Включаем Flexbox для центрирования кнопок */
-    display: flex;
-    justify-content: center; /* Центрирует содержимое (кнопки) по горизонтали */
-    
-    /* 2. Визуальные стили: */
-    background: rgba(30, 40, 60, 0.7);
-    border-radius: 12px;
-    overflow: hidden; /* Полезно, если кнопки выходят за границы */
 
-    /* 3. Ширина и позиционирование: */
-    width: 50%; /* Занимаем всю доступную ширину (ключевое изменение) */
-    
-    /* margin-top: auto; - Если вы используете Flexbox на родителе, эта строка может помочь в выравнивании по низу. */
-    margin: 0 auto; /* Эта строка не нужна, так как width: 100%, но не мешает */
-    padding: 1px 0; /* Добавляем вертикальный отступ */
-    
-    /* 4. Z-index и предотвращение перекрытия: */
-    position: relative;
-    z-index: 5; /* Гарантируем, что этот блок выше графика */
-}
+        .chart-metrics {
+            display: flex;
+              
+            justify-content: space-between;
+            margin-top: 10px;
+            margin-bottom: 4.5px;
+            gap: 19px;
+            font-size: 13px;
+          
+            color: var(--color-text-dim);
+            text-transform: uppercase;
+        }
+
+        .metric-item strong {
+            color: var(--color-text-main);
+            font-weight: 700;
+            margin-left: 5px;
+            font-family: var(--font-digital);
+            text-shadow: 0 0 3px rgba(255, 255, 255, 0.2);
+        }
+        
+        /* --- Timeframe Selector (FROM 3-2) --- */
+        .timeframe-selector {
+            display: flex;
+            justify-content: space-between; 
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 3px;
+            width: 100%;
+            position: relative;
+            z-index: 5; 
+            border: 1px solid rgba(58, 134, 255, 0.2);
+        }
         
         .timeframe {
-            padding: 8px 16px;
-            color: #a0b0d0;
+            flex-grow: 1;
+            text-align: center;
+            padding: 8px 0;
+            color: var(--color-text-dim);
             cursor: pointer;
             font-size: 14px;
+            font-weight: 500;
             transition: all 0.3s ease;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .timeframe:hover {
+            color: var(--color-text-main);
         }
         
         .timeframe.active {
-            background: #3a86ff; 
-            color: #e0e6f0;
-            font-weight: 600;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+            background: var(--color-accent-neon);
+            color: var(--color-bg-deep); 
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(58, 134, 255, 0.6);
+            transform: scale(1.03);
         }
         
-        /* Стили для Hover Tooltip */
+        /* --- Tooltip (FROM 3-2) --- */
         #hoverTooltip {
             position: absolute;
-            background: rgba(40, 50, 70, 0.95);
-            color: #e0e6f0;
-            padding: 6px 10px;
-            border-radius: 6px;
+            background: rgba(18, 26, 45, 0.95);
+            color: var(--color-text-main);
+            padding: 10px 15px;
+            border-radius: 12px;
             font-size: 14px;
             pointer-events: none;
-            white-space: nowrap;
             opacity: 0;
-            transition: opacity 0.1s ease;
-            transform: translate(-50%, -100%); 
-            
-            border: 1px solid rgba(80, 100, 150, 0.5);
-            line-height: 1.5; 
+            transition: opacity 0.1s ease, transform 0.1s ease;
+            transform: translate(-50%, calc(-100% - 15px)); 
+            border: 1px solid var(--color-accent-neon);
+            box-shadow: 0 0 10px rgba(58, 134, 255, 0.5);
+            z-index: 100;
+            font-family: var(--font-digital);
         }
 
-        
-        
         #hoverTooltip .price {
             font-weight: 700;
-            color: #fff;
+            color: var(--color-gain); 
             margin-right: 5px;
+            text-shadow: var(--glow-gain);
         }
         
         #hoverTooltip .time {
-            color: #a0b0d0;
+            color: var(--color-text-dim);
             font-size: 12px;
-        }
-        
-        .glow-effect {
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            filter: blur(80px); 
-            opacity: 0.1; 
-            z-index: 0;
-        }
-        
-        .glow-1 {
-            background: #3a86ff;
-            top: -100px;
-            right: -100px;
-        }
-        
-        .glow-2 {
-            background: #8338ec;
-            bottom: -100px;
-            left: -100px;
+            margin-top: 3px;
+            display: block;
         }
 
         .data-source {
             position: absolute;
-            bottom: 10px;
-            left: 25px;
-            color: rgba(160, 180, 220, 0.6);
-            font-size: 12px;
+            bottom: 1px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(160, 180, 220, 0.4);
+            font-size: 11px;
+            text-transform: uppercase;
+            font-family: var(--font-digital);
+            letter-spacing: 1px;
         }
 
-        ::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #2f2f2f; /* Фон дорожки */
-}
-::-webkit-scrollbar-thumb {
-  background: #5a5a5a; /* Сама полоса */
-  border-radius: 4px;
-}
-
-.loading {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #a0a0a0;
-}
-
-/* --- Тултип --- */
-.tooltip {
-    position: absolute;
-    background: #333;
-    color: white;
-    padding: 5px 8px;
-    border-radius: 5px;
-    font-size: 0.8em;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.1s;
-    transform: translate(-50%, calc(-100% - 10px));
-    z-index: 10;
-    text-align: center;
-}
-.tooltip .price { font-weight: bold; color: #00ff88; }
-.tooltip .time { color: #a0a0a0; }
-
-
-/* --- Таймфреймы --- */
-.timeframes-container {
-    display: flex;
-    justify-content: space-around;
-    padding: 5px 0;
-    margin-bottom: 10px;
-    background: #33364f;
-    border-radius: 8px;
-    position: relative; /* Добавьте, чтобы гарантировать, что он находится на своем уровне */
-    z-index: 5;         /* Установите z-index выше, чем у других элементов */
-    overflow: hidden;   /* Если overflow не нужен, уберите его */
-    padding: 5px 0;
-    margin-top: auto;
-}
-
-.timeframe {
-    padding: 5px 10px;
-    cursor: pointer;
-    font-size: 0.85em;
-    color: #a0a0a0;
-    transition: color 0.2s;
-}
-
-.timeframe.active {
-    color: #00ff88;
-    font-weight: bold;
-}
-
-/* --- 24H High/Low --- */
-.summary-info {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.9em;
-    color: #a0a0a0;
-}
-
-.summary-info p {
-    margin: 0;
-}
-
-.summary-info span {
-    color: #f0f0f0;
-    font-weight: 600;
-}
-
-/* *** MEDIA QUERY: Адаптация для очень маленьких экранов (телефоны) *** */
-@media (max-width: 480px) {
-    .crypto-widget-container {
-        padding: 8px 12px; /* На мобильном это нормально */
-        border-radius: 0; 
-        min-height: 100vh;
-    }
-    
-    .current-price {
-        font-size: 1.3em; /* Немного крупнее для лучшей видимости */
-    }
-    
-   
-    
- 
-    
-    .timeframe {
-        font-size: 1em;
-        padding: 8px 12px;
-    }
-}
-
-
+        /* --- Media Queries (FROM 3-2) --- */
+        @media (max-width: 480px) {
+            .aetherstream-core {
+                width: 100%;
+                max-width: none;
+                padding: 15px; 
+                border-radius: 0; 
+                min-height: 100vh;
+                border-left: none;
+                border-right: none;
+            }
+            .current-price { font-size: 2em; }
+            .timeframe { font-size: 13px; padding: 6px 0; }
+            .chart-area { height: 250px; }
+        }
     </style>
 </head>
 <body>
-    <div class="sparkline-container">
-        <div class="glow-effect glow-1"></div>
-        <div class="glow-effect glow-2"></div>
-
-
+    <div class="aetherstream-core">
         
-        <div class="header">
-            <div class="coin-selector-group">
-                <div style="display:none" class="title" id="coinName">BTCUSDT</div>
-                <select id="coinSelect"></select>
-            </div>
-            <div class="price-info">
+        <div class="header-dynamic">
+            <div class="price-display">
                 <div class="current-price">Loading...</div>
                 <div class="price-change">-.-%</div>
             </div>
+            
+            <div class="coin-selector-container">
+                <select id="coinSelect" title="Select Cryptocurrency"></select>
+            </div>
         </div>
 
-         <div class="chart-metrics">
-            <div class="metric-item">High (24h): <strong id="highPrice">--.--</strong></div>
-            <div class="metric-item">Low (24h): <strong id="lowPrice">--.--</strong></div>
-        </div>
-
-        
-
-       
-        
         <div class="chart-area">
-            
-            <div class="loading" id="loadingState">Loading chart data...</div>
+            <div class="loading" id="loadingState">AetherStream Loading...</div>
             <canvas id="sparklineChart"></canvas>
-            
             <div id="hoverTooltip"></div>
-
-            <div class="data-source">Data: Binance API</div>
+            <div class="data-source">Source: Binance</div>
         </div>
-  <div class="timeframe-selector">
-            
+
+        <div class="chart-metrics">
+            <div class="metric-item">High: <strong id="highPrice">--.--</strong></div>
+            <div class="metric-item">Low: <strong id="lowPrice">--.--</strong></div>
+        </div>
+        
+        <div class="timeframe-selector">
             <div class="timeframe active" data-interval="1h" data-limit="24">24H</div>
             <div class="timeframe" data-interval="4h" data-limit="42">7D</div>
             <div class="timeframe" data-interval="1d" data-limit="30">1M</div>
             <div class="timeframe" data-interval="1w" data-limit="52">1Y</div>
         </div>
       
-        
     </div>
 
     <script>
         // --- Константы и глобальные переменные ---
         const API_BASE = 'https://api.binance.com/api/v3';
-        const currency = 'USDT';
         const DPI = window.devicePixelRatio || 1; 
+        const MARKET_DATA_REFRESH_INTERVAL = 15000; 
+        
+        const COLOR_GAIN_HEX = '#00ff88'; // Cyber Green
+        const COLOR_LOSS_HEX = '#ff3366'; // Neon Pink
         
         let currentCoinId = 'BTCUSDT'; 
         let priceData = []; 
         let rawPrices = []; 
         let animationFrameId = null; 
         let lastMouseX = -1;
+        let marketDataIntervalId = null;
         
-        // Переменные для анимации пульсации
         let pulseAnimationFrameId = null;
         let pulseTimeStart = null;
-        const PULSE_DURATION = 2000; // 2 секунды
+        const PULSE_DURATION = 1500; 
 
+
+        // --- Функция получения параметра из URL ---
+function getUrlParameter(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+        // Расширенный список символов 
         const SYMBOL_NAMES = {
-'BTCUSDT': 'BITCOIN',
-'ETHUSDT': 'ETHEREUM',
-'BNBUSDT': 'BNB',
-'XRPUSDT': 'RIPPLE',
-'ADAUSDT': 'CARDANO',
-'SOLUSDT': 'SOLANA',
-'DOGEUSDT': 'DOGECOIN',
-'MATICUSDT': 'POLYGON',
-'DOTUSDT': 'POLKADOT',
-'TRXUSDT': 'TRON',
-'LINKUSDT': 'CHAINLINK',
-'LTCUSDT': 'LITECOIN',
-'BCHUSDT': 'BITCOIN CASH',
-'AVAXUSDT': 'AVALANCHE',
-'UNIUSDT': 'UNISWAP',
-'PEPEUSDT': 'PEPE',
-'BONKUSDT': 'BONK',
-'INJUSDT': 'INJECTIVE',
-'APTUSDT': 'APTOS',
-'ATOMUSDT': 'COSMOS',
-'FILUSDT': 'FILECOIN',
-'ETCUSDT': 'ETHEREUM CLASSIC',
-'XLMUSDT': 'STELLAR',
-'ARBUSDT': 'ARBITRUM',
-'TONUSDT': 'TON',
+            'BTCUSDT': 'BITCOIN', 'ETHUSDT': 'ETHEREUM', 'BNBUSDT': 'BNB', 
+            'XRPUSDT': 'RIPPLE', 'ADAUSDT': 'CARDANO', 'SOLUSDT': 'SOLANA', 
+            'DOGEUSDT': 'DOGECOIN', 'MATICUSDT': 'POLYGON', 'DOTUSDT': 'POLKADOT', 
+            'TRXUSDT': 'TRON', 'LINKUSDT': 'CHAINLINK', 'LTCUSDT': 'LITECOIN', 
+            'BCHUSDT': 'BITCOIN CASH', 'AVAXUSDT': 'AVALANCHE', 'UNIUSDT': 'UNISWAP',
+            'PEPEUSDT': 'PEPE', 'BONKUSDT': 'BONK', 'INJUSDT': 'INJECTIVE', 
+            'APTUSDT': 'APTOS', 'ATOMUSDT': 'COSMOS', 'FILUSDT': 'FILECOIN', 
+            'ETCUSDT': 'ETHEREUM CLASSIC', 'XLMUSDT': 'STELLAR', 'ARBUSDT': 'ARBITRUM',
+            'TONUSDT': 'TON', 
         };
 
         const elements = {
             widgetTitle: document.getElementById('widgetTitle'),
-            coinName: document.getElementById('coinName'),
             currentPrice: document.querySelector('.current-price'),
             priceChange: document.querySelector('.price-change'),
             highPrice: document.getElementById('highPrice'),
@@ -486,7 +395,6 @@ body {
             coinSelect: document.getElementById('coinSelect'),
             canvas: document.getElementById('sparklineChart'),
             tooltip: document.getElementById('hoverTooltip'),
-            chartArea: document.querySelector('.chart-area')
         };
         const ctx = elements.canvas.getContext('2d');
         
@@ -494,22 +402,25 @@ body {
             interval: '1h', 
             limit: 24,      
             padding: { top: 10, right: 10, bottom: 10, left: 10 }, 
-            hoverLineColor: 'rgba(255, 255, 255, 0.4)'
+            hoverLineColor: 'rgba(58, 134, 255, 0.7)' 
         };
+        
+        let lastTrendPositive = false; 
 
         // --- Utility Functions ---
         function formatPrice(price) {
-            const numPrice = parseFloat(price);
+             const numPrice = parseFloat(price);
+            if (isNaN(numPrice)) return '--.--';
             return new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: 'USD', 
                 minimumFractionDigits: 2,
-                maximumFractionDigits: numPrice > 100 ? 2 : 8
-            }).format(numPrice);
+                maximumFractionDigits: numPrice > 100 ? 2 : (numPrice > 1 ? 4 : 8)
+            }).format(numPrice).replace('$', ''); 
         }
         
         function formatDate(timestamp) {
-            return new Date(timestamp).toLocaleTimeString('en-US', {
+            return new Date(timestamp).toLocaleString('en-US', {
                 hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric'
             });
         }
@@ -518,44 +429,64 @@ body {
             elements.loadingState.style.display = isLoading ? 'block' : 'none';
         }
 
-        // --- API Calls (Binance) ---
+        function stopPulseAnimation() {
+            if (pulseAnimationFrameId) {
+                window.cancelAnimationFrame(pulseAnimationFrameId);
+                pulseAnimationFrameId = null;
+                pulseTimeStart = null;
+            }
+        }
 
+        function startPulseAnimation() {
+            if (lastMouseX === -1 && !pulseAnimationFrameId && rawPrices.length > 0) {
+                 pulseTimeStart = null;
+                 pulseAnimationFrameId = window.requestAnimationFrame(animatePulse);
+            }
+        }
+        
         function getSupportedSymbols() {
-            return Object.keys(SYMBOL_NAMES).map(symbol => ({
+             return Object.keys(SYMBOL_NAMES).map(symbol => ({
                 id: symbol,
                 name: SYMBOL_NAMES[symbol]
             }));
         }
 
+        // --- API Calls (Binance) ---
         async function fetchChartData(symbol, interval, limit) {
-            setLoading(true);
-            try {
-                const url = `${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-                const response = await fetch(url);
-                const data = await response.json();
-                setLoading(false);
-                return data.map(kline => [parseInt(kline[0]), parseFloat(kline[4])]); 
-            } catch (error) {
-                console.error("Error fetching chart data from Binance:", error);
-                setLoading(false);
-                return [];
-            }
+             setLoading(true);
+             try {
+                 const url = `${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+                 const response = await fetch(url);
+                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                 const data = await response.json();
+                 setLoading(false);
+                 if (data.code) throw new Error(`Binance API error: ${data.msg}`);
+                 return data.map(kline => [parseInt(kline[0]), parseFloat(kline[4]), parseFloat(kline[1])]); 
+             } catch (error) {
+                 console.error("Error fetching chart data from Binance:", error);
+                 setLoading(false);
+                 return [];
+             }
         }
 
         async function fetchMarketData(symbol) {
-            try {
+             try {
                 const url = `${API_BASE}/ticker/24hr?symbol=${symbol}`;
                 const response = await fetch(url);
-                return await response.json();
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                 if (data.code) throw new Error(`Binance API error: ${data.msg}`);
+                return data;
             } catch (error) {
                 console.error("Error fetching market data from Binance:", error);
                 return null;
             }
         }
         
+        // --- Custom Update Logic (Glitch Effect & Neon Colors - FROM 3-2) ---
         function updatePriceDisplay(marketData) {
             if (!marketData || marketData.code) { 
-                elements.currentPrice.textContent = 'Data Error';
+                elements.currentPrice.textContent = 'N/A';
                 elements.priceChange.textContent = '--';
                 elements.highPrice.textContent = '--';
                 elements.lowPrice.textContent = '--';
@@ -567,53 +498,43 @@ body {
             const high24h = parseFloat(marketData.highPrice);
             const low24h = parseFloat(marketData.lowPrice);
             
-            elements.currentPrice.textContent = formatPrice(price);
-            
             const isUptrend = change24h >= 0;
-            const trendColor = isUptrend ? '#00ff88' : '#ff3366';
-            const bgColor = isUptrend ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255, 51, 102, 0.1)';
-            const changeText = `${isUptrend ? '+' : ''}${change24h ? change24h.toFixed(2) : '0.00'}% (24h)`;
+            const trendColor = isUptrend ? 'var(--color-gain)' : 'var(--color-loss)';
+            const bgColor = isUptrend ? 'rgba(0, 255, 136, 0.15)' : 'rgba(255, 51, 102, 0.15)';
+            const glow = isUptrend ? 'var(--glow-gain)' : 'var(--glow-loss)';
+            
+            const priceText = formatPrice(price);
+            
+            if (isUptrend !== lastTrendPositive) {
+                 // Animation here
+            }
+            
+            elements.currentPrice.textContent = priceText;
+            elements.currentPrice.style.color = trendColor;
+            elements.currentPrice.style.textShadow = glow;
+            
+            const changeText = `${isUptrend ? '▲ ' : '▼ '}${Math.abs(change24h).toFixed(2)}% (24H)`;
             
             elements.priceChange.textContent = changeText;
             elements.priceChange.style.color = trendColor;
             elements.priceChange.style.background = bgColor;
+            elements.priceChange.style.boxShadow = `0 0 5px ${trendColor}55`;
 
             elements.highPrice.textContent = formatPrice(high24h);
             elements.lowPrice.textContent = formatPrice(low24h);
+            
+            lastTrendPositive = isUptrend;
         }
-
-       // --- Initialization Logic ---
-function getCoinFromPath() {
-    const path = window.location.pathname; // например: "/miniwidget/btcusdt"
-    const parts = path.split('/');
-    const coinSymbol = parts[parts.length - 1].toUpperCase(); // последняя часть пути
-    
-    if (SYMBOL_NAMES[coinSymbol]) {
-        return coinSymbol;
-    }
-    return null;
-}
-
-function initializeWidget() {
-    populateCoinSelect();
-    
-    // Пробуем получить монету из пути URL
-    const pathCoin = getCoinFromPath();
-    if (pathCoin) {
-        currentCoinId = pathCoin;
-        elements.coinSelect.value = currentCoinId;
-    }
-    
-    updateWidget(currentCoinId);
-}
         
         /**
-         * Основная функция рисования графика. 
-         * Если hoverX > -1, возвращает данные для тултипа.
+         * Основная функция рисования графика.
          */
         function drawSparkline(hoverX = -1, pulseScale = 1) {
             const prices = rawPrices;
-            if (prices.length === 0) return;
+            if (prices.length < 2) {
+                ctx.clearRect(0, 0, elements.canvas.width, elements.canvas.height);
+                return;
+            }
 
             const rect = elements.canvas.parentElement.getBoundingClientRect();
             const cssWidth = rect.width;
@@ -626,97 +547,115 @@ function initializeWidget() {
             const width = cssWidth - config.padding.left - config.padding.right;
             const height = cssHeight - config.padding.top - config.padding.bottom;
             
-            const max = Math.max(...prices);
-            const min = Math.min(...prices);
-            const range = max - min;
+            const allValues = priceData.map(p => p[1]); // Только Close Prices
+            const max = Math.max(...allValues);
+            const min = Math.min(...allValues);
+            let range = max - min;
             
             const isUptrend = prices[prices.length - 1] >= prices[0];
-            const lineColor = isUptrend ? '#00ff88' : '#ff3366';
+            const lineColorHex = isUptrend ? COLOR_GAIN_HEX : COLOR_LOSS_HEX;
+
+            if (range <= 0.00000001) { 
+                range = 1; 
+            }
 
             ctx.clearRect(0, 0, cssWidth * DPI, cssHeight * DPI);
             
-            if (prices.length < 2 || range <= 0) {
-                ctx.fillStyle = '#a0b0d0';
-                ctx.fillText("Data not sufficient for graph.", 50, 50);
-                return;
-            }
-
             const xScale = width / (prices.length - 1);
             const yScale = height / range;
 
-            const getCanvasY = (price) => config.padding.top + height - (price - min) * yScale;
+            const offset = range === 1 ? (height / 2) - (max - min) * yScale / 2 : 0; 
+
+            const getCanvasY = (price) => config.padding.top + height - (price - min) * yScale + offset;
             const getCanvasX = (index) => config.padding.left + index * xScale;
             
-            // 1. Рисование области под линией (Area)
+            // --- 0. Рисование Horizon Line (Начальная цена периода) ---
+            const startingPrice = priceData[0][2]; 
+            const horizonY = getCanvasY(startingPrice);
+            
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]); 
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; 
+            ctx.lineWidth = 1;
+            ctx.moveTo(config.padding.left, horizonY);
+            ctx.lineTo(cssWidth - config.padding.right, horizonY);
+            ctx.stroke();
+            ctx.setLineDash([]); 
+            
+            // 1. Рисование области под линией (Area - Holographic Gradient)
             ctx.beginPath();
             ctx.moveTo(config.padding.left, cssHeight - config.padding.bottom);
-
             ctx.lineTo(getCanvasX(0), getCanvasY(prices[0]));
+
             for (let i = 0; i < prices.length - 1; i++) {
                 const p1 = { x: getCanvasX(i), y: getCanvasY(prices[i]) };
                 const p2 = { x: getCanvasX(i + 1), y: getCanvasY(prices[i + 1]) };
-                const cpX = (p1.x + p2.x) / 2;
-                const cpY = p1.y; 
-                ctx.quadraticCurveTo(cpX, cpY, p2.x, p2.y);
+                const cpX1 = p1.x + (p2.x - p1.x) / 2;
+                const cpX2 = p2.x - (p2.x - p1.x) / 2;
+                ctx.bezierCurveTo(cpX1, p1.y, cpX2, p2.y, p2.x, p2.y);
             }
             
             ctx.lineTo(config.padding.left + width, cssHeight - config.padding.bottom);
             ctx.closePath();
             
             const areaGradient = ctx.createLinearGradient(0, config.padding.top, 0, cssHeight - config.padding.bottom);
-            areaGradient.addColorStop(0, lineColor + '40');
-            areaGradient.addColorStop(1, lineColor + '05');
+            areaGradient.addColorStop(0, lineColorHex + '60'); 
+            areaGradient.addColorStop(0.5, lineColorHex + '15');
+            areaGradient.addColorStop(1, lineColorHex + '05');
             
             ctx.fillStyle = areaGradient;
             ctx.fill();
 
-            // 2. Рисование линии графика (Line)
+            // 2. Рисование линии графика (Line - Neon Glow)
             ctx.beginPath();
-            ctx.strokeStyle = lineColor;
-            ctx.lineWidth = 2;
-            ctx.shadowColor = lineColor; 
-            ctx.shadowBlur = 10;
+            ctx.strokeStyle = lineColorHex; 
+            ctx.lineWidth = 2.5; 
+            ctx.shadowColor = lineColorHex; 
+            ctx.shadowBlur = 12; 
             
             ctx.moveTo(getCanvasX(0), getCanvasY(prices[0]));
             for (let i = 0; i < prices.length - 1; i++) {
                 const p1 = { x: getCanvasX(i), y: getCanvasY(prices[i]) };
                 const p2 = { x: getCanvasX(i + 1), y: getCanvasY(prices[i + 1]) };
-                const cpX = (p1.x + p2.x) / 2;
-                const cpY = p1.y;
-                ctx.quadraticCurveTo(cpX, cpY, p2.x, p2.y);
+                const cpX1 = p1.x + (p2.x - p1.x) / 2;
+                const cpX2 = p2.x - (p2.x - p1.x) / 2;
+                ctx.bezierCurveTo(cpX1, p1.y, cpX2, p2.y, p2.x, p2.y);
             }
             ctx.stroke();
-            ctx.shadowBlur = 0;
+            ctx.shadowBlur = 0; 
 
             // 3. Координаты последней точки
             const lastX = getCanvasX(prices.length - 1);
             const lastY = getCanvasY(prices[prices.length - 1]);
             
-            // 4. Рисование анимированной пульсации
-            if (pulseScale > 1) {
+            // 4. Рисование анимированной пульсации (Pulse)
+            if (pulseScale > 1 && hoverX === -1) { // Пульсация только при отсутствии ховера
                  ctx.beginPath();
-                 const outerRadius = 12 * pulseScale;
-                 const opacity = 0.8 / pulseScale; // Уменьшаем прозрачность по мере расширения
+                 const outerRadius = 18 * pulseScale;
+                 const opacity = 0.8 / pulseScale; 
                  ctx.arc(lastX, lastY, outerRadius, 0, Math.PI * 2);
-                 ctx.strokeStyle = lineColor + Math.round(opacity * 255).toString(16).padStart(2, '0');
-                 ctx.lineWidth = 2 * (2 - pulseScale); // Толщина уменьшается
+                 ctx.strokeStyle = lineColorHex + Math.round(opacity * 255).toString(16).padStart(2, '0'); 
+                 ctx.lineWidth = 3 * (1.8 - pulseScale); 
                  ctx.stroke();
             }
             
-            // 5. Рисование внешнего кольца (стандартного)
-            ctx.beginPath();
-            ctx.arc(lastX, lastY, 1, 0, Math.PI * 2);
-            ctx.strokeStyle = lineColor + '80';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            
-            // 6. Рисование внутренней точки
+            // 5. Рисование точки (Core)
             ctx.beginPath();
             ctx.arc(lastX, lastY, 6, 0, Math.PI * 2);
-            ctx.fillStyle = lineColor;
+            ctx.fillStyle = lineColorHex; 
+            ctx.shadowColor = lineColorHex; 
+            ctx.shadowBlur = 10;
             ctx.fill();
             
-            // 7. Рисование курсора наведения (Hover)
+            // 6. Рисование внутреннего кольца (Dark Center)
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, 3, 0, Math.PI * 2);
+            ctx.fillStyle = 'var(--color-bg-deep)';
+            ctx.shadowBlur = 0;
+            ctx.fill();
+
+
+            // 7. Рисование курсора наведения (Hover Projection)
             if (hoverX > -1) {
                 const graphMouseX = hoverX - config.padding.left;
                 
@@ -730,7 +669,7 @@ function initializeWidget() {
                 const pointX = getCanvasX(index);
                 const pointY = getCanvasY(price);
                 
-                // Вертикальная линия
+                // Вертикальная линия (Neon)
                 ctx.beginPath();
                 ctx.strokeStyle = config.hoverLineColor;
                 ctx.lineWidth = 1;
@@ -738,78 +677,105 @@ function initializeWidget() {
                 ctx.lineTo(pointX, cssHeight - config.padding.bottom);
                 ctx.stroke();
                 
-                // Точка на линии
+                // Точка на линии (Highlight)
                 ctx.beginPath();
                 ctx.arc(pointX, pointY, 6, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.fillStyle = 'var(--color-accent-neon)';
+                ctx.shadowColor = 'var(--color-accent-neon)';
+                ctx.shadowBlur = 8;
                 ctx.fill();
+                ctx.shadowBlur = 0;
 
                 return { pointX, pointY, price, timestamp };
             }
         }
         
-        /**
-         * Цикл анимации пульсации.
-         */
+        // --- Animation & Hover Logic ---
         function animatePulse(timestamp) {
             if (!pulseTimeStart) {
                 pulseTimeStart = timestamp;
             }
 
+        
+
             const elapsed = timestamp - pulseTimeStart;
-let progress = elapsed / PULSE_DURATION; // Линейный прогресс (0 до 1)
- 
-if (progress >= 1) {
-    progress = 1; // Завершение анимации
-    drawSparkline(lastMouseX, 1.0); // Финальная отрисовка без пульсации
-    window.cancelAnimationFrame(pulseAnimationFrameId);
-    pulseAnimationFrameId = null;
-    return; // Останавливаем выполнение
-}
+            let progress = elapsed / PULSE_DURATION; 
             
-            // Используем синусоиду для плавного изменения масштаба от 1 до 2 и обратно
-            // В данном случае, нам нужно только расширение, так что 1.0 до 1.5
-            // Плавно пульсируем от 1.0 до 1.5 и сразу сбрасываем.
-            const minScale = 1.0;
-            const maxScale = 1.5; // Будет увеличиваться сильнее, прежде чем исчезнет
-            let pulseScale = 1;
-            
-            // Начинаем новый цикл пульсации каждые 2 секунды
-            if (elapsed < PULSE_DURATION) {
-                pulseScale = minScale + (maxScale - minScale) * Math.sin(progress * Math.PI); // Плавное расширение
+            if (progress >= 1.8) {
+                pulseTimeStart = null; 
+                pulseAnimationFrameId = window.requestAnimationFrame(animatePulse);
+                return;
             }
+
             
-            // Рисуем график с текущим масштабом пульсации
+            
+            const minScale = 0.5;
+            const maxScale = 1.5; 
+            let pulseScale = minScale + (maxScale - minScale) * Math.sin(progress * Math.PI);
+            
             drawSparkline(lastMouseX, pulseScale);
 
-            // Продолжаем цикл анимации
             pulseAnimationFrameId = window.requestAnimationFrame(animatePulse);
         }
 
-        // --- Hover (Tooltip) Logic ---
+        
+
         function handleMouseMove(e) {
-            lastMouseX = e.clientX;
+            const rect = elements.canvas.getBoundingClientRect();
+            lastMouseX = e.clientX - rect.left; 
+            
+            if (lastMouseX < 0 || lastMouseX > rect.width) {
+                 handleMouseOut();
+                 return;
+            }
+            
+            stopPulseAnimation();
+
             if (!animationFrameId) {
                 animationFrameId = window.requestAnimationFrame(processHover);
             }
         }
 
+        
+        
+        // --- 💡 ФИКС: Touch Handlers для мобильных ---
+        function handleTouchStart(e) {
+            e.preventDefault(); // Предотвращает скролл страницы
+            handleTouchMove(e);
+        }
+
+        function handleTouchMove(e) {
+            // Берем первое касание
+            const touch = e.touches[0];
+            const rect = elements.canvas.getBoundingClientRect();
+            // Расчет координаты X относительно Canvas
+            lastMouseX = touch.clientX - rect.left; 
+            
+            if (lastMouseX < 0 || lastMouseX > rect.width) {
+                 handleMouseOut();
+                 return;
+            }
+
+            stopPulseAnimation();
+
+            if (!animationFrameId) {
+                // Используем ту же логику рендеринга, что и для мыши
+                animationFrameId = window.requestAnimationFrame(processHover);
+            }
+        }
+        
+        function handleTouchEnd(e) {
+            // После завершения касания, убираем тултип и запускаем пульс
+            handleMouseOut();
+        }
+
+
         function processHover() {
             animationFrameId = null;
 
-            if (rawPrices.length === 0) return;
+            if (rawPrices.length === 0 || lastMouseX === -1) return;
             
-            const rect = elements.canvas.getBoundingClientRect();
-            const mouseX = lastMouseX - rect.left; 
-
-            // Сбрасываем пульсацию при наведении, чтобы курсор был виден лучше
-            if (pulseAnimationFrameId) {
-                window.cancelAnimationFrame(pulseAnimationFrameId);
-                pulseAnimationFrameId = null;
-                pulseTimeStart = null;
-            }
-
-            const hoverData = drawSparkline(mouseX, 1); // Рисуем без пульсации при наведении
+            const hoverData = drawSparkline(lastMouseX, 1); 
             
             if (hoverData) {
                 const { pointX, pointY, price, timestamp } = hoverData;
@@ -817,16 +783,22 @@ if (progress >= 1) {
                 const priceHtml = `<span class="price">${formatPrice(price)}</span>`;
                 const timeHtml = `<span class="time">${formatDate(timestamp)}</span>`;
                 
-                elements.tooltip.innerHTML = `${priceHtml} <br> ${timeHtml}`;
+                elements.tooltip.innerHTML = `${priceHtml} ${timeHtml}`;
                 
                 const canvasOffsetTop = elements.canvas.offsetTop;
                 const canvasOffsetLeft = elements.canvas.offsetLeft;
                 
+                // Располагаем тултип
                 elements.tooltip.style.left = `${pointX + canvasOffsetLeft}px`;
                 elements.tooltip.style.top = `${pointY + canvasOffsetTop}px`;
                 elements.tooltip.style.opacity = '1';
             } else {
                 handleMouseOut();
+            }
+            
+            // Продолжаем рендерить, пока lastMouseX активен (т.е. палец касается экрана)
+            if (lastMouseX !== -1) {
+                 animationFrameId = window.requestAnimationFrame(processHover);
             }
         }
 
@@ -838,42 +810,68 @@ if (progress >= 1) {
             elements.tooltip.style.opacity = '0';
             lastMouseX = -1;
             
-            // Возобновляем пульсацию при уходе курсора
-            if (!pulseAnimationFrameId) {
-                pulseAnimationFrameId = window.requestAnimationFrame(animatePulse);
-            }
+            drawSparkline(-1, 1);
+            startPulseAnimation();
         }
 
-        // --- Initialization Logic ---
-        async function updateWidget(symbol) {
-            elements.coinName.textContent = symbol;
-            elements.widgetTitle.textContent = `${SYMBOL_NAMES[symbol] || symbol} Crypto Widget`;
 
-            const marketData = await fetchMarketData(symbol);
-            updatePriceDisplay(marketData);
+        // --- Initialization Logic ---
+        async function updateMarketData() {
+             const marketData = await fetchMarketData(currentCoinId);
+             updatePriceDisplay(marketData);
+        }
+
+        async function updateWidget(symbol) {
+            stopPulseAnimation();
+            
+            currentCoinId = symbol;
+            
+            elements.widgetTitle.textContent = `AetherStream Core: ${SYMBOL_NAMES[symbol] || symbol}`;
+
+            await updateMarketData();
+            
+            if (marketDataIntervalId) {
+                 clearInterval(marketDataIntervalId);
+            }
+            marketDataIntervalId = setInterval(updateMarketData, MARKET_DATA_REFRESH_INTERVAL);
 
             priceData = await fetchChartData(symbol, config.interval, config.limit);
-            rawPrices = priceData.map(p => p[1]);
+            rawPrices = priceData.map(p => p[1]); 
 
-            // Запускаем пульсацию после загрузки данных
-            if (!pulseAnimationFrameId) {
-                 pulseAnimationFrameId = window.requestAnimationFrame(animatePulse);
-            }
+            drawSparkline();
+            startPulseAnimation();
         }
 
         function populateCoinSelect() {
-            const symbols = getSupportedSymbols();
-            elements.coinSelect.innerHTML = '';
+    const symbols = getSupportedSymbols();
+    elements.coinSelect.innerHTML = '';
+    
+    // === ДОБАВЛЕНО: Получаем символ из URL параметра 'symbol' ===
+    const urlSymbol = getUrlParameter('symbol');
+    if (urlSymbol && SYMBOL_NAMES[urlSymbol.toUpperCase()]) {
+        currentCoinId = urlSymbol.toUpperCase();
+    }
+    // === КОНЕЦ ДОБАВЛЕНИЯ ===
+    
+    symbols.forEach(coin => {
+        const option = document.createElement('option');
+        option.value = coin.id;
+        option.textContent = coin.id; 
+        elements.coinSelect.appendChild(option);
+    });
             
-            symbols.forEach(coin => {
-                const option = document.createElement('option');
-                option.value = coin.id;
-                option.textContent = `${coin.id} - ${coin.name}`;
-                elements.coinSelect.appendChild(option);
-            });
+            const defaultOption = elements.coinSelect.querySelector(`option[value="${currentCoinId}"]`);
+            if (defaultOption) {
+                 defaultOption.selected = true;
+            }
+            
+            elements.coinSelect.style.textShadow = SYMBOL_NAMES[currentCoinId].includes('COIN') || currentCoinId === 'BTCUSDT' ? '0 0 5px #ffcc00' : '0 0 5px var(--color-accent-neon)';
             
             updateWidget(currentCoinId);
         }
+
+
+
 
         // --- Event Listeners ---
         elements.timeframes.forEach(timeframe => {
@@ -884,28 +882,33 @@ if (progress >= 1) {
                 config.interval = this.getAttribute('data-interval');
                 config.limit = parseInt(this.getAttribute('data-limit'));
                 
-                updateWidget(currentCoinId);
+                updateWidget(currentCoinId); 
             });
         });
 
         elements.coinSelect.addEventListener('change', (e) => {
             currentCoinId = e.target.value;
-            updateWidget(currentCoinId);
+            e.target.style.textShadow = SYMBOL_NAMES[currentCoinId].includes('COIN') || currentCoinId === 'BTCUSDT' ? '0 0 5px #ffcc00' : '0 0 5px var(--color-accent-neon)';
+            updateWidget(currentCoinId); 
         });
 
+        // --- 💡 ФИКС: Mouse & Touch Events ---
         elements.canvas.addEventListener('mousemove', handleMouseMove);
         elements.canvas.addEventListener('mouseout', handleMouseOut);
+        elements.canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        elements.canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        elements.canvas.addEventListener('touchend', handleTouchEnd);
         
         window.addEventListener('resize', () => {
              clearTimeout(window.resizeTimer);
              window.resizeTimer = setTimeout(() => {
-                 drawSparkline(lastMouseX, pulseAnimationFrameId ? 1.0 : 1.0); // Просто перерисовываем
+                 drawSparkline(lastMouseX, pulseAnimationFrameId ? 1.0 : 1.0);
              }, 100);
         });
 
 
         // --- Инициализация ---
-        document.addEventListener('DOMContentLoaded', initializeWidget);
+        document.addEventListener('DOMContentLoaded', populateCoinSelect);
     </script>
 </body>
 </html>
