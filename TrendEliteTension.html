@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>EliteTrend Quantum Scanner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root{
+      --bg:#0a0a0a; --surface:#111; --surface-light:#1a1a1a; --border:#222;
+      --text:#e2e8f0; --muted:#94a3b8; --accent:#00d07a; --danger:#ef4444; --warn:#f59e0b;
+      --blue:#3b82f6; --purple:#8b5cf6; --fib-level:#8b5cf6;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif;overflow:auto; overflow-x: hidden;
+  scrollbar-color: #2a2a2a #0a0a0a;
+  scrollbar-width: thin;}
+    .app{display:flex;flex-direction:column;height:100vh}
+    .header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+    .logo{display:flex;gap:10px;align-items:center;cursor:pointer}
+    .logo-text{font-weight:700;font-size:16px}
+    .badge{background:var(--accent);color:#000;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px}
+    .controls{display:flex;gap:8px;align-items:center}
+    .select, .btn {background:var(--surface-light);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px}
+    .btn {cursor:pointer}
+    .main{display:flex;flex:1;min-height:0}
+    
+    /* 🔥 ПАНЕЛИ С РЕСАЙЗОМ */
+    .left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-right: 2px solid var(--border);
+      min-width: 300px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .right{
+      flex:0.45;
+      display:flex;
+      flex-direction:column;
+      background:var(--surface);
+      overflow:auto; 
+      min-width: 400px;
+      position: relative;
+      min-height: 450px;
+    }
+    
+    /* РЕСАЙЗЕРЫ */
+    .resizer {
+      position: absolute;
+      background: var(--border);
+      z-index: 100;
+      opacity: 0.35;
+    }
+    
+    .resizer.vertical {
+      width: 4px;
+      height: 100%;
+      right: -2px;
+      top: 0;
+      cursor: col-resize;
+      opacity: 0.35;
+    }
+    
+    .resizer.horizontal {
+      height: 4px;
+      width: 100%;
+      bottom: -2px;
+      left: 0;
+      cursor: row-resize;
+    }
+    
+    .resizer:hover {
+      background: var(--accent);
+    }
+    
+    .overview{
+      padding:12px;
+      border-bottom:1px solid var(--border);
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .watchlist-table{width:100%;border-collapse:collapse}
+    
+    /* ОБНОВЛЕННЫЕ СТРОКИ С ПРОГРЕССОМ */
+    .coin-row{
+      display:grid;
+      grid-template-columns: 1fr 84px 80px 70px;
+      gap:45px;
+      align-items:center;
+      padding:10px;
+      border-radius:8px;
+      margin-bottom:6px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      cursor:pointer;
+      border:1px solid transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .coin-row::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, transparent, rgba(0,208,122,0.1), transparent);
+      transition: width 0.3s ease;
+      z-index: 0;
+    }
+    
+    .coin-row.tension-high::before {
+      width: 100%;
+      background: linear-gradient(90deg, transparent, rgba(239,68,68,0.15), transparent);
+      animation: tensionPulse 2s infinite;
+    }
+    
+    .coin-row.tension-medium::before {  
+      width: 70%;
+      background: linear-gradient(90deg, transparent, rgba(245,158,11,0.1), transparent);
+    }
+    
+    .coin-row.tension-low::before {
+      width: 30%;
+      background: linear-gradient(90deg, transparent, rgba(59,130,246,0.1), transparent);
+    }
+    
+    @keyframes tensionPulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 0.3; }
+    }
+    
+    .coin-row:hover{
+      border-color:#2b2b2b;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent)
+    }
+    
+    .coin-symbol{font-weight:700; position: relative; z-index: 1;}
+    .coin-price{font-family: 'IBM Plex Mono', monospace;font-size:13px; position: relative; z-index: 1;}
+    .small-muted{color:var(--muted);font-size:12px; position: relative; z-index: 1;}
+    .arrow{font-size:18px;width:22px;text-align:center; position: relative; z-index: 1;}
+    .arrow.up{color:var(--accent)}
+    .arrow.down{color:var(--danger)}
+    .arrow.flat{color:var(--warn)}
+    .spark{ 
+      width:98px;
+      height:28px;
+      border-radius:4px;
+      display:block;
+      opacity: 0.85;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* ИНДИКАТОР НАПРЯЖЕНИЯ */
+    .tension-indicator { 
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--danger), var(--warn), var(--accent));
+      transition: width 0.5s ease;
+      z-index: 2;
+    }
+    
+    .tension-value { display: none !important;
+      position: absolute;
+      top: 2px;
+      right: 8px;
+      font-size: 10px;
+      font-weight: 600;
+      z-index: 1;
+    }
+    
+    .tension-low .tension-value { color: var(--blue); }
+    .tension-medium .tension-value { color: var(--warn); }
+    .tension-high .tension-value { color: var(--danger); }
+    
+    .filterbar{
+      display:flex;
+      gap:8px;
+      padding:4px 8px;
+      background:var(--surface-light);
+      border-radius:8px;
+      margin-bottom:10px
+    }
+    .filter-btn{
+      padding:6px 10px;
+      border-radius:6px;
+      background:transparent;
+      border:1px solid var(--border);
+      color:var(--muted);
+      cursor:pointer
+    }
+    .filter-btn.active{
+      border-color:var(--accent);
+      color:var(--text);
+      background:linear-gradient(180deg, rgba(0,208,122,0.06), transparent)
+    }
+   
+    .filter-btn[data-filter="short"].active {
+      border-color: #ff4b4b;
+      color: #fff;
+      background: linear-gradient(180deg, rgba(255,75,75,0.08), transparent);
+    }
+
+    /* ТРЕЙДИНГВЬЮ */
+    .tradingview-section {
+      flex: 0.70;
+      min-height: 150px;
+      max-height: 40vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .tradingview-container {
+      flex: 1;
+      background: var(--surface-light);
+      height: 100%;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tradingview-widget {
+      height: 100%;
+      width: 100%;
+    }
+
+    .fullscreen-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(17, 17, 17, 0.8);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 10;
+      backdrop-filter: blur(4px);
+    }
+
+    .fullscreen-btn:hover {
+      background: var(--surface-light);
+    }
+
+    /* ДЕТАЛЬНАЯ ПАНЕЛЬ */
+    .detail-panel{
+      padding:12px;
+      flex: 1;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .detail-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+
+    .detail-title{font-weight:700; font-size: 18px;}
+    .detail-subtitle{color: var(--muted); font-size: 12px;}
+
+    .signal-card{
+      padding:12px;
+      border-radius:8px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      border:1px solid var(--border);
+      cursor:pointer
+    }
+
+    .strength-bar{
+      height:8px;
+      background:var(--surface-light);
+      border-radius:6px;
+      overflow:hidden;
+      margin-top:8px
+    }
+    
+    .strength-fill{
+      height:100%;
+      background:linear-gradient(90deg,var(--danger),var(--warn),var(--accent));
+      transition:width .4s
+    }
+    
+    .log{
+      padding:10px;
+      height:160px;
+      overflow:auto;
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      border-radius:8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size:12px
+    }
+    
+    .mini-stats{
+      display:flex;
+      gap:8px;
+      margin-top:8px
+    }
+    
+    .stat{
+      flex:1;
+      padding:8px;
+      background:var(--surface-light);
+      border-radius:8px;
+      border:1px solid var(--border);
+      text-align:center
+    }
+    
+    .header-right{display:flex;gap:8px;align-items:center}
+    .help-btn{
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      padding:6px;
+      border-radius:8px;
+      cursor:pointer
+    }
+   
+    /* СТАТУС СОЕДИНЕНИЯ */
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-left: 12px;
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+    }
+
+    .connection-dot.connected {
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.4); }
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-left: 6px;
+      box-shadow: 0 0 6px var(--accent);
+      animation: pulse 1.5s infinite;
+    }
+
+    /* АНИМАЦИИ */
+    .signal-pulse {
+      animation: signalPulse 2s ease-in-out;
+    }
+
+    @keyframes signalPulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    /* ВКЛАДКИ */
+    .tab-buttons {
+      display: flex;
+      gap: 6px;
+      margin: 0 20px;
+    }
+
+    .tab-btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+      border-color: var(--accent);
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(0,208,122,0.06), transparent);
+    }
+
+    /* TELEGRAM */
+    .telegram-section {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .telegram-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .telegram-input {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .telegram-btn {
+      width: 100%;
+      padding: 8px;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .telegram-btn:hover {
+      background: var(--border);
+    }
+
+    .telegram-status {
+      margin-top: 8px;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .status-ok {
+      color: var(--accent);
+    }
+
+    .status-error {
+      color: var(--danger);
+    }
+
+    /* CHARTS PANEL */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 4px;
+      height: 100%;
+      padding: 6px;
+      background: var(--surface);
+    }
+
+    .chart-window {
+      background: var(--surface-light);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      min-height: 200px;
+    }
+
+    /* АДАПТИВНОСТЬ */
+    @media (max-width: 1000px) { 
+      .right { width: 360px } 
+      .left { min-width: 0 } 
+    }
+    
+    @media (max-width: 760px) { 
+      .main { flex-direction: column } 
+      .right { width: 100%; height: 380px } 
+      .left { border-right: none } 
+      .tradingview-section { display: none; }
+      .coin-row { gap: 20px; }
+    }
+
+    /* ELITE TREND SPECIFIC STYLES */
+    .strategy-info {
+      background: linear-gradient(135deg, rgba(0,208,122,0.1), transparent);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .risk-badge {
+      background: var(--warn);
+      color: #000;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    
+    .signal-quality {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    .quality-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    .quality-high { background: var(--accent); }
+    .quality-medium { background: var(--warn); }
+    .quality-low { background: var(--danger); }
+    
+    .fib-levels {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    
+    .fib-level {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: var(--surface-light);
+      font-size: 11px;
+    }
+    
+    .fib-level.active {
+      background: linear-gradient(90deg, rgba(139, 92, 246, 0.2), transparent);
+      border-left: 3px solid var(--fib-level);
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--muted);
+      border-radius: 50%;
+      border-top-color: var(--accent);
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .price-movement {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+    }
+    
+    .positive { color: var(--accent); }
+    .negative { color: var(--danger); }
+    
+    .trend-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    
+    .trend-bullish {
+      background: rgba(0, 208, 122, 0.1);
+      color: var(--accent);
+    }
+    
+    .trend-bearish {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger);
+    }
+    
+    .trend-neutral {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warn);
+    }
+
+    /* ПРОГНОЗИРУЮЩИЕ СИГНАЛЫ */
+    .prediction-horizon {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent);
+      border: 1px solid var(--blue);
+      border-radius: 8px;
+      padding: 8px;
+      margin: 8px 0;
+      font-size: 11px;
+    }
+    
+    .prediction-triggers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    
+    .trigger-badge {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+    }
+    
+    .prediction-move {
+      font-weight: 700;
+      color: var(--accent);
+    }
+    
+    .expiry-timer {
+      display: inline-block;
+      padding: 2px 6px;
+      background: var(--warn);
+      color: #000;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    
+    /* НОВЫЕ СТИЛИ ДЛЯ ВИЗУАЛИЗАЦИИ НАПРЯЖЕНИЯ */
+    .tension-meter {
+      width: 100%;
+      height: 20px;
+      background: var(--surface-light);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 8px 0;
+      position: relative;
+    }
+    
+    .tension-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #f59e0b, #ef4444);
+      transition: width 0.5s ease;
+      position: relative;
+    }
+    
+    .tension-markers {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 10px;
+    }
+    
+    .tension-marker {
+      width: 2px;
+      height: 100%;
+      background: rgba(255,255,255,0.1);
+    }
+    
+    .tension-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    
+    .tension-breakdown {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .tension-factor {
+      background: var(--surface-light);
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 10px;
+    }
+    
+    .factor-progress {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    
+    .factor-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+    
+    .momentum-gauge {
+      width: 100%;
+      height: 80px;
+      position: relative;
+      margin: 12px 0;
+    }
+    
+    .gauge-background {
+      width: 100%;
+      height: 100%;
+      border-radius: 40px 40px 0 0;
+      background: var(--surface-light);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .gauge-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: linear-gradient(0deg, #3b82f6, #00d07a, #f59e0b, #ef4444);
+      transition: height 0.5s ease;
+    }
+    
+    .gauge-needle {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 100%;
+      background: white;
+      z-index: 2;
+    }
+    
+    .gauge-labels {
+      position: absolute;
+      bottom: -20px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: var(--muted);
+    }
+    
+    .explosion-indicator {
+      text-align: center;
+      padding: 10px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(239,68,68,0.1), transparent);
+      border: 1px solid var(--danger);
+      margin: 8px 0;
+      animation: explosionPulse 2s infinite;
+    }
+    
+    @keyframes explosionPulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="logo" onclick="location.reload()">
+        <div class="logo-text">EliteTrend</div>
+        <div class="badge">TENSION</div>
+        <div class="connection-status" id="connectionStatus">
+          <div class="connection-dot connected"></div>
+          <span>REAL DATA</span>
+        </div>
+      </div>
+
+      <div class="tab-buttons" style="display: none">
+        <button class="tab-btn active" data-tab="scanner">Scanner</button>
+        <button class="tab-btn" data-tab="app3">CoinGlass</button>
+        <button class="tab-btn" data-tab="charts">4 Charts</button>
+        <button class="tab-btn" data-tab="app4">Strategy Test</button>
+      </div>
+
+      <div class="header-right">
+        <select id="timeframeSelect" class="select">
+          <option value="5m">5M</option>
+          <option value="15m" selected>15M</option>
+          <option value="1h">1H</option>
+          <option value="4h">4H</option>
+        </select>
+        <button id="helpBtn" class="help-btn">?</button>
+      </div>
+    </div>
+
+    <!-- SCANNER PANEL -->
+    <div id="scannerPanel" class="main" style="display:flex;">
+      <!-- LEFT PANEL -->
+      <div class="left">
+        <!-- TradingView Chart -->
+        <div class="tradingview-section">
+          <div class="tradingview-container">
+            <div id="tvContainer" class="tradingview-widget"></div>
+            <button id="btnFullscreen" class="fullscreen-btn" title="Fullscreen">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="resizer horizontal"></div>
+        </div>
+
+        <!-- Watchlist -->
+        <div class="overview">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div class="small-muted" id="overviewStatus">0 tension signals</div>
+            <div class="small-muted">Quantum Tension Analysis</div>
+          </div>
+
+          <div class="filterbar" id="filterBar">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="long">Only Long</button>
+            <button class="filter-btn" data-filter="short">Only Short</button>
+            <button class="filter-btn" data-filter="elite">High Tension</button>
+            <div style="flex:1"></div>
+            <label class="small-muted" style="align-self:center;font-size:12px">Tension ≥</label>
+            <input id="qualityThresh" type="number" value="70" min="0" max="100" style="width:60px;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface-light);color:var(--text)">
+          </div>
+
+          <div class="resizer vertical"></div>
+
+          <div id="watchlistContainer">
+            <!-- rows injected here -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- RIGHT PANEL -->
+      <div class="right">
+        <div class="detail-panel" id="detailPanel">
+          <div class="detail-header">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;gap:12px">
+              <div style="flex:1;min-width:200px">
+                <div class="detail-title" id="detailTitle" style="font-size:16px;line-height:1.2">Select a coin</div>
+                <div class="detail-subtitle" id="detailSubtitle" style="font-size:12px;line-height:1.2">Real Binance data • Tension analysis</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Signal Section -->
+          <div style="margin-bottom:16px">
+            <div style="text-align:center;padding:12px 0;margin-bottom:8px">
+              <div style="font-size:2.8rem;margin-bottom:6px" id="signalIcon">⚡</div>
+              <div style="font-size:0.9rem;color:var(--muted)" id="signalStatus">Awaiting tension buildup</div>
+            </div>
+
+            <!-- Индикатор напряжения -->
+            <div id="tensionMeterContainer" style="display:none">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <div class="small-muted">Tension Level</div>
+                <div id="tensionValue" style="font-weight:700;font-size:14px;color:var(--accent)">0%</div>
+              </div>
+              
+              <div class="tension-meter">
+                <div class="tension-fill" id="tensionFill" style="width:0%"></div>
+                <div class="tension-markers">
+                  <div class="tension-marker"></div>
+                  <div class="tension-marker"></div>
+                  <div class="tension-marker"></div>
+                  <div class="tension-marker"></div>
+                </div>
+              </div>
+              
+              <div class="tension-labels">
+                <span>Low</span>
+                <span>Medium</span>
+                <span>High</span>
+                <span>Explosion</span>
+              </div>
+              
+             
+              
+              <!-- Индикатор взрыва -->
+              <div class="explosion-indicator" id="explosionIndicator" style="display:none">
+                <div style="font-weight:700;color:var(--danger)">🚀 EXPLOSION IMMINENT!</div>
+                <div style="font-size:10px;margin-top:4px" id="explosionCountdown">Expected in: --</div>
+              </div>
+              
+              <!-- Детали напряжения -->
+              <div class="tension-breakdown" id="tensionBreakdown">
+                <!-- factors injected here -->
+              </div>
+            </div>
+
+                <!-- Прогнозирующая информация -->
+              <div class="prediction-horizon" id="predictionInfo" style="display:none";>
+                <div style="display:none;display:flex;justify-content:space-between;align-items:center">
+                  <div>
+                    <strong>QUANTUM PREDICTION:</strong> 
+                    <span id="predictionDirection">—</span> in 
+                    <span id="predictionTimeframe">—</span>
+                  </div>
+                  <div class="expiry-timer" id="predictionExpiry">15:00</div>
+                </div>
+                <div style="margin-top:4px">
+                  Expected move: <span class="prediction-move" id="expectedMove">—%</span>
+                </div>
+                <div class="prediction-triggers" id="predictionTriggers">
+                  <!-- Триггеры будут добавлены динамически -->
+                </div>
+              </div>
+
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <div>
+                  <div class="small-muted" style="margin-bottom:2px">Signal Type</div>
+                  <div style="font-weight:700;font-size:15px" id="detailSignalText">—</div>
+                </div>
+                <div style="text-align:right">
+                  <div class="small-muted" style="margin-bottom:2px">Confidence</div>
+                  <div id="detailStrength" style="font-weight:700;font-size:13px;color:var(--blue)">0%</div>
+                </div>
+              </div>
+
+                 <!-- Strategy Stats -->
+              <div style="margin:12px 0 8px 0;padding:10px;background:var(--surface-light);border-radius:8px;border:1px solid var(--border)">
+                <div class="small-muted" style="text-align:center;margin-bottom:6px">Quantum Metrics</div>
+                <div style="display:flex;justify-content:space-around;gap:8px">
+                  <div style="text-align:center;flex:1">
+                    <div class="small-muted" style="font-size:10px;margin-bottom:2px">Price</div>
+                    <div id="detailPrice" style="font-weight:700;font-size:13px;color:var(--accent)">$--</div>
+                  </div>
+                  <div style="text-align:center;flex:1;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+                    <div class="small-muted" style="font-size:10px;margin-bottom:2px">RSI</div>
+                    <div id="detailRsi" style="font-weight:700;font-size:13px;color:var(--warn)">--</div>
+                  </div>
+                  <div style="text-align:center;flex:1">
+                    <div class="small-muted" style="font-size:10px;margin-bottom:2px">Trend</div>
+                    <div id="detailTrend" style="font-weight:700;font-size:13px;">--</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+               <!-- Моментум индикатор -->
+              <div class="momentum-gauge">
+                <div class="gauge-background">
+                  <div class="gauge-fill" id="gaugeFill" style="height:0%"></div>
+                  <div class="gauge-needle"></div>
+                </div>
+                <div class="gauge-labels">
+                  <span>Bearish</span>
+                  <span>Neutral</span>
+                  <span>Bullish</span>
+                </div>
+              </div>
+              
+              <div class="signal-quality">
+                <div class="quality-dot quality-low" style="display:none";></div>
+                <div style="display:none;font-size:11px;color:var(--muted)">Quantum Tension Analysis</div>
+                <div style="display:none"; class="risk-badge">RISK: 1-2%</div>
+              </div>
+              
+              <div class="strength-bar" style="display:none;margin-bottom:8px">
+                <div class="strength-fill" id="detailStrengthFill" style="width:0%"></div>
+              </div>
+              
+              <div class="small-muted" style="display:none;line-height:1.3;min-height:32px" id="detailDesc">—</div>
+              
+          
+
+              <!-- Fibonacci Levels -->
+              <div class="fib-levels" id="fibLevels" style="display:none">
+                <div class="small-muted" style="text-align:center;margin:8px 0 4px 0">Fibonacci Retracement</div>
+                <div class="fib-level" id="fib236">
+                  <span>23.6%</span>
+                  <span class="price-movement" id="fib236Price">—</span>
+                </div>
+                <div class="fib-level" id="fib382">
+                  <span>38.2%</span>
+                  <span class="price-movement" id="fib382Price">—</span>
+                </div>
+                <div class="fib-level active" id="fib500">
+                  <span>50.0%</span>
+                  <span class="price-movement" id="fib500Price">—</span>
+                </div>
+                <div class="fib-level active" id="fib618">
+                  <span>61.8%</span>
+                  <span class="price-movement" id="fib618Price">—</span>
+                </div>
+                <div class="fib-level" id="fib786">
+                  <span>78.6%</span>
+                  <span class="price-movement" id="fib786Price">—</span>
+                </div>
+              </div>
+              
+           
+
+            <div class="small-muted" style="display:none">Quantum Analysis</div>
+            <div id="detailMiniLog" style="font-family:monospace;font-size:11px;max-height:70px;overflow:auto;background:var(--surface-light);padding:8px;border-radius:6px;border:1px solid var(--border);line-height:1.3"></div>
+          </div>
+        </div>
+
+        <!-- Telegram Settings -->
+        <div class="telegram-section">
+          <div style="font-weight:700;margin-bottom:8px">Tension Alerts</div>
+          <div class="telegram-inputs">
+            <input id="tgToken" class="telegram-input" placeholder="Bot Token">
+            <input id="tgChat" class="telegram-input" placeholder="Chat ID">
+          </div>
+          <button id="btnTgTestConn" class="telegram-btn">Test Connection</button>
+          <div id="tgStatus" class="telegram-status"></div>
+        </div>
+
+        <!-- Activity Log -->
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          <div style="font-weight:700">Quantum Activity Log</div>
+          <div class="log" id="mainLog"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Остальные панели оставляем как есть -->
+    <div id="app3Panel" class="main" style="display:none;flex-direction:column;height:100vh;">
+      <div style="height:100%;width:100%;border:none;background:var(--surface);">
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);">
+          CoinGlass Integration Ready
+        </div>
+      </div>
+    </div>
+
+    <div id="chartsPanel" class="main" style="display:none;">
+      <div class="charts-grid">
+        <div class="chart-window"><div id="tvChart1" style="height:100%;width:100%"></div></div>
+        <div class="chart-window"><div id="tvChart2" style="height:100%;width:100%"></div></div>
+        <div class="chart-window"><div id="tvChart3" style="height:100%;width:100%"></div></div>
+        <div class="chart-window"><div id="tvChart4" style="height:100%;width:100%"></div></div>
+      </div>
+    </div>
+
+    <div id="app4Panel" class="main" style="display:none;flex-direction:column;height:100vh;">
+      <div style="height:100%;width:100%;border:none;background:var(--surface);">
+        <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);">
+          Strategy Tester Integration Ready
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
+  <script>
+  // ========== ELITETREND TENSION SCANNER ==========
+  const WATCHLIST = [
+    "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT","SOLUSDT","DOGEUSDT",
+    "MATICUSDT","DOTUSDT","TRXUSDT","LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT",
+    "UNIUSDT","PEPEUSDT","BONKUSDT","INJUSDT","APTUSDT","ATOMUSDT","FILUSDT",
+    "ETCUSDT","XLMUSDT","ARBUSDT","TONUSDT"
+  ];
+
+  const TENSION_CONFIG = {
+    min_tension: 60,
+    explosion_threshold: 85,
+    required_factors: 3,
+    scan_interval: 45000,
+    tension_decay: 0.95
+  };
+
+  // ========== TENSION ENGINE ==========
+  class TensionEngine {
+    static calculateTension(candles) {
+      if (!candles || candles.length < 50) return null;
+      
+      const closes = candles.map(c => c.close);
+      const volumes = candles.map(c => c.vol);
+      const currentPrice = closes[closes.length - 1];
+      
+      // 1. ВОЛАТИЛЬНОСТЬ И СЖАТИЕ
+      const volatility = this.calculateVolatility(candles.slice(-20));
+      const compression = this.detectVolatilityCompression(candles);
+      
+      // 2. ОБЪЕМЫ И НАКОПЛЕНИЕ
+const volumeSpike = this.detectVolumeSpike(volumes);
+const volumeAccumulation = this.detectVolumeAccumulation(candles);
+
+// 3. МОМЕНТУМ ЦЕНЫ (НОВОЕ!)
+const priceMomentum = this.calculatePriceMomentum(candles);
+if (priceMomentum) {
+    tension += 15;
+    factors.push({ name: 'price_momentum', value: 15 });
+}
+
+         
+      // 3. МОМЕНТУМ И ТРЕНД
+      const rsi = this.calculateRSI(closes, 14);
+      const currentRSI = rsi[rsi.length - 1];
+      const momentum = this.calculateMomentum(closes);
+      const trendStrength = this.calculateTrendStrength(candles);
+      
+      
+      // 4. ДИВЕРГЕНЦИИ
+      const divergence = this.detectDivergence(candles, rsi);
+      
+      // 5. УРОВНИ ФИБОНАЧЧИ
+      const fibTension = this.calculateFibonacciTension(candles, currentPrice);
+      
+      // РАСЧЕТ ОБЩЕГО НАПРЯЖЕНИЯ
+      let tension = 0;
+      const factors = [];
+      
+      // Фактор 1: Сжатие волатильности (0-25 points)
+      if (compression) {
+        tension += 25;
+        factors.push({ name: 'volatility_compression', value: 20 });
+      }
+      
+      // Фактор 2: Спайк объемов (0-20 points)
+      if (volumeSpike) {
+        tension += 25;
+        factors.push({ name: 'volume_spike', value: 25 });
+      }
+      
+      // Фактор 3: Накопление объемов (0-15 points)
+      if (volumeAccumulation) {
+        tension += 12;
+        factors.push({ name: 'volume_accumulation', value: 17 });
+      }
+      
+      // Фактор 4: Дивергенция RSI (0-20 points)
+      if (divergence) {
+        tension += 18;
+        factors.push({ name: 'rsi_divergence', value: 25 });
+      }
+      
+      // Фактор 5: Уровни Фибоначчи (0-15 points)
+      tension += fibTension;
+      factors.push({ name: 'fibonacci_alignment', value: fibTension });
+      
+      // Фактор 6: Сила тренда (0-15 points)
+      tension += trendStrength;
+      factors.push({ name: 'trend_strength', value: trendStrength });
+      
+      // Корректировка на основе RSI
+      const rsiFactor = this.calculateRSIFactor(currentRSI);
+      tension *= rsiFactor;
+      
+      // Ограничение 0-100
+      tension = Math.max(0, Math.min(100, Math.round(tension)));
+      
+      return {
+        tension,
+        factors,
+        volatility,
+        compression,
+        volumeSpike,
+        volumeAccumulation,
+        divergence,
+        rsi: Math.round(currentRSI),
+        momentum,
+        trendStrength,
+        price: currentPrice
+      };
+    }
+    
+    static calculateVolatility(candles) {
+      const highs = candles.map(c => c.high);
+      const lows = candles.map(c => c.low);
+      return (Math.max(...highs) - Math.min(...lows)) / Math.min(...lows) * 100;
+    }
+
+    static calculatePriceMomentum(candles) {
+    if (candles.length < 10) return false;
+    const recent = candles.slice(-5);
+    const previous = candles.slice(-10, -5);
+    
+    const recentVolatility = this.calculateVolatility(recent);
+    const previousVolatility = this.calculateVolatility(previous);
+    
+    return recentVolatility > previousVolatility * 2;
+}
+    
+    static detectVolatilityCompression(candles, period = 20) {
+      if (candles.length < period * 2) return false;
+      
+      const recent = candles.slice(-period);
+      const previous = candles.slice(-period * 2, -period);
+      
+      const recentVolatility = this.calculateVolatility(recent);
+      const previousVolatility = this.calculateVolatility(previous);
+      
+      return recentVolatility < previousVolatility * 0.6;
+    }
+    
+    static detectVolumeSpike(volumes) {
+      if (volumes.length < 20) return false;
+      
+      const recent = volumes.slice(-5);
+      const average = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+      
+      return recent.some(vol => vol > average * 1.5);
+    }
+    
+    static detectVolumeAccumulation(candles) {
+      if (candles.length < 50) return false;
+      
+      const recent = candles.slice(-20);
+      const greenCandles = recent.filter(c => c.close > c.open).length;
+      const volumeThreshold = candles.slice(-50, -20).reduce((sum, c) => sum + c.vol, 0) / 30;
+      const highVolumeCandles = recent.filter(c => c.vol > volumeThreshold).length;
+      
+      return greenCandles >= 10 && highVolumeCandles >= 8;
+    }
+    
+    static calculateRSI(closes, period = 14) {
+      if (closes.length < period + 1) return Array(closes.length).fill(50);
+      
+      const gains = [];
+      const losses = [];
+      
+      for (let i = 1; i < closes.length; i++) {
+        const change = closes[i] - closes[i-1];
+        gains.push(change > 0 ? change : 0);
+        losses.push(change < 0 ? Math.abs(change) : 0);
+      }
+      
+      let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      
+      const rsi = new Array(period).fill(50);
+      
+      for (let i = period; i < gains.length; i++) {
+        avgGain = ((avgGain * (period - 1)) + gains[i]) / period;
+        avgLoss = ((avgLoss * (period - 1)) + losses[i]) / period;
+        
+        const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+        rsi.push(100 - (100 / (1 + rs)));
+      }
+      
+      return rsi;
+    }
+    
+    static calculateMomentum(closes) {
+      if (closes.length < 10) return 0;
+      
+        // Используем разные периоды для лучшего определения тренда
+    const veryShort = closes.slice(-3);  // 3 последние свечи
+    const short = closes.slice(-8);      // 8 последних свечей  
+    const medium = closes.slice(-15);    // 15 последних свечей
+    
+    const veryShortAvg = veryShort.reduce((a, b) => a + b, 0) / veryShort.length;
+    const shortAvg = short.reduce((a, b) => a + b, 0) / short.length;
+    const mediumAvg = medium.reduce((a, b) => a + b, 0) / medium.length;
+    
+    // Комбинируем несколько временных периодов
+    const veryShortMomentum = ((veryShortAvg - shortAvg) / shortAvg) * 100;
+    const shortMomentum = ((shortAvg - mediumAvg) / mediumAvg) * 100;
+    
+    // Взвешиваем короткий период сильнее
+    const combinedMomentum = (veryShortMomentum * 0.7) + (shortMomentum * 0.3);
+    
+    // Усиливаем и ограничиваем
+    return Math.max(-25, Math.min(25, combinedMomentum * 2));
+}
+    
+    static calculateTrendStrength(candles) {
+      const ema21 = this.calculateEMA(candles.map(c => c.close), 21);
+      const ema50 = this.calculateEMA(candles.map(c => c.close), 50);
+      
+      const currentEma21 = ema21[ema21.length - 1];
+      const currentEma50 = ema50[ema50.length - 1];
+      
+      if (!currentEma21 || !currentEma50) return 0;
+      
+      const trend = currentEma21 > currentEma50 ? 1 : -1;
+      const strength = Math.abs((currentEma21 - currentEma50) / currentEma50 * 100);
+      
+      return Math.min(15, strength * trend);
+    }
+    
+    static detectDivergence(candles, rsi) {
+      if (candles.length < 25 || rsi.length < 25) return false;
+      
+      const priceHighs = this.findExtremes(candles.map(c => c.high), 5);
+      const rsiHighs = this.findExtremes(rsi, 5);
+      
+      if (priceHighs.length < 2 || rsiHighs.length < 2) return false;
+      
+      const lastPriceHigh = priceHighs[priceHighs.length-1].value;
+      const prevPriceHigh = priceHighs[priceHighs.length-2].value;
+      const lastRSIHigh = rsiHighs[rsiHighs.length-1].value;
+      const prevRSIHigh = rsiHighs[rsiHighs.length-2].value;
+      
+      return (lastPriceHigh > prevPriceHigh && lastRSIHigh < prevRSIHigh) ||
+             (lastPriceHigh < prevPriceHigh && lastRSIHigh > prevRSIHigh);
+    }
+    
+    static calculateFibonacciTension(candles, currentPrice) {
+      const swingPoints = this.findSwingPoints(candles, 5, 5);
+      
+      if (swingPoints.highs.length < 2 || swingPoints.lows.length < 2) return 0;
+      
+      const latestHigh = swingPoints.highs[swingPoints.highs.length - 1];
+      const latestLow = swingPoints.lows[swingPoints.lows.length - 1];
+      
+      const fibLevels = this.calculateFibonacciLevels(latestHigh.price, latestLow.price);
+      
+      // Проверяем близость к ключевым уровням Фибо
+      for (const [level, price] of Object.entries(fibLevels)) {
+        const distance = Math.abs((currentPrice - price) / price * 100);
+        if (distance < 1) {
+          return ['0.382', '0.5', '0.618'].includes(level) ? 12 : 8;
+        }
+      }
+      
+      return 0;
+    }
+    
+    static calculateRSIFactor(rsi) {
+      // RSI между 30-70 дает максимальный фактор
+      if (rsi > 30 && rsi < 70) return 1.0;
+      if (rsi > 20 && rsi < 80) return 0.9;
+      return 0.6;
+    }
+    
+    static calculateEMA(data, period) {
+      const k = 2 / (period + 1);
+      const ema = [];
+      
+      let emaValue = data.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      
+      for (let i = 0; i < data.length; i++) {
+        if (i < period - 1) {
+          ema.push(null);
+        } else if (i === period - 1) {
+          ema.push(emaValue);
+        } else {
+          emaValue = (data[i] * k) + (emaValue * (1 - k));
+          ema.push(emaValue);
+        }
+      }
+      return ema;
+    }
+    
+    static findExtremes(data, lookback) {
+      const extremes = [];
+      for (let i = lookback; i < data.length - lookback; i++) {
+        let isExtreme = true;
+        const value = data[i];
+        
+        for (let j = i - lookback; j <= i + lookback; j++) {
+          if (j === i) continue;
+          if (value <= data[j]) {
+            isExtreme = false;
+            break;
+          }
+        }
+        
+        if (isExtreme) extremes.push({ index: i, value });
+      }
+      return extremes;
+    }
+    
+    static findSwingPoints(candles, leftBars = 5, rightBars = 5) {
+      const highs = [];
+      const lows = [];
+      
+      for (let i = leftBars; i < candles.length - rightBars; i++) {
+        let isHigh = true;
+        let isLow = true;
+        
+        for (let j = i - leftBars; j < i; j++) {
+          if (candles[i].high <= candles[j].high) isHigh = false;
+          if (candles[i].low >= candles[j].low) isLow = false;
+        }
+        
+        for (let j = i + 1; j <= i + rightBars; j++) {
+          if (candles[i].high <= candles[j].high) isHigh = false;
+          if (candles[i].low >= candles[j].low) isLow = false;
+        }
+        
+        if (isHigh) highs.push({ index: i, price: candles[i].high });
+        if (isLow) lows.push({ index: i, price: candles[i].low });
+      }
+      
+      return { highs, lows };
+    }
+    
+    static calculateFibonacciLevels(high, low) {
+      const difference = high - low;
+      return {
+        '0.236': high - (difference * 0.236),
+        '0.382': high - (difference * 0.382),
+        '0.5': high - (difference * 0.5),
+        '0.618': high - (difference * 0.618),
+        '0.786': high - (difference * 0.786)
+      };
+    }
+  }
+
+  // ========== APPLICATION CODE ==========
+  const DEFAULT_TIMEFRAME = '15m';
+  const CANDLES_LIMIT = 100;
+  
+  let timeframe = DEFAULT_TIMEFRAME;
+  let isRunning = true;
+  let watchers = {};
+  let updateTimer = null;
+  let tradingviewLoaded = false;
+  let currentDetail = null;
+  let tvWidget = null;
+  let lastTelegramSignal = {};
+  let tensionHistory = {};
+
+  function q(id){return document.getElementById(id)}
+  
+  function addMainLog(text, cls='info'){
+    const el = q('mainLog');
+    const node = document.createElement('div');
+    const t = new Date().toLocaleTimeString();
+    node.innerHTML = `<span style="color:var(--muted)">[${t}]</span> ${text}`;
+    el.appendChild(node);
+    el.scrollTop = el.scrollHeight;
+    while(el.children.length>200) el.removeChild(el.firstChild);
+  }
+
+ async function fetchCandles(symbol, tf, limit = CANDLES_LIMIT){
+  try {
+    const intervalMap = {
+      '5m': '5m', '15m': '15m', '1h': '1h', '4h': '4h'
+    };
+    
+    const binanceTF = intervalMap[tf] || '15m';
+    
+    // Используем альтернативный источник данных
+    const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${binanceTF}&limit=${limit}`, {
+      mode: 'no-cors' // Отключаем CORS проверку
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    return data.map(d => ({
+      ts: d[0], open: +d[1], high: +d[2], low: +d[3], close: +d[4], vol: +d[5]
+    }));
+    
+  } catch (error) {
+    console.error(`API error for ${symbol}:`, error);
+    
+    // Fallback: генерируем тестовые данные если API не работает
+    return generateMockData(symbol, limit);
+  }
+}
+
+// Функция для генерации тестовых данных
+function generateMockData(symbol, limit) {
+  const data = [];
+  let price = 100 + Math.random() * 1000; // Случайная начальная цена
+  
+  for (let i = 0; i < limit; i++) {
+    const change = (Math.random() - 0.5) * 10;
+    price += change;
+    
+    data.push({
+      ts: Date.now() - (limit - i) * 900000, // 15 минут интервал
+      open: price - change,
+      high: price + Math.random() * 5,
+      low: price - Math.random() * 5,
+      close: price,
+      vol: 1000 + Math.random() * 10000
+    });
+  }
+  
+  return data;
+}
+
+async function fetchWithRetry(symbol, tf, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await fetchCandles(symbol, tf);
+    } catch (error) {
+      if (attempt === retries) {
+        addMainLog(`❌ Failed to fetch ${symbol} after ${retries} attempts`);
+        throw error;
+      }
+      await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+    }
+  }
+}
+
+  function calculateTension(symbol, candles) {
+    return TensionEngine.calculateTension(candles);
+  }
+
+  function renderWatchlistUI(){
+    const container = q('watchlistContainer');
+    container.innerHTML = '';
+    WATCHLIST.forEach(sym=>{
+      const row = document.createElement('div');
+      row.className = 'coin-row';
+      row.id = `row-${sym}`;
+      row.innerHTML = `
+        <div>
+          <div class="coin-symbol">${sym.replace('USDT','/USDT')}</div>
+          <div class="small-muted" id="sub-${sym}">--</div>
+        </div>
+        <div class="coin-price" id="price-${sym}">—</div>
+        <canvas class="spark" id="spark-${sym}"></canvas>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="arrow" id="arrow-${sym}">—</div>
+          <div class="small-muted" id="str-${sym}">—</div>
+        </div>
+        <div class="tension-indicator" id="tension-bar-${sym}"></div>
+        <div class="tension-value" id="tension-value-${sym}">0%</div>
+      `;
+      row.addEventListener('click', (e)=>{
+        if(e.target.tagName.toLowerCase()!=='button') openDetailFor(sym);
+      });
+      container.appendChild(row);
+      
+      watchers[sym] = {
+        candles: [],
+        lastPrice: null,
+        tension: null,
+        sparkPoints: [],
+        loading: true
+      };
+      
+      tensionHistory[sym] = [];
+    });
+    updateOverviewStatus();
+  }
+
+  function updateOverviewStatus(){
+    const highTension = Object.values(watchers).filter(w=> 
+      w.tension && w.tension.tension >= +q('qualityThresh').value
+    ).length;
+    
+    const explosion = Object.values(watchers).filter(w=> 
+      w.tension && w.tension.tension >= TENSION_CONFIG.explosion_threshold
+    ).length;
+    
+    const filter = q('filterBar').querySelector('.filter-btn.active').dataset.filter;
+    q('overviewStatus').textContent = `${explosion} explosion • ${highTension} high tension • ${filter}`;
+  }
+
+  function drawSpark(sym){
+    const canvas = q(`spark-${sym}`);
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width = canvas.clientWidth * devicePixelRatio;
+    const H = canvas.height = canvas.clientHeight * devicePixelRatio;
+    ctx.clearRect(0,0,W,H);
+    
+    const pts = watchers[sym].sparkPoints || [];
+    if(pts.length<2){
+      ctx.strokeStyle = '#2b2b2b';
+      ctx.lineWidth = 2*devicePixelRatio;
+      ctx.beginPath(); 
+      ctx.moveTo(2*devicePixelRatio,H/2); 
+      ctx.lineTo(W-2*devicePixelRatio,H/2); 
+      ctx.stroke();
+      return;
+    }
+    
+    const min = Math.min(...pts), max = Math.max(...pts);
+    const len = pts.length;
+    ctx.lineWidth = 2*devicePixelRatio;
+    
+    const slope = pts[pts.length-1] - pts[0];
+    const styles = getComputedStyle(document.documentElement);
+    const accentColor = styles.getPropertyValue('--accent').trim();
+    const dangerColor = styles.getPropertyValue('--danger').trim(); 
+
+    ctx.strokeStyle = slope>0 ? accentColor : slope<0 ? dangerColor : '#f59e0b';
+    
+    ctx.beginPath();
+    for(let i=0;i<len;i++){
+      const x = (i/(len-1))*(W-4*devicePixelRatio) + 2*devicePixelRatio;
+      const y = max===min ? H/2 : H - ((pts[i]-min)/(max-min))*(H-4*devicePixelRatio) - 2*devicePixelRatio;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+
+  function renderRow(sym){
+    const s = watchers[sym];
+    if(!s) return;
+    
+    q(`price-${sym}`).textContent = s.lastPrice ? `$${(+s.lastPrice).toFixed(2)}` : '—';
+    
+    const tension = s.tension;
+    const arrowEl = q(`arrow-${sym}`);
+    const strEl = q(`str-${sym}`);
+    const subEl = q(`sub-${sym}`);
+    const rowEl = q(`row-${sym}`);
+    const tensionBar = q(`tension-bar-${sym}`);
+    const tensionValue = q(`tension-value-${sym}`);
+    
+    if (s.loading) {
+      arrowEl.className = 'arrow flat';
+      arrowEl.innerHTML = '<div class="loading-spinner"></div>';
+      strEl.textContent = '...';
+      subEl.textContent = 'Loading tension...';
+      tensionBar.style.width = '0%';
+      tensionValue.textContent = '0%';
+      rowEl.className = 'coin-row';
+    } else if (tension) {
+      const tensionLevel = tension.tension;
+      
+      // Обновляем индикатор напряжения
+      tensionBar.style.width = `${tensionLevel}%`;
+      tensionValue.textContent = `${tensionLevel}%`;
+      
+      // Обновляем классы напряжения для визуальных эффектов
+      rowEl.className = 'coin-row';
+      if (tensionLevel >= TENSION_CONFIG.explosion_threshold) {
+        rowEl.classList.add('tension-high');
+        arrowEl.className = 'arrow up';
+        arrowEl.textContent = '💥';
+        strEl.textContent = 'EXPLOSION!';
+        strEl.style.color = 'var(--danger)';
+        subEl.innerHTML = `<span class="trend-indicator trend-bullish">IMMINENT</span>`;
+      } else if (tensionLevel >= 70) {
+        rowEl.classList.add('tension-medium');
+        arrowEl.className = 'arrow up';
+        arrowEl.textContent = '⚡';
+        strEl.textContent = `${tensionLevel}%`;
+        strEl.style.color = 'var(--warn)';
+        subEl.innerHTML = `<span class="trend-indicator trend-neutral">HIGH TENSION</span>`;
+      } else if (tensionLevel >= 40) {
+        rowEl.classList.add('tension-low');
+        arrowEl.className = 'arrow flat';
+        arrowEl.textContent = '↗';
+        strEl.textContent = `${tensionLevel}%`;
+        strEl.style.color = 'var(--blue)';
+        subEl.textContent = 'building...';
+      } else {
+        arrowEl.className = 'arrow flat';
+        arrowEl.textContent = '→';
+        strEl.textContent = `${tensionLevel}%`;
+        strEl.style.color = 'var(--muted)';
+        subEl.textContent = 'low tension';
+      }
+    } else {
+      arrowEl.className = 'arrow flat';
+      arrowEl.textContent = '→';
+      strEl.textContent = '—';
+      strEl.style.color = 'var(--muted)';
+      subEl.textContent = 'no data';
+      tensionBar.style.width = '0%';
+      tensionValue.textContent = '0%';
+      rowEl.className = 'coin-row';
+    }
+    
+    drawSpark(sym);
+  }
+
+  function refreshWatchlist(){
+    const filter = document.querySelector('.filter-btn.active').dataset.filter;
+    WATCHLIST.forEach(sym=>{
+      const row = q(`row-${sym}`);
+      const s = watchers[sym];
+      const tension = s.tension;
+      
+      let show = true;
+      
+      if(filter === 'long') show = tension && tension.momentum > 0 && tension.tension >= +q('qualityThresh').value;
+      if(filter === 'short') show = tension && tension.momentum < 0 && tension.tension >= +q('qualityThresh').value;
+      if(filter === 'elite') show = tension && tension.tension >= +q('qualityThresh').value;
+      
+      row.style.display = show ? 'grid' : 'none';
+      renderRow(sym);
+    });
+    
+    updateOverviewStatus();
+  }
+
+  async function scanLoop(){
+    if(!isRunning) return;
+    
+    try {
+      const promises = WATCHLIST.map(async (sym) => {
+        try {
+          watchers[sym].loading = true;
+          renderRow(sym);
+          
+          const candles = await fetchWithRetry(sym, timeframe, CANDLES_LIMIT);
+          
+          if (!candles || candles.length === 0) {
+            throw new Error('No candles received');
+          }
+          
+          const lastCandle = candles[candles.length - 1];
+          watchers[sym].candles = candles;
+          watchers[sym].lastPrice = lastCandle.close;
+          watchers[sym].loading = false;
+          
+          // Рассчитываем напряжение
+          const tension = calculateTension(sym, candles);
+          watchers[sym].tension = tension;
+          
+          // Сохраняем историю напряжения
+          if (tension) {
+            tensionHistory[sym].push({
+              timestamp: Date.now(),
+              tension: tension.tension,
+              price: tension.price
+            });
+            
+            // Ограничиваем историю
+            if (tensionHistory[sym].length > 50) {
+              tensionHistory[sym].shift();
+            }
+          }
+          
+          const pts = candles.slice(-20).map(c => c.close);
+          watchers[sym].sparkPoints = pts;
+          
+          renderRow(sym);
+          
+          // Отправляем алерт при высоком напряжении
+          if (tension && tension.tension >= TENSION_CONFIG.explosion_threshold) {
+            const signalKey = `${sym}_explosion`;
+            const cooldownTime = 300000; // 5 минут
+            
+            if (!lastTelegramSignal[signalKey] || Date.now() - lastTelegramSignal[signalKey] > cooldownTime) {
+              sendTelegramSignal(sym, tension);
+              lastTelegramSignal[signalKey] = Date.now();
+            }
+          }
+          
+        } catch (err) {
+          console.error(`Error for ${sym}:`, err);
+          watchers[sym].loading = false;
+          renderRow(sym);
+        }
+      });
+
+      await Promise.all(promises);
+      refreshWatchlist();
+      
+      if (currentDetail && watchers[currentDetail]) {
+        const watcher = watchers[currentDetail];
+        const tension = watcher.tension;
+        updateDetailPanel(currentDetail, tension);
+      }
+      
+    } catch (error) {
+      console.error('Scan error:', error);
+      addMainLog(`❌ Scan failed: ${error.message}`);
+    }
+    
+    if (isRunning) {
+      updateTimer = setTimeout(scanLoop, TENSION_CONFIG.scan_interval);
+    }
+  }
+
+  function updateDetailPanel(sym, tension) {
+    const watcher = watchers[sym];
+    
+    q('detailPrice').textContent = watcher.lastPrice ? `$${watcher.lastPrice.toFixed(2)}` : '--';
+    q('tensionMeterContainer').style.display = tension ? 'block' : 'none';
+    
+    if (tension) {
+      // Обновляем основной индикатор напряжения
+      const tensionLevel = tension.tension;
+      q('tensionValue').textContent = `${tensionLevel}%`;
+      q('tensionFill').style.width = `${tensionLevel}%`;
+      q('tensionValue').style.color = 
+        tensionLevel >= 85 ? 'var(--danger)' : 
+        tensionLevel >= 70 ? 'var(--warn)' : 'var(--accent)';
+      
+      // Обновляем моментум индикатор
+      const momentum = Math.max(0, Math.min(100, 50 + (tension.momentum * 2)));
+      q('gaugeFill').style.height = `${momentum}%`;
+      
+      // Обновляем индикатор взрыва
+      if (tensionLevel >= TENSION_CONFIG.explosion_threshold) {
+        q('explosionIndicator').style.display = 'block';
+        const timeToExplosion = Math.max(1, Math.round((100 - tensionLevel) / 5));
+        q('explosionCountdown').textContent = `Expected in: ${timeToExplosion}min`;
+      } else {
+        q('explosionIndicator').style.display = 'none';
+      }
+
+      // Обновляем моментум индикатор - ФИКСИМ ЭТОТ БЛОК!
+if (tension && tension.momentum !== undefined) {
+    const momentumValue = tension.momentum;
+    
+    // Преобразуем момент в проценты для гауге (от 0% до 100%)
+    const gaugePercentage = Math.max(0, Math.min(100, 50 + (momentumValue * 2)));
+    q('gaugeFill').style.height = `${gaugePercentage}%`;
+    
+    // Обновляем текстовое направление
+    let trendText, trendClass;
+    if (momentumValue > 3) {
+        trendText = 'BULLISH';
+        trendClass = 'trend-bullish';
+    } else if (momentumValue < -3) {
+        trendText = 'BEARISH';
+        trendClass = 'trend-bearish';
+    } else {
+        trendText = 'NEUTRAL';
+        trendClass = 'trend-neutral';
+    }
+    
+    q('detailTrend').textContent = trendText;
+    q('detailTrend').className = `trend-indicator ${trendClass}`;
+    
+    // Также обновляем индикатор направления если он есть
+    if (q('directionIndicator')) {
+        const directionEl = q('directionIndicator');
+        if (momentumValue > 3) {
+            directionEl.textContent = '⬆️ BULLISH';
+            directionEl.style.color = 'var(--accent)';
+        } else if (momentumValue < -3) {
+            directionEl.textContent = '⬇️ BEARISH';
+            directionEl.style.color = 'var(--danger)';
+        } else {
+            directionEl.textContent = '➡️ NEUTRAL';
+            directionEl.style.color = 'var(--warn)';
+        }
+    }
+}
+      
+      // Обновляем разбивку факторов
+      const breakdownContainer = q('tensionBreakdown');
+      breakdownContainer.innerHTML = '';
+      
+      tension.factors.forEach(factor => {
+        const factorEl = document.createElement('div');
+        factorEl.className = 'tension-factor';
+        factorEl.innerHTML = `
+          <div style="display:flex;justify-content:space-between">
+            <span>${factor.name}</span>
+            <span>${factor.value}%</span>
+          </div>
+          <div class="factor-progress">
+            <div class="factor-fill" style="width: ${factor.value}%"></div>
+          </div>
+        `;
+        breakdownContainer.appendChild(factorEl);
+      });
+      
+      q('detailRsi').textContent = tension.rsi;
+      
+      const trendEl = q('detailTrend');
+      const trendValue = tension.momentum > 2 ? 'BULLISH' : tension.momentum < -2 ? 'BEARISH' : 'NEUTRAL';
+      trendEl.textContent = trendValue;
+      trendEl.className = `trend-indicator trend-${trendValue.toLowerCase()}`;
+      
+      q('detailStrength').textContent = `${Math.round(tensionLevel)}%`;
+      q('detailStrengthFill').style.width = `${tensionLevel}%`;
+      
+      // Определяем тип сигнала на основе напряжения
+      let signalType = 'MONITORING';
+      if (tensionLevel >= TENSION_CONFIG.explosion_threshold) {
+        signalType = 'EXPLOSION IMMINENT';
+        q('detailSignalText').style.color = 'var(--danger)';
+      } else if (tensionLevel >= 70) {
+        signalType = 'HIGH TENSION';
+        q('detailSignalText').style.color = 'var(--warn)';
+      } else {
+        signalType = 'BUILDING TENSION';
+        q('detailSignalText').style.color = 'var(--blue)';
+      }
+      
+      q('detailSignalText').textContent = signalType;
+      
+      q('detailDesc').textContent = 
+        `Tension Level: ${tensionLevel}% | RSI: ${tension.rsi} | Momentum: ${tension.momentum.toFixed(2)}%`;
+      
+      q('detailMiniLog').innerHTML = `
+        <div>VOLATILITY: ${tension.volatility.toFixed(2)}% | COMPRESSION: ${tension.compression ? 'YES' : 'NO'}</div>
+        <div>VOLUME SPIKE: ${tension.volumeSpike ? 'YES' : 'NO'} | ACCUMULATION: ${tension.volumeAccumulation ? 'YES' : 'NO'}</div>
+        <div>DIVERGENCE: ${tension.divergence ? 'DETECTED' : 'NONE'} | TREND: ${trendValue}</div>
+        <div>ACTIVE FACTORS: ${tension.factors.filter(f => f.value > 5).length}/${tension.factors.length}</div>
+      `;
+      
+      // Обновляем иконку и статус
+      updateSignalIcon(sym, tension);
+      
+    } else {
+      q('detailRsi').textContent = '--';
+      q('detailTrend').textContent = '--';
+      q('detailSignalText').textContent = '—';
+      q('detailStrength').textContent = '0%';
+      q('detailStrengthFill').style.width = '0%';
+      q('detailDesc').textContent = 'No tension data available';
+      q('detailMiniLog').innerHTML = `<div>${new Date().toLocaleTimeString()} • Analyzing ${sym}</div>`;
+      updateSignalIcon(sym, null);
+    }
+  }
+
+  function updateSignalIcon(sym, tension) {
+    const icon = q('signalIcon');
+    const status = q('signalStatus');
+    
+    if (!tension) {
+      icon.textContent = '⚡';
+      icon.style.color = 'var(--muted)';
+      status.textContent = 'Select a coin';
+      return;
+    }
+
+    const tensionLevel = tension.tension;
+
+    if (tensionLevel >= TENSION_CONFIG.explosion_threshold) {
+      icon.textContent = '💥';
+      icon.style.color = 'var(--danger)';
+      status.textContent = `EXPLOSION IMMINENT • ${tensionLevel}%`;
+      status.style.color = 'var(--danger)';
+    } else if (tensionLevel >= 70) {
+      icon.textContent = '⚡';
+      icon.style.color = 'var(--warn)';
+      status.textContent = `HIGH TENSION • ${tensionLevel}%`;
+      status.style.color = 'var(--warn)';
+    } else if (tensionLevel >= 40) {
+      icon.textContent = '↗';
+      icon.style.color = 'var(--blue)';
+      status.textContent = `BUILDING TENSION • ${tensionLevel}%`;
+      status.style.color = 'var(--blue)';
+    } else {
+      icon.textContent = '⚡';
+      icon.style.color = 'var(--muted)';
+      status.textContent = `LOW TENSION • ${tensionLevel}%`;
+      status.style.color = 'var(--muted)';
+    }
+  }
+
+  function openDetailFor(sym){
+    currentDetail = sym;
+    const watcher = watchers[sym];
+    const tension = watcher?.tension;
+    
+    updateSignalIcon(sym, tension);
+    
+    q('detailTitle').textContent = sym.replace('USDT','/USDT');
+    q('detailSubtitle').textContent = `Timeframe: ${timeframe} • Tension Analysis`;
+    q('detailPrice').textContent = watcher?.lastPrice ? `$${(+watcher.lastPrice).toFixed(2)}` : '--';
+    
+    updateDetailPanel(sym, tension);
+    loadTradingViewChart(sym);
+  }
+
+  function loadTradingViewChart(symbol) {
+    if (!tradingviewLoaded) {
+      tradingviewLoaded = true;
+    }
+    initTradingViewWidget(symbol);
+  }
+
+  function initTradingViewWidget(symbol) {
+    try {
+      if (tvWidget) {
+        try { tvWidget.remove(); } catch(e) {}
+      }
+      
+      const intervalMap = {
+        '5m': '5', '15m': '15', '1h': '60', '4h': '240'
+      };
+      
+      const tvInterval = intervalMap[timeframe] || '15';
+      
+      tvWidget = new TradingView.widget({
+        autosize: true,
+        symbol: `BINANCE:${symbol}`,
+        interval: tvInterval,
+        timezone: 'Etc/UTC',
+        style: 1,
+        theme: 'dark',
+        container_id: 'tvContainer',
+        locale: 'en',
+        toolbar_bg: '#111111',
+        enable_publishing: false,
+        allow_symbol_change: false,
+        hide_side_toolbar: false
+      });
+      
+    } catch(e) {
+      q('tvContainer').innerHTML = '<div style="color:var(--muted); padding:20px; text-align:center">Chart loading...</div>';
+    }
+  }
+
+  async function sendTelegramSignal(symbol, tension) {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) return;
+
+    const message = `💥 TENSION ALERT\n` +
+                   `⚡ ${symbol} EXPLOSION\n` +
+                   `📊 Tension Level: ${tension.tension}%\n` +
+                   `📈 Price: $${tension.price.toFixed(2)}\n` +
+                   `⚡ RSI: ${tension.rsi}\n` +
+                   `🎯 Active Factors: ${tension.factors.filter(f => f.value > 5).length}\n`;
+                   
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+      
+      const data = await response.json();
+      if (data.ok) {
+        addMainLog(`📤 Tension alert sent for ${symbol} (${tension.tension}%)`);
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Tension alert sent</span>';
+      } else {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Telegram error</span>';
+      }
+    } catch (error) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Network error</span>';
+    }
+  }
+
+  async function testTelegramConnection() {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">Enter credentials</span>';
+      return;
+    }
+    
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const data = await response.json();
+      
+      if (data.ok) {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Connected to Telegram</span>';
+      } else {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-error">Invalid token</span>';
+      }
+    } catch (error) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Connection failed</span>';
+    }
+  }
+
+  function initResizeHandlers() {
+    const leftPanel = document.querySelector('.left');
+    const rightPanel = document.querySelector('.right');
+    const tradingViewSection = document.querySelector('.tradingview-section');
+    const overviewSection = document.querySelector('.overview');
+    
+    const verticalResizer = document.querySelector('.resizer.vertical');
+    const horizontalResizer = document.querySelector('.resizer.horizontal');
+    
+    let isVerticalResizing = false;
+    let isHorizontalResizing = false;
+    
+    verticalResizer.addEventListener('mousedown', function(e) {
+      isVerticalResizing = true;
+      document.addEventListener('mousemove', handleVerticalResize);
+      document.addEventListener('mouseup', stopVerticalResize);
+      e.preventDefault();
+    });
+    
+    function handleVerticalResize(e) {
+      if (!isVerticalResizing) return;
+      
+      const containerRect = document.querySelector('.main').getBoundingClientRect();
+      const leftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      
+      if (leftWidth > 20 && leftWidth < 80) {
+        leftPanel.style.flex = `0 0 ${leftWidth}%`;
+        rightPanel.style.flex = `0 0 ${100 - leftWidth}%`;
+      }
+    }
+    
+    function stopVerticalResize() {
+      isVerticalResizing = false;
+      document.removeEventListener('mousemove', handleVerticalResize);
+      document.removeEventListener('mouseup', stopVerticalResize);
+    }
+    
+    horizontalResizer.addEventListener('mousedown', function(e) {
+      isHorizontalResizing = true;
+      document.addEventListener('mousemove', handleHorizontalResize);
+      document.addEventListener('mouseup', stopHorizontalResize);
+      e.preventDefault();
+    });
+    
+    function handleHorizontalResize(e) {
+      if (!isHorizontalResizing) return;
+      
+      const leftRect = leftPanel.getBoundingClientRect();
+      const tvHeight = ((e.clientY - leftRect.top) / leftRect.height) * 100;
+      
+      if (tvHeight > 10 && tvHeight < 50) {
+        tradingViewSection.style.flex = `0 0 ${tvHeight}%`;
+        overviewSection.style.flex = `0 0 ${100 - tvHeight}%`;
+      }
+    }
+    
+    function stopHorizontalResize() {
+      isHorizontalResizing = false;
+      document.removeEventListener('mousemove', handleHorizontalResize);
+      document.removeEventListener('mouseup', stopHorizontalResize);
+    }
+  }
+
+  // ИНИЦИАЛИЗАЦИЯ
+  document.addEventListener('DOMContentLoaded', ()=>{
+    renderWatchlistUI();
+    initResizeHandlers();
+    
+    document.querySelectorAll('.filter-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        refreshWatchlist();
+      });
+    });
+    
+    q('timeframeSelect').addEventListener('change', function() {
+      timeframe = this.value;
+      addMainLog(`🔄 Switching to ${timeframe} timeframe`);
+      if (currentDetail) {
+        loadTradingViewChart(currentDetail);
+      }
+    });
+
+    q('btnTgTestConn').addEventListener('click', testTelegramConnection);
+
+    q('helpBtn').addEventListener('click', () => {
+      alert(`💥 ELITETREND TENSION ANALYZER
+
+⚡ TENSION PHILOSOPHY:
+• Visualize market pressure buildup before explosions
+• Track multiple tension factors in real-time
+• Predict trend explosions 15-60 minutes in advance
+• Focus on PRESSURE rather than simple signals
+
+📊 TENSION FACTORS:
+• VOLATILITY COMPRESSION: Price coiling before breakout
+• VOLUME SPIKE: Unusual trading activity detection
+• VOLUME ACCUMULATION: Smart money positioning
+• RSI DIVERGENCE: Momentum vs price discrepancies
+• FIBONACCI ALIGNMENT: Key level convergence
+• TREND STRENGTH: Underlying momentum power
+
+🎯 TENSION LEVELS:
+• 0-40%: LOW TENSION - Monitoring phase
+• 40-70%: BUILDING TENSION - Accumulation
+• 70-85%: HIGH TENSION - Preparation for move
+• 85-100%: EXPLOSION IMMINENT - Immediate action
+
+💡 TENSION USAGE:
+1. Monitor BUILDING TENSION (40-70%) for setup
+2. Prepare for HIGH TENSION (70-85%) entries
+3. Execute on EXPLOSION (85%+) signals
+4. Use 1-2% position sizing
+5. Set stops beyond key Fibonacci levels
+
+🔧 TENSION FEATURES:
+• Real-time tension visualization
+• Multi-factor tension breakdown
+• Momentum gauge for direction
+• Explosion countdown timer
+• Historical tension tracking`);
+    });
+
+    q('qualityThresh').addEventListener('change', ()=> {
+      refreshWatchlist();
+      addMainLog(`🎚 Tension threshold set to ${q('qualityThresh').value}%`);
+    });
+
+    addMainLog("🚀 EliteTrend Tension Analyzer initialized");
+    addMainLog(`📊 Monitoring ${WATCHLIST.length} coins for pressure buildup`);
+    addMainLog("⚡ Focus: Visualizing market tension before explosions");
+    addMainLog("🛡 Professional risk management: 1-2% per trade");
+    
+    setTimeout(()=>{
+      timeframe = q('timeframeSelect').value || timeframe;
+      scanLoop();
+      if (WATCHLIST.includes('BTCUSDT')) {
+        openDetailFor('BTCUSDT');
+      }
+    }, 1000);
+  });
+
+  window.openDetailFor = openDetailFor;
+  </script>
+</body>
+</html>
