@@ -365,11 +365,32 @@
         const PULSE_DURATION = 1500; 
 
 
-        // --- Функция получения параметра из URL ---
-function getUrlParameter(name) {
+    // ==================== URL PARAMETERS HANDLING ====================
+function getUrlParam(name) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(name);
 }
+
+function applyUrlParams() {
+    const urlSymbol = getUrlParam('symbol');
+    
+    if (urlSymbol) {
+        const symbolValue = urlSymbol.toUpperCase();
+        
+        // Check if symbol exists in SYMBOL_NAMES
+        if (SYMBOL_NAMES[symbolValue]) {
+            currentCoinId = symbolValue;
+            console.log(`✅ Symbol set from URL: ${symbolValue}`);
+            return true;
+        } else {
+            console.warn(`⚠️ Symbol not found: ${symbolValue}`);
+        }
+    }
+    
+    return false;
+}
+
+
 
         // Расширенный список символов 
         const SYMBOL_NAMES = {
@@ -842,16 +863,13 @@ function getUrlParameter(name) {
             startPulseAnimation();
         }
 
-        function populateCoinSelect() {
+        // ==================== MODIFIED INITIALIZATION ====================
+function populateCoinSelect() {
     const symbols = getSupportedSymbols();
     elements.coinSelect.innerHTML = '';
     
-    // === ДОБАВЛЕНО: Получаем символ из URL параметра 'symbol' ===
-    const urlSymbol = getUrlParameter('symbol');
-    if (urlSymbol && SYMBOL_NAMES[urlSymbol.toUpperCase()]) {
-        currentCoinId = urlSymbol.toUpperCase();
-    }
-    // === КОНЕЦ ДОБАВЛЕНИЯ ===
+    // Apply URL parameters before populating
+    applyUrlParams();
     
     symbols.forEach(coin => {
         const option = document.createElement('option');
@@ -859,16 +877,16 @@ function getUrlParameter(name) {
         option.textContent = coin.id; 
         elements.coinSelect.appendChild(option);
     });
-            
-            const defaultOption = elements.coinSelect.querySelector(`option[value="${currentCoinId}"]`);
-            if (defaultOption) {
-                 defaultOption.selected = true;
-            }
-            
-            elements.coinSelect.style.textShadow = SYMBOL_NAMES[currentCoinId].includes('COIN') || currentCoinId === 'BTCUSDT' ? '0 0 5px #ffcc00' : '0 0 5px var(--color-accent-neon)';
-            
-            updateWidget(currentCoinId);
-        }
+    
+    const defaultOption = elements.coinSelect.querySelector(`option[value="${currentCoinId}"]`);
+    if (defaultOption) {
+         defaultOption.selected = true;
+    }
+    
+    elements.coinSelect.style.textShadow = SYMBOL_NAMES[currentCoinId].includes('COIN') || currentCoinId === 'BTCUSDT' ? '0 0 5px #ffcc00' : '0 0 5px var(--color-accent-neon)';
+    
+    updateWidget(currentCoinId);
+}
 
 
 
