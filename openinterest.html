@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Open Interest Screener</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔻</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root{
+      --bg:#0a0a0a; --surface:#111; --surface-light:#1a1a1a; --border:#222;
+      --text:#e2e8f0; --muted:#94a3b8; --accent:#00d07a; --danger:#ef4444; --warn:#f59e0b;
+      --blue:#3b82f6; --purple:#8b5cf6;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif;overflow:auto; overflow-x: hidden;
+  scrollbar-color: #2a2a2a #0a0a0a;
+  scrollbar-width: thin;}
+    .app{display:flex;flex-direction:column;height:100vh}
+    .header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+    .logo{display:flex;gap:10px;align-items:center;cursor:pointer}
+    .logo-text{font-weight:700;font-size:16px}
+    .badge{background:var(--purple);color:#fff;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px}
+    .controls{display:flex;gap:8px;align-items:center}
+    .select, .btn {background:var(--surface-light);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px}
+    .btn {cursor:pointer}
+    .main{display:flex;flex:1;min-height:0}
+    
+    /* ПАНЕЛИ */
+    .left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-right: 2px solid var(--border);
+      min-width: 300px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .right{
+      flex:0.45;
+      display:flex;
+      flex-direction:column;
+      background:var(--surface);
+      overflow:auto; 
+      min-width: 400px;
+      position: relative;
+      min-height: 450px;
+    }
+    
+    /* РЕСАЙЗЕР */
+    .resizer {
+      position: absolute;
+      background: var(--border);
+      z-index: 100;
+      opacity: 0.35;
+    }
+    
+    .resizer.vertical {
+      width: 4px;
+      height: 100%;
+      right: -2px;
+      top: 0;
+      cursor: col-resize;
+      opacity: 0.35;
+    }
+    
+    .resizer:hover {
+      background: var(--accent);
+    }
+    
+    .overview{
+      padding:12px;
+      border-bottom:1px solid var(--border);
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .watchlist-table{width:100%;border-collapse:collapse}
+    .coin-row{
+      display:grid;
+      grid-template-columns: 1fr 84px 80px 70px;
+      gap:45px;
+      align-items:center;
+      padding:10px;
+      border-radius:8px;
+      margin-bottom:6px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      cursor:pointer;
+      border:1px solid transparent
+    }
+    .coin-row:hover{
+      border-color:#2b2b2b;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent)
+    }
+    .coin-symbol{font-weight:700}
+    .coin-price{font-family: 'IBM Plex Mono', monospace;font-size:13px}
+    .small-muted{color:var(--muted);font-size:12px}
+    .arrow{font-size:18px;width:22px;text-align:center}
+    .arrow.up{color:var(--accent)}
+    .arrow.down{color:var(--danger)}
+    .arrow.flat{color:var(--warn)}
+    .spark{
+      width:98px;
+      height:28px;
+      border-radius:4px;
+      display:block;
+      opacity: 0.85;
+    }
+    
+    .filterbar{
+      display:flex;
+      gap:8px;
+      padding:4px 8px;
+      background:var(--surface-light);
+      border-radius:8px;
+      margin-bottom:10px
+    }
+    .filter-btn{
+      padding:6px 10px;
+      border-radius:6px;
+      background:transparent;
+      border:1px solid var(--border);
+      color:var(--muted);
+      cursor:pointer
+    }
+    .filter-btn.active{
+      border-color:var(--accent);
+      color:var(--text);
+      background:linear-gradient(180deg, rgba(0,208,122,0.06), transparent)
+    }
+   
+    .filter-btn[data-filter="falling"].active {
+      border-color: #ff4b4b;
+      color: #fff;
+      background: linear-gradient(180deg, rgba(255,75,75,0.08), transparent);
+    }
+
+    /* ДЕТАЛЬНАЯ ПАНЕЛЬ */
+    .detail-panel{
+      padding:12px;
+      flex: 1;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .detail-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+
+    .detail-title{font-weight:700; font-size: 18px;}
+    .detail-subtitle{color: var(--muted); font-size: 12px;}
+
+    .signal-card{
+      padding:12px;
+      border-radius:8px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      border:1px solid var(--border);
+      cursor:pointer
+    }
+
+    .strength-bar{
+      height:8px;
+      background:var(--surface-light);
+      border-radius:6px;
+      overflow:hidden;
+      margin-top:8px
+    }
+    
+    .strength-fill{
+      height:100%;
+      background:linear-gradient(90deg,var(--danger),var(--warn),var(--accent));
+      transition:width .4s
+    }
+    
+    .log{
+      padding:10px;
+      height:160px;
+      overflow:auto;
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      border-radius:8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size:12px
+    }
+    
+    .mini-stats{
+      display:flex;
+      gap:8px;
+      margin-top:8px
+    }
+    
+    .stat{
+      flex:1;
+      padding:8px;
+      background:var(--surface-light);
+      border-radius:8px;
+      border:1px solid var(--border);
+      text-align:center
+    }
+    
+    .header-right{display:flex;gap:8px;align-items:center}
+    .help-btn{
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      padding:6px;
+      border-radius:8px;
+      cursor:pointer
+    }
+   
+    /* СТАТУС СОЕДИНЕНИЯ */
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-left: 12px;
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+    }
+
+    .connection-dot.connected {
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.4); }
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-left: 6px;
+      box-shadow: 0 0 6px var(--accent);
+      animation: pulse 1.5s infinite;
+    }
+
+    /* АНИМАЦИИ */
+    .signal-pulse {
+      animation: signalPulse 2s ease-in-out;
+    }
+
+    @keyframes signalPulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    /* ВКЛАДКИ */
+    .tab-buttons {
+      display: flex;
+      gap: 6px;
+      margin: 0 20px;
+    }
+
+    .tab-btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+      border-color: var(--accent);
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(0,208,122,0.06), transparent);
+    }
+
+    /* TELEGRAM */
+    .telegram-section {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .telegram-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .telegram-input {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .telegram-btn {
+      width: 100%;
+      padding: 8px;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .telegram-btn:hover {
+      background: var(--border);
+    }
+
+    .telegram-status {
+      margin-top: 8px;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .status-ok {
+      color: var(--accent);
+    }
+
+    .status-error {
+      color: var(--danger);
+    }
+
+    /* АДАПТИВНОСТЬ */
+    @media (max-width: 1000px) { 
+      .right { width: 360px } 
+      .left { min-width: 0 } 
+    }
+    
+    @media (max-width: 760px) { 
+      .main { flex-direction: column } 
+      .right { width: 100%; height: 380px } 
+      .left { border-right: none } 
+      .coin-row { gap: 20px; }
+    }
+
+    /* НАСТРОЙКИ OI */
+    .oi-settings {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      background: var(--surface-light);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .oi-setting {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .oi-setting label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .oi-setting input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 4px;
+      width: 70px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="logo" onclick="location.reload()">
+        <div class="logo-text">Open Interest Screener</div>
+        <div class="badge">PRO EDITION</div>
+        <div class="connection-status" id="connectionStatus">
+          <div class="connection-dot connected"></div>
+          <span>LIVE</span>
+        </div>
+      </div>
+
+      <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="scanner">OI Scanner</button>
+        <button class="tab-btn" data-tab="coinglass">Coinglass</button>
+      </div>
+
+      <div class="header-right">
+        <div class="controls">
+          <button id="helpBtn" class="help-btn">?</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCANNER PANEL -->
+    <div id="scannerPanel" class="main" style="display:flex;">
+      <!-- LEFT PANEL -->
+      <div class="left">
+        <!-- Watchlist -->
+        <div class="overview">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div class="small-muted" id="overviewStatus">0 active</div>
+          </div>
+
+          <!-- OI Settings -->
+          <div class="oi-settings">
+            <div class="oi-setting">
+              <label for="oiPeriod">Period (min)</label>
+              <input id="oiPeriod" type="number" value="15" min="1" max="60">
+            </div>
+            <div class="oi-setting">
+              <label for="oiPercent">% Change</label>
+              <input id="oiPercent" type="number" value="5" min="0.1" max="50" step="0.1">
+            </div>
+            <div style="flex:1"></div>
+            <button id="btnStart" class="btn" style="background:var(--accent);color:#000;font-weight:600">START</button>
+          </div>
+
+          <div class="filterbar" id="filterBar">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="rising">Rising OI</button>
+            <button class="filter-btn" data-filter="falling">Falling OI</button>
+            <button class="filter-btn" data-filter="signals">Signals</button>
+          </div>
+          <div class="resizer vertical"></div>
+
+          <div id="watchlistContainer">
+            <!-- rows injected here -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- RIGHT PANEL -->
+      <div class="right">
+        <div style="padding:12px;border-bottom:1px solid var(--border);flex:1;display:flex;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-weight:700">Open Interest Details</div>
+            <div class="small-muted">Signal #<span id="signalNumber">0</span></div>
+          </div>
+          
+          <div class="detail-panel" id="detailPanel">
+            <div class="detail-header">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;gap:12px">
+                <div style="flex:1;min-width:200px">
+                  <div class="detail-title" id="detailTitle" style="font-size:16px;line-height:1.2">Select a coin</div>
+                  <div class="detail-subtitle" id="detailSubtitle" style="font-size:12px;line-height:1.2">OI data loads automatically</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- OI Signal Section -->
+            <div style="margin-bottom:16px">
+              <div style="text-align:center;padding:12px 0;margin-bottom:8px">
+                <div style="font-size:2.8rem;margin-bottom:6px" id="signalIcon">📊</div>
+                <div style="font-size:0.9rem;color:var(--muted)" id="signalStatus">No OI signal</div>
+              </div>
+
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                  <div>
+                    <div class="small-muted" style="margin-bottom:2px">OI Change</div>
+                    <div style="font-weight:700;font-size:15px" id="detailChangeText">—</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div class="small-muted" style="margin-bottom:2px">Current OI</div>
+                    <div id="detailOI" style="font-weight:700;font-size:13px;color:var(--blue)">—</div>
+                  </div>
+                </div>
+                <div class="strength-bar" style="margin-bottom:8px">
+                  <div class="strength-fill" id="detailStrengthFill" style="width:0%"></div>
+                </div>
+                <div class="small-muted" style="line-height:1.3;min-height:32px" id="detailDesc">—</div>
+                
+                <!-- OI Stats -->
+                <div style="margin:12px 0 8px 0;padding:10px;background:var(--surface-light);border-radius:8px;border:1px solid var(--border)">
+                  <div class="small-muted" style="text-align:center;margin-bottom:6px">Open Interest Stats</div>
+                  <div style="display:flex;justify-content:space-around;gap:8px">
+                    <div style="text-align:center;flex:1">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">Price</div>
+                      <div id="detailPrice" style="font-weight:700;font-size:13px;color:var(--accent)">$--</div>
+                    </div>
+                    <div style="text-align:center;flex:1;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">Volume</div>
+                      <div id="detailVolume" style="font-weight:700;font-size:13px;color:var(--warn)">--</div>
+                    </div>
+                    <div style="text-align:center;flex:1">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">% Change</div>
+                      <div id="detailPercent" style="font-weight:700;font-size:13px;color:var(--blue)">--</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="small-muted" style="margin-bottom:4px">Recent Activity</div>
+              <div id="detailMiniLog" style="font-family:monospace;font-size:11px;max-height:70px;overflow:auto;background:var(--surface-light);padding:8px;border-radius:6px;border:1px solid var(--border);line-height:1.3"></div>
+            </div>
+          </div>
+
+          <!-- Telegram Settings -->
+          <div class="telegram-section">
+            <div style="font-weight:700;margin-bottom:8px">Telegram Alerts</div>
+            <div class="telegram-inputs">
+              <input id="tgToken" class="telegram-input" placeholder="Bot Token">
+              <input id="tgChat" class="telegram-input" placeholder="Chat ID">
+            </div>
+            <button id="btnTgTestConn" class="telegram-btn">Test Connection</button>
+            <div id="tgStatus" class="telegram-status"></div>
+          </div>
+
+          <!-- Activity Log -->
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+            <div style="font-weight:700">Activity Log</div>
+            <div class="log" id="mainLog"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COINGLASS PANEL -->
+    <div id="coinglassPanel" class="main" style="display:none;flex-direction:column;height:100vh;">
+      <div style="height:100%;width:100%;border:none;background:var(--surface);">
+        <iframe 
+          id="coinglassFrame"
+          src="https://www.coinglass.com/tv/Bitget_BTCUSDT_UMCBL" 
+          style="width:100%;height:100%;border:none;background:var(--surface);"
+          frameborder="0"
+          allowfullscreen>
+        </iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ========== Config ==========
+  const TOP_COINS = [
+    "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
+    "SOLUSDT","DOGEUSDT","DOTUSDT","TRXUSDT",
+    "LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT", 
+    "PEPEUSDT", "BONKUSDT", "INJUSDT", "APTUSDT","ATOMUSDT","FILUSDT",
+    "MATICUSDT", "NEARUSDT", "OPUSDT", "ARBUSDT", "SUIUSDT",
+    "SEIUSDT", "TIAUSDT", "ORDIUSDT", "RUNEUSDT", "MEMEUSDT"
+  ];
+  
+  const UPDATE_INTERVAL_MS = 300000; // 5 минут
+  const OI_HISTORY_LIMIT = 100;
+  
+  // State
+  let isRunning = false;
+  let watchers = {};
+  let updateTimer = null;
+  let currentDetail = null;
+  let signalCounter = 0;
+  let lastTelegramSignal = {};
+
+  // OI Settings
+  let oiPeriod = 15; // minutes
+  let oiPercent = 5; // percent
+
+  // Utils
+  function q(id){return document.getElementById(id)}
+  
+  function addMainLog(text, cls='info'){
+    const el = q('mainLog');
+    const node = document.createElement('div');
+    const t = new Date().toLocaleTimeString();
+    node.innerHTML = `<span style="color:var(--muted)">[${t}]</span> ${text}`;
+    el.appendChild(node);
+    el.scrollTop = el.scrollHeight;
+    while(el.children.length>200) el.removeChild(el.firstChild);
+  }
+
+  // 🔥 ОБНОВЛЕНИЕ СИГНАЛА OI
+  function updateSignalIcon(sym) {
+    const icon = q('signalIcon');
+    const status = q('signalStatus');
+    const watcher = watchers[sym];
+    
+    if (!watcher) {
+      icon.textContent = '📊';
+      icon.style.color = 'var(--muted)';
+      status.textContent = 'Select a coin';
+      return;
+    }
+
+    const oiChange = watcher.oiChangePercent || 0;
+
+    if (oiChange >= oiPercent) {
+      icon.textContent = '🚀';
+      icon.style.color = 'var(--accent)';
+      status.textContent = `OI INCREASE • ${oiChange.toFixed(2)}%`;
+    } else if (oiChange <= -oiPercent) {
+      icon.textContent = '📉';
+      icon.style.color = 'var(--danger)';
+      status.textContent = `OI DECREASE • ${oiChange.toFixed(2)}%`;
+    } else {
+      icon.textContent = '📊';
+      icon.style.color = 'var(--warn)';
+      status.textContent = `NO SIGNAL • ${oiChange.toFixed(2)}%`;
+    }
+  }
+
+  // Initial render of watchlist UI
+  function renderWatchlistUI(){
+    const container = q('watchlistContainer');
+    container.innerHTML = '';
+    TOP_COINS.forEach(sym=>{
+      const row = document.createElement('div');
+      row.className = 'coin-row';
+      row.id = `row-${sym}`;
+      row.innerHTML = `
+        <div>
+          <div class="coin-symbol">${sym.replace('USDT','/USDT')}</div>
+          <div class="small-muted" id="sub-${sym}">--</div>
+        </div>
+        <div class="coin-price" id="price-${sym}">—</div>
+        <div class="coin-price" id="oi-${sym}">—</div>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="arrow" id="arrow-${sym}">—</div>
+          <div class="small-muted" id="change-${sym}">—</div>
+        </div>
+      `;
+      row.addEventListener('click', (e)=>{
+        if(e.target.tagName.toLowerCase()!=='button') openDetailFor(sym);
+      });
+      container.appendChild(row);
+      
+      watchers[sym] = {
+        oiHistory: [],
+        currentOI: null,
+        oiChangePercent: 0,
+        price: null,
+        volume: null,
+        lastUpdate: null
+      };
+    });
+    updateOverviewStatus();
+  }
+
+  function updateOverviewStatus(){
+    const active = Object.values(watchers).filter(w=> 
+      Math.abs(w.oiChangePercent || 0) >= oiPercent
+    ).length;
+    
+    const filter = q('filterBar').querySelector('.filter-btn.active').dataset.filter;
+    q('overviewStatus').textContent = `${active} signals • ${filter}`;
+  }
+
+  // 🔥 ПОЛУЧЕНИЕ ДАННЫХ OI С BINANCE
+  async function fetchOpenInterest(symbol){
+    try {
+      const resp = await fetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${symbol}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        return {
+          symbol: data.symbol,
+          openInterest: parseFloat(data.openInterest),
+          timestamp: Date.now()
+        };
+      }
+    } catch (e) {
+      console.error(`OI API error for ${symbol}:`, e);
+    }
+    return null;
+  }
+
+  // 🔥 ПОЛУЧЕНИЕ ЦЕНЫ И ОБЪЕМА
+  async function fetchPriceAndVolume(symbol){
+    try {
+      const resp = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        return {
+          price: parseFloat(data.lastPrice),
+          volume: parseFloat(data.volume),
+          priceChangePercent: parseFloat(data.priceChangePercent)
+        };
+      }
+    } catch (e) {
+      console.error(`Price API error for ${symbol}:`, e);
+    }
+    return null;
+  }
+
+  // 🔥 ВЫЧИСЛЕНИЕ ИЗМЕНЕНИЯ OI
+  function calculateOIChange(symbol) {
+    const watcher = watchers[symbol];
+    if (!watcher || watcher.oiHistory.length < 2) return 0;
+
+    const currentOI = watcher.currentOI;
+    const periodMs = oiPeriod * 60 * 1000; // Convert to milliseconds
+    const targetTime = Date.now() - periodMs;
+    
+    // Find OI value closest to the target time
+    let historicalOI = null;
+    for (let i = watcher.oiHistory.length - 1; i >= 0; i--) {
+      if (watcher.oiHistory[i].timestamp <= targetTime) {
+        historicalOI = watcher.oiHistory[i].openInterest;
+        break;
+      }
+    }
+    
+    // If we don't have enough history, use the oldest available
+    if (historicalOI === null && watcher.oiHistory.length > 0) {
+      historicalOI = watcher.oiHistory[0].openInterest;
+    }
+    
+    if (historicalOI && historicalOI > 0) {
+      return ((currentOI - historicalOI) / historicalOI) * 100;
+    }
+    
+    return 0;
+  }
+
+  // 🔥 ОСНОВНОЙ ЦИКЛ СКАНИРОВАНИЯ OI
+  async function scanLoop(){
+    if(!isRunning) return;
+    
+    try {
+      const promises = TOP_COINS.map(async (sym) => {
+        try {
+          // Получаем OI данные
+          const oiData = await fetchOpenInterest(sym);
+          if (!oiData) return;
+          
+          // Получаем цену и объем
+          const marketData = await fetchPriceAndVolume(sym);
+          
+          const watcher = watchers[sym];
+          watcher.currentOI = oiData.openInterest;
+          watcher.lastUpdate = oiData.timestamp;
+          
+          // Добавляем в историю
+          watcher.oiHistory.push({
+            timestamp: oiData.timestamp,
+            openInterest: oiData.openInterest
+          });
+          
+          // Ограничиваем размер истории
+          if (watcher.oiHistory.length > OI_HISTORY_LIMIT) {
+            watcher.oiHistory = watcher.oiHistory.slice(-OI_HISTORY_LIMIT);
+          }
+          
+          // Вычисляем изменение OI
+          watcher.oiChangePercent = calculateOIChange(sym);
+          
+          // Обновляем рыночные данные
+          if (marketData) {
+            watcher.price = marketData.price;
+            watcher.volume = marketData.volume;
+            watcher.priceChangePercent = marketData.priceChangePercent;
+          }
+          
+          renderRow(sym);
+          
+          // Проверяем сигнал OI
+          if (Math.abs(watcher.oiChangePercent) >= oiPercent) {
+            const direction = watcher.oiChangePercent > 0 ? 'RISING' : 'FALLING';
+            const signalKey = `${sym}_${direction}`;
+            
+            if (!lastTelegramSignal[signalKey]) {
+              signalCounter++;
+              q('signalNumber').textContent = signalCounter;
+              
+              sendTelegramSignal(sym, direction, watcher.oiChangePercent, watcher.price, watcher.volume);
+              lastTelegramSignal[signalKey] = Date.now();
+              
+              addMainLog(`🚨 OI Signal #${signalCounter}: ${sym} ${direction} ${watcher.oiChangePercent.toFixed(2)}%`);
+            }
+          }
+          
+        } catch (err) {
+          console.error(`Error for ${sym}:`, err);
+        }
+      });
+
+      await Promise.all(promises);
+      refreshWatchlist();
+      
+      // ОБНОВЛЕНИЕ ДЕТАЛЕЙ ЕСЛИ ОТКРЫТЫ
+      if (currentDetail && watchers[currentDetail]) {
+        const watcher = watchers[currentDetail];
+        updateDetailPanel(watcher);
+      }
+      
+    } catch (error) {
+      console.error('Scan error:', error);
+      addMainLog('❌ Scan error: ' + error.message);
+    }
+    
+    if (isRunning) {
+      updateTimer = setTimeout(scanLoop, UPDATE_INTERVAL_MS);
+    }
+  }
+
+  function renderRow(sym){
+    const s = watchers[sym];
+    if(!s) return;
+    
+    q(`price-${sym}`).textContent = s.price ? `$${(+s.price).toFixed(2)}` : '—';
+    q(`oi-${sym}`).textContent = s.currentOI ? formatOI(s.currentOI) : '—';
+    
+    const change = s.oiChangePercent || 0;
+    const arrowEl = q(`arrow-${sym}`);
+    const changeEl = q(`change-${sym}`);
+    
+    if(change > 0){
+      arrowEl.className='arrow up';
+      arrowEl.textContent='↑';
+      changeEl.textContent = `${change.toFixed(2)}%`;
+      changeEl.style.color = 'var(--accent)';
+    } else if(change < 0){
+      arrowEl.className='arrow down';
+      arrowEl.textContent='↓';
+      changeEl.textContent = `${change.toFixed(2)}%`;
+      changeEl.style.color = 'var(--danger)';
+    } else {
+      arrowEl.className='arrow flat';
+      arrowEl.textContent='→';
+      changeEl.textContent = '0%';
+      changeEl.style.color = 'var(--muted)';
+    }
+    
+    q(`sub-${sym}`).textContent = s.lastUpdate ? 
+      `Updated: ${new Date(s.lastUpdate).toLocaleTimeString()}` : '--';
+  }
+
+  function formatOI(oi) {
+    if (oi >= 1000000) {
+      return (oi / 1000000).toFixed(2) + 'M';
+    } else if (oi >= 1000) {
+      return (oi / 1000).toFixed(2) + 'K';
+    }
+    return oi.toFixed(2);
+  }
+
+  function refreshWatchlist(){
+    const filter = document.querySelector('.filter-btn.active').dataset.filter;
+    TOP_COINS.forEach(sym=>{
+      const row = q(`row-${sym}`);
+      const s = watchers[sym];
+      const change = s.oiChangePercent || 0;
+      let show = true;
+      
+      if(filter==='rising') show = change >= oiPercent;
+      if(filter==='falling') show = change <= -oiPercent;
+      if(filter==='signals') show = Math.abs(change) >= oiPercent;
+      
+      row.style.display = show ? 'grid' : 'none';
+      renderRow(sym);
+    });
+    
+    // СОРТИРОВКА АКТИВНЫХ СИГНАЛОВ
+    if (filter === 'signals') {
+      sortActiveByOIChange();
+    }
+    
+    updateOverviewStatus();
+  }
+
+  // 🔥 СОРТИРОВКА АКТИВНЫХ СИГНАЛОВ ПО ИЗМЕНЕНИЮ OI
+  function sortActiveByOIChange() {
+    const container = q('watchlistContainer');
+    const visibleRows = Array.from(container.querySelectorAll('.coin-row[style*="display: grid"]'));
+    
+    visibleRows.sort((a, b) => {
+      const symA = a.id.replace('row-', '');
+      const symB = b.id.replace('row-', '');
+      const watcherA = watchers[symA];
+      const watcherB = watchers[symB];
+      
+      const changeA = Math.abs(watcherA?.oiChangePercent || 0);
+      const changeB = Math.abs(watcherB?.oiChangePercent || 0);
+      
+      return changeB - changeA; // По убыванию
+    });
+    
+    visibleRows.forEach(row => container.appendChild(row));
+  }
+
+  // ДЕТАЛЬНАЯ ИНФОРМАЦИЯ
+  function openDetailFor(sym){
+    currentDetail = sym;
+    const watcher = watchers[sym];
+    
+    // АНИМАЦИЯ
+    const detailPanel = q('detailPanel');
+    detailPanel.classList.add('signal-pulse');
+    setTimeout(() => detailPanel.classList.remove('signal-pulse'), 2000);
+    
+    updateSignalIcon(sym);
+    updateDetailPanel(watcher);
+  }
+
+  function updateDetailPanel(watcher) {
+    if (!watcher) return;
+    
+    q('detailTitle').textContent = currentDetail.replace('USDT','/USDT');
+    q('detailSubtitle').textContent = `OI Period: ${oiPeriod}min • Change Threshold: ${oiPercent}%`;
+    q('detailPrice').textContent = watcher.price ? `$${(+watcher.price).toFixed(2)}` : '--';
+    q('detailVolume').textContent = watcher.volume ? formatOI(watcher.volume) : '--';
+    q('detailPercent').textContent = watcher.oiChangePercent ? `${watcher.oiChangePercent.toFixed(2)}%` : '--';
+    
+    q('detailChangeText').textContent = watcher.oiChangePercent ? 
+      `${watcher.oiChangePercent > 0 ? '+' : ''}${watcher.oiChangePercent.toFixed(2)}%` : '—';
+    
+    q('detailOI').textContent = watcher.currentOI ? formatOI(watcher.currentOI) : '—';
+    
+    const absChange = Math.abs(watcher.oiChangePercent || 0);
+    const strength = Math.min(100, (absChange / oiPercent) * 100);
+    q('detailStrengthFill').style.width = `${strength}%`;
+    
+    let desc = 'No significant OI change';
+    if (watcher.oiChangePercent >= oiPercent) {
+      desc = `Open Interest increased by ${watcher.oiChangePercent.toFixed(2)}% over ${oiPeriod} minutes - New money entering`;
+    } else if (watcher.oiChangePercent <= -oiPercent) {
+      desc = `Open Interest decreased by ${Math.abs(watcher.oiChangePercent).toFixed(2)}% over ${oiPeriod} minutes - Positions closing`;
+    }
+    q('detailDesc').textContent = desc;
+    
+    const time = new Date().toLocaleTimeString();
+    q('detailMiniLog').innerHTML = `<div>${time} • OI: ${watcher.currentOI ? formatOI(watcher.currentOI) : '--'} (${watcher.oiChangePercent ? watcher.oiChangePercent.toFixed(2) : '0'}%)</div>`;
+  }
+
+  // TELEGRAM
+  async function sendTelegramSignal(symbol, direction, changePercent, price, volume) {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) return;
+
+    const emoji = direction === 'RISING' ? '🚀' : '📉';
+    const message = `${emoji} OPEN INTEREST SIGNAL #${signalCounter}\n` +
+                   `💰 ${symbol.replace('USDT', '/USDT')}\n` +
+                   `📈 OI ${direction}: ${changePercent.toFixed(2)}% (${oiPeriod}min)\n` +
+                   `💵 Price: $${price.toFixed(2)}\n` +
+                   `📊 Volume: ${formatOI(volume)}`;
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+      
+      const data = await response.json();
+      if (data.ok) {
+        addMainLog(`Telegram OI signal sent for ${symbol}`);
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Signal sent</span>';
+      }
+    } catch (error) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Network error</span>';
+    }
+  }
+
+  async function testTelegramConnection() {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">Enter credentials</span>';
+      return;
+    }
+    
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const data = await response.json();
+      
+      if (data.ok) {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Connected</span>';
+      } else {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-error">Invalid token</span>';
+      }
+    } catch (error) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Connection failed</span>';
+    }
+  }
+
+  // 🔥 РЕСАЙЗИНГ ПАНЕЛЕЙ
+  function initResizeHandlers() {
+    const leftPanel = document.querySelector('.left');
+    const rightPanel = document.querySelector('.right');
+    
+    const verticalResizer = document.querySelector('.resizer.vertical');
+    
+    let isVerticalResizing = false;
+    
+    // ВЕРТИКАЛЬНЫЙ РЕСАЙЗ (лево-право)
+    verticalResizer.addEventListener('mousedown', function(e) {
+      isVerticalResizing = true;
+      document.addEventListener('mousemove', handleVerticalResize);
+      document.addEventListener('mouseup', stopVerticalResize);
+      e.preventDefault();
+    });
+    
+    function handleVerticalResize(e) {
+      if (!isVerticalResizing) return;
+      
+      const containerRect = document.querySelector('.main').getBoundingClientRect();
+      const leftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      
+      if (leftWidth > 20 && leftWidth < 80) {
+        leftPanel.style.flex = `0 0 ${leftWidth}%`;
+        rightPanel.style.flex = `0 0 ${100 - leftWidth}%`;
+      }
+    }
+    
+    function stopVerticalResize() {
+      isVerticalResizing = false;
+      document.removeEventListener('mousemove', handleVerticalResize);
+      document.removeEventListener('mouseup', stopVerticalResize);
+    }
+  }
+
+  // 🔥 ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+  function initTabHandlers() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const tab = this.dataset.tab;
+        document.getElementById('scannerPanel').style.display = tab === 'scanner' ? 'flex' : 'none';
+        document.getElementById('coinglassPanel').style.display = tab === 'coinglass' ? 'flex' : 'none';
+      });
+    });
+  }
+
+  // START/STOP
+  function toggleScanner() {
+    if (isRunning) {
+      isRunning = false;
+      if (updateTimer) {
+        clearTimeout(updateTimer);
+        updateTimer = null;
+      }
+      q('btnStart').textContent = 'START';
+      q('btnStart').style.background = 'var(--accent)';
+      addMainLog('⏸️ OI Scanner stopped');
+    } else {
+      isRunning = true;
+      q('btnStart').textContent = 'STOP';
+      q('btnStart').style.background = 'var(--danger)';
+      addMainLog('▶️ OI Scanner started');
+      scanLoop();
+    }
+  }
+
+  // ИНИЦИАЛИЗАЦИЯ
+  document.addEventListener('DOMContentLoaded', ()=>{
+    renderWatchlistUI();
+    initResizeHandlers();
+    initTabHandlers();
+    
+    // ФИЛЬТРЫ
+    document.querySelectorAll('.filter-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        refreshWatchlist();
+      });
+    });
+    
+    // OI SETTINGS
+    q('oiPeriod').addEventListener('change', function() {
+      oiPeriod = parseInt(this.value) || 15;
+      addMainLog(`OI Period updated to ${oiPeriod} minutes`);
+    });
+
+    q('oiPercent').addEventListener('change', function() {
+      oiPercent = parseFloat(this.value) || 5;
+      addMainLog(`OI Percent threshold updated to ${oiPercent}%`);
+    });
+
+    // START BUTTON
+    q('btnStart').addEventListener('click', toggleScanner);
+
+    // TELEGRAM
+    q('btnTgTestConn').addEventListener('click', testTelegramConnection);
+
+    // HELP
+    q('helpBtn').addEventListener('click', () => {
+      alert(`🚀 OPEN INTEREST SCREENER
+
+📊 FEATURES:
+• Monitors Open Interest for 30 top cryptocurrencies
+• Real-time data from Binance Futures
+• Customizable period (1-60 minutes) and percentage threshold
+• Telegram alerts for significant OI changes
+• Coinglass integration
+
+🎯 HOW TO USE:
+1. Click START to begin monitoring
+2. Set OI Period (minutes) and % Change threshold
+3. Use filters: All/Rising/Falling/Signals
+4. Monitor OI changes in real-time
+
+⚡ STRATEGY:
+• Rising OI + Rising Price + Rising Volume = Strong Long Signal
+• Focus on early signals (#1, #2) for best entries
+• Combine with other indicators (CVD, volume) for confirmation`);
+    });
+
+    addMainLog('Open Interest Screener initialized');
+    addMainLog(`Monitoring ${TOP_COINS.length} coins every 5 minutes`);
+    
+    // АВТОСТАРТ
+    setTimeout(()=>{
+      if (TOP_COINS.includes('BTCUSDT')) {
+        openDetailFor('BTCUSDT');
+      }
+    }, 1000);
+  });
+
+  window.openDetailFor = openDetailFor;
+  </script>
+</body>
+</html>

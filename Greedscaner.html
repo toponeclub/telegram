@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Grid Scanner Pro - Futures</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔮</text></svg>">
+  <style>
+    :root{
+      --bg:#0a0a0a; --surface:#111; --surface-light:#1a1a1a; --border:#222;
+      --text:#e2e8f0; --muted:#94a3b8; --accent:#00d07a; --danger:#ef4444; --warn:#f59e0b;
+      --blue:#3b82f6; --purple:#8b5cf6;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif;overflow:hidden;}
+    .app{display:flex;flex-direction:column;height:100vh}
+    .header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+    .logo{display:flex;gap:10px;align-items:center;cursor:pointer}
+    .logo-text{font-weight:700;font-size:16px}
+    .badge{background:var(--accent);color:#000;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px}
+    .controls{display:flex;gap:8px;align-items:center}
+    .select, .btn {background:var(--surface-light);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;font-size:12px}
+    .btn {cursor:pointer}
+    .main{display:flex;flex:1;min-height:0}
+     .scrollbar {color:#2a2a2a, #0a0a0a}
+    
+    .left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-right: 2px solid var(--border);
+      min-width: 300px;
+      overflow: hidden;
+    }
+    
+    .right{
+      flex:0.45;
+      display:flex;
+      flex-direction:column;
+      background:var(--surface);
+      overflow:auto; 
+      min-width: 400px;
+      min-height: 450px;
+    }
+    
+    .chart-section {
+      flex: 0.70;
+      min-height: 150px;
+      max-height: 40vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .chart-container {
+      flex: 1;
+      background: var(--surface-light);
+      height: 100%;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .chart-iframe {
+      height: 100%;
+      width: 100%;
+      border: none;
+      background: var(--surface-light);
+    }
+
+    .overview{
+      padding:12px;
+      border-bottom:1px solid var(--border);
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .filterbar{
+      display:flex;
+      gap:8px;
+      padding:4px 8px;
+      background:var(--surface-light);
+      border-radius:8px;
+      margin-bottom:10px
+    }
+    .filter-btn{
+      padding:6px 10px;
+      border-radius:6px;
+      background:transparent;
+      border:1px solid var(--border);
+      color:var(--muted);
+      cursor:pointer;
+      font-size:11px;
+    }
+    .filter-btn.active{
+      border-color:var(--accent);
+      color:var(--text);
+      background:linear-gradient(180deg, rgba(0,208,122,0.06), transparent)
+    }
+    
+    .grid-levels {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      background: var(--surface-light);
+      margin-bottom: 12px;
+    }
+    
+    .grid-level {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 8px;
+      margin: 2px 0;
+      border-radius: 4px;
+      font-size: 11px;
+      transition: all 0.3s ease;
+    }
+    
+    .grid-level.active {
+      background: linear-gradient(90deg, rgba(0, 208, 122, 0.15), transparent);
+      border-left: 3px solid var(--accent);
+    }
+    
+    .grid-level.hit {
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.15), transparent);
+      border-left: 3px solid var(--warn);
+    }
+    
+    .grid-buy {
+      color: var(--accent);
+    }
+    
+    .grid-sell {
+      color: var(--danger);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .stat-card {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    
+    .stat-label {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    
+    .pnl-positive {
+      color: var(--accent);
+    }
+    
+    .pnl-negative {
+      color: var(--danger);
+    }
+
+    .detail-panel{
+      padding:12px;
+      flex: 1;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .detail-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+
+    .detail-title{font-weight:700; font-size: 18px;}
+    .detail-subtitle{color: var(--muted); font-size: 12px;}
+
+    .funding-info {
+      display: flex;
+      justify-content: space-between;
+      background: var(--surface-light);
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+
+    .funding-rate {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+    }
+
+    .funding-positive { color: var(--accent); }
+    .funding-negative { color: var(--danger); }
+
+    .position-tracker {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), transparent);
+      border: 1px solid var(--blue);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .position-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .position-status {
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .position-long { color: var(--accent); }
+    .position-short { color: var(--danger); }
+    .position-flat { color: var(--muted); }
+
+    .position-details {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .signal-card{
+      padding:12px;
+      border-radius:8px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      border:1px solid var(--border);
+    }
+
+    .signal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    
+    .action-badge {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+    }
+
+    .log{
+      padding:10px;
+      height:160px;
+      overflow:auto;
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      border-radius:8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size:12px
+    }
+    
+    .header-right{display:flex;gap:8px;align-items:center}
+    .help-btn{
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      padding:6px;
+      border-radius:8px;
+      cursor:pointer
+    }
+   
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-left: 12px;
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+    }
+
+    .connection-dot.connected {
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.4); }
+    }
+
+    .telegram-section {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .telegram-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .telegram-input {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .telegram-btn {
+      width: 100%;
+      padding: 8px;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .telegram-btn:hover {
+      background: var(--border);
+    }
+
+    .telegram-status {
+      margin-top: 8px;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .status-ok {
+      color: var(--accent);
+    }
+
+    .status-error {
+      color: var(--danger);
+    }
+
+    .daily-levels {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), transparent);
+      border: 1px solid var(--purple);
+      border-radius: 8px;
+      padding: 8px;
+      margin: 8px 0;
+      font-size: 11px;
+    }
+
+    .small-muted{color:var(--muted);font-size:12px}
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--muted);
+      border-radius: 50%;
+      border-top-color: var(--accent);
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+ <div class="app">
+    <div class="header">
+      <div class="logo" onclick="location.reload()">
+        <div class="logo-text">Grid Scanner Pro</div>
+        <div class="badge">FUTURES</div>
+        <div class="connection-status" id="connectionStatus">
+          <div class="connection-dot"></div>
+          <span>CONNECTING...</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <select id="timeframeSelect" class="select">
+          <option value="15m">15M</option>
+          <option value="1h">1H</option>
+          <option value="4h">4H</option>
+        </select>
+        <button id="helpBtn" class="help-btn">?</button>
+      </div>
+    </div>
+
+    <div id="scannerPanel" class="main" style="display:flex;">
+      <!-- LEFT PANEL -->
+      <div class="left">
+        <!-- T1Prime Chart -->
+        <div class="chart-section">
+          <div class="chart-container">
+            <iframe src="https://www.t1prime.com/widget" class="chart-iframe" id="t1primeChart"></iframe>
+          </div>
+        </div>
+
+        <!-- Grid Status -->
+        <div class="overview">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div class="small-muted" id="overviewStatus">Grid Scanner Active</div>
+            <div class="small-muted">BTCUSDT Futures</div>
+          </div>
+
+          <!-- Funding Rate -->
+          <div class="funding-info">
+            <div>
+              <div class="small-muted">Funding Rate</div>
+              <div class="funding-rate" id="fundingRate">--</div>
+            </div>
+            <div>
+              <div class="small-muted">Next Funding</div>
+              <div class="small-muted" id="nextFunding">--</div>
+            </div>
+            <div>
+              <div class="small-muted">Commission</div>
+              <div class="small-muted" id="commission">0.04%</div>
+            </div>
+          </div>
+
+          <!-- Daily Levels -->
+          <div class="daily-levels">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+              <strong>Daily Levels</strong>
+              <span class="small-muted" id="dailyTime">Today</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;">
+              <span>Low: <span id="dailyLow">--</span></span>
+              <span>High: <span id="dailyHigh">--</span></span>
+              <span>Range: <span id="dailyRange">--</span></span>
+            </div>
+          </div>
+
+          <div class="filterbar" id="filterBar">
+            <button class="filter-btn active" data-filter="all">All Levels</button>
+            <button class="filter-btn" data-filter="buy">Buy Levels</button>
+            <button class="filter-btn" data-filter="sell">Sell Levels</button>
+            <button class="filter-btn" data-filter="active">Active Only</button>
+            <div style="flex:1"></div>
+            <label class="small-muted" style="align-self:center;font-size:12px">Levels</label>
+            <input id="gridLevelsInput" type="number" value="40" min="20" max="100" style="width:60px;padding:6px;border-radius:6px;border:1px solid var(--border);background:var(--surface-light);color:var(--text)">
+          </div>
+
+          <!-- Grid Levels Display -->
+          <div class="grid-levels" id="gridLevelsContainer">
+            <div style="text-align:center;color:var(--muted);padding:20px;">
+              <div class="loading-spinner" style="margin:0 auto 10px;"></div>
+              Loading grid levels...
+            </div>
+          </div>
+
+          <!-- Current Stats -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="currentPrice">$--</div>
+              <div class="stat-label">Current Price</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="gridCenter">$--</div>
+              <div class="stat-label">Grid Center</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="activeLevels">0/40</div>
+              <div class="stat-label">Active Levels</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value pnl-positive" id="gridPnL">+0.00%</div>
+              <div class="stat-label">Grid PnL</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- RIGHT PANEL -->
+      <div class="right">
+        <div class="detail-panel" id="detailPanel">
+          <div class="detail-header">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;gap:12px">
+              <div style="flex:1;min-width:200px">
+                <div class="detail-title" id="detailTitle" style="font-size:16px;line-height:1.2">BTC/USDT Futures</div>
+                <div class="detail-subtitle" id="detailSubtitle" style="font-size:12px;line-height:1.2">Grid Scanner Pro • Real Binance Futures</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Position Tracker -->
+          <div class="position-tracker">
+            <div class="position-header">
+              <div class="position-status" id="positionStatus">FLAT POSITION</div>
+              <div class="small-muted" id="positionTime">--</div>
+            </div>
+            <div class="position-details">
+              <div>Entry Price: <span id="positionEntry">--</span></div>
+              <div>Current PnL: <span id="positionPnL">--</span></div>
+              <div>Size: <span id="positionSize">--</span></div>
+              <div>Duration: <span id="positionDuration">--</span></div>
+            </div>
+          </div>
+
+          <!-- Signal Section -->
+          <div class="signal-card">
+            <div style="text-align:center;padding:8px 0;margin-bottom:8px">
+              <div style="font-size:2.5rem;margin-bottom:6px" id="signalIcon">🔮</div>
+              <div style="font-size:0.9rem;color:var(--muted)" id="signalStatus">Initializing Grid Scanner...</div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <div>
+                <div class="small-muted">Next Action</div>
+                <div style="font-weight:700;font-size:14px" id="nextAction">Loading...</div>
+              </div>
+              <div style="text-align:right">
+                <div class="small-muted">Confidence</div>
+                <div style="font-weight:700;font-size:13px;color:var(--blue)" id="signalConfidence">--%</div>
+              </div>
+            </div>
+
+            <div class="signal-actions" id="signalActions">
+              <div class="action-badge">INITIALIZING</div>
+            </div>
+          </div>
+
+          <!-- Performance -->
+          <div style="padding:10px;background:var(--surface-light);border-radius:8px;border:1px solid var(--border)">
+            <div class="small-muted" style="text-align:center;margin-bottom:6px">Session Performance</div>
+            <div style="display:flex;justify-content:space-around;gap:8px">
+              <div style="text-align:center;flex:1">
+                <div class="small-muted" style="font-size:10px;margin-bottom:2px">Total Trades</div>
+                <div id="totalTrades" style="font-weight:700;font-size:13px;color:var(--accent)">0</div>
+              </div>
+              <div style="text-align:center;flex:1;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+                <div class="small-muted" style="font-size:10px;margin-bottom:2px">Win Rate</div>
+                <div id="winRate" style="font-weight:700;font-size:13px;color:var(--warn)">0%</div>
+              </div>
+              <div style="text-align:center;flex:1">
+                <div class="small-muted" style="font-size:10px;margin-bottom:2px">Avg Profit</div>
+                <div id="avgProfit" style="font-weight:700;font-size:13px;">0%</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="small-muted" style="margin-bottom:4px">Grid Analysis</div>
+          <div id="detailMiniLog" style="font-family:monospace;font-size:11px;max-height:70px;overflow:auto;background:var(--surface-light);padding:8px;border-radius:6px;border:1px solid var(--border);line-height:1.3">
+            <div>Initializing Grid Scanner...</div>
+            <div>Connecting to Binance Futures API...</div>
+          </div>
+        </div>
+
+        <!-- Telegram Settings -->
+        <div class="telegram-section">
+          <div style="font-weight:700;margin-bottom:8px">Telegram Alerts</div>
+          <div class="telegram-inputs">
+            <input id="tgToken" class="telegram-input" placeholder="Bot Token">
+            <input id="tgChat" class="telegram-input" placeholder="Chat ID">
+          </div>
+          <button id="btnTgTestConn" class="telegram-btn">Test Connection</button>
+          <div id="tgStatus" class="telegram-status"></div>
+        </div>
+
+        <!-- Activity Log -->
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding:12px">
+          <div style="font-weight:700">Trading Activity Log</div>
+          <div class="log" id="mainLog"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+// ========== GRID SCANNER PRO - FUTURES BOT ==========
+const SYMBOL = "BTCUSDT";
+const DEFAULT_TIMEFRAME = '15m';
+const UPDATE_INTERVAL_MS = 15000; // 15 seconds for real-time
+const CANDLES_LIMIT = 200;
+
+// Enhanced Grid Configuration
+const GRID_CONFIG = {
+  buy_levels: 20,
+  sell_levels: 20,  
+  min_confidence: 85,
+  rebuild_threshold: 0.025, // 2.5%
+  volatility_adjustment: true,
+  risk_per_trade: 0.01,
+  take_profit: 0.03,
+  stop_loss: 0.015,
+  max_position_size: 0.05, // 5% of capital
+  funding_aware: true
+};
+
+// Advanced State Management
+let timeframe = DEFAULT_TIMEFRAME;
+let isRunning = true;
+let currentGrid = null;
+let scanInterval = null;
+let dailyHighLow = { high: 0, low: 0, timestamp: 0 };
+
+// Complete Trading State
+let tradingState = {
+  symbol: SYMBOL,
+  position: {
+    type: 'FLAT', // FLAT, LONG, SHORT
+    entryPrice: 0,
+    entryTime: 0,
+    size: 0,
+    pnl: 0,
+    fundingPaid: 0
+  },
+  grid: {
+    levels: [],
+    center: 0,
+    step: 0,
+    trend: 'NEUTRAL',
+    lastRebuild: Date.now(),
+    dailyHigh: 0,
+    dailyLow: 0,
+    atr: 0
+  },
+  performance: {
+    totalTrades: 0,
+    winningTrades: 0,
+    totalPnL: 0,
+    sessionStart: Date.now(),
+    maxDrawdown: 0
+  },
+  market: {
+    fundingRate: 0,
+    nextFunding: 0,
+    openInterest: 0,
+    volume24h: 0
+  }
+};
+
+// DOM Utilities
+function q(id){return document.getElementById(id)}
+
+function addMainLog(text, type='info'){
+  const el = q('mainLog');
+  if (!el) return;
+  
+  const node = document.createElement('div');
+  const t = new Date().toLocaleTimeString();
+  const color = type === 'error' ? 'var(--danger)' : 
+                type === 'success' ? 'var(--accent)' : 
+                type === 'warning' ? 'var(--warn)' : 'var(--muted)';
+  
+  node.innerHTML = `<span style="color:${color}">[${t}]</span> ${text}`;
+  el.appendChild(node);
+  el.scrollTop = el.scrollHeight;
+  while(el.children.length > 100) el.removeChild(el.firstChild);
+}
+
+// Real Binance Futures API Integration
+async function fetchFuturesCandles(symbol, tf, limit = CANDLES_LIMIT){
+  try {
+    const intervalMap = {
+      '15m': '15m',
+      '1h': '1h', 
+      '4h': '4h'
+    };
+    
+    const binanceTF = intervalMap[tf] || '15m';
+    const response = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${binanceTF}&limit=${limit}`);
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    return data.map(d => ({
+      ts: d[0], 
+      open: +d[1], 
+      high: +d[2], 
+      low: +d[3], 
+      close: +d[4], 
+      vol: +d[5],
+      trades: d[8]
+    }));
+    
+  } catch (error) {
+    throw new Error(`Binance Futures API: ${error.message}`);
+  }
+}
+
+async function fetchFundingRate(symbol){
+  try {
+    const response = await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${symbol}`);
+    if (!response.ok) throw new Error('Funding rate fetch failed');
+    const data = await response.json();
+    return {
+      rate: parseFloat(data.lastFundingRate),
+      nextFunding: data.nextFundingTime
+    };
+  } catch (error) {
+    console.warn('Funding rate unavailable:', error);
+    return { rate: 0, nextFunding: 0 };
+  }
+}
+
+async function fetchDailyLevels(symbol){
+  try {
+    const response = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=1d&limit=1`);
+    if (!response.ok) throw new Error('Daily levels fetch failed');
+    const data = await response.json();
+    return {
+      high: parseFloat(data[0][2]),
+      low: parseFloat(data[0][3]),
+      timestamp: data[0][0]
+    };
+  } catch (error) {
+    console.warn('Daily levels unavailable:', error);
+    return { high: 0, low: 0, timestamp: 0 };
+  }
+}
+
+// Advanced Technical Analysis
+function calculateATR(candles, period = 14) {
+  if (!candles || candles.length < period + 1) return 100;
+  
+  const trueRanges = [];
+  for (let i = 1; i < candles.length; i++) {
+    const high = candles[i].high;
+    const low = candles[i].low;
+    const prevClose = candles[i-1].close;
+    
+    const tr = Math.max(
+      high - low,
+      Math.abs(high - prevClose),
+      Math.abs(low - prevClose)
+    );
+    trueRanges.push(tr);
+  }
+  
+  let atr = trueRanges.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  for (let i = period; i < trueRanges.length; i++) {
+    atr = ((atr * (period - 1)) + trueRanges[i]) / period;
+  }
+  
+  return atr;
+}
+
+function calculateEMA(data, period, priceKey = 'close') {
+  if (!data || data.length < period) return Array(data.length).fill(null);
+  
+  const k = 2 / (period + 1);
+  const ema = [];
+  let emaValue = data.slice(0, period).reduce((sum, d) => sum + d[priceKey], 0) / period;
+  
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      ema.push(null);
+    } else if (i === period - 1) {
+      ema.push(emaValue);
+    } else {
+      emaValue = (data[i][priceKey] * k) + (emaValue * (1 - k));
+      ema.push(emaValue);
+    }
+  }
+  return ema;
+}
+
+function analyzeMarketRegime(candles, currentPrice) {
+  const ema21 = calculateEMA(candles, 21);
+  const ema50 = calculateEMA(candles, 50);
+  const atr = calculateATR(candles);
+  
+  const currentEma21 = ema21[ema21.length - 1];
+  const currentEma50 = ema50[ema50.length - 1];
+  
+  if (!currentEma21 || !currentEma50) return 'NEUTRAL';
+  
+  // Volatility regime
+  const volatility = atr / currentPrice;
+  const volRegime = volatility > 0.02 ? 'HIGH_VOL' : volatility > 0.01 ? 'MED_VOL' : 'LOW_VOL';
+  
+  // Trend regime
+  const trend = currentEma21 > currentEma50 ? 
+               (currentPrice > currentEma21 ? 'STRONG_BULL' : 'WEAK_BULL') :
+               (currentPrice < currentEma21 ? 'STRONG_BEAR' : 'WEAK_BEAR');
+  
+  return { trend, volatility: volRegime, atr };
+}
+
+// Smart Grid Generation with Dynamic Adaptation
+function generateSmartGrid(candles, currentPrice, marketRegime) {
+  const atr = marketRegime.atr;
+  const baseStep = atr * 0.7;
+  
+  // Adjust step based on volatility regime
+  let stepMultiplier = 1;
+  if (marketRegime.volatility === 'HIGH_VOL') stepMultiplier = 1.3;
+  if (marketRegime.volatility === 'LOW_VOL') stepMultiplier = 0.7;
+  
+  const step = baseStep * stepMultiplier;
+  const gridLevels = [];
+  
+  // Generate buy levels (below current price)
+  for (let i = 1; i <= GRID_CONFIG.buy_levels; i++) {
+    const price = currentPrice - (step * i);
+    // Volume increases with distance for better risk management
+    const volume = 0.002 + (i * 0.0003);
+    gridLevels.push({
+      price: price,
+      type: 'BUY',
+      volume: volume,
+      executed: false,
+      timestamp: null,
+      pnl: 0,
+      orderId: `BUY_${i}`
+    });
+  }
+  
+  // Generate sell levels (above current price)
+  for (let i = 1; i <= GRID_CONFIG.sell_levels; i++) {
+    const price = currentPrice + (step * i);
+    const volume = 0.002 + (i * 0.0003);
+    gridLevels.push({
+      price: price,
+      type: 'SELL', 
+      volume: volume,
+      executed: false,
+      timestamp: null,
+      pnl: 0,
+      orderId: `SELL_${i}`
+    });
+  }
+  
+  gridLevels.sort((a, b) => a.price - b.price);
+  
+  return {
+    levels: gridLevels,
+    center: currentPrice,
+    step: step,
+    trend: marketRegime.trend,
+    lastRebuild: Date.now(),
+    atr: atr,
+    volatility: marketRegime.volatility,
+    dailyHigh: dailyHighLow.high,
+    dailyLow: dailyHighLow.low
+  };
+}
+
+// Advanced Grid Management
+function shouldRebuildGrid(currentGrid, currentPrice, marketRegime) {
+  if (!currentGrid) return true;
+  
+  // Price deviation check
+  const priceDeviation = Math.abs(currentPrice - currentGrid.center) / currentGrid.center;
+  if (priceDeviation > GRID_CONFIG.rebuild_threshold) return true;
+  
+  // Trend change check
+  if (marketRegime.trend !== currentGrid.trend) return true;
+  
+  // Volatility regime change
+  if (marketRegime.volatility !== currentGrid.volatility) return true;
+  
+  // Daily levels breach
+  if (currentPrice > currentGrid.dailyHigh * 1.01 || currentPrice < currentGrid.dailyLow * 0.99) return true;
+  
+  // Time-based rebuild (4 hours)
+  if (Date.now() - currentGrid.lastRebuild > 4 * 60 * 60 * 1000) return true;
+  
+  return false;
+}
+
+// Position Management with Memory
+function managePosition(gridSignals, currentPrice, fundingRate) {
+  const signals = [];
+  
+  gridSignals.forEach(signal => {
+    if (signal.level.executed) return;
+    
+    const level = signal.level;
+    level.executed = true;
+    level.timestamp = Date.now();
+    
+    // Calculate potential PnL
+    const priceDiff = signal.type === 'BUY' ? currentPrice - level.price : level.price - currentPrice;
+    const pnlPercent = (priceDiff / level.price) * 100;
+    level.pnl = pnlPercent;
+    
+    // Update trading state
+    tradingState.performance.totalTrades++;
+    tradingState.performance.totalPnL += pnlPercent;
+    
+    if (pnlPercent > 0) {
+      tradingState.performance.winningTrades++;
+    }
+    
+    // Position management logic
+    if (signal.type === 'BUY') {
+      if (tradingState.position.type === 'SHORT') {
+        // Close short position and open long
+        const closePnL = ((tradingState.position.entryPrice - currentPrice) / tradingState.position.entryPrice) * 100;
+        signals.push({
+          action: 'CLOSE_SHORT',
+          price: currentPrice,
+          pnl: closePnL,
+          message: `🔄 Closing SHORT at $${currentPrice.toFixed(2)} (${closePnL > 0 ? '+' : ''}${closePnL.toFixed(2)}%)`
+        });
+      }
+      
+      // Open long position
+      tradingState.position = {
+        type: 'LONG',
+        entryPrice: currentPrice,
+        entryTime: Date.now(),
+        size: level.volume,
+        pnl: 0,
+        fundingPaid: 0
+      };
+      
+      signals.push({
+        action: 'OPEN_LONG',
+        price: currentPrice,
+        size: level.volume,
+        message: `📈 Opening LONG at $${currentPrice.toFixed(2)}`
+      });
+      
+    } else { // SELL signal
+      if (tradingState.position.type === 'LONG') {
+        // Close long position and open short
+        const closePnL = ((currentPrice - tradingState.position.entryPrice) / tradingState.position.entryPrice) * 100;
+        signals.push({
+          action: 'CLOSE_LONG',
+          price: currentPrice,
+          pnl: closePnL,
+          message: `🔄 Closing LONG at $${currentPrice.toFixed(2)} (${closePnL > 0 ? '+' : ''}${closePnL.toFixed(2)}%)`
+        });
+      }
+      
+      // Open short position
+      tradingState.position = {
+        type: 'SHORT',
+        entryPrice: currentPrice,
+        entryTime: Date.now(),
+        size: level.volume,
+        pnl: 0,
+        fundingPaid: 0
+      };
+      
+      signals.push({
+        action: 'OPEN_SHORT',
+        price: currentPrice,
+        size: level.volume,
+        message: `📉 Opening SHORT at $${currentPrice.toFixed(2)}`
+      });
+    }
+    
+    addMainLog(`🎯 ${signal.type} signal executed at $${level.price.toFixed(2)}`, 'success');
+  });
+  
+  return signals;
+}
+
+// Check for grid level activations
+function checkGridLevels(currentGrid, currentPrice) {
+  if (!currentGrid || !currentGrid.levels) return { signals: [], activeLevels: 0 };
+  
+  const signals = [];
+  let activeLevels = 0;
+  
+  currentGrid.levels.forEach(level => {
+    const distance = Math.abs(currentPrice - level.price) / currentPrice;
+    const activationDistance = 0.002; // 0.2% for activation
+    
+    if (distance < activationDistance && !level.executed) {
+      signals.push({
+        type: level.type,
+        price: level.price,
+        volume: level.volume,
+        level: level
+      });
+    }
+    
+    if (distance < 0.005) { // 0.5% for active monitoring
+      activeLevels++;
+    }
+  });
+  
+  return { signals, activeLevels };
+}
+
+// Enhanced Signal Processing
+function processTradingSignals(signals, currentPrice) {
+  signals.forEach(signal => {
+    // Send Telegram alert
+    sendTelegramAlert(signal.message);
+    
+    // Send to war room
+    sendToWarRoom(SYMBOL, {
+      action: signal.action,
+      price: signal.price,
+      pnl: signal.pnl || 0,
+      message: signal.message,
+      type: 'TRADING_SIGNAL'
+    });
+    
+    addMainLog(signal.message, signal.pnl > 0 ? 'success' : 'warning');
+  });
+}
+
+// Telegram Integration
+function sendTelegramAlert(message) {
+  const token = q('tgToken')?.value.trim();
+  const chatId = q('tgChat')?.value.trim();
+  
+  if (!token || !chatId) return;
+
+  const fullMessage = `🎯 GRID SCANNER PRO - FUTURES\n${message}\n\n⏰ ${new Date().toLocaleTimeString()}\n📊 ${SYMBOL} | ${timeframe}`;
+
+  fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: fullMessage,
+      parse_mode: 'HTML'
+    })
+  }).catch(error => console.error('Telegram error:', error));
+}
+
+function sendToWarRoom(symbol, signalData) {
+  // War room integration
+  console.log(`📡 War Room Signal:`, signalData);
+}
+
+// UI Updates
+function updateConnectionStatus(connected) {
+  const statusEl = q('connectionStatus');
+  if (!statusEl) return;
+  
+  if (connected) {
+    statusEl.innerHTML = '<div class="connection-dot connected"></div><span>LIVE DATA</span>';
+  } else {
+    statusEl.innerHTML = '<div class="connection-dot"></div><span>NO CONNECTION</span>';
+  }
+}
+
+function updateFundingInfo(fundingData) {
+  if (q('fundingRate')) {
+    const rate = fundingData.rate * 100;
+    q('fundingRate').textContent = `${rate > 0 ? '+' : ''}${rate.toFixed(4)}%`;
+    q('fundingRate').className = `funding-rate ${rate >= 0 ? 'funding-positive' : 'funding-negative'}`;
+  }
+  
+  if (q('nextFunding') && fundingData.nextFunding) {
+    const nextDate = new Date(fundingData.nextFunding);
+    q('nextFunding').textContent = nextDate.toLocaleTimeString();
+  }
+}
+
+function updateDailyLevels() {
+  if (q('dailyHigh') && dailyHighLow.high > 0) {
+    q('dailyHigh').textContent = `$${dailyHighLow.high.toFixed(2)}`;
+    q('dailyLow').textContent = `$${dailyHighLow.low.toFixed(2)}`;
+    q('dailyRange').textContent = `${((dailyHighLow.high - dailyHighLow.low) / dailyHighLow.low * 100).toFixed(2)}%`;
+    
+    const dailyTime = new Date(dailyHighLow.timestamp);
+    if (isToday(dailyTime)) {
+      q('dailyTime').textContent = 'Today';
+    } else {
+      q('dailyTime').textContent = dailyTime.toLocaleDateString();
+    }
+  }
+}
+
+function isToday(date) {
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+         date.getMonth() === today.getMonth() &&
+         date.getFullYear() === today.getFullYear();
+}
+
+function updatePositionDisplay() {
+  const position = tradingState.position;
+  
+  if (q('positionStatus')) {
+    let statusText = 'FLAT POSITION';
+    let statusClass = 'position-flat';
+    
+    if (position.type === 'LONG') {
+      statusText = `LONG ${position.size.toFixed(4)} BTC`;
+      statusClass = 'position-long';
+    } else if (position.type === 'SHORT') {
+      statusText = `SHORT ${position.size.toFixed(4)} BTC`;
+      statusClass = 'position-short';
+    }
+    
+    q('positionStatus').textContent = statusText;
+    q('positionStatus').className = `position-status ${statusClass}`;
+  }
+  
+  if (q('positionEntry')) {
+    q('positionEntry').textContent = position.type !== 'FLAT' ? `$${position.entryPrice.toFixed(2)}` : '--';
+  }
+  
+  if (q('positionPnL') && position.type !== 'FLAT') {
+    const currentPrice = currentGrid ? currentGrid.center : 0;
+    const pnl = position.type === 'LONG' ? 
+                ((currentPrice - position.entryPrice) / position.entryPrice * 100) :
+                ((position.entryPrice - currentPrice) / position.entryPrice * 100);
+    
+    q('positionPnL').textContent = `${pnl > 0 ? '+' : ''}${pnl.toFixed(2)}%`;
+    q('positionPnL').className = pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+  } else {
+    q('positionPnL').textContent = '--';
+  }
+  
+  if (q('positionSize')) {
+    q('positionSize').textContent = position.type !== 'FLAT' ? `${position.size.toFixed(4)} BTC` : '--';
+  }
+  
+  if (q('positionDuration') && position.entryTime > 0) {
+    const duration = Math.floor((Date.now() - position.entryTime) / 60000); // minutes
+    if (duration < 60) {
+      q('positionDuration').textContent = `${duration}m`;
+    } else {
+      q('positionDuration').textContent = `${Math.floor(duration / 60)}h ${duration % 60}m`;
+    }
+  }
+  
+  if (q('positionTime') && position.entryTime > 0) {
+    q('positionTime').textContent = new Date(position.entryTime).toLocaleTimeString();
+  }
+}
+
+function renderGridLevels() {
+  const container = q('gridLevelsContainer');
+  if (!container || !currentGrid) return;
+  
+  const currentPrice = currentGrid.center;
+  const filter = document.querySelector('.filter-btn.active')?.dataset.filter || 'all';
+  
+  let html = '';
+  let displayedLevels = 0;
+  
+  currentGrid.levels.forEach((level, index) => {
+    const distance = Math.abs(currentPrice - level.price) / currentPrice;
+    const isActive = distance < 0.005;
+    const isHit = level.executed;
+    
+    if (filter === 'buy' && level.type !== 'BUY') return;
+    if (filter === 'sell' && level.type !== 'SELL') return;
+    if (filter === 'active' && !isActive) return;
+    
+    displayedLevels++;
+    
+    const levelClass = `grid-level ${level.type === 'BUY' ? 'grid-buy' : 'grid-sell'} ${isActive ? 'active' : ''} ${isHit ? 'hit' : ''}`;
+    
+    html += `
+      <div class="${levelClass}">
+        <span>${level.type} @ $${level.price.toFixed(2)}</span>
+        <span>${level.volume.toFixed(4)}</span>
+      </div>
+    `;
+  });
+  
+  if (displayedLevels === 0) {
+    html = '<div style="text-align:center;color:var(--muted);padding:10px;">No levels match filter</div>';
+  }
+  
+  container.innerHTML = html;
+}
+
+function updateStatistics() {
+  if (!currentGrid) return;
+  
+  const currentPrice = currentGrid.center;
+  const { activeLevels } = checkGridLevels(currentGrid, currentPrice);
+  
+  if (q('currentPrice')) q('currentPrice').textContent = `$${currentPrice.toFixed(2)}`;
+  if (q('gridCenter')) q('gridCenter').textContent = `$${currentGrid.center.toFixed(2)}`;
+  if (q('activeLevels')) q('activeLevels').textContent = `${activeLevels}/${currentGrid.levels.length}`;
+  
+  const totalPnL = tradingState.performance.totalPnL;
+  const pnlPercent = totalPnL > 0 ? `+${totalPnL.toFixed(2)}%` : `${totalPnL.toFixed(2)}%`;
+  if (q('gridPnL')) {
+    q('gridPnL').textContent = pnlPercent;
+    q('gridPnL').className = `stat-value ${totalPnL >= 0 ? 'pnl-positive' : 'pnl-negative'}`;
+  }
+  
+  if (q('totalTrades')) q('totalTrades').textContent = tradingState.performance.totalTrades;
+  const winRate = tradingState.performance.totalTrades > 0 ? 
+    (tradingState.performance.winningTrades / tradingState.performance.totalTrades * 100).toFixed(1) : 0;
+  if (q('winRate')) q('winRate').textContent = `${winRate}%`;
+  
+  const avgProfit = tradingState.performance.totalTrades > 0 ? 
+    (tradingState.performance.totalPnL / tradingState.performance.totalTrades).toFixed(2) : 0;
+  if (q('avgProfit')) q('avgProfit').textContent = `${avgProfit}%`;
+}
+
+function updateSignalDisplay(currentPrice, marketRegime, activeLevels) {
+  if (!currentGrid) return;
+  
+  // Update next action
+  const nextAction = activeLevels > 0 ? 
+    'Monitoring active grid levels' : 
+    'Waiting for price movement to trigger levels';
+  
+  if (q('nextAction')) q('nextAction').textContent = nextAction;
+  
+  // Update signal actions
+  const actionsContainer = q('signalActions');
+  if (actionsContainer) {
+    actionsContainer.innerHTML = '';
+    
+    const actions = [
+      `GRID_${currentGrid.levels.length}L`,
+      `TREND_${marketRegime.trend.split('_')[1]}`,
+      `VOL_${marketRegime.volatility.split('_')[0]}`,
+      `ACTIVE_${activeLevels}`,
+      `ATR_${(currentGrid.atr/currentPrice*100).toFixed(2)}%`
+    ];
+    
+    actions.forEach(action => {
+      const badge = document.createElement('div');
+      badge.className = 'action-badge';
+      badge.textContent = action;
+      actionsContainer.appendChild(badge);
+    });
+  }
+  
+  // Update confidence
+  if (q('signalConfidence')) {
+    const confidence = Math.min(95, 70 + (activeLevels * 2));
+    q('signalConfidence').textContent = `${confidence}%`;
+  }
+  
+  // Update mini log
+  if (q('detailMiniLog')) {
+    const positionType = tradingState.position.type;
+    const positionInfo = positionType !== 'FLAT' ? 
+      ` | Position: ${positionType} @ $${tradingState.position.entryPrice.toFixed(2)}` : '';
+    
+    q('detailMiniLog').innerHTML = `
+      <div>TREND: ${marketRegime.trend} | Volatility: ${marketRegime.volatility}</div>
+      <div>Active Levels: ${activeLevels} | Grid PnL: ${tradingState.performance.totalPnL.toFixed(2)}%</div>
+      <div>Trades: ${tradingState.performance.totalTrades} | Win Rate: ${tradingState.performance.totalTrades > 0 ? 
+        ((tradingState.performance.winningTrades / tradingState.performance.totalTrades) * 100).toFixed(1) : 0}%${positionInfo}</div>
+    `;
+  }
+}
+
+// Main Scanning Loop
+async function scanLoop(){
+  if(!isRunning) return;
+  
+  try {
+    // Fetch market data
+    const [candles, fundingData, dailyData] = await Promise.all([
+      fetchFuturesCandles(SYMBOL, timeframe, CANDLES_LIMIT),
+      fetchFundingRate(SYMBOL),
+      fetchDailyLevels(SYMBOL)
+    ]);
+    
+    if (!candles || candles.length === 0) {
+      throw new Error('No market data received');
+    }
+    
+    const currentPrice = candles[candles.length - 1].close;
+    
+    // Update market data
+    tradingState.market.fundingRate = fundingData.rate;
+    tradingState.market.nextFunding = fundingData.nextFunding;
+    dailyHighLow = dailyData;
+    
+    // Analyze market regime
+    const marketRegime = analyzeMarketRegime(candles, currentPrice);
+    
+    // Initialize or rebuild grid
+    if (!currentGrid || shouldRebuildGrid(currentGrid, currentPrice, marketRegime)) {
+      currentGrid = generateSmartGrid(candles, currentPrice, marketRegime);
+      addMainLog(`🔄 Grid rebuilt - Center: $${currentPrice.toFixed(2)}, ${marketRegime.trend}, ${marketRegime.volatility}`, 'info');
+    }
+    
+    // Check for grid level activations
+    const { signals, activeLevels } = checkGridLevels(currentGrid, currentPrice);
+    
+    // Process trading signals
+    if (signals.length > 0) {
+      const tradingSignals = managePosition(signals, currentPrice, fundingData.rate);
+      processTradingSignals(tradingSignals, currentPrice);
+    }
+    
+    // Update all UI components
+    updateConnectionStatus(true);
+    updateFundingInfo(fundingData);
+    updateDailyLevels();
+    updatePositionDisplay();
+    renderGridLevels();
+    updateStatistics();
+    updateSignalDisplay(currentPrice, marketRegime, activeLevels);
+    
+  } catch (error) {
+    console.error('Grid scan error:', error);
+    updateConnectionStatus(false);
+    addMainLog(`❌ Scan error: ${error.message}`, 'error');
+  }
+}
+
+// Initialize Application
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Setup filter buttons
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderGridLevels();
+    });
+  });
+  
+  // Timeframe selector
+  if (q('timeframeSelect')) {
+    q('timeframeSelect').addEventListener('change', function() {
+      timeframe = this.value;
+      addMainLog(`🔄 Switching to ${timeframe} timeframe`, 'info');
+      currentGrid = null; // Force grid rebuild
+    });
+  }
+
+  // Grid levels input
+  if (q('gridLevelsInput')) {
+    q('gridLevelsInput').addEventListener('change', function() {
+      const totalLevels = parseInt(this.value);
+      GRID_CONFIG.buy_levels = Math.floor(totalLevels / 2);
+      GRID_CONFIG.sell_levels = Math.floor(totalLevels / 2);
+      addMainLog(`🎚 Grid levels set to ${totalLevels} (${GRID_CONFIG.buy_levels}+${GRID_CONFIG.sell_levels})`, 'info');
+      currentGrid = null; // Force grid rebuild
+    });
+  }
+
+  // Telegram test connection
+  if (q('btnTgTestConn')) {
+    q('btnTgTestConn').addEventListener('click', () => {
+      const token = q('tgToken')?.value.trim();
+      const chatId = q('tgChat')?.value.trim();
+      
+      if (!token || !chatId) {
+        q('tgStatus').textContent = 'Please enter Token and Chat ID';
+        q('tgStatus').className = 'telegram-status status-error';
+        return;
+      }
+      
+      q('tgStatus').textContent = 'Testing connection...';
+      q('tgStatus').className = 'telegram-status';
+      
+      sendTelegramAlert('🔔 Grid Scanner Pro - Test Connection\n✅ Telegram alerts are working properly!');
+      
+      setTimeout(() => {
+        q('tgStatus').textContent = 'Test message sent - check your Telegram';
+        q('tgStatus').className = 'telegram-status status-ok';
+      }, 1000);
+    });
+  }
+
+  // Initial logs
+  addMainLog("🚀 Grid Scanner Pro Futures initialized", "success");
+  addMainLog(`📊 Monitoring ${SYMBOL} Futures - Real Binance data`, "info");
+  addMainLog("🎯 Advanced Grid Strategy: Dynamic adaptation to volatility", "info");
+  addMainLog("🛡 Professional Risk Management: Position tracking + Funding awareness", "info");
+  
+  // Auto-start scanner
+  setTimeout(() => {
+    timeframe = q('timeframeSelect')?.value || timeframe;
+    
+    // Start scanning loop
+    scanLoop();
+    scanInterval = setInterval(scanLoop, UPDATE_INTERVAL_MS);
+    
+    addMainLog("✅ Grid Scanner started successfully", "success");
+    addMainLog("📡 Live position tracking activated", "info");
+  }, 2000);
+});
+
+// Cleanup
+window.addEventListener('beforeunload', () => {
+  isRunning = false;
+  if (scanInterval) clearInterval(scanInterval);
+});
+</script>
+</body>
+</html>

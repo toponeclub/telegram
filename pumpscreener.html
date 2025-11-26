@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>Pump Screener</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔻</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root{
+      --bg:#0a0a0a; --surface:#111; --surface-light:#1a1a1a; --border:#222;
+      --text:#e2e8f0; --muted:#94a3b8; --accent:#00d07a; --danger:#ef4444; --warn:#f59e0b;
+      --blue:#3b82f6; --purple:#8b5cf6;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif;overflow:auto; overflow-x: hidden;
+  scrollbar-color: #2a2a2a #0a0a0a;
+  scrollbar-width: thin;}
+    .app{display:flex;flex-direction:column;height:100vh}
+    .header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+    .logo{display:flex;gap:10px;align-items:center;cursor:pointer}
+    .logo-text{font-weight:700;font-size:16px}
+    .badge{background:var(--purple);color:#fff;padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px}
+    .controls{display:flex;gap:8px;align-items:center}
+    .select, .btn {background:var(--surface-light);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px}
+    .btn {cursor:pointer}
+    .main{display:flex;flex:1;min-height:0}
+    
+    /* ПАНЕЛИ */
+    .left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface);
+      border-right: 2px solid var(--border);
+      min-width: 300px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .right{
+      flex:0.45;
+      display:flex;
+      flex-direction:column;
+      background:var(--surface);
+      overflow:auto; 
+      min-width: 400px;
+      position: relative;
+      min-height: 450px;
+    }
+    
+    /* РЕСАЙЗЕР */
+    .resizer {
+      position: absolute;
+      background: var(--border);
+      z-index: 100;
+      opacity: 0.35;
+    }
+    
+    .resizer.vertical {
+      width: 4px;
+      height: 100%;
+      right: -2px;
+      top: 0;
+      cursor: col-resize;
+      opacity: 0.35;
+    }
+    
+    .resizer:hover {
+      background: var(--accent);
+    }
+    
+    .overview{
+      padding:12px;
+      border-bottom:1px solid var(--border);
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .coin-row{
+      display:grid;
+      grid-template-columns: 1fr 84px 80px 70px;
+      gap:45px;
+      align-items:center;
+      padding:10px;
+      border-radius:8px;
+      margin-bottom:6px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      cursor:pointer;
+      border:1px solid transparent
+    }
+    .coin-row:hover{
+      border-color:#2b2b2b;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent)
+    }
+    .coin-symbol{font-weight:700}
+    .coin-price{font-family: 'IBM Plex Mono', monospace;font-size:13px}
+    .small-muted{color:var(--muted);font-size:12px}
+    .arrow{font-size:18px;width:22px;text-align:center}
+    .arrow.up{color:var(--accent)}
+    .arrow.down{color:var(--danger)}
+    .arrow.flat{color:var(--warn)}
+    .spark{
+      width:98px;
+      height:28px;
+      border-radius:4px;
+      display:block;
+      opacity: 0.85;
+    }
+    
+    .filterbar{
+      display:flex;
+      gap:8px;
+      padding:4px 8px;
+      background:var(--surface-light);
+      border-radius:8px;
+      margin-bottom:10px
+    }
+    .filter-btn{
+      padding:6px 10px;
+      border-radius:6px;
+      background:transparent;
+      border:1px solid var(--border);
+      color:var(--muted);
+      cursor:pointer
+    }
+    .filter-btn.active{
+      border-color:var(--accent);
+      color:var(--text);
+      background:linear-gradient(180deg, rgba(0,208,122,0.06), transparent)
+    }
+   
+    .filter-btn[data-filter="falling"].active {
+      border-color: #ff4b4b;
+      color: #fff;
+      background: linear-gradient(180deg, rgba(255,75,75,0.08), transparent);
+    }
+
+    /* ДЕТАЛЬНАЯ ПАНЕЛЬ */
+    .detail-panel{
+      padding:12px;
+      flex: 1;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .detail-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+
+    .detail-title{font-weight:700; font-size: 18px;}
+    .detail-subtitle{color: var(--muted); font-size: 12px;}
+
+    .signal-card{
+      padding:12px;
+      border-radius:8px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+      border:1px solid var(--border);
+      cursor:pointer
+    }
+
+    .strength-bar{
+      height:8px;
+      background:var(--surface-light);
+      border-radius:6px;
+      overflow:hidden;
+      margin-top:8px
+    }
+    
+    .strength-fill{
+      height:100%;
+      background:linear-gradient(90deg,var(--danger),var(--warn),var(--accent));
+      transition:width .4s
+    }
+    
+    .log{
+      padding:10px;
+      height:160px;
+      overflow:auto;
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      border-radius:8px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size:12px
+    }
+    
+    .mini-stats{
+      display:flex;
+      gap:8px;
+      margin-top:8px
+    }
+    
+    .stat{
+      flex:1;
+      padding:8px;
+      background:var(--surface-light);
+      border-radius:8px;
+      border:1px solid var(--border);
+      text-align:center
+    }
+    
+    .header-right{display:flex;gap:8px;align-items:center}
+    .help-btn{
+      background:var(--surface-light);
+      border:1px solid var(--border);
+      padding:6px;
+      border-radius:8px;
+      cursor:pointer
+    }
+   
+    /* СТАТУС СОЕДИНЕНИЯ */
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-left: 12px;
+    }
+
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+    }
+
+    .connection-dot.connected {
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.4); }
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-left: 6px;
+      box-shadow: 0 0 6px var(--accent);
+      animation: pulse 1.5s infinite;
+    }
+
+    /* АНИМАЦИИ */
+    .signal-pulse {
+      animation: signalPulse 2s ease-in-out;
+    }
+
+    @keyframes signalPulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    /* ВКЛАДКИ */
+    .tab-buttons {
+      display: flex;
+      gap: 6px;
+      margin: 0 20px;
+    }
+
+    .tab-btn {
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+      border-color: var(--accent);
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(0,208,122,0.06), transparent);
+    }
+
+    /* TELEGRAM */
+    .telegram-section {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .telegram-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .telegram-input {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .telegram-btn {
+      width: 100%;
+      padding: 8px;
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .telegram-btn:hover {
+      background: var(--border);
+    }
+
+    .telegram-status {
+      margin-top: 8px;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .status-ok {
+      color: var(--accent);
+    }
+
+    .status-error {
+      color: var(--danger);
+    }
+
+    /* АДАПТИВНОСТЬ */
+    @media (max-width: 1000px) { 
+      .right { width: 360px } 
+      .left { min-width: 0 } 
+    }
+    
+    @media (max-width: 760px) { 
+      .main { flex-direction: column } 
+      .right { width: 100%; height: 380px } 
+      .left { border-right: none } 
+      .coin-row { gap: 20px; }
+    }
+
+    /* НАСТРОЙКИ PUMP */
+    .pump-settings {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      background: var(--surface-light);
+      border-radius: 8px;
+      margin-bottom: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pump-setting {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .pump-setting label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .pump-setting input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 4px;
+      width: 70px;
+      font-size: 12px;
+    }
+
+    .pump-type-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-right: 8px;
+    }
+
+    .pump-divider {
+      height: 24px;
+      width: 1px;
+      background: var(--border);
+      margin: 0 8px;
+    }
+
+    /* СИГНАЛЫ */
+    .signal-badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    .signal-long {
+      background: rgba(0, 208, 122, 0.2);
+      color: var(--accent);
+      border: 1px solid rgba(0, 208, 122, 0.3);
+    }
+
+    .signal-short {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="logo" onclick="location.reload()">
+        <div class="logo-text">Pump Screener</div>
+        <div class="badge">PRO EDITION</div>
+        <div class="connection-status" id="connectionStatus">
+          <div class="connection-dot connected"></div>
+          <span>LIVE</span>
+        </div>
+      </div>
+
+      <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="scanner">Pump Scanner</button>
+        <button class="tab-btn" data-tab="coinglass">Coinglass</button>
+      </div>
+
+      <div class="header-right">
+        <div class="controls">
+          <button id="helpBtn" class="help-btn">?</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCANNER PANEL -->
+    <div id="scannerPanel" class="main" style="display:flex;">
+      <!-- LEFT PANEL -->
+      <div class="left">
+        <!-- Watchlist -->
+        <div class="overview">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div class="small-muted" id="overviewStatus">0 active</div>
+          </div>
+
+          <!-- Pump Settings -->
+          <div class="pump-settings">
+            <span class="pump-type-label">LONG</span>
+            <div class="pump-setting">
+              <label for="longPeriod">Period (min)</label>
+              <input id="longPeriod" type="number" value="2" min="1" max="60">
+            </div>
+            <div class="pump-setting">
+              <label for="longPercent">% Change</label>
+              <input id="longPercent" type="number" value="2" min="0.1" max="50" step="0.1">
+            </div>
+            
+            <div class="pump-divider"></div>
+            
+            <span class="pump-type-label">SHORT</span>
+            <div class="pump-setting">
+              <label for="shortPeriod">Period (min)</label>
+              <input id="shortPeriod" type="number" value="20" min="1" max="60">
+            </div>
+            <div class="pump-setting">
+              <label for="shortPercent">% Change</label>
+              <input id="shortPercent" type="number" value="10" min="0.1" max="50" step="0.1">
+            </div>
+            
+            <div style="flex:1"></div>
+            <button id="btnStart" class="btn" style="background:var(--accent);color:#000;font-weight:600">START</button>
+          </div>
+
+          <div class="filterbar" id="filterBar">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="long">Long Signals</button>
+            <button class="filter-btn" data-filter="short">Short Signals</button>
+            <button class="filter-btn" data-filter="signals">All Signals</button>
+          </div>
+          <div class="resizer vertical"></div>
+
+          <div id="watchlistContainer">
+            <!-- rows injected here -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- RIGHT PANEL -->
+      <div class="right">
+        <div style="padding:12px;border-bottom:1px solid var(--border);flex:1;display:flex;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-weight:700">Pump Details</div>
+            <div class="small-muted">Signal #<span id="signalNumber">0</span></div>
+          </div>
+          
+          <div class="detail-panel" id="detailPanel">
+            <div class="detail-header">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;gap:12px">
+                <div style="flex:1;min-width:200px">
+                  <div class="detail-title" id="detailTitle" style="font-size:16px;line-height:1.2">Select a coin</div>
+                  <div class="detail-subtitle" id="detailSubtitle" style="font-size:12px;line-height:1.2">Pump data loads automatically</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pump Signal Section -->
+            <div style="margin-bottom:16px">
+              <div style="text-align:center;padding:12px 0;margin-bottom:8px">
+                <div style="font-size:2.8rem;margin-bottom:6px" id="signalIcon">📊</div>
+                <div style="font-size:0.9rem;color:var(--muted)" id="signalStatus">No pump signal</div>
+              </div>
+
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                  <div>
+                    <div class="small-muted" style="margin-bottom:2px">Long Pump Change</div>
+                    <div style="font-weight:700;font-size:15px" id="detailLongChange">—</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div class="small-muted" style="margin-bottom:2px">Short Pump Change</div>
+                    <div id="detailShortChange" style="font-weight:700;font-size:13px;color:var(--blue)">—</div>
+                  </div>
+                </div>
+                
+                <!-- Pump Stats -->
+                <div style="margin:12px 0 8px 0;padding:10px;background:var(--surface-light);border-radius:8px;border:1px solid var(--border)">
+                  <div class="small-muted" style="text-align:center;margin-bottom:6px">Price Stats</div>
+                  <div style="display:flex;justify-content:space-around;gap:8px">
+                    <div style="text-align:center;flex:1">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">Current Price</div>
+                      <div id="detailPrice" style="font-weight:700;font-size:13px;color:var(--accent)">$--</div>
+                    </div>
+                    <div style="text-align:center;flex:1;border-left:1px solid var(--border);border-right:1px solid var(--border)">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">24h Volume</div>
+                      <div id="detailVolume" style="font-weight:700;font-size:13px;color:var(--warn)">--</div>
+                    </div>
+                    <div style="text-align:center;flex:1">
+                      <div class="small-muted" style="font-size:10px;margin-bottom:2px">24h Change</div>
+                      <div id="detail24hChange" style="font-weight:700;font-size:13px;color:var(--blue)">--</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="small-muted" style="margin-bottom:4px">Recent Activity</div>
+                <div id="detailMiniLog" style="font-family:monospace;font-size:11px;max-height:70px;overflow:auto;background:var(--surface-light);padding:8px;border-radius:6px;border:1px solid var(--border);line-height:1.3"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Telegram Settings -->
+          <div class="telegram-section">
+            <div style="font-weight:700;margin-bottom:8px">Telegram Alerts</div>
+            <div class="telegram-inputs">
+              <input id="tgToken" class="telegram-input" placeholder="Bot Token">
+              <input id="tgChat" class="telegram-input" placeholder="Chat ID">
+            </div>
+            <button id="btnTgTestConn" class="telegram-btn">Test Connection</button>
+            <div id="tgStatus" class="telegram-status"></div>
+          </div>
+
+          <!-- Activity Log -->
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+            <div style="font-weight:700">Activity Log</div>
+            <div class="log" id="mainLog"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COINGLASS PANEL -->
+    <div id="coinglassPanel" class="main" style="display:none;flex-direction:column;height:100vh;">
+      <div style="height:100%;width:100%;border:none;background:var(--surface);">
+        <iframe 
+          id="coinglassFrame"
+          src="https://www.coinglass.com/tv/Bitget_BTCUSDT_UMCBL" 
+          style="width:100%;height:100%;border:none;background:var(--surface);"
+          frameborder="0"
+          allowfullscreen>
+        </iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ========== Config ==========
+  const TOP_COINS = [
+    "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT",
+    "SOLUSDT","DOGEUSDT","DOTUSDT","TRXUSDT",
+    "LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT", 
+    "PEPEUSDT", "BONKUSDT", "INJUSDT", "APTUSDT","ATOMUSDT","FILUSDT",
+    "MATICUSDT", "NEARUSDT", "OPUSDT", "ARBUSDT", "SUIUSDT",
+    "SEIUSDT", "TIAUSDT", "ORDIUSDT", "RUNEUSDT", "MEMEUSDT"
+  ];
+  
+  const UPDATE_INTERVAL_MS = 60000; // 1 минута для более точного отслеживания пампов
+  const PRICE_HISTORY_LIMIT = 120; // 120 минут истории
+  
+  // State
+  let isRunning = false;
+  let watchers = {};
+  let updateTimer = null;
+  let currentDetail = null;
+  let signalCounter = 0;
+  let lastTelegramSignal = {};
+
+  // Pump Settings
+  let longPeriod = 2; // minutes
+  let longPercent = 2; // percent
+  let shortPeriod = 20; // minutes
+  let shortPercent = 10; // percent
+
+  // Utils
+  function q(id){return document.getElementById(id)}
+  
+  function addMainLog(text, cls='info'){
+    const el = q('mainLog');
+    const node = document.createElement('div');
+    const t = new Date().toLocaleTimeString();
+    node.innerHTML = `<span style="color:var(--muted)">[${t}]</span> ${text}`;
+    el.appendChild(node);
+    el.scrollTop = el.scrollHeight;
+    while(el.children.length>200) el.removeChild(el.firstChild);
+  }
+
+  // 🔥 ОБНОВЛЕНИЕ СИГНАЛА PUMP
+  function updateSignalIcon(sym) {
+    const icon = q('signalIcon');
+    const status = q('signalStatus');
+    const watcher = watchers[sym];
+    
+    if (!watcher) {
+      icon.textContent = '📊';
+      icon.style.color = 'var(--muted)';
+      status.textContent = 'Select a coin';
+      return;
+    }
+
+    const longChange = watcher.longChangePercent || 0;
+    const shortChange = watcher.shortChangePercent || 0;
+
+    if (longChange >= longPercent) {
+      icon.textContent = '🚀';
+      icon.style.color = 'var(--accent)';
+      status.textContent = `LONG PUMP • ${longChange.toFixed(2)}% in ${longPeriod}min`;
+    } else if (shortChange >= shortPercent) {
+      icon.textContent = '📉';
+      icon.style.color = 'var(--danger)';
+      status.textContent = `SHORT PUMP • ${shortChange.toFixed(2)}% in ${shortPeriod}min`;
+    } else {
+      icon.textContent = '📊';
+      icon.style.color = 'var(--warn)';
+      status.textContent = `NO SIGNAL`;
+    }
+  }
+
+  // Initial render of watchlist UI
+  function renderWatchlistUI(){
+    const container = q('watchlistContainer');
+    container.innerHTML = '';
+    TOP_COINS.forEach(sym=>{
+      const row = document.createElement('div');
+      row.className = 'coin-row';
+      row.id = `row-${sym}`;
+      row.innerHTML = `
+        <div>
+          <div class="coin-symbol">${sym.replace('USDT','/USDT')}</div>
+          <div class="small-muted" id="sub-${sym}">--</div>
+        </div>
+        <div class="coin-price" id="price-${sym}">—</div>
+        <div class="coin-price" id="long-${sym}">—</div>
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div class="arrow" id="arrow-${sym}">—</div>
+          <div class="small-muted" id="short-${sym}">—</div>
+        </div>
+      `;
+      row.addEventListener('click', (e)=>{
+        if(e.target.tagName.toLowerCase()!=='button') openDetailFor(sym);
+      });
+      container.appendChild(row);
+      
+      watchers[sym] = {
+        priceHistory: [],
+        currentPrice: null,
+        longChangePercent: 0,
+        shortChangePercent: 0,
+        volume: null,
+        priceChangePercent24h: 0,
+        lastUpdate: null,
+        signalType: null, // 'long' or 'short'
+        signalCount: 0
+      };
+    });
+    updateOverviewStatus();
+  }
+
+  function updateOverviewStatus(){
+    const longSignals = Object.values(watchers).filter(w=> 
+      (w.longChangePercent || 0) >= longPercent
+    ).length;
+    
+    const shortSignals = Object.values(watchers).filter(w=> 
+      (w.shortChangePercent || 0) >= shortPercent
+    ).length;
+    
+    const filter = q('filterBar').querySelector('.filter-btn.active').dataset.filter;
+    q('overviewStatus').textContent = `${longSignals} long • ${shortSignals} short • ${filter}`;
+  }
+
+  // 🔥 ПОЛУЧЕНИЕ ЦЕНЫ И ОБЪЕМА С BINANCE
+  async function fetchPriceAndVolume(symbol){
+    try {
+      const resp = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
+      if (resp.ok) {
+        const data = await resp.json();
+        return {
+          price: parseFloat(data.lastPrice),
+          volume: parseFloat(data.volume),
+          priceChangePercent: parseFloat(data.priceChangePercent)
+        };
+      }
+    } catch (e) {
+      console.error(`Price API error for ${symbol}:`, e);
+    }
+    return null;
+  }
+
+  // 🔥 ВЫЧИСЛЕНИЕ ИЗМЕНЕНИЯ ЦЕНЫ
+  function calculatePriceChange(symbol, periodMinutes) {
+    const watcher = watchers[symbol];
+    if (!watcher || watcher.priceHistory.length < 2) return 0;
+
+    const currentPrice = watcher.currentPrice;
+    const periodMs = periodMinutes * 60 * 1000; // Convert to milliseconds
+    const targetTime = Date.now() - periodMs;
+    
+    // Find price value closest to the target time
+    let historicalPrice = null;
+    for (let i = watcher.priceHistory.length - 1; i >= 0; i--) {
+      if (watcher.priceHistory[i].timestamp <= targetTime) {
+        historicalPrice = watcher.priceHistory[i].price;
+        break;
+      }
+    }
+    
+    // If we don't have enough history, use the oldest available
+    if (historicalPrice === null && watcher.priceHistory.length > 0) {
+      historicalPrice = watcher.priceHistory[0].price;
+    }
+    
+    if (historicalPrice && historicalPrice > 0) {
+      return ((currentPrice - historicalPrice) / historicalPrice) * 100;
+    }
+    
+    return 0;
+  }
+
+  // 🔥 ОСНОВНОЙ ЦИКЛ СКАНИРОВАНИЯ PUMP
+  async function scanLoop(){
+    if(!isRunning) return;
+    
+    try {
+      const promises = TOP_COINS.map(async (sym) => {
+        try {
+          // Получаем цену и объем
+          const marketData = await fetchPriceAndVolume(sym);
+          
+          if (!marketData) return;
+          
+          const watcher = watchers[sym];
+          watcher.currentPrice = marketData.price;
+          watcher.lastUpdate = Date.now();
+          watcher.volume = marketData.volume;
+          watcher.priceChangePercent24h = marketData.priceChangePercent;
+          
+          // Добавляем в историю
+          watcher.priceHistory.push({
+            timestamp: Date.now(),
+            price: marketData.price
+          });
+          
+          // Ограничиваем размер истории
+          if (watcher.priceHistory.length > PRICE_HISTORY_LIMIT) {
+            watcher.priceHistory = watcher.priceHistory.slice(-PRICE_HISTORY_LIMIT);
+          }
+          
+          // Вычисляем изменения цены
+          watcher.longChangePercent = calculatePriceChange(sym, longPeriod);
+          watcher.shortChangePercent = calculatePriceChange(sym, shortPeriod);
+          
+          renderRow(sym);
+          
+          // Проверяем сигналы LONG PUMP
+          if (watcher.longChangePercent >= longPercent) {
+            const signalKey = `${sym}_long`;
+            
+            if (!lastTelegramSignal[signalKey]) {
+              signalCounter++;
+              q('signalNumber').textContent = signalCounter;
+              
+              watcher.signalType = 'long';
+              watcher.signalCount++;
+              
+              sendTelegramSignal(sym, 'LONG', watcher.longChangePercent, watcher.currentPrice, watcher.volume, longPeriod);
+              lastTelegramSignal[signalKey] = Date.now();
+              
+              addMainLog(`🚀 LONG Pump #${signalCounter}: ${sym} +${watcher.longChangePercent.toFixed(2)}% in ${longPeriod}min`);
+            }
+          }
+          
+          // Проверяем сигналы SHORT PUMP
+          if (watcher.shortChangePercent >= shortPercent) {
+            const signalKey = `${sym}_short`;
+            
+            if (!lastTelegramSignal[signalKey]) {
+              signalCounter++;
+              q('signalNumber').textContent = signalCounter;
+              
+              watcher.signalType = 'short';
+              watcher.signalCount++;
+              
+              sendTelegramSignal(sym, 'SHORT', watcher.shortChangePercent, watcher.currentPrice, watcher.volume, shortPeriod);
+              lastTelegramSignal[signalKey] = Date.now();
+              
+              addMainLog(`📉 SHORT Pump #${signalCounter}: ${sym} +${watcher.shortChangePercent.toFixed(2)}% in ${shortPeriod}min`);
+            }
+          }
+          
+        } catch (err) {
+          console.error(`Error for ${sym}:`, err);
+        }
+      });
+
+      await Promise.all(promises);
+      refreshWatchlist();
+      
+      // ОБНОВЛЕНИЕ ДЕТАЛЕЙ ЕСЛИ ОТКРЫТЫ
+      if (currentDetail && watchers[currentDetail]) {
+        const watcher = watchers[currentDetail];
+        updateDetailPanel(watcher);
+      }
+      
+    } catch (error) {
+      console.error('Scan error:', error);
+      addMainLog('❌ Scan error: ' + error.message);
+    }
+    
+    if (isRunning) {
+      updateTimer = setTimeout(scanLoop, UPDATE_INTERVAL_MS);
+    }
+  }
+
+  function renderRow(sym){
+    const s = watchers[sym];
+    if(!s) return;
+    
+    q(`price-${sym}`).textContent = s.currentPrice ? `$${(+s.currentPrice).toFixed(2)}` : '—';
+    
+    const longChange = s.longChangePercent || 0;
+    const shortChange = s.shortChangePercent || 0;
+    
+    q(`long-${sym}`).textContent = longChange ? `${longChange.toFixed(2)}%` : '—';
+    q(`short-${sym}`).textContent = shortChange ? `${shortChange.toFixed(2)}%` : '—';
+    
+    const arrowEl = q(`arrow-${sym}`);
+    const shortEl = q(`short-${sym}`);
+    
+    if(longChange >= longPercent){
+      arrowEl.className='arrow up';
+      arrowEl.textContent='🚀';
+      shortEl.innerHTML = `${shortChange.toFixed(2)}% <span class="signal-badge signal-long">LONG</span>`;
+      shortEl.style.color = 'var(--accent)';
+    } else if(shortChange >= shortPercent){
+      arrowEl.className='arrow down';
+      arrowEl.textContent='📉';
+      shortEl.innerHTML = `${shortChange.toFixed(2)}% <span class="signal-badge signal-short">SHORT</span>`;
+      shortEl.style.color = 'var(--danger)';
+    } else {
+      arrowEl.className='arrow flat';
+      arrowEl.textContent='→';
+      shortEl.textContent = `${shortChange.toFixed(2)}%`;
+      shortEl.style.color = 'var(--muted)';
+    }
+    
+    q(`sub-${sym}`).textContent = s.lastUpdate ? 
+      `Updated: ${new Date(s.lastUpdate).toLocaleTimeString()}` : '--';
+  }
+
+  function formatVolume(vol) {
+    if (vol >= 1000000) {
+      return (vol / 1000000).toFixed(2) + 'M';
+    } else if (vol >= 1000) {
+      return (vol / 1000).toFixed(2) + 'K';
+    }
+    return vol.toFixed(2);
+  }
+
+  function refreshWatchlist(){
+    const filter = document.querySelector('.filter-btn.active').dataset.filter;
+    TOP_COINS.forEach(sym=>{
+      const row = q(`row-${sym}`);
+      const s = watchers[sym];
+      const longChange = s.longChangePercent || 0;
+      const shortChange = s.shortChangePercent || 0;
+      let show = true;
+      
+      if(filter==='long') show = longChange >= longPercent;
+      if(filter==='short') show = shortChange >= shortPercent;
+      if(filter==='signals') show = (longChange >= longPercent) || (shortChange >= shortPercent);
+      
+      row.style.display = show ? 'grid' : 'none';
+      renderRow(sym);
+    });
+    
+    // СОРТИРОВКА АКТИВНЫХ СИГНАЛОВ
+    if (filter === 'signals' || filter === 'long' || filter === 'short') {
+      sortActiveBySignalStrength();
+    }
+    
+    updateOverviewStatus();
+  }
+
+  // 🔥 СОРТИРОВКА АКТИВНЫХ СИГНАЛОВ ПО СИЛЕ СИГНАЛА
+  function sortActiveBySignalStrength() {
+    const container = q('watchlistContainer');
+    const visibleRows = Array.from(container.querySelectorAll('.coin-row[style*="display: grid"]'));
+    
+    visibleRows.sort((a, b) => {
+      const symA = a.id.replace('row-', '');
+      const symB = b.id.replace('row-', '');
+      const watcherA = watchers[symA];
+      const watcherB = watchers[symB];
+      
+      const filter = document.querySelector('.filter-btn.active').dataset.filter;
+      
+      let scoreA = 0, scoreB = 0;
+      
+      if (filter === 'long' || filter === 'signals') {
+        scoreA += Math.max(0, watcherA.longChangePercent || 0);
+        scoreB += Math.max(0, watcherB.longChangePercent || 0);
+      }
+      
+      if (filter === 'short' || filter === 'signals') {
+        scoreA += Math.max(0, watcherA.shortChangePercent || 0);
+        scoreB += Math.max(0, watcherB.shortChangePercent || 0);
+      }
+      
+      return scoreB - scoreA; // По убыванию
+    });
+    
+    visibleRows.forEach(row => container.appendChild(row));
+  }
+
+  // ДЕТАЛЬНАЯ ИНФОРМАЦИЯ
+  function openDetailFor(sym){
+    currentDetail = sym;
+    const watcher = watchers[sym];
+    
+    // АНИМАЦИЯ
+    const detailPanel = q('detailPanel');
+    detailPanel.classList.add('signal-pulse');
+    setTimeout(() => detailPanel.classList.remove('signal-pulse'), 2000);
+    
+    updateSignalIcon(sym);
+    updateDetailPanel(watcher);
+  }
+
+  function updateDetailPanel(watcher) {
+    if (!watcher) return;
+    
+    q('detailTitle').textContent = currentDetail.replace('USDT','/USDT');
+    q('detailSubtitle').textContent = `Long: ${longPeriod}min/${longPercent}% • Short: ${shortPeriod}min/${shortPercent}%`;
+    q('detailPrice').textContent = watcher.currentPrice ? `$${(+watcher.currentPrice).toFixed(2)}` : '--';
+    q('detailVolume').textContent = watcher.volume ? formatVolume(watcher.volume) : '--';
+    q('detail24hChange').textContent = watcher.priceChangePercent24h ? `${watcher.priceChangePercent24h.toFixed(2)}%` : '--';
+    
+    q('detailLongChange').textContent = watcher.longChangePercent ? 
+      `${watcher.longChangePercent > 0 ? '+' : ''}${watcher.longChangePercent.toFixed(2)}%` : '—';
+    
+    q('detailShortChange').textContent = watcher.shortChangePercent ? 
+      `${watcher.shortChangePercent > 0 ? '+' : ''}${watcher.shortChangePercent.toFixed(2)}%` : '—';
+    
+    let desc = 'No significant pump detected';
+    if (watcher.longChangePercent >= longPercent) {
+      desc = `Price increased by ${watcher.longChangePercent.toFixed(2)}% over ${longPeriod} minutes - Potential LONG opportunity`;
+    } else if (watcher.shortChangePercent >= shortPercent) {
+      desc = `Price increased by ${watcher.shortChangePercent.toFixed(2)}% over ${shortPeriod} minutes - Potential SHORT opportunity (overheated)`;
+    }
+    q('detailDesc').textContent = desc;
+    
+    const time = new Date().toLocaleTimeString();
+    q('detailMiniLog').innerHTML = `<div>${time} • Price: $${watcher.currentPrice ? watcher.currentPrice.toFixed(2) : '--'} (Long: ${watcher.longChangePercent ? watcher.longChangePercent.toFixed(2) : '0'}%, Short: ${watcher.shortChangePercent ? watcher.shortChangePercent.toFixed(2) : '0'}%)</div>`;
+  }
+
+  // TELEGRAM
+  async function sendTelegramSignal(symbol, direction, changePercent, price, volume, period) {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) return;
+
+    const emoji = direction === 'LONG' ? '🚀' : '📉';
+    const message = `${emoji} PUMP SIGNAL #${signalCounter}\n` +
+                   `💰 ${symbol.replace('USDT', '/USDT')}\n` +
+                   `📈 ${direction} PUMP: +${changePercent.toFixed(2)}% in ${period}min\n` +
+                   `💵 Price: $${price.toFixed(2)}\n` +
+                   `📊 24h Volume: ${formatVolume(volume)}\n` +
+                   `⏰ ${new Date().toLocaleTimeString()}`;
+
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      });
+      
+      const data = await response.json();
+      if (data.ok) {
+        addMainLog(`Telegram ${direction} pump signal sent for ${symbol}`);
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Signal sent</span>';
+      }
+    } catch (error) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Network error</span>';
+    }
+  }
+
+  async function testTelegramConnection() {
+    const token = document.getElementById('tgToken').value.trim();
+    const chatId = document.getElementById('tgChat').value.trim();
+    
+    if (!token || !chatId) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">Enter credentials</span>';
+      return;
+    }
+    
+    try {
+      const response = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const data = await response.json();
+      
+      if (data.ok) {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-ok">✅ Connected</span>';
+      } else {
+        document.getElementById('tgStatus').innerHTML = '<span class="status-error">Invalid token</span>';
+      }
+    } catch (error) {
+      document.getElementById('tgStatus').innerHTML = '<span class="status-error">❌ Connection failed</span>';
+    }
+  }
+
+  // 🔥 РЕСАЙЗИНГ ПАНЕЛЕЙ
+  function initResizeHandlers() {
+    const leftPanel = document.querySelector('.left');
+    const rightPanel = document.querySelector('.right');
+    
+    const verticalResizer = document.querySelector('.resizer.vertical');
+    
+    let isVerticalResizing = false;
+    
+    // ВЕРТИКАЛЬНЫЙ РЕСАЙЗ (лево-право)
+    verticalResizer.addEventListener('mousedown', function(e) {
+      isVerticalResizing = true;
+      document.addEventListener('mousemove', handleVerticalResize);
+      document.addEventListener('mouseup', stopVerticalResize);
+      e.preventDefault();
+    });
+    
+    function handleVerticalResize(e) {
+      if (!isVerticalResizing) return;
+      
+      const containerRect = document.querySelector('.main').getBoundingClientRect();
+      const leftWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      
+      if (leftWidth > 20 && leftWidth < 80) {
+        leftPanel.style.flex = `0 0 ${leftWidth}%`;
+        rightPanel.style.flex = `0 0 ${100 - leftWidth}%`;
+      }
+    }
+    
+    function stopVerticalResize() {
+      isVerticalResizing = false;
+      document.removeEventListener('mousemove', handleVerticalResize);
+      document.removeEventListener('mouseup', stopVerticalResize);
+    }
+  }
+
+  // 🔥 ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+  function initTabHandlers() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const tab = this.dataset.tab;
+        document.getElementById('scannerPanel').style.display = tab === 'scanner' ? 'flex' : 'none';
+        document.getElementById('coinglassPanel').style.display = tab === 'coinglass' ? 'flex' : 'none';
+      });
+    });
+  }
+
+  // START/STOP
+  function toggleScanner() {
+    if (isRunning) {
+      isRunning = false;
+      if (updateTimer) {
+        clearTimeout(updateTimer);
+        updateTimer = null;
+      }
+      q('btnStart').textContent = 'START';
+      q('btnStart').style.background = 'var(--accent)';
+      addMainLog('⏸️ Pump Scanner stopped');
+    } else {
+      isRunning = true;
+      q('btnStart').textContent = 'STOP';
+      q('btnStart').style.background = 'var(--danger)';
+      addMainLog('▶️ Pump Scanner started');
+      scanLoop();
+    }
+  }
+
+  // ИНИЦИАЛИЗАЦИЯ
+  document.addEventListener('DOMContentLoaded', ()=>{
+    renderWatchlistUI();
+    initResizeHandlers();
+    initTabHandlers();
+    
+    // ФИЛЬТРЫ
+    document.querySelectorAll('.filter-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        refreshWatchlist();
+      });
+    });
+    
+    // PUMP SETTINGS
+    q('longPeriod').addEventListener('change', function() {
+      longPeriod = parseInt(this.value) || 2;
+      addMainLog(`Long Period updated to ${longPeriod} minutes`);
+    });
+
+    q('longPercent').addEventListener('change', function() {
+      longPercent = parseFloat(this.value) || 2;
+      addMainLog(`Long Percent threshold updated to ${longPercent}%`);
+    });
+
+    q('shortPeriod').addEventListener('change', function() {
+      shortPeriod = parseInt(this.value) || 20;
+      addMainLog(`Short Period updated to ${shortPeriod} minutes`);
+    });
+
+    q('shortPercent').addEventListener('change', function() {
+      shortPercent = parseFloat(this.value) || 10;
+      addMainLog(`Short Percent threshold updated to ${shortPercent}%`);
+    });
+
+    // START BUTTON
+    q('btnStart').addEventListener('click', toggleScanner);
+
+    // TELEGRAM
+    q('btnTgTestConn').addEventListener('click', testTelegramConnection);
+
+    // HELP
+    q('helpBtn').addEventListener('click', () => {
+      alert(`🚀 PUMP SCREENER
+
+📊 FEATURES:
+• Monitors price pumps for 30 top cryptocurrencies
+• Real-time data from Binance
+• Two signal types: LONG (small pumps) & SHORT (big pumps)
+• Customizable periods and percentage thresholds
+• Telegram alerts for pump signals
+• Coinglass integration
+
+🎯 HOW TO USE:
+1. Click START to begin monitoring
+2. Set LONG parameters (period and % change) for early entry signals
+3. Set SHORT parameters for overheat/retracement signals
+4. Use filters: All/Long/Short/Signals
+5. Monitor pump signals in real-time
+
+⚡ STRATEGY:
+• LONG: Early detection of small pumps (2% in 2min) for trend entry
+• SHORT: Detection of big pumps (10% in 20min) for retracement plays
+• Combine with CVD indicator for confirmation
+• Use grid entry for short positions to improve average price`);
+    });
+
+    addMainLog('Pump Screener initialized');
+    addMainLog(`Monitoring ${TOP_COINS.length} coins every minute`);
+    
+    // АВТОСТАРТ
+    setTimeout(()=>{
+      if (TOP_COINS.includes('BTCUSDT')) {
+        openDetailFor('BTCUSDT');
+      }
+    }, 1000);
+  });
+
+  window.openDetailFor = openDetailFor;
+  </script>
+</body>
+</html>

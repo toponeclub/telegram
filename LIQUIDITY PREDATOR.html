@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIQUIDITY PREDATOR v1.0</title>
+    <style>
+        :root {
+            --bg-color: #0d0d12;
+            --card-bg: #1c1c22;
+            --text-main: #ffffff;
+            --text-dim: #888899;
+            --accent-green: #30d158;
+            --accent-red: #ff453a;
+            --accent-blue: #0a84ff;
+            --border: #2c2c35;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- HEADER --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-weight: 200;
+            font-size: 24px;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+
+        .status-bar {
+            font-size: 12px;
+            color: var(--text-dim);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulse-anim 2s infinite;
+        }
+
+        @keyframes pulse-anim {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* --- SETTINGS AREA --- */
+        .settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        input {
+            background: #000;
+            border: 1px solid var(--border);
+            color: var(--accent-blue);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            outline: none;
+        }
+
+        button#startBtn {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        button#startBtn:hover {
+            opacity: 0.9;
+            transform: scale(0.98);
+        }
+
+        button#startBtn:disabled {
+            background: var(--border);
+            color: var(--text-dim);
+        }
+
+        /* --- MAIN GRID --- */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* --- LOG CONSOLE --- */
+        .console-panel {
+            background: #000;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 15px;
+            font-family: "SF Mono", "Monaco", monospace;
+            font-size: 11px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column-reverse; /* Новые логи сверху/снизу по желанию */
+        }
+
+        .log-item {
+            margin-bottom: 4px;
+            border-bottom: 1px solid #111;
+            padding-bottom: 2px;
+        }
+        
+        .log-time { color: #555; margin-right: 8px; }
+        .log-coin { color: var(--accent-blue); font-weight: bold; width: 60px; display: inline-block; }
+        .log-info { color: var(--text-dim); }
+        .log-warn { color: var(--accent-red); }
+        .log-success { color: var(--accent-green); }
+
+        /* --- SIGNALS PANEL --- */
+        .signals-panel {
+            overflow-y: auto;
+        }
+
+        .signal-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--text-dim);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .signal-card.BUY { border-left-color: var(--accent-green); box-shadow: 0 0 15px rgba(48, 209, 88, 0.1); }
+        .signal-card.SELL { border-left-color: var(--accent-red); box-shadow: 0 0 15px rgba(255, 69, 58, 0.1); }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .card-price { font-size: 14px; color: var(--text-main); }
+        .card-reason { font-size: 12px; color: var(--text-dim); margin-top: 8px; line-height: 1.4; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div class="pulse" id="statusDot" style="background-color: var(--text-dim); box-shadow: none;"></div>
+            <h1>LIQUIDITY PREDATOR</h1>
+        </div>
+        <div class="status-bar">
+            <span id="scanStatus">IDLE</span>
+            <span>|</span>
+            <span id="queueCount">0/20 COINS</span>
+        </div>
+    </header>
+
+    <div class="settings">
+        <input type="text" id="tgToken" placeholder="Telegram Bot Token" value="">
+        <input type="text" id="tgChatId" placeholder="Chat ID" value="">
+        <button id="startBtn" onclick="toggleScanner()">START ENGINE</button>
+    </div>
+
+    <div class="dashboard">
+        <div class="console-panel" id="consoleLog">
+            <div class="log-item"><span class="log-info">System ready. Enter credentials and press START.</span></div>
+            <div class="log-item"><span class="log-warn">NOTE: Ensure CORS extension is enabled in browser!</span></div>
+        </div>
+
+        <div class="signals-panel" id="signalsArea">
+            </div>
+    </div>
+
+<script>
+    // --- CONFIGURATION & ARCHITECTURE ---
+    
+    const CONFIG = {
+        coins: [
+       "BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","ADAUSDT","SOLUSDT","DOGEUSDT","DOTUSDT","TRXUSDT","LINKUSDT","LTCUSDT","BCHUSDT","AVAXUSDT","UNIUSDT","PEPEUSDT","BONKUSDT","INJUSDT","APTUSDT","ATOMUSDT","FILUSDT","ETCUSDT","XLMUSDT","ARBUSDT","TONUSDT"
+        ],
+        timeframe: '5m',
+        loopDelay: 50000, // 50 секунд на полный цикл (примерно)
+        coinDelay: 1500,  // 1.5 секунды между монетами
+        // Пороги "Неизбежности"
+        thresholds: {
+            volMultiplier: 1.55,   // Текущий объем > 1.8x от среднего
+            priceStagnation: 0.24, // Цена изменилась меньше чем на 0.2% (зажим)
+            imbalance: 1.65        // Перевес стакана в 2 раза
+            // НОВЫЙ ПАРАМЕТР
+      
+        }
+    };
+
+    let state = {
+        isRunning: false,
+        tgToken: '',
+        tgChatId: '',
+        lastSignals: {} // Чтобы не спамить (Cooldown 15 min)
+    };
+
+    // --- UTILS ---
+
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    const log = (msg, type = 'info', coin = '') => {
+        const consoleDiv = document.getElementById('consoleLog');
+        const time = new Date().toLocaleTimeString('ru-RU');
+        
+        let colorClass = 'log-info';
+        if(type === 'warn') colorClass = 'log-warn';
+        if(type === 'success') colorClass = 'log-success';
+
+        const html = `
+            <div class="log-item">
+                <span class="log-time">[${time}]</span>
+                ${coin ? `<span class="log-coin">${coin.replace('USDT','')}</span>` : ''}
+                <span class="${colorClass}">${msg}</span>
+            </div>
+        `;
+        consoleDiv.insertAdjacentHTML('afterbegin', html);
+    };
+
+    // --- TELEGRAM API ---
+
+    async function sendTelegram(coin, direction, price, reason) {
+        if (!state.tgToken || !state.tgChatId) return;
+
+        const emoji = direction === 'BUY' ? '🟢' : '🔴';
+        const text = `
+<b>${emoji} INEVITABLE ${direction} - ${coin.replace('USDT','')}</b>
+
+Price: ${price}
+Timeframe: 5 min
+Reason: ${reason}
+        `;
+
+        const url = `https://api.telegram.org/bot${state.tgToken}/sendMessage`;
+        try {
+            await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    chat_id: state.tgChatId,
+                    text: text,
+                    parse_mode: 'HTML'
+                })
+            });
+            log(`Telegram sent for ${coin}`, 'success', coin);
+        } catch (e) {
+            log(`TG Error: ${e.message}`, 'warn', coin);
+        }
+    }
+
+    // --- BINANCE DATA ENGINE ---
+
+    async function fetchMarketData(symbol) {
+        try {
+            // 1. Klines (Свечи) - FAPI (Futures)
+            // ВАЖНО: Может потребоваться CORS Extension
+            const klinesRes = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${CONFIG.timeframe}&limit=20`);
+            if(!klinesRes.ok) throw new Error("API Blocked (CORS?)");
+            const klines = await klinesRes.json();
+
+            // 2. Orderbook (Стакан)
+            const depthRes = await fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${symbol}&limit=50`);
+            const depth = await depthRes.json();
+
+            return { klines, depth };
+        } catch (e) {
+            log(`Fetch error: ${e.message}`, 'warn', symbol);
+            return null;
+        }
+    }
+
+    // --- ANALYSIS LOGIC (BRAIN) ---
+
+   // --- ANALYSIS LOGIC (BRAIN) ---
+
+    function analyzeCoin(symbol, data) {
+        const klines = data.klines;
+        const depth = data.depth;
+        
+        // Нужны 5 предыдущих свечей для анализа тренда (с 15-й по 19-ю, 20-я - текущая)
+        const relevantKlines = klines.slice(-6); // Берем последние 6 свечей (5 предыдущих + текущая)
+
+        // Данные последней ЗАВЕРШЕННОЙ свечи
+        const current = relevantKlines[relevantKlines.length - 1]; // Текущая, формирующаяся
+        
+        // Парсим данные
+        const curVol = parseFloat(current[5]);
+        const curOpen = parseFloat(current[1]);
+        const curClose = parseFloat(current[4]);
+        
+        // Средний объем за предыдущие 5 свечей (более актуально)
+        let sumVol = 0;
+        for(let i=0; i < relevantKlines.length - 1; i++) {
+            sumVol += parseFloat(relevantKlines[i][5]);
+        }
+        const avgVol = sumVol / (relevantKlines.length - 1);
+
+        // Расчеты Стакана
+        let bidsVol = 0;
+        let asksVol = 0;
+        depth.bids.forEach(bid => bidsVol += parseFloat(bid[1]));
+        depth.asks.forEach(ask => asksVol += parseFloat(ask[1]));
+        
+        const bookRatio = bidsVol / asksVol; 
+
+        // --- МАТЕМАТИКА НЕИЗБЕЖНОСТИ (ОБНОВЛЕНИЕ) ---
+        
+        const volRatio = curVol / avgVol;
+        // Используем более низкий порог для раннего сигнала
+        const isHighVol = volRatio > CONFIG.minVolRatioForEarlySignal; 
+        
+        // Сохраняем старый жесткий застой (как вторичный критерий)
+        const isStuckHard = Math.abs((curClose - curOpen) / curOpen) * 100 < CONFIG.thresholds.priceStagnation;
+
+
+        // 1. АНАЛИЗ ПРЕДШЕСТВУЮЩЕГО ТРЕНДА (ЗА 5 СВЕЧЕЙ)
+        let redCount = 0;
+        let greenCount = 0;
+
+        // Итерируем по 5 предыдущим ЗАВЕРШЕННЫМ свечам (с index 0 по 4 из relevantKlines)
+        for(let i = 0; i < relevantKlines.length - 1; i++) {
+            const candle = relevantKlines[i];
+            const open = parseFloat(candle[1]);
+            const close = parseFloat(candle[4]);
+            
+            if (close < open) { // Свеча закрылась ниже открытия (Красная)
+                redCount++;
+            } else if (close > open) { // Свеча закрылась выше открытия (Зеленая)
+                greenCount++;
+            }
+            // Если Open=Close, не считаем
+        }
+        
+        // Логика тренда: Красных/Зеленых больше, чем Зеленых/Красных
+        const isDowntrendBefore = redCount > greenCount; // Больше красных, ищем BUY
+        const isUptrendBefore = greenCount > redCount; // Больше зеленых, ищем SELL
+
+        // Debug log (чтобы ты видел, что он считает)
+        // log(`Vol: ${volRatio.toFixed(1)}x, Book: ${bookRatio.toFixed(1)}, Red/Green: ${redCount}/${greenCount}`, 'info', symbol);
+
+
+        // --- КРИТЕРИИ РАННЕГО СИГНАЛА ---
+        
+        // 1. СИГНАЛ BUY (ABSORPTION) - Поглощение падения
+        if (isHighVol && isDowntrendBefore && bookRatio > CONFIG.thresholds.imbalance) {
+            
+            // Если объем очень высокий ИЛИ цена стоит, усиливаем сигнал
+            const isStrongSignal = volRatio > CONFIG.thresholds.volMultiplier || isStuckHard;
+            
+            return {
+                type: 'BUY',
+                price: curClose.toFixed(4),
+                reason: `<b>Early Absorption ${isStrongSignal ? '(STRONG)' : ''}:</b><br>Detected High Volume (${volRatio.toFixed(1)}x) vs Downtrend.<br>Orderbook bids dominate (${bookRatio.toFixed(1)}x).<br>Potential support bounce.`
+            };
+        }
+
+        // 2. СИГНАЛ SELL (DISTRIBUTION) - Распределение роста
+        if (isHighVol && isUptrendBefore && bookRatio < (1 / CONFIG.thresholds.imbalance)) {
+            
+            // Если объем очень высокий ИЛИ цена стоит, усиливаем сигнал
+            const isStrongSignal = volRatio > CONFIG.thresholds.volMultiplier || isStuckHard;
+
+            return {
+                type: 'SELL',
+                price: curClose.toFixed(4),
+                reason: `<b>Early Distribution ${isStrongSignal ? '(STRONG)' : ''}:</b><br>Detected High Volume (${volRatio.toFixed(1)}x) vs Uptrend.<br>Orderbook asks dominate (${(1/bookRatio).toFixed(1)}x).<br>Potential resistance rejection.`
+            };
+        }
+
+        return null;
+    }
+
+    function displaySignal(symbol, signal) {
+        const area = document.getElementById('signalsArea');
+        
+        // Удаляем старый сигнал по этой монете если есть
+        const old = document.getElementById(`sig-${symbol}`);
+        if(old) old.remove();
+
+        const html = `
+            <div class="signal-card ${signal.type}" id="sig-${symbol}">
+                <div class="card-header">
+                    <span>${symbol.replace('USDT','')}</span>
+                    <span style="color: ${signal.type === 'BUY' ? 'var(--accent-green)' : 'var(--accent-red)'}">${signal.type}</span>
+                </div>
+                <div class="card-price">Price: $${signal.price}</div>
+                <div class="card-reason">${signal.reason}</div>
+            </div>
+        `;
+        area.insertAdjacentHTML('afterbegin', html);
+    }
+
+    // --- MAIN LOOP ---
+
+    async function runScannerLoop() {
+        const statusSpan = document.getElementById('scanStatus');
+        const queueSpan = document.getElementById('queueCount');
+        const dot = document.getElementById('statusDot');
+
+        statusSpan.innerText = "SCANNING ACTIVE";
+        statusSpan.style.color = "var(--accent-green)";
+        dot.style.backgroundColor = "var(--accent-green)";
+        dot.style.boxShadow = "0 0 8px var(--accent-green)";
+
+        while(state.isRunning) {
+            log("--- Starting Scan Cycle ---", 'info');
+            
+            let index = 1;
+            for (const coin of CONFIG.coins) {
+                if(!state.isRunning) break; // Экстренная остановка
+
+                queueSpan.innerText = `${index}/${CONFIG.coins.length} - ${coin.replace('USDT','')}`;
+                
+                // 1. Fetch
+                const data = await fetchMarketData(coin);
+                
+                if (data) {
+                    // 2. Analyze
+                    const result = analyzeCoin(coin, data);
+                    
+                    if (result) {
+                        log(`SIGNAL FOUND: ${result.type}`, 'success', coin);
+                        
+                        // Проверка на кулдаун (не чаще 1 раза в 15 мин на монету)
+                        const now = Date.now();
+                        const lastTime = state.lastSignals[coin] || 0;
+                        
+                        if (now - lastTime > 900000) { // 900 000 ms = 15 min
+                            displaySignal(coin, result);
+                            await sendTelegram(coin, result.type, result.price, result.reason.replace(/<br>/g, '\n'));
+                            state.lastSignals[coin] = now;
+                        } else {
+                            log(`Signal skipped (Cooldown active)`, 'warn', coin);
+                        }
+                    } else {
+                        // Просто показываем что живы, логируем только иногда
+                         // log(`Clean. Vol: ${data.klines.length}`, 'info', coin); 
+                    }
+                }
+
+                // Пауза между монетами (чтобы не было API Ban)
+                await sleep(CONFIG.coinDelay);
+                index++;
+            }
+
+            log("Cycle complete. Waiting...", 'info');
+            // Вычисляем сколько осталось ждать до 50 сек, если цикл прошел быстро
+            // Но ты просил просто 50 сек "луп обновления". 
+            // Логичнее просто подождать паузу перед следующим кругом.
+            // Если цикл занял 30 сек (20 монет * 1.5 сек), ждем еще 20 сек.
+            await sleep(10000); 
+        }
+
+        statusSpan.innerText = "STOPPED";
+        statusSpan.style.color = "var(--accent-red)";
+        dot.style.backgroundColor = "var(--accent-red)";
+        dot.style.boxShadow = "none";
+    }
+
+    function toggleScanner() {
+        const btn = document.getElementById('startBtn');
+        const tInput = document.getElementById('tgToken');
+        const cInput = document.getElementById('tgChatId');
+
+        if (!state.isRunning) {
+            // START
+            state.tgToken = tInput.value;
+            state.tgChatId = cInput.value;
+
+            if(!state.tgToken || !state.tgChatId) {
+                alert("Enter Telegram Data!");
+                return;
+            }
+
+            state.isRunning = true;
+            btn.innerText = "STOP ENGINE";
+            btn.style.background = "var(--accent-red)";
+            
+            // Блокируем инпуты
+            tInput.disabled = true;
+            cInput.disabled = true;
+
+            runScannerLoop();
+
+        } else {
+            // STOP
+            state.isRunning = false;
+            btn.innerText = "START ENGINE";
+            btn.style.background = "var(--accent-blue)";
+            
+            tInput.disabled = false;
+            cInput.disabled = false;
+        }
+    }
+
+</script>
+</body>
+</html>
