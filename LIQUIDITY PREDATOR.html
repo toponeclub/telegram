@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LIQUIDITY PREDATOR v1.0</title>
     <style>
-        :root {
+       :root {
             --bg-color: #0d0d12;
             --card-bg: #1c1c22;
             --text-main: #ffffff;
@@ -22,8 +22,8 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
             margin: 0;
             padding: 20px;
-            height: 100vh;
-            overflow: hidden;
+            /* Убрали height: 100vh; и overflow: hidden; для лучшей прокрутки на мобильных */
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
@@ -111,16 +111,24 @@
             color: var(--text-dim);
         }
 
-        /* --- MAIN GRID --- */
+        /* --- MAIN GRID/FLEX (ОСНОВНЫЕ ИЗМЕНЕНИЯ) --- */
         .dashboard {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
+            /* Теперь используем Flexbox для равномерного распределения */
+            display: flex;
+            flex-direction: row; /* По умолчанию: в ряд */
             gap: 20px;
-            height: 100%;
-            overflow: hidden;
+            flex-grow: 1; /* Занимает все доступное место */
+            min-height: 0; /* Важно для корректной работы flex-grow в дочерних элементах */
+            overflow: hidden; /* Общее скрытие, если flex-элементы переполняют */
         }
 
         /* --- LOG CONSOLE --- */
+        .console-panel, .signals-panel {
+            /* Обе панели теперь занимают одинаковое место */
+            flex: 1 1 50%; /* flex-grow: 1, flex-shrink: 1, flex-basis: 50% */
+            min-width: 0; /* Позволяет панели сжиматься */
+        }
+
         .console-panel {
             background: #000;
             border-radius: 12px;
@@ -130,7 +138,9 @@
             font-size: 11px;
             overflow-y: auto;
             display: flex;
-            flex-direction: column-reverse; /* Новые логи сверху/снизу по желанию */
+            flex-direction: column-reverse;
+            /* Минимальная высота, чтобы flex-grow работал */
+            min-height: 200px;
         }
 
         .log-item {
@@ -148,6 +158,8 @@
         /* --- SIGNALS PANEL --- */
         .signals-panel {
             overflow-y: auto;
+             /* Минимальная высота, чтобы flex-grow работал */
+            min-height: 200px;
         }
 
         .signal-card {
@@ -159,7 +171,7 @@
             animation: slideIn 0.3s ease-out;
         }
 
-        @keyframes slideIn {
+       @keyframes slideIn {
             from { transform: translateX(20px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
@@ -182,6 +194,32 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+
+        /* --- АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ (Flexbox -> Stack) --- */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .settings {
+                /* На мобильных располагаем токены и кнопку вертикально */
+                grid-template-columns: 1fr; 
+            }
+            .dashboard {
+                /* Переключаем панели в вертикальный стек */
+                flex-direction: column;
+                gap: 15px;
+            }
+            .console-panel, .signals-panel {
+                /* Панели занимают всю ширину */
+                flex: 1 1 auto; 
+                min-height: 300px; /* Увеличим высоту для удобства на мобильных */
+            }
+        }
 
     </style>
 </head>
@@ -378,8 +416,9 @@ Reason: ${reason}
         }
         
         // Логика тренда: Красных/Зеленых больше, чем Зеленых/Красных
-        const isDowntrendBefore = redCount > greenCount; // Больше красных, ищем BUY
-        const isUptrendBefore = greenCount > redCount; // Больше зеленых, ищем SELL
+       // НОВОЕ СМЯГЧЕННОЕ УСЛОВИЕ ТРЕНДА: Красных/Зеленых должно быть НЕ МЕНЬШЕ, чем противоположных (включая флэт 3/3 или 2/2)
+        const isDowntrendOrFlatBefore = redCount >= greenCount; 
+        const isUptrendOrFlatBefore = greenCount >= redCount;
 
         // Debug log (чтобы ты видел, что он считает)
         // log(`Vol: ${volRatio.toFixed(1)}x, Book: ${bookRatio.toFixed(1)}, Red/Green: ${redCount}/${greenCount}`, 'info', symbol);
