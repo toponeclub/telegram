@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LIQUIDITY PREDATOR v1.0</title>
     <style>
-       :root {
+        :root {
             --bg-color: #0d0d12;
             --card-bg: #1c1c22;
             --text-main: #ffffff;
@@ -22,7 +22,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
             margin: 0;
             padding: 20px;
-            /* Убрали height: 100vh; и overflow: hidden; для лучшей прокрутки на мобильных */
+            /* Изменено для Flexbox/Адаптивности и корректной прокрутки */
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -80,7 +80,7 @@
             border: 1px solid var(--border);
         }
 
-        input {
+        input[type=text] {
             background: #000;
             border: 1px solid var(--border);
             color: var(--accent-blue);
@@ -111,25 +111,61 @@
             color: var(--text-dim);
         }
 
-        /* --- MAIN GRID/FLEX (ОСНОВНЫЕ ИЗМЕНЕНИЯ) --- */
-        .dashboard {
-            /* Теперь используем Flexbox для равномерного распределения */
+        /* --- СТИЛИ ДЛЯ СЛАЙДЕРА --- */
+        .slider-control {
+            grid-column: 1 / span 3; /* Ползунок на всю ширину */
             display: flex;
-            flex-direction: row; /* По умолчанию: в ряд */
+            flex-direction: column;
+            gap: 5px;
+            padding-top: 5px;
+        }
+        
+        .slider-label {
+            font-size: 14px;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 10px;
+            background: var(--border);
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+        }
+        /* --- КОНЕЦ СТИЛЕЙ ДЛЯ СЛАЙДЕРА --- */
+
+        /* --- MAIN FLEXBOX (ВМЕСТО GRID) --- */
+        .dashboard {
+            /* Flexbox для равномерного распределения */
+            display: flex;
+            flex-direction: row; 
             gap: 20px;
-            flex-grow: 1; /* Занимает все доступное место */
-            min-height: 0; /* Важно для корректной работы flex-grow в дочерних элементах */
-            overflow: hidden; /* Общее скрытие, если flex-элементы переполняют */
+            flex-grow: 1; /* Занимает оставшееся вертикальное место */
+            min-height: 0; 
+            overflow: hidden; 
         }
 
         /* --- LOG CONSOLE --- */
-        .console-panel, .signals-panel {
-            /* Обе панели теперь занимают одинаковое место */
-            flex: 1 1 50%; /* flex-grow: 1, flex-shrink: 1, flex-basis: 50% */
-            min-width: 0; /* Позволяет панели сжиматься */
-        }
-
         .console-panel {
+            /* Панель занимает 50% */
+            flex: 1 1 50%; 
+            min-width: 0;
             background: #000;
             border-radius: 12px;
             border: 1px solid var(--border);
@@ -139,8 +175,6 @@
             overflow-y: auto;
             display: flex;
             flex-direction: column-reverse;
-            /* Минимальная высота, чтобы flex-grow работал */
-            min-height: 200px;
         }
 
         .log-item {
@@ -157,9 +191,10 @@
 
         /* --- SIGNALS PANEL --- */
         .signals-panel {
+            /* Панель занимает 50% */
+            flex: 1 1 50%;
+            min-width: 0;
             overflow-y: auto;
-             /* Минимальная высота, чтобы flex-grow работал */
-            min-height: 200px;
         }
 
         .signal-card {
@@ -171,7 +206,7 @@
             animation: slideIn 0.3s ease-out;
         }
 
-       @keyframes slideIn {
+        @keyframes slideIn {
             from { transform: translateX(20px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
@@ -195,32 +230,14 @@
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 
-
-        /* --- АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ (Flexbox -> Stack) --- */
+        /* --- АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ --- */
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .settings {
-                /* На мобильных располагаем токены и кнопку вертикально */
-                grid-template-columns: 1fr; 
-            }
-            .dashboard {
-                /* Переключаем панели в вертикальный стек */
-                flex-direction: column;
-                gap: 15px;
-            }
-            .console-panel, .signals-panel {
-                /* Панели занимают всю ширину */
-                flex: 1 1 auto; 
-                min-height: 300px; /* Увеличим высоту для удобства на мобильных */
-            }
+            body { padding: 10px; }
+            .settings { grid-template-columns: 1fr; }
+            .slider-control { grid-column: 1 / span 1; }
+            .dashboard { flex-direction: column; gap: 15px; }
+            .console-panel, .signals-panel { flex: 1 1 auto; min-height: 300px; }
         }
-
     </style>
 </head>
 <body>
@@ -241,7 +258,15 @@
         <input type="text" id="tgToken" placeholder="Telegram Bot Token" value="">
         <input type="text" id="tgChatId" placeholder="Chat ID" value="">
         <button id="startBtn" onclick="toggleScanner()">START ENGINE</button>
-    </div>
+        
+        <div class="slider-control">
+            <div class="slider-label">
+                <span>Строгость Сигнала (Threshold)</span>
+                <span id="thresholdValueDisplay">50%</span> 
+            </div>
+            <input type="range" min="0" max="100" value="50" class="slider" id="thresholdSlider" oninput="updateThresholds()">
+        </div>
+        </div>
 
     <div class="dashboard">
         <div class="console-panel" id="consoleLog">
@@ -263,13 +288,18 @@
         timeframe: '5m',
         loopDelay: 50000, // 50 секунд на полный цикл (примерно)
         coinDelay: 1500,  // 1.5 секунды между монетами
-        // Пороги "Неизбежности"
+        
+        // Динамические пороги "Неизбежности" (обновляются ползунком)
         thresholds: {
-            volMultiplier: 1.55,   // Текущий объем > 1.8x от среднего
-            priceStagnation: 0.24, // Цена изменилась меньше чем на 0.2% (зажим)
-            imbalance: 1.65        // Перевес стакана в 2 раза
-            // НОВЫЙ ПАРАМЕТР
-      
+            volMultiplier: 1.4,     // Инициализировано
+            priceStagnation: 0.5,   // Инициализировано
+            imbalance: 1.4          // Инициализировано
+        },
+        // Границы для расчетов (не меняются)
+        thresholdRanges: {
+            volMultiplier: { min: 1.1, max: 1.7 }, // Строгость: 1.1 (Мягко) -> 1.7 (Строго)
+            priceStagnation: { min: 0.2, max: 0.8 }, // Застой: 0.8% (Мягко) -> 0.2% (Строго)
+            imbalance: { min: 1.05, max: 1.7 } // Дисбаланс: 1.05x (Мягко) -> 1.7x (Строго)
         }
     };
 
@@ -298,8 +328,59 @@
                 <span class="${colorClass}">${msg}</span>
             </div>
         `;
+        // insertAdjacentHTML('afterbegin') гарантирует, что новые логи сверху
         consoleDiv.insertAdjacentHTML('afterbegin', html);
     };
+
+
+    // --- FINE-TUNING LOGIC (SLIDER) ---
+
+    function updateThresholds() {
+        const slider = document.getElementById('thresholdSlider');
+        const display = document.getElementById('thresholdValueDisplay');
+        const sliderValue = parseInt(slider.value, 10);
+        
+        // Масштабируем значение ползунка (0-100) в диапазон 0-1
+        const scale = sliderValue / 100; 
+
+        const ranges = CONFIG.thresholdRanges;
+        
+        // ФОРМУЛА: NewValue = MIN + (MAX - MIN) * scale
+        
+        // 1. volMultiplier: растет со строгостью (1.1 -> 1.7)
+        CONFIG.thresholds.volMultiplier = parseFloat((
+            ranges.volMultiplier.min + 
+            (ranges.volMultiplier.max - ranges.volMultiplier.min) * scale
+        ).toFixed(3));
+
+        // 2. imbalance: растет со строгостью (1.05 -> 1.7)
+        CONFIG.thresholds.imbalance = parseFloat((
+            ranges.imbalance.min + 
+            (ranges.imbalance.max - ranges.imbalance.min) * scale
+        ).toFixed(3));
+
+        // 3. priceStagnation: падает со строгостью (0.8 -> 0.2)
+        // ФОРМУЛА ОБРАТНАЯ: NewValue = MAX - (MAX - MIN) * scale
+        CONFIG.thresholds.priceStagnation = parseFloat((
+            ranges.priceStagnation.max - 
+            (ranges.priceStagnation.max - ranges.priceStagnation.min) * scale
+        ).toFixed(3));
+
+
+        // Обновление дисплея с текущими параметрами
+        display.innerHTML = `${sliderValue}% 
+            <span style="font-weight: normal; color: var(--text-dim); margin-left: 10px;">
+                V:${CONFIG.thresholds.volMultiplier.toFixed(2)} | 
+                P:${CONFIG.thresholds.priceStagnation.toFixed(2)}% | 
+                I:${CONFIG.thresholds.imbalance.toFixed(2)}x
+            </span>`;
+
+        log(`Thresholds updated: V:${CONFIG.thresholds.volMultiplier.toFixed(2)}, P:${CONFIG.thresholds.priceStagnation.toFixed(2)}%, I:${CONFIG.thresholds.imbalance.toFixed(2)}x`, 'info', 'CONFIG');
+    }
+
+
+    // Инициализация ползунка при загрузке страницы
+    document.addEventListener('DOMContentLoaded', updateThresholds);
 
     // --- TELEGRAM API ---
 
@@ -337,7 +418,6 @@ Reason: ${reason}
     async function fetchMarketData(symbol) {
         try {
             // 1. Klines (Свечи) - FAPI (Futures)
-            // ВАЖНО: Может потребоваться CORS Extension
             const klinesRes = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${CONFIG.timeframe}&limit=20`);
             if(!klinesRes.ok) throw new Error("API Blocked (CORS?)");
             const klines = await klinesRes.json();
@@ -355,29 +435,24 @@ Reason: ${reason}
 
     // --- ANALYSIS LOGIC (BRAIN) ---
 
-   // --- ANALYSIS LOGIC (BRAIN) ---
-
     function analyzeCoin(symbol, data) {
         const klines = data.klines;
         const depth = data.depth;
         
-        // Нужны 5 предыдущих свечей для анализа тренда (с 15-й по 19-ю, 20-я - текущая)
-        const relevantKlines = klines.slice(-6); // Берем последние 6 свечей (5 предыдущих + текущая)
+        // Берем текущую (последнюю) свечу
+        const current = klines[klines.length - 1];
 
-        // Данные последней ЗАВЕРШЕННОЙ свечи
-        const current = relevantKlines[relevantKlines.length - 1]; // Текущая, формирующаяся
-        
         // Парсим данные
-        const curVol = parseFloat(current[5]);
+        const curVol = parseFloat(current[5]); // Volume
         const curOpen = parseFloat(current[1]);
         const curClose = parseFloat(current[4]);
-        
-        // Средний объем за предыдущие 5 свечей (более актуально)
+
+        // Средний объем за предыдущие 19 свечей
         let sumVol = 0;
-        for(let i=0; i < relevantKlines.length - 1; i++) {
-            sumVol += parseFloat(relevantKlines[i][5]);
+        for(let i=0; i < klines.length - 1; i++) {
+            sumVol += parseFloat(klines[i][5]);
         }
-        const avgVol = sumVol / (relevantKlines.length - 1);
+        const avgVol = sumVol / (klines.length - 1);
 
         // Расчеты Стакана
         let bidsVol = 0;
@@ -385,70 +460,38 @@ Reason: ${reason}
         depth.bids.forEach(bid => bidsVol += parseFloat(bid[1]));
         depth.asks.forEach(ask => asksVol += parseFloat(ask[1]));
         
-        const bookRatio = bidsVol / asksVol; 
+        const bookRatio = bidsVol / asksVol; // > 1 значит покупателей больше
 
-        // --- МАТЕМАТИКА НЕИЗБЕЖНОСТИ (ОБНОВЛЕНИЕ) ---
+        // --- МАТЕМАТИКА НЕИЗБЕЖНОСТИ (ИСПОЛЬЗУЕМ ДИНАМИЧЕСКИЕ ПОРОГИ) ---
         
         const volRatio = curVol / avgVol;
-        // Используем более низкий порог для раннего сигнала
-        const isHighVol = volRatio > CONFIG.minVolRatioForEarlySignal; 
+        const priceChange = Math.abs((curClose - curOpen) / curOpen) * 100;
         
-        // Сохраняем старый жесткий застой (как вторичный критерий)
-        const isStuckHard = Math.abs((curClose - curOpen) / curOpen) * 100 < CONFIG.thresholds.priceStagnation;
+        // Debug log
+        // log(`Vol: ${volRatio.toFixed(1)}x, Book: ${bookRatio.toFixed(1)}, Move: ${priceChange.toFixed(2)}%`, 'info', symbol);
 
-
-        // 1. АНАЛИЗ ПРЕДШЕСТВУЮЩЕГО ТРЕНДА (ЗА 5 СВЕЧЕЙ)
-        let redCount = 0;
-        let greenCount = 0;
-
-        // Итерируем по 5 предыдущим ЗАВЕРШЕННЫМ свечам (с index 0 по 4 из relevantKlines)
-        for(let i = 0; i < relevantKlines.length - 1; i++) {
-            const candle = relevantKlines[i];
-            const open = parseFloat(candle[1]);
-            const close = parseFloat(candle[4]);
-            
-            if (close < open) { // Свеча закрылась ниже открытия (Красная)
-                redCount++;
-            } else if (close > open) { // Свеча закрылась выше открытия (Зеленая)
-                greenCount++;
-            }
-            // Если Open=Close, не считаем
-        }
+        // Критерии теперь берутся из динамического CONFIG
+        const isHighVol = volRatio > CONFIG.thresholds.volMultiplier;
+        const isStuck = priceChange < CONFIG.thresholds.priceStagnation;
         
-        // Логика тренда: Красных/Зеленых больше, чем Зеленых/Красных
-       // НОВОЕ СМЯГЧЕННОЕ УСЛОВИЕ ТРЕНДА: Красных/Зеленых должно быть НЕ МЕНЬШЕ, чем противоположных (включая флэт 3/3 или 2/2)
-        const isDowntrendOrFlatBefore = redCount >= greenCount; 
-        const isUptrendOrFlatBefore = greenCount >= redCount;
-
-        // Debug log (чтобы ты видел, что он считает)
-        // log(`Vol: ${volRatio.toFixed(1)}x, Book: ${bookRatio.toFixed(1)}, Red/Green: ${redCount}/${greenCount}`, 'info', symbol);
-
-
-        // --- КРИТЕРИИ РАННЕГО СИГНАЛА ---
-        
-        // 1. СИГНАЛ BUY (ABSORPTION) - Поглощение падения
-        if (isHighVol && isDowntrendBefore && bookRatio > CONFIG.thresholds.imbalance) {
-            
-            // Если объем очень высокий ИЛИ цена стоит, усиливаем сигнал
-            const isStrongSignal = volRatio > CONFIG.thresholds.volMultiplier || isStuckHard;
-            
+        // 1. СИГНАЛ BUY (ABSORPTION)
+        // Цена падает или стоит внизу, Объемы дикие, но Биды (покупатели) держат стену.
+        if (isHighVol && isStuck && bookRatio > CONFIG.thresholds.imbalance) {
             return {
                 type: 'BUY',
                 price: curClose.toFixed(4),
-                reason: `<b>Early Absorption ${isStrongSignal ? '(STRONG)' : ''}:</b><br>Detected High Volume (${volRatio.toFixed(1)}x) vs Downtrend.<br>Orderbook bids dominate (${bookRatio.toFixed(1)}x).<br>Potential support bounce.`
+                reason: `<b>Absorption Logic:</b><br>High Volume (${volRatio.toFixed(1)}x) hitting Support.<br>Price stuck (${priceChange.toFixed(2)}% vs ${CONFIG.thresholds.priceStagnation.toFixed(2)}%).<br>Orderbook bids dominate (${bookRatio.toFixed(1)}x).`
             };
         }
 
-        // 2. СИГНАЛ SELL (DISTRIBUTION) - Распределение роста
-        if (isHighVol && isUptrendBefore && bookRatio < (1 / CONFIG.thresholds.imbalance)) {
-            
-            // Если объем очень высокий ИЛИ цена стоит, усиливаем сигнал
-            const isStrongSignal = volRatio > CONFIG.thresholds.volMultiplier || isStuckHard;
-
+        // 2. СИГНАЛ SELL (DISTRIBUTION)
+        // Цена растет или стоит вверху, Объемы дикие, но Аски (продавцы) не пускают выше.
+        // bookRatio < (1 / CONFIG.thresholds.imbalance)
+        if (isHighVol && isStuck && bookRatio < (1 / CONFIG.thresholds.imbalance)) {
             return {
                 type: 'SELL',
                 price: curClose.toFixed(4),
-                reason: `<b>Early Distribution ${isStrongSignal ? '(STRONG)' : ''}:</b><br>Detected High Volume (${volRatio.toFixed(1)}x) vs Uptrend.<br>Orderbook asks dominate (${(1/bookRatio).toFixed(1)}x).<br>Potential resistance rejection.`
+                reason: `<b>Resistance Logic:</b><br>High Volume (${volRatio.toFixed(1)}x) hitting Resistance.<br>Price stuck (${priceChange.toFixed(2)}% vs ${CONFIG.thresholds.priceStagnation.toFixed(2)}%).<br>Orderbook asks dominate (${(1/bookRatio).toFixed(1)}x).`
             };
         }
 
@@ -462,6 +505,9 @@ Reason: ${reason}
         const old = document.getElementById(`sig-${symbol}`);
         if(old) old.remove();
 
+        // Добавляем уровень строгости в заголовок карточки
+        const reasonHTML = signal.reason.replace(/<br>/g, '<br>');
+
         const html = `
             <div class="signal-card ${signal.type}" id="sig-${symbol}">
                 <div class="card-header">
@@ -469,7 +515,7 @@ Reason: ${reason}
                     <span style="color: ${signal.type === 'BUY' ? 'var(--accent-green)' : 'var(--accent-red)'}">${signal.type}</span>
                 </div>
                 <div class="card-price">Price: $${signal.price}</div>
-                <div class="card-reason">${signal.reason}</div>
+                <div class="card-reason">${reasonHTML}</div>
             </div>
         `;
         area.insertAdjacentHTML('afterbegin', html);
@@ -529,10 +575,7 @@ Reason: ${reason}
             }
 
             log("Cycle complete. Waiting...", 'info');
-            // Вычисляем сколько осталось ждать до 50 сек, если цикл прошел быстро
-            // Но ты просил просто 50 сек "луп обновления". 
-            // Логичнее просто подождать паузу перед следующим кругом.
-            // Если цикл занял 30 сек (20 монет * 1.5 сек), ждем еще 20 сек.
+            // Пауза перед следующим кругом
             await sleep(10000); 
         }
 
@@ -564,6 +607,7 @@ Reason: ${reason}
             // Блокируем инпуты
             tInput.disabled = true;
             cInput.disabled = true;
+            document.getElementById('thresholdSlider').disabled = false; // Разблокируем ползунок
 
             runScannerLoop();
 
@@ -575,6 +619,7 @@ Reason: ${reason}
             
             tInput.disabled = false;
             cInput.disabled = false;
+            document.getElementById('thresholdSlider').disabled = true; // Блокируем ползунок
         }
     }
 
