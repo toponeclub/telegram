@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>DOLF HYBRID 2.5% | PRODUCTION ENGINE</title>
+    <style>
+        :root {
+            --bg: #050505;
+            --panel: #0b0e11;
+            --border: #1e2329;
+            --green: #00ff9d;
+            --red: #ff0055;
+            --gold: #ffcc00;
+            --text-main: #eaeaea;
+            --text-muted: #5e6673;
+        }
+
+        * { box-sizing: border-box; font-family: 'JetBrains Mono', 'Courier New', monospace; user-select: none; }
+        
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .engine-wrapper {
+            width: 460px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+        }
+        .title { font-size: 14px; font-weight: 900; letter-spacing: 1px; color: var(--gold); }
+        .status { font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+        .dot { width: 6px; height: 6px; background: #333; border-radius: 50%; }
+        .dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+        /* INPUT */
+        .input-group { position: relative; margin-bottom: 20px; }
+        input {
+            width: 100%;
+            background: #000;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 16px;
+            font-size: 22px;
+            text-align: center;
+            border-radius: 8px;
+            outline: none;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        input:focus { border-color: var(--gold); box-shadow: 0 0 15px rgba(255, 204, 0, 0.1); }
+
+        /* METRICS GRID */
+        .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+        .m-card { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 6px; border: 1px solid var(--border); text-align: center; }
+        .m-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .m-val { font-size: 14px; font-weight: bold; }
+
+        /* MAIN SIGNAL BOX */
+        .signal-box {
+            height: 160px;
+            background: #000;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sig-title { font-size: 32px; font-weight: 900; letter-spacing: -1px; z-index: 2; transition: 0.3s; }
+        .sig-sub { font-size: 11px; color: #444; margin-top: 8px; font-weight: bold; z-index: 2; }
+        
+        .progress-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: #111; }
+        .progress-fill { height: 100%; width: 0%; background: var(--gold); transition: width 0.2s; }
+
+        /* ANIMATIONS */
+        .pulse-g { border-color: var(--green); box-shadow: 0 0 40px rgba(0,255,157,0.15); }
+        .pulse-r { border-color: var(--red); box-shadow: 0 0 40px rgba(255,0,85,0.15); }
+        
+        .scan-line {
+            position: absolute; width: 100%; height: 2px; background: rgba(255,255,255,0.1);
+            top: 0; animation: scan 2s infinite linear; z-index: 1;
+        }
+        @keyframes scan { 0% { top: 0; opacity: 0; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+        /* TARGET TRACKER */
+        .tracker {
+            margin-top: 15px; padding: 15px; background: #080a0c; border-radius: 8px; border: 1px dashed #333;
+            display: none; flex-direction: column; gap: 5px;
+        }
+        .track-row { display: flex; justify-content: space-between; font-size: 11px; }
+        .track-lbl { color: var(--text-muted); }
+        .track-val { color: #fff; font-weight: bold; }
+
+        /* LOGS */
+        .console {
+            margin-top: 15px; height: 80px; overflow-y: auto; 
+            font-size: 10px; color: #444; font-family: 'Courier New', monospace;
+            border-top: 1px solid var(--border); padding-top: 10px;
+        }
+        .log-entry { margin-bottom: 2px; }
+        .log-succ { color: var(--green); }
+        .log-err { color: var(--red); }
+        
+        /* Utility Colors */
+        .c-green { color: var(--green); }
+        .c-red { color: var(--red); }
+        .c-gold { color: var(--gold); }
+    </style>
+</head>
+<body>
+
+<div class="engine-wrapper">
+    <div class="header">
+        <div class="title">DOLF ULTRA 2.5% <span style="color:#444">// HYBRID CORE</span></div>
+        <div class="status"><div class="dot" id="wsStatus"></div> <span id="wsText">DISCONNECTED</span></div>
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="symbolInput" value="PEPEUSDT" placeholder="ENTER SYMBOL">
+    </div>
+
+    <div class="metrics">
+        <div class="m-card">
+            <div class="m-label">Flow (5s)</div>
+            <div class="m-val" id="valFlow">$0K</div>
+        </div>
+        <div class="m-card">
+            <div class="m-label">Pressure</div>
+            <div class="m-val" id="valSkew">50/50</div>
+        </div>
+        <div class="m-card">
+            <div class="m-label">Funding</div>
+            <div class="m-val" id="valFund">--%</div>
+        </div>
+        <div class="m-card">
+            <div class="m-label">Liquidity</div>
+            <div class="m-val" id="valLiq">SCANNING</div>
+        </div>
+    </div>
+
+    <div id="mainBox" class="signal-box">
+        <div class="scan-line"></div>
+        <div id="sigTitle" class="sig-title" style="color: #222">IDLE</div>
+        <div id="sigSub" class="sig-sub">WAITING FOR DATA STREAM...</div>
+        <div class="progress-bg"><div id="powerBar" class="progress-fill"></div></div>
+    </div>
+
+    <div id="trackerBox" class="tracker">
+        <div class="track-row">
+            <span class="track-lbl">ENTRY PRICE</span>
+            <span class="track-val" id="trackEntry">--</span>
+        </div>
+        <div class="track-row">
+            <span class="track-lbl">TARGET (2.5%)</span>
+            <span class="track-val" id="trackTarget" style="color: var(--gold)">--</span>
+        </div>
+        <div class="track-row">
+            <span class="track-lbl">DISTANCE</span>
+            <span class="track-val" id="trackDist">0.00%</span>
+        </div>
+    </div>
+
+    <div class="console" id="console"></div>
+</div>
+
+<script>
+    // =============================================
+    // ⚙️ CONFIGURATION (The "Production" Settings)
+    // =============================================
+    const CONFIG = {
+        accumWindow: 5000,      // 5 секунд окно накопления
+        minVolumeUSD: 50000,    // Минимум $50k оборота за 5 сек (фильтр шума)
+        minTPS: 12,             // Минимум 12 сделок в секунду (фильтр ботов)
+        skewTrigger: 72,        // 72% перекос для сигнала
+        targetPct: 2.5,         // Цель движения
+        stopPct: 1.2,           // Стоп (для сброса трекера)
+        liqDistance: 2.5        // Дистанция проверки стен в стакане
+    };
+
+    // =============================================
+    // 🧠 HYBRID ENGINE CORE
+    // =============================================
+    class HybridEngine {
+        constructor() {
+            this.ws = null;
+            this.symbol = '';
+            this.trades = [];
+            this.orderBook = { asks: [], bids: [] };
+            this.fundingRate = 0;
+            this.currentPrice = 0;
+            
+            this.state = 'SCANNING'; // SCANNING, TRACKING
+            this.signal = null; // { type: 'LONG', entry: 0, target: 0 }
+            
+            this.initUI();
+        }
+
+        initUI() {
+            const input = document.getElementById('symbolInput');
+            let timeout;
+            input.addEventListener('input', () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => this.start(input.value), 1000);
+            });
+            this.start(input.value);
+        }
+
+        async start(symbol) {
+            if (this.ws) this.ws.close();
+            this.resetState();
+            
+            this.symbol = symbol.toUpperCase().trim();
+            if (!this.symbol.includes('USDT')) this.symbol += 'USDT';
+            
+            this.log(`INITIALIZING ENGINE FOR ${this.symbol}...`);
+            this.updateStatus('CONNECTING...', false);
+
+            // Fetch Initial Funding (REST)
+            this.fetchFunding();
+            setInterval(() => this.fetchFunding(), 30000); // Poll every 30s
+
+            // WebSocket Connection (AggTrade + Depth20 + Ticker)
+            const streamName = this.symbol.toLowerCase();
+            const wsUrl = `wss://fstream.binance.com/stream?streams=${streamName}@aggTrade/${streamName}@depth20@100ms/${streamName}@ticker`;
+            
+            this.ws = new WebSocket(wsUrl);
+
+            this.ws.onopen = () => {
+                this.updateStatus('ONLINE | STREAMING', true);
+                this.log('Stream Connected. Monitoring Flow & Orderbook.');
+                // Start Analysis Loop
+                if (this.analysisLoop) clearInterval(this.analysisLoop);
+                this.analysisLoop = setInterval(() => this.analyze(), 200);
+            };
+
+            this.ws.onmessage = (e) => this.handleData(JSON.parse(e.data));
+            
+            this.ws.onerror = (e) => {
+                this.log('WebSocket Error', 'err');
+                this.updateStatus('ERROR', false);
+            };
+        }
+
+        resetState() {
+            this.trades = [];
+            this.state = 'SCANNING';
+            this.signal = null;
+            document.getElementById('trackerBox').style.display = 'none';
+            document.getElementById('mainBox').className = 'signal-box';
+            document.getElementById('sigTitle').innerText = 'SCANNING';
+            document.getElementById('sigTitle').style.color = '#333';
+        }
+
+        handleData(msg) {
+            const data = msg.data;
+            const stream = msg.stream;
+
+            // 1. Trade Flow (AggTrade)
+            if (stream.includes('aggTrade')) {
+                const price = parseFloat(data.p);
+                const qty = parseFloat(data.q);
+                this.trades.push({
+                    t: Date.now(),
+                    price: price,
+                    volUSD: price * qty,
+                    isBuyerMaker: data.m // true = Sell, false = Buy
+                });
+                this.currentPrice = price;
+            }
+
+            // 2. Order Book (Depth20)
+            if (stream.includes('depth20')) {
+                this.orderBook.asks = data.a.map(x => [parseFloat(x[0]), parseFloat(x[1])]); // Price, Qty
+                this.orderBook.bids = data.b.map(x => [parseFloat(x[0]), parseFloat(x[1])]);
+            }
+        }
+
+        async fetchFunding() {
+            try {
+                // Note: CORS might block this locally. 
+                // In production, use a proxy. Here we try direct.
+                const res = await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${this.symbol}`);
+                const data = await res.json();
+                this.fundingRate = parseFloat(data.lastFundingRate) * 100;
+                
+                const fEl = document.getElementById('valFund');
+                fEl.innerText = this.fundingRate.toFixed(4) + '%';
+                fEl.className = this.fundingRate > 0.01 ? 'm-val c-red' : (this.fundingRate < -0.01 ? 'm-val c-green' : 'm-val');
+            } catch (e) {
+                // Silent fail for CORS, default to neutral
+                // console.warn("Funding fetch failed (CORS likely). Using neutral assumption.");
+            }
+        }
+
+        analyze() {
+            const now = Date.now();
+            // Clean old trades
+            this.trades = this.trades.filter(t => now - t.t < CONFIG.accumWindow);
+
+            if (this.trades.length < 5) return;
+
+            // --- 1. FLOW METRICS ---
+            let buyVol = 0, sellVol = 0;
+            this.trades.forEach(t => {
+                if (t.isBuyerMaker) sellVol += t.volUSD; else buyVol += t.volUSD;
+            });
+
+            const totalVol = buyVol + sellVol;
+            const buyRatio = totalVol > 0 ? (buyVol / totalVol) * 100 : 50;
+            const tps = this.trades.length / (CONFIG.accumWindow / 1000);
+
+            // --- 2. LIQUIDITY CHECK (Context) ---
+            // Calculate imbalance in closest orders
+            let askLiq = 0, bidLiq = 0;
+            this.orderBook.asks.slice(0, 5).forEach(x => askLiq += (x[0] * x[1]));
+            this.orderBook.bids.slice(0, 5).forEach(x => bidLiq += (x[0] * x[1]));
+            
+            const wallStatus = askLiq > bidLiq * 1.5 ? "ASK WALL" : (bidLiq > askLiq * 1.5 ? "BID SUPPORT" : "BALANCED");
+
+            // --- 3. UI UPDATES ---
+            document.getElementById('valFlow').innerText = '$' + (totalVol/1000).toFixed(1) + 'K';
+            
+            const skewEl = document.getElementById('valSkew');
+            skewEl.innerText = `${buyRatio.toFixed(0)} / ${(100-buyRatio).toFixed(0)}`;
+            skewEl.style.color = buyRatio > 55 ? 'var(--green)' : (buyRatio < 45 ? 'var(--red)' : '#fff');
+            
+            const liqEl = document.getElementById('valLiq');
+            liqEl.innerText = wallStatus;
+            liqEl.style.color = wallStatus.includes('BID') ? 'var(--green)' : (wallStatus.includes('ASK') ? 'var(--red)' : '#555');
+
+            // --- 4. SIGNAL LOGIC ---
+            if (this.state === 'SCANNING') {
+                this.checkForSignal(buyRatio, totalVol, tps, wallStatus);
+            } else {
+                this.trackTarget();
+            }
+        }
+
+        checkForSignal(buyRatio, totalVol, tps, wallStatus) {
+            // Power Index Calculation
+            const volScore = Math.min(totalVol / CONFIG.minVolumeUSD, 1) * 40; // Max 40
+            const skewScore = (Math.abs(buyRatio - 50) / 50) * 40; // Max 40
+            const tpsScore = Math.min(tps / CONFIG.minTPS, 1) * 20; // Max 20
+            const power = volScore + skewScore + tpsScore; // Max 100
+
+            document.getElementById('powerBar').style.width = power + '%';
+
+            // SIGNAL CONDITIONS
+            const isVolumeOk = totalVol > CONFIG.minVolumeUSD;
+            const isSpeedOk = tps > CONFIG.minTPS;
+            
+            // LONG CONDITIONS
+            if (buyRatio > CONFIG.skewTrigger && isVolumeOk && isSpeedOk && power > 75) {
+                // Context Check: Funding not too high OR Trend Following
+                if (this.fundingRate < 0.03 && !wallStatus.includes('ASK WALL')) {
+                    this.triggerSignal('LONG');
+                }
+            }
+            
+            // SHORT CONDITIONS
+            if (buyRatio < (100 - CONFIG.skewTrigger) && isVolumeOk && isSpeedOk && power > 75) {
+                if (this.fundingRate > -0.03 && !wallStatus.includes('BID SUPPORT')) {
+                    this.triggerSignal('SHORT');
+                }
+            }
+            
+            // Idle UI
+            const title = document.getElementById('sigTitle');
+            if (power > 60) {
+                title.innerText = "PRE-HEAT";
+                title.style.color = buyRatio > 50 ? 'var(--green)' : 'var(--red)';
+                document.getElementById('sigSub').innerText = `POWER: ${power.toFixed(0)} | ACCUMULATING`;
+            } else {
+                title.innerText = "SCANNING";
+                title.style.color = "#333";
+                document.getElementById('sigSub').innerText = "ANALYZING MARKET FLOW";
+            }
+        }
+
+        triggerSignal(dir) {
+            this.state = 'TRACKING';
+            const targetPrice = dir === 'LONG' 
+                ? this.currentPrice * (1 + CONFIG.targetPct/100) 
+                : this.currentPrice * (1 - CONFIG.targetPct/100);
+            
+            this.signal = {
+                type: dir,
+                entry: this.currentPrice,
+                target: targetPrice
+            };
+
+            // UI Update
+            const box = document.getElementById('mainBox');
+            box.className = dir === 'LONG' ? 'signal-box pulse-g' : 'signal-box pulse-r';
+            
+            const title = document.getElementById('sigTitle');
+            title.innerText = `${dir} 2.5%`;
+            title.style.color = dir === 'LONG' ? 'var(--green)' : 'var(--red)';
+            
+            document.getElementById('sigSub').innerText = "MOMENTUM CONFIRMED. TRACKING TARGET.";
+
+            // Tracker UI
+            document.getElementById('trackerBox').style.display = 'flex';
+            document.getElementById('trackEntry').innerText = this.currentPrice.toFixed(this.getPrecision());
+            document.getElementById('trackTarget').innerText = targetPrice.toFixed(this.getPrecision());
+            
+            this.log(`SIGNAL TRIGGERED: ${dir} @ ${this.currentPrice}`, 'succ');
+        }
+
+        trackTarget() {
+            if (!this.signal) return;
+
+            const dist = ((this.currentPrice - this.signal.entry) / this.signal.entry) * 100;
+            const distDisplay = this.signal.type === 'SHORT' ? -dist : dist; // Always positive if winning
+            
+            const elDist = document.getElementById('trackDist');
+            elDist.innerText = (distDisplay > 0 ? '+' : '') + dist.toFixed(2) + '%';
+            elDist.style.color = distDisplay > 0 ? 'var(--green)' : 'var(--red)';
+
+            // Success Check
+            if (distDisplay >= CONFIG.targetPct) {
+                this.finishSignal(true);
+            }
+            // Stop Loss Check (Reset)
+            if (distDisplay <= -CONFIG.stopPct) {
+                this.finishSignal(false);
+            }
+        }
+
+        finishSignal(success) {
+            const title = document.getElementById('sigTitle');
+            const sub = document.getElementById('sigSub');
+            
+            if (success) {
+                title.innerText = "TARGET HIT";
+                title.style.color = "var(--gold)";
+                sub.innerText = "2.5% MOVEMENT CAPTURED";
+                this.log(`TARGET REACHED!`, 'succ');
+            } else {
+                title.innerText = "STOPPED";
+                title.style.color = "#555";
+                sub.innerText = "MOVEMENT INVALIDATED";
+                this.log(`Signal stopped.`, 'err');
+            }
+
+            // Reset after delay
+            setTimeout(() => this.resetState(), 5000);
+        }
+
+        // Utils
+        updateStatus(text, active) {
+            document.getElementById('wsText').innerText = text;
+            const dot = document.getElementById('wsStatus');
+            dot.className = active ? 'dot active' : 'dot';
+        }
+
+        log(msg, type='') {
+            const con = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = 'log-entry ' + (type === 'succ' ? 'log-succ' : type === 'err' ? 'log-err' : '');
+            line.innerText = `> ${msg}`;
+            con.prepend(line);
+        }
+
+        getPrecision() {
+            return this.currentPrice < 1 ? 8 : 2;
+        }
+    }
+
+    // Start Engine
+    const engine = new HybridEngine();
+
+</script>
+</body>
+</html>
