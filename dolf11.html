@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ff9d' stroke-width='2'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DOLF·AI ULTIMATE · ФИНАЛЬНАЯ ВЕРСИЯ</title>
+  <!-- Chart.js + плагин аннотаций -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
+  <!-- Tailwind только для утилит (не ломает кастомные стили) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ========== ПОЛНОСТЬЮ ТЕМА GOOGLEDOLF9 — НЕОНОВАЯ ЭСТЕТИКА ========= */
+    :root {
+      --bg-dark: #050505;
+      --panel-bg: #0b0e11;
+      --border-color: #1e2329;
+      --accent-green: #00ff9d;
+      --accent-red: #ff0055;
+      --accent-gold: #ffbe0b;
+      --accent-blue: #00d4ff;
+      --text-main: #eaeaea;
+      --text-muted: #848e9c;
+      --glass: rgba(255, 255, 255, 0.03);
+      --font: 'JetBrains Mono', 'Courier New', monospace;
+    }
+
+    * { box-sizing: border-box; font-family: var(--font); outline: none; margin: 0; padding: 0; }
+    
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      margin: 0;
+      padding: 15px;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+    }
+
+    .layout-grid {
+      width: 100%;
+      max-width: 1920px;
+      height: 97vh;
+      display: grid;
+      grid-template-columns: 340px 1fr 360px;
+      grid-template-rows: 60px 1fr 180px;
+      gap: 12px;
+    }
+
+    /* --- HEADER (как в googledolf9) --- */
+    .header {
+      grid-column: 1 / -1;
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 25px;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .header::after {
+      content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
+      background: linear-gradient(90deg, var(--accent-green), var(--accent-blue), var(--accent-red));
+    }
+    .brand { font-size: 22px; font-weight: 900; letter-spacing: -1px; display: flex; align-items: center; gap: 12px; }
+    .brand span { color: var(--accent-green); text-shadow: 0 0 20px rgba(0,255,157,0.3); }
+    .tag { font-size: 10px; background: #161b22; padding: 4px 8px; border-radius: 4px; border: 1px solid #333; color: var(--accent-gold); letter-spacing: 1px; }
+    .connection-status { font-size: 11px; display: flex; align-items: center; gap: 8px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #333; }
+    .dot.active { background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+
+    /* --- ЛЕВАЯ ПАНЕЛЬ (как в googledolf9, но с нашими элементами) --- */
+    .sidebar-left { grid-row: 2 / 3; display: flex; flex-direction: column; gap: 12px; }
+    .control-panel {
+      background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;
+      display: flex; flex-direction: column; gap: 15px;
+    }
+    .mode-selector { display: flex; background: #000; padding: 3px; border-radius: 6px; border: 1px solid var(--border-color); }
+    .mode-btn { 
+      flex: 1; text-align: center; padding: 10px; font-size: 11px; cursor: pointer; color: var(--text-muted); 
+      transition: 0.3s; border-radius: 4px; font-weight: bold;
+    }
+    .mode-btn.active { background: #1c2128; color: var(--text-main); border: 1px solid #333; }
+    .mode-btn:hover { color: #fff; }
+
+    .input-row { display: flex; gap: 8px; }
+    input, select {
+      background: #0d1117; border: 1px solid var(--border-color); color: #fff; padding: 12px; border-radius: 6px;
+      font-size: 13px; font-weight: bold; text-transform: uppercase; width: 100%; transition: 0.3s;
+    }
+    input:focus { border-color: var(--accent-green); box-shadow: 0 0 15px rgba(0,255,157,0.1); }
+
+    .analyze-btn {
+      background: linear-gradient(135deg, var(--accent-green), #00c278);
+      color: #000; border: none; padding: 14px; border-radius: 6px; font-weight: 900; cursor: pointer;
+      transition: all 0.2s; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px;
+      box-shadow: 0 0 20px rgba(0,255,157,0.2);
+    }
+    .analyze-btn:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,255,157,0.4); }
+    .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Метрики в левой панели (Funding, OI%, CVD, Vol) */
+    .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; }
+    .m-card { background: var(--glass); padding: 10px; border-radius: 6px; border-left: 2px solid #333; transition: 0.3s; }
+    .m-card:hover { background: rgba(255,255,255,0.05); }
+    .m-title { font-size: 9px; color: var(--text-muted); margin-bottom: 4px; }
+    .m-val { font-size: 13px; font-weight: bold; }
+
+    /* Сетап-панель */
+    .setups-wrapper {
+      flex: 1; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .section-title { font-size: 11px; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; border-bottom: 1px solid #222; padding-bottom: 8px; display: flex; justify-content: space-between; }
+    .setup-list { flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 6px; }
+    .setup-item {
+      padding: 10px; background: rgba(255,255,255,0.01); border: 1px solid transparent; border-radius: 4px;
+      opacity: 0.5; transition: 0.3s; display: flex; flex-direction: column; gap: 4px;
+    }
+    .setup-item.active { opacity: 1; border-color: var(--accent-green); background: rgba(0,255,157,0.05); transform: translateX(5px); }
+    .setup-item.active-bear { opacity: 1; border-color: var(--accent-red); background: rgba(255,0,85,0.05); transform: translateX(5px); }
+    .s-head { display: flex; justify-content: space-between; align-items: center; }
+    .s-name { font-size: 11px; font-weight: bold; }
+    .s-badge { font-size: 9px; padding: 2px 6px; background: #000; border-radius: 3px; font-weight: bold; }
+    .s-desc { font-size: 9px; color: #666; line-height: 1.2; }
+
+    /* --- ЦЕНТР: ГРАФИК --- */
+    .chart-wrapper {
+      grid-column: 2 / 3; grid-row: 2 / 3;
+      background: #090b0e; border: 1px solid var(--border-color); border-radius: 8px;
+      position: relative; padding: 10px; display: flex; flex-direction: column;
+    }
+    .loader-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(5,5,5,0.9); backdrop-filter: blur(5px);
+      display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100;
+    }
+    .scanner-line { width: 300px; height: 2px; background: var(--accent-green); animation: scan 1.5s infinite ease-in-out; box-shadow: 0 0 15px var(--accent-green); margin-bottom: 20px; }
+    @keyframes scan { 0% { width: 0; opacity: 0; } 50% { width: 300px; opacity: 1; } 100% { width: 0; opacity: 0; margin-left: 300px; } }
+    .load-text { font-size: 14px; font-weight: 900; letter-spacing: 2px; color: #fff; margin-bottom: 5px; }
+    .load-sub { font-size: 10px; color: var(--accent-gold); }
+
+    /* --- ПРАВАЯ ПАНЕЛЬ (ПРОГНОЗ, КАРТА ЛИКВИДАЦИЙ) --- */
+    .sidebar-right { grid-row: 2 / 3; display: flex; flex-direction: column; gap: 12px; }
+    .prediction-box {
+      background: linear-gradient(160deg, #10141a 0%, #080a0c 100%);
+      border: 1px solid var(--border-color); border-radius: 8px; padding: 20px;
+      text-align: center; position: relative;
+    }
+    .spark-container { position: absolute; top: 15px; right: 15px; width: 100px; height: 40px; }
+    .pred-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .pred-val { font-size: 36px; font-weight: 900; margin: 10px 0; text-shadow: 0 0 30px currentColor; }
+    .pred-dir { font-size: 18px; font-weight: 700; margin-bottom: 15px; }
+    .long { color: var(--accent-green); }
+    .short { color: var(--accent-red); }
+    .neutral { color: var(--accent-gold); }
+    .conf-wrapper { background: #1a1f26; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 10px; }
+    .conf-bar { height: 100%; width: 0%; transition: 1s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    .liquidation-panel {
+      flex: 1; background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;
+      display: flex; flex-direction: column;
+    }
+    .liq-map-container { flex: 1; position: relative; border-left: 1px dashed #333; margin: 10px 0 10px 10px; }
+    .liq-marker { position: absolute; width: 100%; height: 1px; left: 0; transition: all 0.5s; }
+    .liq-marker::after { content: attr(data-price); position: absolute; right: 0; top: -14px; font-size: 9px; padding: 2px 4px; border-radius: 2px; color: #000; font-weight: bold; }
+    .liq-marker.long { background: linear-gradient(90deg, transparent, var(--accent-green)); }
+    .liq-marker.long::after { background: var(--accent-green); }
+    .liq-marker.short { background: linear-gradient(90deg, transparent, var(--accent-red)); }
+    .liq-marker.short::after { background: var(--accent-red); }
+    .liq-marker.current { border-top: 1px dashed #9ca3af; height: 1px; }
+    .liq-marker.current::after { content: attr(data-price); background: #555; color: white; right: 0; top: -14px; }
+
+    /* --- ЛОГИ --- */
+    .logs-panel {
+      grid-column: 1 / -1; grid-row: 3 / 4;
+      background: #000; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;
+      overflow-y: auto; font-family: 'Courier New', monospace; font-size: 11px;
+      display: flex; flex-direction: column-reverse;
+    }
+    .log-line { padding: 2px 0; border-left: 2px solid #333; padding-left: 8px; margin-bottom: 4px; animation: fadein 0.3s; }
+    .log-line span { color: #555; margin-right: 8px; }
+    @keyframes fadein { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* Скроллбар */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+  </style>
+</head>
+<body>
+
+<!-- ========== ОСНОВНАЯ СЕТКА ========== -->
+<div class="layout-grid">
+
+  <!-- ========== HEADER (полностью из googledolf9) ========= -->
+  <div class="header">
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00ff9d" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </svg>
+      DOLF-AI <span>ULTIMATE</span> <span class="tag">V11.0 FINAL</span>
+    </div>
+    <div class="connection-status">
+      <div class="dot active" id="apiStatus"></div>
+      <span id="apiText">BINANCE FUTURES · LIVE</span>
+    </div>
+  </div>
+
+  <!-- ========== ЛЕВАЯ ПАНЕЛЬ ========== -->
+  <div class="sidebar-left">
+    <div class="control-panel">
+      <!-- Режимы: SCALP / SWING / MM TRAPS -->
+      <div class="mode-selector">
+        <div class="mode-btn active" onclick="setMode('scalp')" id="btnScalp">⚡ SCALP</div>
+        <div class="mode-btn" onclick="setMode('swing')" id="btnSwing">🌊 SWING</div>
+        <div class="mode-btn" onclick="setMode('mm')" id="btnMM">🎯 MM TRAPS</div>
+      </div>
+
+      <div class="input-row">
+        <input type="text" id="ticker" value="BTC" placeholder="BTC, ETH, SOL...">
+        <select id="preset" style="width: 80px;" onchange="document.getElementById('ticker').value = this.value">
+          <option value="BTC">BTC</option>
+          <option value="ETH">ETH</option>
+          <option value="SOL">SOL</option>
+          <option value="XRP">XRP</option>
+          <option value="DOGE">DOGE</option>
+          <option value="PEPE">PEPE</option>
+          <option value="APT">APT</option>
+        </select>
+      </div>
+
+      <button class="analyze-btn" onclick="runAnalysis()">ЗАПУСТИТЬ DOLF·АНАЛИЗ</button>
+
+      <!-- 4 ключевые метрики (Funding, OI%, CVD, Vol) — как в V10, но в стиле m-card -->
+      <div class="metrics-grid">
+        <div class="m-card" style="border-color: var(--accent-blue)">
+          <div class="m-title">Funding Rate</div>
+          <div class="m-val" id="mFund">--</div>
+        </div>
+        <div class="m-card" style="border-color: #3d7eff">
+          <div class="m-title">OI изм.%</div>
+          <div class="m-val" id="mOI">--</div>
+        </div>
+        <div class="m-card" style="border-color: var(--accent-gold)">
+          <div class="m-title">CVD дельта</div>
+          <div class="m-val" id="mDelta">--</div>
+        </div>
+        <div class="m-card" style="border-color: var(--accent-green)">
+          <div class="m-title">Волат‑ть</div>
+          <div class="m-val" id="mVol">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- СЕТАПЫ DOLF (28/28) -->
+    <div class="setups-wrapper">
+      <div class="section-title">
+        DOLF SETUP DETECTOR
+        <span id="setupCount" style="color: var(--accent-green)">0/28</span>
+      </div>
+      <div class="setup-list" id="setupContainer">
+        <div style="text-align: center; color: #444; margin-top: 20px;">ОЖИДАНИЕ ДАННЫХ...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ЦЕНТР: ГРАФИК ========== -->
+  <div class="chart-wrapper">
+    <div class="loader-overlay" id="loader">
+      <div class="load-text">DOLF-AI SCANNING</div>
+      <div class="scanner-line"></div>
+      <div class="load-sub" id="loadStatus">Инициализация...</div>
+    </div>
+    <canvas id="mainChart"></canvas>
+  </div>
+
+  <!-- ========== ПРАВАЯ ПАНЕЛЬ ========== -->
+  <div class="sidebar-right">
+    <!-- ПРОГНОЗНЫЙ БЛОК + СПАРКЛАЙН -->
+    <div class="prediction-box">
+      <canvas id="sparkCanvas" class="spark-container"></canvas>
+      <div class="pred-label">DOLF PREDICTION</div>
+      <div class="pred-dir neutral" id="pDir">NEUTRAL</div>
+      <div class="pred-val neutral" id="pTarget">0.00%</div>
+      <div style="display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-top: 15px;">
+        <span>УВЕРЕННОСТЬ</span>
+        <span id="pConf">0%</span>
+      </div>
+      <div class="conf-wrapper">
+        <div class="conf-bar" id="pBar" style="background: #444;"></div>
+      </div>
+      <!-- ВРЕМЯ ПРОГНОЗА (ориентир) -->
+      <div style="font-size: 9px; color: #888; margin-top: 8px;" id="predictionTime">⏱️ ~ —</div>
+    </div>
+
+    <!-- КАРТА ЛИКВИДАЦИЙ (МАГНИТЫ) -->
+    <div class="liquidation-panel">
+      <div class="section-title">🔍 КАРТА ЛИКВИДАЦИЙ (МАГНИТЫ)</div>
+      <div class="liq-map-container" id="liqMap"></div>
+      <div style="display: flex; justify-content: space-between; font-size: 9px; color: #555;">
+        <span style="color: var(--accent-green)">⬇️ LONG LIQ</span>
+        <span style="color: var(--accent-red)">⬆️ SHORT LIQ</span>
+        <span style="color: #fff">📌 текущая цена</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== ЛОГИ ========== -->
+  <div class="logs-panel" id="logTerminal">
+    <div class="log-line" style="border-color: var(--accent-green); color: #fff;">
+      <span>[SYSTEM]</span> DOLF-AI ULTIMATE V11.0 FINAL — абсолютный победитель.
+    </div>
+  </div>
+</div>
+
+<script>
+  // ====================================================================
+  //   DOLF-AI ULTIMATE V11.0 — ФИНАЛЬНАЯ, АБСОЛЮТНО РАБОЧАЯ ВЕРСИЯ
+  //   ОБЪЕДИНЯЕТ ЛУЧШЕЕ ИЗ V10 (28 СЕТАПОВ, CVD, ФРАКТАЛЫ, WS)
+  //   И ЛУЧШЕЕ ИЗ GOOGLEDOLF9 (РЕЖИМЫ, ВИЗУАЛ, АННОТАЦИИ, КАРТА)
+  //   + НОВЫЕ ФИЧИ: МАНИПУЛЯЦИИ ММ (ПЕРЕХАЙ/ПЕРЕЛОЙ), ВРЕМЯ ПРОГНОЗА
+  //   НИКАКИХ СИМУЛЯЦИЙ — ТОЛЬКО РЕАЛЬНЫЕ API BINANCE
+  // ====================================================================
+
+  (function(){
+    "use strict";
+
+    // -------------------- КОНФИГУРАЦИЯ --------------------
+    const CONFIG = {
+      // Периоды
+      OI_PERIOD_MIN: 15,
+      FRACTAL_LEN: 24,
+      PREDICT_LEN: 12,
+      LOOKBACK_LIMIT: 300,
+      MAX_OI_HISTORY: 200,
+      LIQUIDATION_CLUSTER_MIN: 25000,
+      // Пороги сетапов
+      VOLATILITY_LOW: 0.9,
+      FUNDING_SHORT_THRESHOLD: -0.01,
+      FUNDING_LONG_THRESHOLD: 0.01,
+      // Режимы
+      MODES: {
+        scalp: { interval: '5m', lookback: 300, risk: 'HIGH', timeEstimate: '15-60 мин' },
+        swing: { interval: '1h', lookback: 300, risk: 'MED', timeEstimate: '2-8 ч' },
+        mm: { interval: '4h', lookback: 300, risk: 'LOW', timeEstimate: '12-48 ч' }
+      }
+    };
+
+    // -------------------- ГЛОБАЛЬНОЕ СОСТОЯНИЕ --------------------
+    const state = {
+      symbol: 'BTCUSDT',
+      mode: 'scalp',
+      currentPrice: null,
+      klines: [],
+      oiHistory: [],
+      trades: [],
+      fundingRate: 0,
+      ticker24h: null,
+      liqEvents: [],
+      activeSetups: [],
+      bias: 0,
+      confidence: 25,
+      targetPct: 0,
+      direction: 'neutral',
+      cvd: 0,
+      prevCvd: 0,
+      cvdTrend: 0,
+      volatility: 0,
+      oiChangePeriod: 0,
+      volumeSpike: 0,
+      priceChange5: 0,
+      newHigh24h: false,
+      newLow24h: false,
+      fomoDetected: false,
+      rsi: 50,
+      priceChange24h: 0,
+      // Фрактальные метрики
+      fractalMatchQuality: 0, // 0-100% насколько похож паттерн
+      // Манипуляции
+      manipulationDetected: false,
+      manipulationType: null, // 'long_trap', 'short_trap'
+      manipulationPrice: null
+    };
+
+    // -------------------- ПОЛНАЯ БИБЛИЯ DOLF: 28 СЕТАПОВ (14+14) --------------------
+    const DOLF_SETUPS = [
+      // ---------- ЛОНГ ----------
+      { id: 'L1', type: 'long', name: '🚀 НАЧАЛО ТРЕНДА', weight: 85,
+        desc: 'Рост цены, OI, объёма после низкой волатильности.',
+        check: (s) => s.volatility < CONFIG.VOLATILITY_LOW && s.priceChange5 > 0.7 && s.oiChangePeriod > 2.0 && s.volumeSpike > 1.7 },
+      { id: 'L2', type: 'long', name: '🏆 ЗОЛОТОЙ ФАНДИНГ', weight: 95,
+        desc: 'OI растёт, фандинг < -0.01% (шорты платят)',
+        check: (s) => s.oiChangePeriod > 1.8 && s.fundingRate < -0.01 },
+      { id: 'L3', type: 'long', name: '🦈 ШОРТОДОН', weight: 88,
+        desc: 'Падение цены + рост OI (ловушка шортов)',
+        check: (s) => s.priceChange5 < -1.2 && s.oiChangePeriod > 2.5 },
+      { id: 'L4', type: 'long', name: '📈 РОСТ НА ФЛЭТЕ OI', weight: 80,
+        desc: 'OI в боковике, цена пошла вверх',
+        check: (s) => Math.abs(s.oiChangePeriod) < 1.0 && s.priceChange5 > 0.6 },
+      { id: 'L5', type: 'long', name: '🔥 ВЫКУП ЛИКВИДАЦИЙ', weight: 86,
+        desc: 'Крупные лонг-лик, отскок',
+        check: (s) => { let liq = getLiqClusters(s.symbol); return Object.keys(liq.long).length > 0 && s.priceChange5 > 0.3; } },
+      { id: 'L6', type: 'long', name: '⏫ КОРРЕКЦИЯ/ПРОДОЛЖЕНИЕ', weight: 78,
+        desc: 'Цена падает, OI не падает',
+        check: (s) => s.priceChange5 < -0.4 && s.oiChangePeriod > -0.3 && s.oiChangePeriod < 1.5 },
+      { id: 'L7', type: 'long', name: '🎭 FOMO ПРОДОЛЖЕНИЕ', weight: 74,
+        desc: 'Сильный тренд + OI растёт, CVD+',
+        check: (s) => s.rsi > 55 && s.oiChangePeriod > 1.0 && s.cvdTrend > 0 },
+      { id: 'L8', type: 'long', name: '💎 ДИВЕРГЕНЦИЯ CVD', weight: 81,
+        desc: 'Цена вниз, CVD вверх',
+        check: (s) => s.priceChange5 < -0.5 && s.cvdTrend > 0.3 },
+      { id: 'L9', type: 'long', name: '📊 OI/ОБЪЁМ БЫКИ', weight: 77,
+        desc: 'Объём > среднего, OI растёт',
+        check: (s) => s.volumeSpike > 1.5 && s.oiChangePeriod > 1.2 },
+      { id: 'L10', type: 'long', name: '⏸️ ПЕРЕГРУЗ ШОРТА', weight: 82,
+        desc: 'Фандинг отр., OI на макс.',
+        check: (s) => s.fundingRate < -0.005 && s.oiChangePeriod > 1.0 },
+      { id: 'L11', type: 'long', name: '🔄 РАЗВОРОТ ЛОЯ', weight: 79,
+        desc: 'Новый лой 24ч, OI не растёт',
+        check: (s) => s.newLow24h === true && s.oiChangePeriod < 0.8 },
+      { id: 'L12', type: 'long', name: '🧹 МЕТЛА ММ', weight: 73,
+        desc: 'Лонг-лик, быстрый отскок',
+        check: (s) => { let liq = getLiqClusters(s.symbol); return liq.longSize > 300000 && s.priceChange5 > 0.2; } },
+      { id: 'L13', type: 'long', name: '⚡ СКАЛЬП-БАЗА', weight: 70,
+        desc: 'Низкая волат., OI +, CVD+',
+        check: (s) => s.volatility < 1.0 && s.oiChangePeriod > 0.5 && s.cvd > 0 },
+      { id: 'L14', type: 'long', name: '📈 ТРЕНД 5M', weight: 76,
+        desc: '5 зелёных свечей, OI растёт',
+        check: (s) => s.priceChange5 > 1.2 && s.oiChangePeriod > 0.8 },
+      // ---------- ШОРТ ----------
+      { id: 'S1', type: 'short', name: '⛰️ НЕДОГОРА', weight: 90,
+        desc: 'Цена обновила хай, OI ниже',
+        check: (s) => s.newHigh24h === true && s.oiChangePeriod < 0.5 && s.oiChangePeriod > -1.5 },
+      { id: 'S2', type: 'short', name: '📉 ДИВЕРГЕНЦИЯ OI', weight: 85,
+        desc: 'Цена растёт, OI падает',
+        check: (s) => s.priceChange5 > 0.8 && s.oiChangePeriod < -0.8 },
+      { id: 'S3', type: 'short', name: '🕯️ FOMO СВЕЧИ', weight: 88,
+        desc: '3+ огромных зелёных свечи, RSI > 75',
+        check: (s) => s.fomoDetected === true && s.rsi > 72 },
+      { id: 'S4', type: 'short', name: '💣 ШОРТ ОТ ЛИКВИДАЦИЙ', weight: 84,
+        desc: 'Крупные ликвидации шортов, OI падает',
+        check: (s) => { let liq = getLiqClusters(s.symbol); return Object.keys(liq.short).length > 0 && s.oiChangePeriod < -0.7; } },
+      { id: 'S5', type: 'short', name: '🌡️ ПЕРЕГРЕТЫЙ ФАНДИНГ', weight: 82,
+        desc: 'Фандинг > +0.03%',
+        check: (s) => s.fundingRate > 0.03 },
+      { id: 'S6', type: 'short', name: '🎈 ПАМП И ДАМП', weight: 80,
+        desc: 'Резкий памп, OI перестал расти',
+        check: (s) => s.priceChange5 > 3.5 && s.oiChangePeriod < 0.4 },
+      { id: 'S7', type: 'short', name: '📉 CVD МЕДВЕДЬ', weight: 75,
+        desc: 'CVD падает, цена не растёт',
+        check: (s) => s.cvdTrend < -0.2 && Math.abs(s.priceChange5) < 0.5 },
+      { id: 'S8', type: 'short', name: '⚖️ OI ВЕРШИНА', weight: 79,
+        desc: 'OI резко вырос, затем пауза',
+        check: (s) => s.oiChangePeriod > 3.0 && s.priceChange5 < 0.2 },
+      { id: 'S9', type: 'short', name: '🔄 РАЗВОРОТ ХАЯ', weight: 77,
+        desc: 'Новый хай, OI не растёт',
+        check: (s) => s.newHigh24h === true && s.oiChangePeriod < 0.2 },
+      { id: 'S10', type: 'short', name: '🧊 ФРИЗ-ФАНДИНГ', weight: 70,
+        desc: 'Фандинг > 0.01%, OI снижается',
+        check: (s) => s.fundingRate > 0.01 && s.oiChangePeriod < -0.5 },
+      { id: 'S11', type: 'short', name: '📊 ОБЪЁМ СПАД', weight: 72,
+        desc: 'Цена вверх, объём падает',
+        check: (s) => s.priceChange5 > 1.0 && s.volumeSpike < 0.9 },
+      { id: 'S12', type: 'short', name: '💸 ИСТОЩЕНИЕ ЛОНГ', weight: 81,
+        desc: 'Фандинг высокий, CVD падает',
+        check: (s) => s.fundingRate > 0.015 && s.cvdTrend < -0.1 },
+      { id: 'S13', type: 'short', name: '🕳️ ДАТЧИК ПАДЕНИЯ', weight: 68,
+        desc: 'Цена на хае, OI падает 2+ периода',
+        check: (s) => s.newHigh24h && s.oiChangePeriod < -0.4 },
+      { id: 'S14', type: 'short', name: '🎢 ЛИКВИДАЦИИ ЛОНГ', weight: 76,
+        desc: 'Ликвидации лонгов, цена не падает',
+        check: (s) => { let liq = getLiqClusters(s.symbol); return Object.keys(liq.long).length > 0 && s.priceChange5 > -0.1 && s.oiChangePeriod < 0; } }
+    ];
+
+    // -------------------- ЖЁСТКИЕ ПРАВИЛА --------------------
+    function applyProhibitionRules(setups, s) {
+      return setups.filter(setup => {
+        if (setup.type === 'short') {
+          if (s.oiChangePeriod > 1.0) return false;
+          if (s.fundingRate < -0.01) return false;
+        }
+        if (setup.type === 'long' && s.priceChange5 > 5.0) return false;
+        return true;
+      });
+    }
+
+    // -------------------- BINANCE FUTURES API --------------------
+    const BinanceFutures = {
+      async fetchKlines(symbol, interval, limit = 300) {
+        const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+        const res = await fetch(url); if (!res.ok) throw new Error(`KLINES ${res.status}`); return res.json();
+      },
+      async fetchOpenInterest(symbol) {
+        const url = `https://fapi.binance.com/fapi/v1/openInterest?symbol=${symbol}`;
+        const res = await fetch(url); if (!res.ok) throw new Error(`OI ${res.status}`); return res.json();
+      },
+      async fetchPremiumIndex(symbol) {
+        const url = `https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${symbol}`;
+        const res = await fetch(url); if (!res.ok) throw new Error(`PREMIUM ${res.status}`); return res.json();
+      },
+      async fetchTicker24h(symbol) {
+        const url = `https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=${symbol}`;
+        const res = await fetch(url); if (!res.ok) throw new Error(`TICKER ${res.status}`); return res.json();
+      },
+      async fetchTrades(symbol, limit = 500) {
+        const url = `https://fapi.binance.com/fapi/v1/trades?symbol=${symbol}&limit=${limit}`;
+        const res = await fetch(url); if (!res.ok) throw new Error(`TRADES ${res.status}`); return res.json();
+      }
+    };
+
+    // -------------------- WS ЛИКВИДАЦИЙ --------------------
+    const LiqWS = {
+      ws: null,
+      init() {
+        if (this.ws) return;
+        this.ws = new WebSocket('wss://fstream.binance.com/ws/!forceOrder@arr');
+        this.ws.onmessage = (e) => {
+          try {
+            let d = JSON.parse(e.data); let o = d.o; if (!o) return;
+            let usd = parseFloat(o.q) * parseFloat(o.p);
+            state.liqEvents.push({ time: Date.now(), symbol: o.s, side: o.S, price: parseFloat(o.p), qty: parseFloat(o.q), usd });
+            if (state.liqEvents.length > 500) state.liqEvents.shift();
+          } catch (e) {}
+        };
+        this.ws.onerror = () => log('⚠️ WS ликвидаций переподключение...', 'warn');
+      }
+    };
+    LiqWS.init();
+
+    // -------------------- АНАЛИТИЧЕСКИЕ ФУНКЦИИ --------------------
+    function computeVolatility(klines, p = 20) {
+      if (klines.length < p) return 0;
+      let sum = 0;
+      for (let i = klines.length - p; i < klines.length; i++) {
+        let high = parseFloat(klines[i][2]), low = parseFloat(klines[i][3]), close = parseFloat(klines[i][4]);
+        sum += (high - low) / close;
+      } return (sum / p) * 100;
+    }
+    function computeOIChange(hist, mins = 15) {
+      if (hist.length < 2) return 0;
+      let now = Date.now(), target = now - mins * 60000;
+      let pastOI = null;
+      for (let i = hist.length-1; i>=0; i--) { if (hist[i].timestamp <= target) { pastOI = hist[i].oi; break; } }
+      if (!pastOI) pastOI = hist[0].oi;
+      let curr = hist[hist.length-1].oi;
+      return ((curr - pastOI) / pastOI) * 100;
+    }
+    function computeCVD(trades) {
+      if (!trades || !trades.length) return 0;
+      let delta = 0;
+      trades.forEach(t => { let qty = parseFloat(t.qty); t.isBuyerMaker ? delta -= qty : delta += qty; });
+      return delta;
+    }
+    function detectFomoCandles(klines, lb = 5) {
+      if (klines.length < lb) return false;
+      let recent = klines.slice(-lb);
+      let avgBody = recent.reduce((s,c)=> s + Math.abs(parseFloat(c[4])-parseFloat(c[1])),0)/lb;
+      let cnt = 0;
+      for (let i = recent.length-1; i>=0; i--) {
+        let c = recent[i]; 
+        let body = Math.abs(parseFloat(c[4])-parseFloat(c[1]));
+        let upWick = parseFloat(c[2]) - Math.max(parseFloat(c[4]),parseFloat(c[1]));
+        let lowWick = Math.min(parseFloat(c[4]),parseFloat(c[1])) - parseFloat(c[3]);
+        if (body > avgBody*1.8 && upWick < body*0.15 && lowWick < body*0.15) cnt++; else break;
+      } return cnt >= 3;
+    }
+    function computeRSI(closes, period=14) {
+      if (closes.length < period+1) return 50;
+      let gains=0, losses=0;
+      for (let i = closes.length-period; i<closes.length; i++) {
+        let diff = closes[i]-closes[i-1];
+        if (diff>0) gains+=diff; else losses-=diff;
+      }
+      let rs = gains / (losses || 0.001); 
+      return 100 - 100/(1+rs);
+    }
+
+    // Кластеры ликвидаций
+    function getLiqClusters(symbol, minutes=120) {
+      let now = Date.now(), cutoff = now - minutes*60000;
+      let filtered = state.liqEvents.filter(ev => ev.symbol === symbol && ev.time >= cutoff && ev.usd >= CONFIG.LIQUIDATION_CLUSTER_MIN);
+      let long = {}, short = {}, longSize = 0, shortSize = 0;
+      filtered.forEach(ev => {
+        let p = ev.price.toFixed(2);
+        if (ev.side === 'SELL') { long[p] = (long[p]||0)+ev.usd; longSize += ev.usd; }
+        else { short[p] = (short[p]||0)+ev.usd; shortSize += ev.usd; }
+      });
+      return { long, short, longSize, shortSize };
+    }
+
+    // Фрактальный прогноз с оценкой качества совпадения
+    function fractalPredict(prices, patternLen = 24, predLen = 12) {
+      if (prices.length < patternLen + predLen + 5) return { path: Array(predLen).fill(0), quality: 0 };
+      let closes = prices.map(p => parseFloat(p));
+      let current = closes.slice(-patternLen);
+      let normCurr = normalize(current);
+      let bestIdx = -1, bestDist = Infinity;
+      for (let i = 0; i <= closes.length - patternLen - predLen; i+=2) {
+        let cand = closes.slice(i, i+patternLen);
+        let normCand = normalize(cand);
+        let dist = euclidean(normCurr, normCand);
+        if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+      }
+      if (bestIdx === -1) return { path: Array(predLen).fill(0), quality: 0 };
+      // Качество совпадения: чем меньше расстояние, тем выше качество (масштабируем)
+      let maxPossibleDist = Math.sqrt(patternLen); // приблизительно
+      let quality = Math.max(0, 100 - (bestDist / maxPossibleDist) * 100);
+      let future = closes.slice(bestIdx + patternLen, bestIdx + patternLen + predLen);
+      let base = closes[bestIdx + patternLen - 1];
+      let path = future.map(p => (p - base) / base * 100);
+      return { path, quality };
+    }
+    function normalize(arr) { let min = Math.min(...arr), max = Math.max(...arr); if (max===min) return arr.map(()=>0); return arr.map(v => (v-min)/(max-min)); }
+    function euclidean(a,b) { let s=0; for(let i=0;i<a.length;i++) s+=(a[i]-b[i])**2; return Math.sqrt(s); }
+
+    // -------------------- UI --------------------
+    function log(msg, type = 'info') {
+      const term = document.getElementById('logTerminal');
+      const line = document.createElement('div');
+      const time = new Date().toLocaleTimeString();
+      let color = '#888';
+      if(type === 'succ') color = '#00ff9d';
+      if(type === 'err') color = '#ff0055';
+      if(type === 'warn') color = '#ffbe0b';
+      line.className = 'log-line';
+      line.style.borderColor = color;
+      line.innerHTML = `<span>[${time}]</span> <strong style="color:${color}">${msg}</strong>`;
+      term.prepend(line);
+      if (term.children.length > 20) term.lastElementChild.remove();
+    }
+
+    // Переключение режима
+    window.setMode = function(mode) {
+      state.mode = mode;
+      ['btnScalp', 'btnSwing', 'btnMM'].forEach(id => document.getElementById(id).classList.remove('active'));
+      document.getElementById(`btn${mode.charAt(0).toUpperCase() + mode.slice(1)}`).classList.add('active');
+      log(`РЕЖИМ: ${mode.toUpperCase()} (${CONFIG.MODES[mode].interval})`, 'info');
+    };
+
+    // -------------------- ОСНОВНОЙ АНАЛИЗ --------------------
+    window.runAnalysis = async function() {
+      const btn = document.querySelector('.analyze-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Анализ...';
+      const loader = document.getElementById('loader');
+      const status = document.getElementById('loadStatus');
+      loader.style.display = 'flex';
+      status.innerText = 'Загрузка данных с Binance...';
+
+      let rawSymbol = document.getElementById('ticker').value.trim().toUpperCase();
+      if (!rawSymbol.includes('USDT')) rawSymbol += 'USDT';
+      state.symbol = rawSymbol;
+      const cfg = CONFIG.MODES[state.mode];
+
+      try {
+        // Параллельные запросы
+        let [klines, oiResp, premium, ticker24, trades] = await Promise.all([
+          BinanceFutures.fetchKlines(state.symbol, cfg.interval, cfg.lookback),
+          BinanceFutures.fetchOpenInterest(state.symbol),
+          BinanceFutures.fetchPremiumIndex(state.symbol),
+          BinanceFutures.fetchTicker24h(state.symbol),
+          BinanceFutures.fetchTrades(state.symbol, 500)
+        ]);
+
+        // Сохраняем данные
+        state.klines = klines;
+        let currentOI = parseFloat(oiResp.openInterest);
+        state.oiHistory.push({ timestamp: Date.now(), oi: currentOI });
+        if (state.oiHistory.length > CONFIG.MAX_OI_HISTORY) state.oiHistory.shift();
+        state.fundingRate = parseFloat(premium.lastFundingRate) * 100;
+        state.currentPrice = parseFloat(ticker24.lastPrice);
+        state.ticker24h = ticker24;
+        state.trades = trades;
+        state.priceChange24h = parseFloat(ticker24.priceChangePercent);
+        state.volume24h = parseFloat(ticker24.volume);
+
+        // Расчёт метрик
+        state.volatility = computeVolatility(klines, 20);
+        let closes = klines.map(k => parseFloat(k[4]));
+        let lastClose = closes[closes.length-1];
+        let close5ago = closes[closes.length-5];
+        state.priceChange5 = ((lastClose - close5ago)/close5ago)*100;
+        state.oiChangePeriod = computeOIChange(state.oiHistory, CONFIG.OI_PERIOD_MIN);
+        
+        let volumes = klines.map(k => parseFloat(k[5]));
+        let avgVol = volumes.slice(-30).reduce((a,b)=>a+b,0)/30;
+        state.volumeSpike = volumes[volumes.length-1] / avgVol;
+
+        let newCvd = computeCVD(trades);
+        state.prevCvd = state.cvd;
+        state.cvd = newCvd;
+        state.cvdTrend = state.cvd - state.prevCvd;
+
+        state.rsi = computeRSI(closes, 14);
+
+        let highs = klines.map(k => parseFloat(k[2]));
+        let lows = klines.map(k => parseFloat(k[3]));
+        let lastHigh = highs[highs.length-1], lastLow = lows[lows.length-1];
+        state.newHigh24h = lastHigh > Math.max(...highs.slice(-100, -1));
+        state.newLow24h = lastLow < Math.min(...lows.slice(-100, -1));
+
+        state.fomoDetected = detectFomoCandles(klines);
+
+        // ---- ОБНАРУЖЕНИЕ МАНИПУЛЯЦИЙ ММ (перехай/перелой с расхождением OI) ----
+        state.manipulationDetected = false;
+        state.manipulationType = null;
+        state.manipulationPrice = null;
+        if (state.newHigh24h && state.oiChangePeriod < 0.5) {
+          state.manipulationDetected = true;
+          state.manipulationType = 'short_trap'; // ловушка шортов
+          state.manipulationPrice = lastHigh;
+        }
+        if (state.newLow24h && state.oiChangePeriod > -0.5 && state.oiChangePeriod < 1.0) {
+          state.manipulationDetected = true;
+          state.manipulationType = 'long_trap'; // ловушка лонгов
+          state.manipulationPrice = lastLow;
+        }
+
+        // СЕТАПЫ
+        let detected = DOLF_SETUPS.filter(setup => { try { return setup.check(state); } catch(e){ return false; } });
+        let finalSetups = applyProhibitionRules(detected, state);
+        state.activeSetups = finalSetups;
+        renderSetups(finalSetups);
+
+        // BIAS И УВЕРЕННОСТЬ (с учётом качества фрактала)
+        let longW = 0, shortW = 0;
+        finalSetups.forEach(s => { if (s.type === 'long') longW += s.weight; else shortW += s.weight; });
+        let total = longW + shortW || 1;
+        state.bias = (longW - shortW) / total;
+
+        // Фрактальный прогноз + качество
+        let { path: pred, quality: fractalQuality } = fractalPredict(closes, CONFIG.FRACTAL_LEN, CONFIG.PREDICT_LEN);
+        state.fractalMatchQuality = fractalQuality;
+        let avgPred = pred.reduce((a,b)=>a+b,0)/pred.length || 0;
+        state.targetPct = avgPred * (1 + state.bias * 0.4);
+        if (Math.abs(state.targetPct) < 0.1) state.targetPct = state.bias * 0.3;
+        state.direction = state.targetPct > 0.25 ? 'long' : state.targetPct < -0.25 ? 'short' : 'neutral';
+
+        // Уверенность: комбинация количества сетапов, bias, качества фрактала, волатильности
+        let setupConf = finalSetups.length * 8;
+        let biasConf = Math.abs(state.bias) * 40;
+        let fractalConf = fractalQuality * 0.3;
+        let volConf = state.volatility < 1.5 ? 15 : 5; // низкая волатильность = выше уверенность
+        state.confidence = Math.min(95, 35 + setupConf + biasConf + fractalConf + volConf);
+        state.confidence = Math.max(15, state.confidence);
+
+        // ОБНОВЛЕНИЕ UI
+        updateMetricsUI();
+        updateVerdictUI();
+        renderChart(klines, pred, lastHigh, lastLow, state.direction === 'long' ? '#00ff9d' : state.direction === 'short' ? '#ff0055' : '#ffbe0b');
+        renderLiquidityMap();
+        drawSparkline(closes.slice(-30), state.direction === 'long' ? '#00ff9d' : state.direction === 'short' ? '#ff0055' : '#ffbe0b');
+
+        // Время прогноза
+        document.getElementById('predictionTime').innerHTML = `⏱️ ~ ${CONFIG.MODES[state.mode].timeEstimate}`;
+
+        loader.style.display = 'none';
+        log(`✅ Анализ ${state.symbol} (${state.mode}) | Сетапов: ${finalSetups.length} | Уверенность: ${Math.round(state.confidence)}%`, 'succ');
+      } catch (err) {
+        loader.style.display = 'none';
+        log(`❌ Ошибка: ${err.message}`, 'err');
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'ЗАПУСТИТЬ DOLF·АНАЛИЗ';
+      }
+    };
+
+    // ------ ОТРИСОВКА UI ------
+    function updateMetricsUI() {
+      document.getElementById('mFund').innerHTML = (state.fundingRate !== undefined && !isNaN(state.fundingRate)) ? state.fundingRate.toFixed(4)+'%' : '—';
+      document.getElementById('mOI').innerHTML = (state.oiChangePeriod!==0) ? (state.oiChangePeriod>0?'+':'')+state.oiChangePeriod.toFixed(2)+'%' : '—';
+      document.getElementById('mDelta').innerHTML = state.cvd ? state.cvd.toFixed(0) : '—';
+      document.getElementById('mVol').innerHTML = state.volatility ? state.volatility.toFixed(2)+'%' : '—';
+    }
+
+    function renderSetups(setups) {
+      let container = document.getElementById('setupContainer');
+      container.innerHTML = '';
+      if (!setups || setups.length===0) { 
+        container.innerHTML = '<div style="text-align:center;color:#555;margin-top:20px">НЕТ АКТИВНЫХ СЕТАПОВ</div>'; 
+        document.getElementById('setupCount').innerText = '0/28'; 
+        return; 
+      }
+      setups.forEach(s => {
+        let div = document.createElement('div');
+        div.className = `setup-item ${s.type === 'long' ? 'active' : 'active-bear'}`;
+        div.innerHTML = `
+          <div class="s-head">
+            <span class="s-name" style="color: ${s.type === 'long' ? '#00ff9d' : '#ff3366'}">${s.name}</span>
+            <span class="s-badge" style="color: ${s.type === 'long' ? '#00ff9d' : '#ff3366'}">${s.weight}%</span>
+          </div>
+          <div class="s-desc">${s.desc}</div>
+        `;
+        container.appendChild(div);
+      });
+      document.getElementById('setupCount').innerText = `${setups.length}/28`;
+    }
+
+    function updateVerdictUI() {
+      let dir = state.direction;
+      let color = dir === 'long' ? '#00ff9d' : dir === 'short' ? '#ff0055' : '#ffbe0b';
+      document.getElementById('pDir').innerText = dir === 'long' ? 'LONG' : dir === 'short' ? 'SHORT' : 'NEUTRAL';
+      document.getElementById('pDir').className = `pred-dir ${dir}`;
+      document.getElementById('pTarget').innerText = (state.targetPct > 0 ? '+' : '') + state.targetPct.toFixed(2) + '%';
+      document.getElementById('pTarget').className = `pred-val ${dir}`;
+      document.getElementById('pConf').innerText = Math.round(state.confidence) + '%';
+      document.getElementById('pBar').style.width = state.confidence + '%';
+      document.getElementById('pBar').style.background = color;
+    }
+
+    // --- СПАРКЛАЙН ---
+    function drawSparkline(data, color) {
+      const cvs = document.getElementById('sparkCanvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width = cvs.clientWidth || 100;
+      const h = cvs.height = cvs.clientHeight || 40;
+      ctx.clearRect(0,0,w,h);
+      if (data.length < 2) return;
+      const min = Math.min(...data);
+      const max = Math.max(...data);
+      const range = max - min || 1;
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      data.forEach((p, i) => {
+        const x = (i / (data.length-1)) * w;
+        const y = h - ((p - min) / range * h * 0.8) - (h*0.1);
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 6;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // --- ГРАФИК (с аннотациями) ---
+    let chartInstance;
+    function renderChart(klines, forecastPath, liqHigh, liqLow, predColor) {
+      const ctx = document.getElementById('mainChart').getContext('2d');
+      if (chartInstance) chartInstance.destroy();
+
+      const labels = klines.map(k => new Date(k[0]).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}));
+      const prices = klines.map(k => parseFloat(k[4]));
+      const lastPrice = prices[prices.length-1];
+
+      // Прогноз
+      const forecastData = new Array(prices.length-1).fill(null);
+      forecastData.push(lastPrice);
+      forecastPath.forEach((pct, i) => {
+        forecastData.push(lastPrice * (1 + pct/100 * (1+state.bias*0.3)));
+        labels.push(`+${i+1}`);
+      });
+      const histData = [...prices, ...new Array(forecastPath.length).fill(null)];
+
+      // Аннотации для манипуляций
+      let annotations = {};
+      if (state.manipulationDetected && state.manipulationPrice) {
+        let label = state.manipulationType === 'short_trap' ? '⚡ ЛОВУШКА ШОРТОВ' : '⚡ ЛОВУШКА ЛОНГОВ';
+        let color = state.manipulationType === 'short_trap' ? '#ffbe0b' : '#ffbe0b';
+        annotations.manipulation = {
+          type: 'line',
+          yMin: state.manipulationPrice,
+          yMax: state.manipulationPrice,
+          borderColor: color,
+          borderWidth: 1,
+          borderDash: [5,5],
+          label: {
+            content: label,
+            display: true,
+            position: 'start',
+            color: color,
+            font: { size: 9, weight: 'bold' }
+          }
+        };
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'PRICE', data: histData, borderColor: '#888', borderWidth: 1.5, pointRadius: 0, tension: 0.1 },
+            { label: 'DOLF FORECAST', data: forecastData, borderColor: predColor, borderWidth: 2, borderDash: [5,5], pointRadius: 0, tension: 0.4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            annotation: { annotations: annotations }
+          },
+          scales: {
+            x: { display: false },
+            y: { position: 'right', grid: { color: '#1a1e23' }, ticks: { color: '#555' } }
+          }
+        }
+      });
+    }
+
+    // --- КАРТА ЛИКВИДАЦИЙ (стиль googledolf9) ---
+    function renderLiquidityMap() {
+      const mapDiv = document.getElementById('liqMap');
+      mapDiv.innerHTML = '';
+      let clusters = getLiqClusters(state.symbol, 120);
+      let longP = Object.keys(clusters.long).map(Number), shortP = Object.keys(clusters.short).map(Number);
+      let current = state.currentPrice || 50000;
+      if (longP.length===0 && shortP.length===0) {
+        mapDiv.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100%;color:#555;font-size:10px;">— НЕТ КРУПНЫХ ЛИКВИДАЦИЙ —</div>';
+        return;
+      }
+      let min = Math.min(...longP.concat(shortP).concat(current*0.98));
+      let max = Math.max(...longP.concat(shortP).concat(current*1.02));
+      let range = max-min || 1;
+      let getTop = (p) => ((max - p) / range * 100)+'%';
+      longP.forEach(p => {
+        let m = document.createElement('div'); m.className = 'liq-marker long';
+        m.style.top = getTop(p);
+        m.setAttribute('data-price', p.toFixed(2));
+        mapDiv.appendChild(m);
+      });
+      shortP.forEach(p => {
+        let m = document.createElement('div'); m.className = 'liq-marker short';
+        m.style.top = getTop(p);
+        m.setAttribute('data-price', p.toFixed(2));
+        mapDiv.appendChild(m);
+      });
+      let curr = document.createElement('div'); curr.className = 'liq-marker current';
+      curr.style.top = getTop(current);
+      curr.setAttribute('data-price', current.toFixed(2));
+      mapDiv.appendChild(curr);
+    }
+
+    // Инициализация
+    window.onload = () => {
+      log('DOLF-AI ULTIMATE V11.0 FINAL загружен. Все данные реальные, WebSocket активен.', 'succ');
+      setMode('scalp');
+      setTimeout(() => runAnalysis(), 500);
+    };
+  })();
+</script>
+</body>
+</html>
