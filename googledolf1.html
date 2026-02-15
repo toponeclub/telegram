@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOLF-AI: Fractal Prediction Engine</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #050505;
+            --panel: #0f1115;
+            --border: #1f232b;
+            --accent: #00ff9d; /* Bullish */
+            --danger: #ff0055; /* Bearish */
+            --warning: #ffbe0b; /* Liquidations/Projection */
+            --text-main: #e1e1e1;
+            --text-muted: #6b7280;
+            --grid: rgba(255, 255, 255, 0.03);
+        }
+
+        * { box-sizing: border-box; font-family: 'JetBrains Mono', 'Segoe UI', monospace; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .main-terminal {
+            width: 100%;
+            max-width: 1200px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+            display: grid;
+            grid-template-rows: auto auto 1fr auto;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* HEADER & CONTROLS */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+        }
+
+        .brand { font-size: 20px; font-weight: 800; letter-spacing: 1px; color: var(--text-main); }
+        .brand span { color: var(--accent); }
+        .version { font-size: 10px; background: #222; padding: 2px 6px; border-radius: 4px; color: var(--text-muted); margin-left: 10px; }
+
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+        
+        select, button {
+            background: #161b22;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        select:hover, button:hover { border-color: var(--text-muted); }
+
+        .mode-btn { border: 1px solid var(--border); color: var(--text-muted); }
+        .mode-btn.active { background: rgba(0, 255, 157, 0.1); border-color: var(--accent); color: var(--accent); }
+
+        .run-btn {
+            background: var(--accent);
+            color: #000;
+            font-weight: 800;
+            border: none;
+            box-shadow: 0 0 15px rgba(0, 255, 157, 0.2);
+        }
+        .run-btn:hover { transform: translateY(-1px); box-shadow: 0 0 25px rgba(0, 255, 157, 0.4); }
+        .run-btn:disabled { background: var(--text-muted); cursor: not-allowed; box-shadow: none; }
+
+        /* METRICS GRID */
+        .dolf-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .metric-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .metric-value { font-size: 18px; font-weight: 700; }
+        .metric-sub { font-size: 11px; margin-top: 4px; }
+        
+        .val-up { color: var(--accent); }
+        .val-down { color: var(--danger); }
+        .val-neutral { color: var(--warning); }
+
+        /* CHART AREA */
+        .chart-wrapper {
+            position: relative;
+            height: 500px;
+            background: #0b0d10;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        canvas { width: 100%; height: 100%; }
+
+        .overlay-loader {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5,5,5,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+            display: none;
+        }
+
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* LOGS & ANALYSIS */
+        .analysis-log {
+            background: #000;
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            line-height: 1.6;
+        }
+
+        .log-entry span { color: var(--text-main); font-weight: bold; }
+        .log-entry.bullish { border-left: 3px solid var(--accent); padding-left: 10px; margin-bottom: 5px; }
+        .log-entry.bearish { border-left: 3px solid var(--danger); padding-left: 10px; margin-bottom: 5px; }
+        .probability-bar {
+            height: 4px;
+            width: 100%;
+            background: #222;
+            margin-top: 10px;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .prob-fill { height: 100%; transition: width 1s ease; }
+
+    </style>
+</head>
+<body>
+
+<div class="main-terminal">
+    <div class="header">
+        <div class="brand">DOLF-AI <span>PREDICTOR</span> <span class="version">V2.0 PROD</span></div>
+        <div class="controls">
+            <button class="mode-btn active" id="btnScalp" onclick="setMode('scalp')">⚡ SCALP (15m)</button>
+            <button class="mode-btn" id="btnSwing" onclick="setMode('swing')">🌊 SWING (4h)</button>
+            
+            <select id="coinSelect">
+               <option value="BTCUSDT">BTC/USDT</option>
+<option value="ETHUSDT">ETH/USDT</option>
+<option value="BNBUSDT">BNB/USDT</option>
+<option value="XRPUSDT">XRP/USDT</option>
+<option value="ADAUSDT">ADA/USDT</option>
+<option value="SOLUSDT">SOL/USDT</option>
+<option value="DOGEUSDT">DOGE/USDT</option>
+<option value="DOTUSDT">DOT/USDT</option>
+<option value="TRXUSDT">TRX/USDT</option>
+<option value="LINKUSDT">LINK/USDT</option>
+<option value="LTCUSDT">LTC/USDT</option>
+<option value="BCHUSDT">BCH/USDT</option>
+<option value="AVAXUSDT">AVAX/USDT</option>
+<option value="UNIUSDT">UNI/USDT</option>
+<option value="PEPEUSDT">PEPE/USDT</option>
+<option value="BONKUSDT">BONK/USDT</option>
+<option value="INJUSDT">INJ/USDT</option>
+<option value="APTUSDT">APT/USDT</option>
+<option value="ATOMUSDT">ATOM/USDT</option>
+<option value="FILUSDT">FIL/USDT</option>
+<option value="ETCUSDT">ETC/USDT</option>
+<option value="XLMUSDT">XLM/USDT</option>
+<option value="ARBUSDT">ARB/USDT</option>
+<option value="TONUSDT">TON/USDT</option>
+<option value="USDCUSDT">USDC/USDT</option>
+<option value="HYPEUSDT">HYPE/USDT</option>
+<option value="ZECUSDT">ZEC/USDT</option>
+<option value="HBARUSDT">HBAR/USDT</option>
+<option value="SUIUSDT">SUI/USDT</option>
+<option value="TAOUSDT">TAO/USDT</option>
+<option value="AAVEUSDT">AAVE/USDT</option>
+<option value="NEARUSDT">NEAR/USDT</option>
+<option value="ASTERUSDT">ASTER/USDT</option>
+<option value="ICPUSDT">ICP/USDT</option>
+<option value="ENAUSDT">ENA/USDT</option>
+<option value="PUMPUSDT">PUMP/USDT</option>
+<option value="ONDOUSDT">ONDO/USDT</option>
+<option value="KASUSDT">KAS/USDT</option>
+<option value="WLDUSDT">WLD/USDT</option>
+<option value="POLUSDT">POL/USDT</option>
+<option value="PAXGUSDT">PAXG/USDT</option>
+<option value="QNTUSDT">QNT/USDT</option>
+<option value="RLUSDUSDT">RLUSD/USDT</option>
+<option value="SKYUSDT">SKY/USDT</option>
+<option value="ALGOUSDT">ALGO/USDT</option>
+<option value="XMRUSDT">XMR/USDT</option>
+<option value="IMXUSDT">IMX/USDT</option>
+<option value="OPUSDT">OP/USDT</option>
+<option value="MIMUSDT">MIM/USDT</option>
+<option value="VETUSDT">VET/USDT</option>
+<option value="GRTUSDT">GRT/USDT</option>
+<option value="FLOWUSDT">FLOW/USDT</option>
+<option value="MKRUSDT">MKR/USDT</option>
+<option value="SEIUSDT">SEI/USDT</option>
+<option value="FTMUSDT">FTM/USDT</option>
+<option value="STRKUSDT">STRK/USDT</option>
+<option value="THETAUSDT">THETA/USDT</option>
+<option value="ETHFIUSDT">ETHFI/USDT</option>
+<option value="TUSDUSDT">TUSD/USDT</option>
+<option value="WIFUSDT">WIF/USDT</option>
+<option value="GALAUSDT">GALA/USDT</option>
+<option value="FETUSDT">FET/USDT</option>
+<option value="AKTUSDT">AKT/USDT</option>
+<option value="TIAUSDT">TIA/USDT</option>
+<option value="LDOUSDT">LDO/USDT</option>
+<option value="ZILUSDT">ZIL/USDT</option>
+<option value="EGLDUSDT">EGLD/USDT</option>
+<option value="JASMYUSDT">JASMY/USDT</option>
+<option value="RUNEUSDT">RUNE/USDT</option>
+<option value="BSVUSDT">BSV/USDT</option>
+<option value="PIPPINUSDT">PIPPIN/USDT</option>
+<option value="PYRUSDT">PYR/USDT</option>
+<option value="USUSDT">US/USDT</option>
+<option value="MUSDT">M/USDT</option>
+<option value="AIOUSDT">AIO/USDT</option>
+<option value="ARCUDT">ARC/UDT</option>
+<option value="BANANAS31USDT">BANANAS31/USDT</option>
+<option value="GLMUSDT">GLM/USDT</option>
+            </select>
+
+            <button class="run-btn" onclick="runAnalysis()">ЗАПУСТИТЬ АНАЛИЗ</button>
+        </div>
+    </div>
+
+    <div class="dolf-dashboard">
+        <div class="metric-card">
+            <div class="metric-title">Price Action</div>
+            <div class="metric-value" id="priceDisplay">--</div>
+            <div class="metric-sub" id="priceChange">--</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Open Interest (24h)</div>
+            <div class="metric-value" id="oiDisplay">--</div>
+            <div class="metric-sub" id="oiTrend">Waiting...</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Funding Rate</div>
+            <div class="metric-value" id="fundingDisplay">--</div>
+            <div class="metric-sub" id="fundingSignal">--</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">AI Confidence</div>
+            <div class="metric-value" id="confidenceDisplay">0%</div>
+            <div class="metric-sub" id="patternCount">0 Fractals</div>
+        </div>
+        <div class="metric-card" style="border-color: var(--warning)">
+            <div class="metric-title">Prediction</div>
+            <div class="metric-value" id="predictionTarget">--</div>
+            <div class="metric-sub" id="predictionDir">NEUTRAL</div>
+        </div>
+    </div>
+
+    <div class="chart-wrapper">
+        <div class="overlay-loader" id="loader">
+            <div class="spinner"></div>
+            <div id="loadingText">Подключение к Binance API...</div>
+        </div>
+        <canvas id="mainChart"></canvas>
+    </div>
+
+    <div class="analysis-log" id="logContainer">
+        <div class="log-entry">Система готова. Выберите монету и режим.</div>
+    </div>
+</div>
+
+<script>
+    // --- GLOBAL STATE ---
+    let myChart = null;
+    let currentMode = 'scalp';
+    const CONFIG = {
+        scalp: { interval: '15m', lookback: 1000, patternLen: 24, predictLen: 12, name: 'SCALP' },
+        swing: { interval: '4h', lookback: 1000, patternLen: 30, predictLen: 10, name: 'SWING' }
+    };
+    
+    // --- UTILS ---
+    const $ = (id) => document.getElementById(id);
+    const log = (msg, type='neutral') => {
+        const div = document.createElement('div');
+        div.className = `log-entry ${type === 'up' ? 'bullish' : type === 'down' ? 'bearish' : ''}`;
+        div.innerHTML = `<span>[AI LOG]</span> ${msg}`;
+        const container = $('logContainer');
+        container.prepend(div);
+    };
+
+    function setMode(mode) {
+        currentMode = mode;
+        $('btnScalp').className = `mode-btn ${mode === 'scalp' ? 'active' : ''}`;
+        $('btnSwing').className = `mode-btn ${mode === 'swing' ? 'active' : ''}`;
+        log(`Режим переключен на: ${CONFIG[mode].name}`);
+    }
+
+    // --- API LAYER (BINANCE) ---
+    async function fetchKlines(symbol, interval, limit) {
+        // Получаем свечи + объем
+        const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.map(d => ({
+            time: d[0],
+            open: parseFloat(d[1]),
+            high: parseFloat(d[2]),
+            low: parseFloat(d[3]),
+            close: parseFloat(d[4]),
+            volume: parseFloat(d[5]),
+            takerBuyVol: parseFloat(d[10]) // Важно для дельты
+        }));
+    }
+
+    async function fetchMarketData(symbol) {
+        // Параллельный запрос ОИ и Фандинга
+        const [oiRes, fundRes] = await Promise.all([
+            fetch(`https://fapi.binance.com/fapi/v1/openInterest?symbol=${symbol}`),
+            fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${symbol}`)
+        ]);
+        const oi = await oiRes.json();
+        const fund = await fundRes.json();
+        return {
+            openInterest: parseFloat(oi.openInterest),
+            fundingRate: parseFloat(fund.lastFundingRate)
+        };
+    }
+
+    // --- MATH & ANALYSIS ENGINE ---
+
+    // 1. Нормализация (приведение разных цен к единой шкале %)
+    function normalizeData(slice) {
+        const basePrice = slice[0].close;
+        const baseVol = Math.max(...slice.map(s => s.volume));
+        
+        return slice.map(c => ({
+            p: (c.close - basePrice) / basePrice, // Price % change
+            v: c.volume / baseVol, // Normalized Volume
+            d: (c.takerBuyVol - (c.volume - c.takerBuyVol)) / c.volume // Delta Ratio (-1 to 1)
+        }));
+    }
+
+    // 2. Поиск Фракталов (MSE с весом на Объем)
+    function findFractals(data, patternLen, predictLen) {
+        const currentPattern = normalizeData(data.slice(-patternLen));
+        const matches = [];
+
+        // Сканируем историю
+        // Не берем последние patternLen + predictLen, чтобы не заглядывать в будущее которого нет
+        for (let i = 0; i < data.length - (patternLen + predictLen); i++) {
+            const candidate = normalizeData(data.slice(i, i + patternLen));
+            let error = 0;
+
+            for (let j = 0; j < patternLen; j++) {
+                // MSE по цене
+                const priceErr = Math.pow(currentPattern[j].p - candidate[j].p, 2);
+                // MSE по структуре дельты (покупатели/продавцы)
+                const deltaErr = Math.pow(currentPattern[j].d - candidate[j].d, 2);
+                
+                // Цена важнее, но дельта дает контекст
+                error += priceErr + (deltaErr * 0.5); 
+            }
+
+            matches.push({
+                index: i,
+                error: error,
+                // Сохраняем будущее движение этого паттерна
+                future: data.slice(i + patternLen, i + patternLen + predictLen)
+            });
+        }
+
+        // Сортируем: меньше ошибка = точнее совпадение
+        matches.sort((a, b) => a.error - b.error);
+        return matches.slice(0, 7); // Топ 7 совпадений
+    }
+
+    // 3. Анализ DOLF (Delta, OI, Liq, Fund)
+    function analyzeDOLF(klines, marketData) {
+        const last = klines[klines.length-1];
+        const prev = klines[klines.length-2];
+        
+        let score = 0; // -10 (Bearish) to +10 (Bullish)
+        const signals = [];
+
+        // --- CVD / Delta Analysis ---
+        // Если цена падает, а покупки растут (Дивергенция)
+        const delta = last.takerBuyVol - (last.volume - last.takerBuyVol);
+        if (delta > 0) score += 1; else score -= 1;
+
+        // --- Funding Analysis ---
+        const fundingPct = marketData.fundingRate * 100;
+        if (fundingPct < 0) {
+            score += 3; 
+            signals.push("Отрицательный фандинг (Шорт-сквиз возможен)");
+        } else if (fundingPct > 0.05) {
+            score -= 2;
+            signals.push("Высокий фандинг (Перегрев лонгов)");
+        }
+
+        // --- OI Analysis (Эмуляция локального тренда ОИ по объему, т.к. нет истории API) ---
+        // Если объем растет на росте цены = Сила
+        if (last.close > prev.close && last.volume > prev.volume) {
+            score += 2;
+            signals.push("Рост цены на объеме (Поддержка интереса)");
+        }
+        // Если цена падает на объеме = Дамп
+        if (last.close < prev.close && last.volume > prev.volume) {
+            score -= 2;
+            signals.push("Падение на объеме (Слив)");
+        }
+
+        return { score, signals };
+    }
+
+    // 4. Генерация Проекции
+    function generateProjection(currentClose, fractals, dolfScore) {
+        const len = fractals[0].future.length;
+        const avgPath = new Array(len).fill(0);
+
+        // Усредняем топ совпадений
+        fractals.forEach(f => {
+            const startPrice = f.future[0].open; // База
+            f.future.forEach((candle, i) => {
+                const change = (candle.close - startPrice) / startPrice;
+                avgPath[i] += change;
+            });
+        });
+
+        // Конвертируем обратно в цену
+        let finalPath = avgPath.map(pct => currentClose * (1 + (pct / fractals.length)));
+
+        // --- КОРРЕКЦИЯ DOLF ---
+        // Если фракталы говорят Вверх, но DOLF говорит Вниз (-score), ослабляем рост или флэтим
+        // Если фракталы Вверх и DOLF Вверх, усиливаем.
+        
+        const modifier = 1 + (dolfScore * 0.005); // 0.5% влияние на каждый шаг
+        finalPath = finalPath.map((price, i) => {
+             // Чем дальше прогноз, тем сильнее влияние фундаментала DOLF
+             return price * (1 + ((modifier - 1) * (i+1)/2)); 
+        });
+
+        return finalPath;
+    }
+
+    // --- MAIN RUN FUNCTION ---
+    async function runAnalysis() {
+        const btn = document.querySelector('.run-btn');
+        btn.disabled = true;
+        $('loader').style.display = 'flex';
+        $('logContainer').innerHTML = ''; // Clear logs
+        
+        const symbol = $('coinSelect').value;
+        const cfg = CONFIG[currentMode];
+
+        try {
+            log(`Загрузка данных ${symbol} [${cfg.interval}]...`);
+            
+            // 1. Fetch
+            const klines = await fetchKlines(symbol, cfg.interval, cfg.lookback);
+            const marketData = await fetchMarketData(symbol);
+            
+            const currentPrice = klines[klines.length - 1].close;
+            
+            // 2. UI Update (Metrics)
+            $('priceDisplay').innerText = currentPrice.toFixed(currentPrice < 1 ? 5 : 2);
+            $('oiDisplay').innerText = Math.round(marketData.openInterest).toLocaleString();
+            $('fundingDisplay').innerText = (marketData.fundingRate * 100).toFixed(4) + '%';
+            
+            // 3. Logic: Fractals
+            log("Поиск фрактальных совпадений...");
+            const fractals = findFractals(klines, cfg.patternLen, cfg.predictLen);
+            const bestMatchScore = (1 / (fractals[0].error + 0.1)) * 10; // Эвристика уверенности
+            
+            // 4. Logic: DOLF
+            log("DOLF Анализ метрик...");
+            const dolf = analyzeDOLF(klines, marketData);
+            dolf.signals.forEach(s => log(s, dolf.score > 0 ? 'up' : 'down'));
+
+            // 5. Projection
+            const projection = generateProjection(currentPrice, fractals, dolf.score);
+            
+            // 6. Final Calculation
+            const endPrice = projection[projection.length - 1];
+            const movePct = ((endPrice - currentPrice) / currentPrice) * 100;
+            
+            // UI Color logic
+            const dirEl = $('predictionDir');
+            const targetEl = $('predictionTarget');
+            
+            if (movePct > 0.5) {
+                dirEl.innerText = "LONG / BUY";
+                dirEl.className = "metric-sub val-up";
+                targetEl.className = "metric-value val-up";
+            } else if (movePct < -0.5) {
+                dirEl.innerText = "SHORT / SELL";
+                dirEl.className = "metric-sub val-down";
+                targetEl.className = "metric-value val-down";
+            } else {
+                dirEl.innerText = "NEUTRAL / CHOP";
+                dirEl.className = "metric-sub val-neutral";
+                targetEl.className = "metric-value val-neutral";
+            }
+            targetEl.innerText = `${movePct > 0 ? '+' : ''}${movePct.toFixed(2)}%`;
+            
+            // Confidence (Fractal Match Quality + DOLF alignment)
+            // Если фрактал вверх и DOLF вверх = высокая уверенность
+            let confidence = Math.min(98, (bestMatchScore * 10) + Math.abs(dolf.score * 2));
+            if (Math.sign(movePct) !== Math.sign(dolf.score) && Math.abs(dolf.score) > 2) confidence /= 2; // Conflict
+            
+            $('confidenceDisplay').innerText = confidence.toFixed(0) + '%';
+            $('patternCount').innerText = `${fractals.length} Sims Avg`;
+
+            log(`Прогноз: Движение ${movePct.toFixed(2)}% за ${cfg.predictLen} свечей.`, movePct > 0 ? 'up' : 'down');
+
+            // 7. Render Chart
+            renderChart(klines, projection, cfg);
+
+        } catch (e) {
+            console.error(e);
+            log("ОШИБКА API: " + e.message, 'down');
+            alert("Ошибка получения данных. Проверьте подключение или VPN.");
+        } finally {
+            $('loader').style.display = 'none';
+            btn.disabled = false;
+        }
+    }
+
+    // --- CHART RENDERING ---
+    function renderChart(klines, projection, cfg) {
+        const ctx = $('mainChart').getContext('2d');
+        
+        // Prepare Data
+        // Show last 100 candles + projection
+        const visibleKlines = klines.slice(-80);
+        const labels = visibleKlines.map(k => new Date(k.time).toLocaleTimeString());
+        
+        // Add empty labels for projection
+        for(let i=0; i<projection.length; i++) labels.push(`+${i+1}`);
+
+        // Datasets
+        const histData = visibleKlines.map(k => k.close);
+        // Fill projection array with nulls for history part
+        const projData = new Array(histData.length - 1).fill(null);
+        // Connect lines
+        projData.push(histData[histData.length - 1]); 
+        projection.forEach(p => projData.push(p));
+
+        // Liquidation Map (Simple heuristic: Local Highs/Lows)
+        const prices = visibleKlines.map(k=>k.close);
+        const maxP = Math.max(...prices);
+        const minP = Math.min(...prices);
+        
+        if (myChart) myChart.destroy();
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'History',
+                        data: histData,
+                        borderColor: '#6b7280',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'AI Projection',
+                        data: projData,
+                        borderColor: projData[projData.length-1] > histData[histData.length-1] ? '#00ff9d' : '#ff0055',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                plugins: {
+                    legend: { display: false },
+                    annotation: {
+                        annotations: {
+                            liqHigh: {
+                                type: 'line',
+                                yMin: maxP,
+                                yMax: maxP,
+                                borderColor: 'rgba(255, 190, 11, 0.4)',
+                                borderWidth: 1,
+                                label: { content: 'Liquidity Pool (Shorts)', display: true, color: '#ffbe0b', position: 'end' }
+                            },
+                            liqLow: {
+                                type: 'line',
+                                yMin: minP,
+                                yMax: minP,
+                                borderColor: 'rgba(255, 190, 11, 0.4)',
+                                borderWidth: 1,
+                                label: { content: 'Liquidity Pool (Longs)', display: true, color: '#ffbe0b', position: 'end' }
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { display: false },
+                    y: { 
+                        display: true, 
+                        position: 'right',
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#6b7280', callback: (val) => val.toFixed(val<1?4:2) }
+                    }
+                }
+            }
+        });
+    }
+
+    // Init
+    window.addEventListener('load', () => {
+        log("Инициализация ядра...");
+        // Auto-run BTC check
+        runAnalysis();
+    });
+
+</script>
+</body>
+</html>
