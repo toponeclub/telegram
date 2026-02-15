@@ -193,6 +193,8 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
+
+    @media (max-width: 1200px) { body { overflow: auto !important; height: auto !important; } .layout-grid { display: flex !important; flex-direction: column; height: auto !important; gap: 20px; } .chart-wrapper { min-height: 450px; } }
   </style>
 </head>
 <body>
