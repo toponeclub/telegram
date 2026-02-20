@@ -30,14 +30,14 @@ body {
     color: var(--text-main); 
     min-height: 100vh;
     overflow-y: auto;
-    display: flex; 
+    /* display: flex; */
     font-size: 12px; 
 }
         .app-container {
             display: grid;
             grid-template-columns: 320px 1fr 300px;
             grid-template-rows: 60px 1fr 30px;
-            width: 100%; height: 100vh;
+           width: 100%; height: 100vh;       /* ← теперь точно 100vh */
             gap: 6px; padding: 6px;
         }
 
@@ -159,7 +159,9 @@ body {
         ::-webkit-scrollbar-thumb:hover { background: #00ff9d; }
         * { scrollbar-width: thin; scrollbar-color: #2a2e33 #050505; }
 
-        
+       
+
+iframe, #tv-chart { flex: 1; height: 100% !important; }
 
         /* кастомный ползунок */
         #liq-glow {
@@ -258,6 +260,49 @@ body {
         flex-direction: column !important;
         gap: 8px !important;
     }
+
+    /* В конец @media (max-width: 768px) */
+/* В конец @media (max-width: 768px) */
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: 100%; /* необязательно, но для совместимости */
+}
+.app-container {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    width: 100%; height: 100vh;       /* ← теперь точно 100vh */
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    gap: 6px;
+    padding: 6px;
+    box-sizing: border-box;  /* уже есть в * */
+}
+/* Обнуляем padding у контейнера с iframe */
+div[style*="grid-column: 1 / -1;"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+}
+iframe {
+    max-width: 100% !important;
+    width: 100% !important;
+    display: block !important;
+    border: none !important;
+    box-sizing: border-box !important;
+}
+/* Перестраховка для любых других элементов */
+* {
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+}
     
     /* PRICE, ACTION и часы в одной строке */
     .header > div:nth-child(2) > div:first-child {
@@ -393,41 +438,7 @@ body {
     }
 }
 
-/* В конец @media (max-width: 768px) */
-html, body {
-    overflow-x: hidden !important;
-    width: 100% !important;
-    max-width: 100vw !important;
-}
-.app-container {
-    padding-left: 4px !important;
-    padding-right: 4px !important;
-    width: 100% !important;
-    max-width: 100vw !important;
-    overflow-x: hidden !important;
-}
-/* Обнуляем padding у контейнера с iframe */
-div[style*="grid-column: 1 / -1;"] {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    width: 100% !important;
-    max-width: 100vw !important;
-    box-sizing: border-box !important;
-}
-iframe {
-    max-width: 100% !important;
-    width: 100% !important;
-    display: block !important;
-    border: none !important;
-    box-sizing: border-box !important;
-}
-/* Перестраховка для любых других элементов */
-* {
-    max-width: 100vw !important;
-    box-sizing: border-box !important;
-}
+
 
 .chart-controls {
     position: absolute; 
@@ -464,6 +475,69 @@ iframe {
         visibility: hidden !important;
     }
 }
+
+.measure-rect {
+    position: fixed;
+    background: rgba(0, 255, 157, 0.15); /* Цвет как в ПК версии */
+    border: 1px dashed #00ff9d;
+    pointer-events: none;
+    z-index: 9998;
+    display: none;
+}
+
+#drawing-svg text {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* 1. Убиваем горизонтальный скролл на корню */
+html, body {
+    max-width: 100vw;
+    overflow-x: hidden !important;
+}
+
+/* 2. Фикс контейнера, чтобы он не выпирал */
+.app-container {
+    width: 100vw !important;
+    max-width: 100%;
+    box-sizing: border-box !important; /* Чтобы padding не раздувал ширину */
+}
+
+
+
+/* 3. Фикс центральной колонки */
+div[class*="grid"] > div:nth-child(2) {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box !important;
+}
+
+/* 4. График теперь не будет давить в бока */
+#tv-chart {
+    width: 100% !important;
+    max-width: 100%;
+}
+
+
+/* 2. Задаем графику конкретную высоту, чтобы он не был "индюком" */
+#tv-chart {
+    height: 700px !important; /* Здесь поставь столько, сколько тебе удобно для глаз */
+    min-height: 500px !important;
+    width: 100% !important;
+}
+
+/* 3. Плашки сетапов и пульса — делаем их фиксированными, чтобы не прыгали */
+.panel:not(#tv-chart) {
+    height: auto !important;
+    min-height: 100px !important; /* Минималка, чтобы текст влез */
+    padding: 15px !important;
+}
+
+/* 4. Убираем любой конфликт со скроллом */
+.app-container {
+    height: auto !important;
+    min-height: 100vh !important;
+}
     </style>
 </head>
 <body>
@@ -488,7 +562,18 @@ iframe {
             </div>
         </div>
 
-        <div class="clock-display" id="clock" style="min-width: 65px;">10:11:50</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+    <div class="clock-display" id="clock" style="min-width: 65px;">10:11:50</div>
+    <select id="timezone-select" class="bg-black border border-gray-700 text-white text-[10px] rounded px-1 py-0.5" style="width: 70px;">
+        <option value="auto">Auto</option>
+        <option value="America/New_York">NY</option>
+        <option value="Europe/London">London</option>
+        <option value="Europe/Moscow">Moscow</option>
+        <option value="Asia/Shanghai">Shanghai</option>
+        <option value="Asia/Tokyo">Tokyo</option>
+        <option value="UTC">UTC</option>
+    </select>
+</div>
 
         <div class="input-group" style="display: flex; gap: 8px; align-items: center;">
             <input type="text" id="symbol-input" value="BTC" placeholder="COIN" style="width: 80px;">
@@ -721,6 +806,16 @@ iframe {
         </div>
     </aside>
 
+
+
+    
+    
+</div>
+
+    <footer class="footer" id="console-log">
+        <span class="log-item">[SYSTEM] DOLF V15 GENESIS + HUNTER + HEATMAP INITIALIZED.</span>
+    </footer>
+</div>
 <!-- КОНТЕЙНЕР ДЛЯ ТРЁХ IFRAME -->
 <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; margin: 0 6px 6px 6px; width: 100%;">
     
@@ -733,16 +828,7 @@ iframe {
             allowfullscreen>
         </iframe>
     </div>
-
-    
-    
-</div>
-
-    <footer class="footer" id="console-log">
-        <span class="log-item">[SYSTEM] DOLF V15 GENESIS + HUNTER + HEATMAP INITIALIZED.</span>
-    </footer>
-</div>
-
+      </div>
 <script>
 /**
  * DOLF V15 GENESIS ENGINE + HUNTER MODULE + LIQUIDATION HEATMAP
@@ -770,6 +856,9 @@ const APP = (function() {
 
 
     };
+
+    // Внутри APP добавьте:
+let currentTimezone = 'auto';
 
     // --- STATE ---
     const STATE = {
@@ -870,8 +959,105 @@ function init() {
             });
         });
     }
-
+// Внутри APP.init после создания чарта:
+document.getElementById('timezone-select').addEventListener('change', function() {
+    const tz = this.value === 'auto' ? Intl.DateTimeFormat().resolvedOptions().timeZone : this.value;
+    
+    // Перенастраиваем отображение времени на графике
+    chart.applyOptions({
+        localization: {
+            timeFormatter: timestamp => {
+                return new Date(timestamp * 1000).toLocaleString('en-GB', {
+                    timeZone: tz,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+            }
+        }
+    });
+});
         
+let measureStartPos = null; // Храним и цену, и координаты Y/X
+let lastTapTime = 0;
+let isMeasuring = false;
+
+// Создаем элементы
+const measureDiv = document.createElement('div');
+measureDiv.style = "position:fixed; z-index:9999; color:#00ff9d; background:rgba(0,0,0,0.85); padding:4px 8px; border-radius:4px; display:none; pointer-events:none; font-size:12px; border:1px solid rgba(0,255,157,0.3); font-family:monospace; transform: translate(-50%, -100%); margin-top:-10px;";
+document.body.appendChild(measureDiv);
+
+const measureRect = document.createElement('div');
+measureRect.className = 'measure-rect';
+document.body.appendChild(measureRect);
+
+const container = document.getElementById('tv-chart');
+
+container.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    
+    const now = Date.now();
+    if (now - lastTapTime < 300) {
+        isMeasuring = true;
+        const touch = e.touches[0];
+        const rect = container.getBoundingClientRect();
+        
+        // Запоминаем стартовую позицию
+        measureStartPos = {
+            x: touch.clientX,
+            y: touch.clientY,
+            price: STATE.series.candle.coordinateToPrice(touch.clientY - rect.top)
+        };
+        
+        if (navigator.vibrate) navigator.vibrate(30);
+        e.preventDefault();
+    }
+    lastTapTime = now;
+}, { passive: false });
+
+container.addEventListener('touchmove', (e) => {
+    if (!isMeasuring || !measureStartPos) return;
+    e.preventDefault();
+
+    const touch = e.touches[0];
+    const rect = container.getBoundingClientRect();
+    const currentPrice = STATE.series.candle.coordinateToPrice(touch.clientY - rect.top);
+
+    if (currentPrice && measureStartPos.price) {
+        const percent = ((currentPrice - measureStartPos.price) / measureStartPos.price * 100).toFixed(2);
+        
+        // 1. Рисуем прямоугольник ("Квадрат")
+        const top = Math.min(measureStartPos.y, touch.clientY);
+        const left = Math.min(measureStartPos.x, touch.clientX);
+        const height = Math.abs(touch.clientY - measureStartPos.y);
+        const width = Math.abs(touch.clientX - measureStartPos.x);
+
+        measureRect.style.display = 'block';
+        measureRect.style.top = top + 'px';
+        measureRect.style.left = left + 'px';
+        measureRect.style.width = width + 'px';
+        measureRect.style.height = height + 'px';
+        
+        // Цвет прямоугольника (красный если вниз, зеленый если вверх)
+        measureRect.style.backgroundColor = currentPrice < measureStartPos.price ? 'rgba(255, 0, 85, 0.15)' : 'rgba(0, 255, 157, 0.15)';
+        measureRect.style.borderColor = currentPrice < measureStartPos.price ? '#ff0055' : '#00ff9d';
+
+        // 2. Показываем плашку с %
+        measureDiv.style.display = 'block';
+        measureDiv.style.left = touch.clientX + 'px';
+        measureDiv.style.top = touch.clientY + 'px';
+        measureDiv.innerHTML = `📏 ${percent > 0 ? '+' : ''}${percent}%`;
+        measureDiv.style.color = currentPrice < measureStartPos.price ? '#ff0055' : '#00ff9d';
+    }
+}, { passive: false });
+
+container.addEventListener('touchend', () => {
+    isMeasuring = false;
+    measureStartPos = null;
+    measureDiv.style.display = 'none';
+    measureRect.style.display = 'none';
+});
         
         // --- DEATH UPDATE: ZOOM PRICE SCALE ---
         const chartContainer = document.getElementById('tv-chart');
@@ -941,6 +1127,9 @@ function init() {
         log('[KERNEL] Chart engine ready + HUNTER armed + HEATMAP active.');
     }
 
+
+    
+
     // --- CLOCK ---
     function startClock() {
         function update() {
@@ -950,8 +1139,21 @@ function init() {
             if(el) el.innerText = timeString;
         }
         update();
-        setInterval(update, 1000);
+        setInterval(() => {
+    const clockEl = document.getElementById('clock');
+    const tzSelect = document.getElementById('timezone-select');
+    if (!clockEl || !tzSelect) return;
+
+    const tz = tzSelect.value === 'auto' ? Intl.DateTimeFormat().resolvedOptions().timeZone : tzSelect.value;
+    
+    clockEl.innerText = new Date().toLocaleTimeString('en-GB', { 
+        timeZone: tz, 
+        hour12: false 
+    });
+}, 1000);
     }
+
+
 
     // --- CHART ENGINE ---
     function initChart() {
@@ -991,6 +1193,7 @@ function init() {
             priceScaleId: '',
         });
         STATE.chart.priceScale('').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+        
 
         STATE.series.forecast = STATE.chart.addLineSeries({
             color: CONFIG.colors.gold, lineWidth: 2, lineStyle: 2,
@@ -1003,8 +1206,51 @@ function init() {
             STATE.chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
         });
 
-
     }
+
+// Установка временной зоны
+// Установка временной зоны
+// ... внутри функции init, где-то в конце ...
+
+const timezoneSelect = document.getElementById('timezone-select');
+if (timezoneSelect) {
+    const savedTZ = localStorage.getItem('dolf_timezone') || 'auto';
+    timezoneSelect.value = savedTZ;
+
+    // ОБЯЗАТЕЛЬНО: Вызываем сразу после загрузки конфига
+    // Но убедитесь, что это идет ПОСЛЕ того, как STATE.chart = createChart(...)
+    setTimeout(() => applyTimezone(savedTZ), 100); 
+
+    timezoneSelect.addEventListener('change', (e) => {
+        const tz = e.target.value;
+        localStorage.setItem('dolf_timezone', tz);
+        applyTimezone(tz);
+    });
+}
+
+function applyTimezone(tz) {
+    if (!STATE.chart) return;
+    
+    // Определяем целевую зону
+    const targetTz = tz === 'auto' ? Intl.DateTimeFormat().resolvedOptions().timeZone : tz;
+
+    STATE.chart.applyOptions({
+        localization: {
+            timeFormatter: (timestamp) => {
+                // Это заставит график показывать время выбранной зоны
+                return new Date(timestamp * 1000).toLocaleString('en-GB', {
+                    timeZone: targetTz,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+            }
+        }
+    });
+}
+
+
 
     // --- DATA FETCHING ---
     async function runAnalysis() {
@@ -1908,9 +2154,9 @@ STATE.series.volume.update(volUpdate);
             createLine(low, 'BOTTOM', '#ffffff', 1, 0),               // Сплошная белая
             
             // Твои рабочие уровни
-            createLine(high - diff * 0.382, '0.382 RETRACE', '#fbbf24'),
-            createLine(high - diff * 0.50,  '0.50 EQ', '#00ff9d'),
-            createLine(high - diff * 0.618, '0.618 GOLDEN', '#3b82f6')
+           createLine(high - diff * 0.382, '0.382', '#fbbf24', 1, 0),
+createLine(high - diff * 0.50,  '0.50', '#00ff9d', 1, 0),
+createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
         ];
     }
 
@@ -2291,33 +2537,48 @@ STATE.series.volume.update(volUpdate);
             }
         },
 
-        updateDrawing(pos) {
-            const el = document.getElementById('temp-el');
-            const d = this.tempDrawing;
-            if (!el || !d) return;
+       updateDrawing(pos) {
+    const el = document.getElementById('temp-el');
+    const d = this.tempDrawing;
+    if (!el || !d) return;
 
-            if (d.tool === 'brush') {
-                el.setAttribute('d', el.getAttribute('d') + ` L ${pos.x} ${pos.y}`);
-            } else if (d.tool === 'trend') {
-                el.setAttribute('x1', d.startPos.x); el.setAttribute('y1', d.startPos.y);
-                el.setAttribute('x2', pos.x); el.setAttribute('y2', pos.y);
-            } else {
-                const x = Math.min(pos.x, d.startPos.x);
-                const y = Math.min(pos.y, d.startPos.y);
-                const w = Math.abs(pos.x - d.startPos.x);
-                const h = Math.abs(pos.y - d.startPos.y);
-                el.setAttribute('x', x); el.setAttribute('y', y);
-                el.setAttribute('width', w); el.setAttribute('height', h);
+    if (d.tool === 'brush') {
+        el.setAttribute('d', el.getAttribute('d') + ` L ${pos.x} ${pos.y}`);
+    } else if (d.tool === 'trend') {
+        el.setAttribute('x1', d.startPos.x); el.setAttribute('y1', d.startPos.y);
+        el.setAttribute('x2', pos.x); el.setAttribute('y2', pos.y);
+    } else {
+        const x = Math.min(pos.x, d.startPos.x);
+        const y = Math.min(pos.y, d.startPos.y);
+        const w = Math.abs(pos.x - d.startPos.x);
+        const h = Math.abs(pos.y - d.startPos.y);
+        el.setAttribute('x', x); el.setAttribute('y', y);
+        el.setAttribute('width', w); el.setAttribute('height', h);
 
-                if (d.tool === 'ruler') {
-                    const txt = document.getElementById('temp-txt');
-                    const curPrice = STATE.series.candle.coordinateToPrice(pos.y);
-                    const pc = ((curPrice - d.startPrice) / d.startPrice * 100).toFixed(2);
-                    txt.setAttribute('x', pos.x + 5); txt.setAttribute('y', pos.y - 5);
-                    txt.textContent = `${pc}%`;
-                }
-            }
-        },
+        if (d.tool === 'ruler') {
+            const txt = document.getElementById('temp-txt');
+            const curPrice = STATE.series.candle.coordinateToPrice(pos.y);
+            
+            // Расчет цвета: вверх - зеленый, вниз - красный
+            const isUp = curPrice >= d.startPrice;
+            const color = isUp ? '#00ff9d' : '#ff0055';
+            const bgColor = isUp ? 'rgba(0, 255, 157, 0.15)' : 'rgba(255, 0, 85, 0.15)';
+
+            // Применяем цвета к прямоугольнику
+            el.setAttribute('fill', bgColor);
+            el.setAttribute('stroke', color);
+            el.setAttribute('stroke-width', '1');
+
+            // Обновляем текст
+            const pc = ((curPrice - d.startPrice) / d.startPrice * 100).toFixed(2);
+            txt.setAttribute('x', pos.x + 5); 
+            txt.setAttribute('y', pos.y - 5);
+            txt.setAttribute('fill', color);
+            txt.textContent = ""; // Сначала чистим
+            txt.textContent = `${pc > 0 ? '+' : ''}${pc}%`; // Потом пишем
+        }
+    }
+},
 
         
        // --- CHART STYLES ---
