@@ -1,0 +1,2586 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>GENESIS</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300ff9d' stroke-width='2'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>">
+    
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --panel-bg: #0b0e11;
+            --border-color: #1e2329;
+            --accent-green: #00ff9d;
+            --accent-red: #ff0055;
+            --accent-gold: #ffbe0b;
+            --accent-blue: #00d4ff;
+            --text-main: #eaeaea;
+            --text-muted: #848e9c;
+            --font: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; font-family: var(--font); margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+body { 
+    background: var(--bg-dark); 
+    color: var(--text-main); 
+    min-height: 100vh;
+    overflow-y: auto;
+    display: flex; 
+    font-size: 12px; 
+}
+        .app-container {
+            display: grid;
+            grid-template-columns: 320px 1fr 300px;
+            grid-template-rows: 60px 1fr 30px;
+            width: 100%; height: 100vh;
+            gap: 6px; padding: 6px;
+        }
+
+        .panel { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        
+        .header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 2px solid var(--accent-green); background: #080a0d; flex-direction: row; }
+        .brand { font-size: 20px; font-weight: 900; letter-spacing: -1px; color: var(--accent-green); display: flex; align-items: center; gap: 8px; }
+        .brand span { color: #fff; font-weight: 400; font-size: 10px; background: #1e2329; padding: 2px 6px; border-radius: 4px; }
+        
+        .input-group { display: flex; gap: 10px; align-items: center; flex: 1; justify-content: center; }
+        #symbol-input { background: #000; border: 1px solid #333; color: #fff; padding: 8px 12px; border-radius: 4px; font-weight: bold; text-transform: uppercase; width: 140px; text-align: center; transition: 0.3s; }
+        #symbol-input:focus { border-color: var(--accent-green); box-shadow: 0 0 15px rgba(0,255,157,0.1); }
+        
+        .scan-btn { background: var(--accent-green); color: #000; border: none; padding: 8px 20px; border-radius: 4px; font-weight: 800; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+        .scan-btn:hover { background: #00cc7d; box-shadow: 0 0 15px rgba(0,255,157,0.3); }
+        .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+
+        .clock-display { font-size: 11px; color: #666; font-weight: bold; min-width: 60px; text-align: right; }
+
+        .sidebar-left { grid-row: 2 / 3; gap: 8px; padding: 10px; overflow-y: hidden; }
+        
+        .metric-card { background: rgba(255,255,255,0.02); padding: 8px; border-radius: 4px; border-left: 3px solid #333; display: flex; flex-direction: column; }
+        .m-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .m-val { font-size: 14px; font-weight: bold; margin-top: 2px; }
+        
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px; flex-shrink: 0; }
+
+        .setup-list { flex: 1; overflow-y: auto; padding-right: 2px; background: rgba(0,0,0,0.3); border-radius: 4px; border: 1px solid #1e2329; padding: 5px; }
+        .setup-header { font-size: 10px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #222; padding-bottom: 5px; margin-bottom: 5px; position: sticky; top: 0; background: var(--panel-bg); z-index: 5; }
+        
+        .setup-item { background: #0e1217; border: 1px solid #1e2329; padding: 8px; border-radius: 4px; margin-bottom: 5px; opacity: 0.5; transition: 0.3s; display: flex; flex-direction: column; gap: 2px; }
+        .setup-item.active { opacity: 1; border-color: var(--accent-green); background: rgba(0,255,157,0.05); transform: translateX(2px); box-shadow: -2px 0 10px rgba(0,255,157,0.1); }
+        .setup-item.active-bear { opacity: 1; border-color: var(--accent-red); background: rgba(255,0,85,0.05); transform: translateX(2px); box-shadow: -2px 0 10px rgba(255,0,85,0.1); }
+        .s-name { font-weight: bold; font-size: 11px; display: flex; justify-content: space-between; }
+        .s-desc { font-size: 9px; color: #666; margin-top: 2px; line-height: 1.2; }
+
+        .chart-container { grid-column: 2 / 3; grid-row: 2 / 3; position: relative; background: #000; }
+        #tv-chart { width: 100%; height: 100%; }
+        
+        .tf-overlay { position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; gap: 4px; background: rgba(0,0,0,0.7); padding: 4px; border-radius: 6px; backdrop-filter: blur(4px); border: 1px solid #333; }
+        .tf-btn { background: transparent; border: 1px solid transparent; color: #888; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .tf-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
+        .tf-btn.active { background: var(--accent-green); color: #000; box-shadow: 0 0 10px rgba(0,255,157,0.2); }
+
+        .loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 50; backdrop-filter: blur(3px); }
+        .scan-bar { width: 200px; height: 3px; background: #222; border-radius: 2px; overflow: hidden; margin-top: 10px; }
+        .scan-fill { width: 100%; height: 100%; background: var(--accent-green); animation: loading 1.5s infinite ease-in-out; transform-origin: left; }
+        @keyframes loading { 0% { transform: scaleX(0); } 50% { transform: scaleX(1); } 100% { transform: scaleX(0); transform-origin: right; } }
+
+        .sidebar-right { grid-row: 2 / 3; display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+        
+        .fib-btn { background: #111; border: 1px solid #fbbf24; color: #fbbf24; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; transition: 0.3s; text-align: center; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; }
+        .fib-btn.active { background: #fbbf24; color: #000; box-shadow: 0 0 15px #fbbf24; }
+
+        .verdict-panel { background: linear-gradient(145deg, #10141a, #050505); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; text-align: center; flex-shrink: 0; }
+        .v-main { font-size: 28px; font-weight: 900; margin: 5px 0; text-shadow: 0 0 20px currentColor; }
+        .v-label { font-size: 10px; color: #666; letter-spacing: 2px; text-transform: uppercase; }
+        .v-target { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #333; display: flex; justify-content: space-between; font-size: 11px; }
+        
+        .conf-track { width: 100%; height: 4px; background: #222; margin-top: 8px; border-radius: 2px; overflow: hidden; }
+        .conf-val { height: 100%; width: 0%; transition: 1s cubic-bezier(0.22, 1, 0.36, 1); }
+
+        .spark-box { height: 80px; width: 100%; background: rgba(0,0,0,0.3); border-radius: 4px; position: relative; flex-shrink: 0; }
+        #sparkline { width: 100%; height: 100%; }
+
+        .reasoning-box { flex: 1; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 4px; padding: 10px; border: 1px solid #1e2329; }
+
+        .footer { grid-column: 1 / -1; background: #000; border-top: 1px solid var(--border-color); padding: 0 15px; font-family: 'Courier New', monospace; font-size: 10px; display: flex; align-items: center; color: var(--accent-green); overflow: hidden; white-space: nowrap; }
+        .log-item { margin-right: 20px; opacity: 0.8; animation: fadeLog 0.3s ease-out; }
+        @keyframes fadeLog { from { opacity: 0; transform: translateY(5px); } to { opacity: 0.8; transform: translateY(0); } }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        @media (max-width: 1000px) {
+            .app-container { grid-template-columns: 1fr; grid-template-rows: 60px 400px auto auto auto; height: auto; overflow-y: auto; }
+            .sidebar-left, .sidebar-right { grid-row: auto; grid-column: 1 / -1; height: 300px; }
+            .chart-container { grid-row: auto; grid-column: 1 / -1; height: 400px; }
+            .footer { display: none; }
+        }
+
+        @media (max-width: 1200px) {
+            .app-container { grid-template-columns: 250px 1fr 250px; }
+        }
+
+        @media (max-width: 1024px) {
+            .app-container { 
+                grid-template-columns: 1fr 1fr; 
+                grid-template-rows: auto auto 1fr auto; 
+                overflow-y: auto; 
+                height: auto;
+            }
+            .header { grid-column: 1 / -1; }
+            .sidebar-left { grid-column: 1 / 2; grid-row: 2; height: 350px; }
+            .sidebar-right { grid-column: 2 / 3; grid-row: 2; height: 350px; }
+            .chart-container { grid-column: 1 / -1; grid-row: 3; height: 500px; }
+            .footer { display: none; }
+        }
+
+        @media (max-width: 768px) {
+            .app-container { grid-template-columns: 1fr; grid-template-rows: auto; display: flex; flex-direction: column; gap: 10px; }
+            .sidebar-left, .sidebar-right, .chart-container { width: 100%; height: auto; min-height: 400px; }
+            .brand { font-size: 16px; }
+            #symbol-input { width: 100px; }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        #speed-index { color: #00ff9d; text-shadow: 0 0 10px rgba(0, 255, 157, 0.3); }
+        #l2-walls div span:first-child { font-weight: bold; }
+        .animate-pulse { animation: pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; color: #ff0055; } }
+        #fib-btn.active { background: #fbbf24 !important; color: #000 !important; border-color: #fbbf24 !important; box-shadow: 0 0 15px rgba(251, 191, 36, 0.4); }
+        .power-bar-fill { transition: width 1s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: linear-gradient(90deg, #ff0055, #f59e0b, #00ff9d); }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #2a2e33; border-radius: 10px; border: 2px solid #050505; }
+        ::-webkit-scrollbar-thumb:hover { background: #00ff9d; }
+        * { scrollbar-width: thin; scrollbar-color: #2a2e33 #050505; }
+
+        
+
+        /* кастомный ползунок */
+        #liq-glow {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #1e2329;
+            height: 4px;
+            border-radius: 2px;
+            outline: none;
+        }
+        #liq-glow::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #00ff9d;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px #00ff9d;
+            transition: 0.2s;
+        }
+        #liq-glow::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+     -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #00ff9d;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px #00ff9d;
+            transition: 0.2s;
+}
+
+.chart-controls {
+    position: absolute; 
+    top: 50%; /* Центр по вертикали */
+    left: 15px; 
+    transform: translateY(-50%); /* Точное выравнивание */
+    z-index: 1001; /* Поверх всего */
+    display: flex; flex-direction: column; gap: 8px;
+    background: rgba(11, 14, 17, 0.85); padding: 8px; border-radius: 8px;
+    border: 1px solid var(--border-color); backdrop-filter: blur(10px);
+}
+.chart-btn {
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    background: transparent; border: 1px solid transparent; color: var(--text-muted);
+    border-radius: 4px; cursor: pointer; transition: 0.2s; font-size: 14px;
+}
+.chart-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.chart-btn.active { color: var(--accent-green); border-color: var(--accent-green); background: rgba(0,255,157,0.1); }
+
+/* Слой для рисования */
+#drawing-svg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 50;
+}
+.drawing-item { pointer-events: all; cursor: crosshair; }
+
+/* Адаптивность для header с центровкой */
+@media (max-width: 1200px) {
+    .header {
+        padding: 0 10px !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .header {
+        flex-wrap: wrap !important;
+        height: auto !important;
+        padding: 8px !important;
+    }
+    
+    /* Убираем absolute позиционирование на планшетах */
+    .header > div:nth-child(2) {
+        position: static !important;
+        transform: none !important;
+        left: auto !important;
+        width: 100% !important;
+        justify-content: center !important;
+        margin: 8px 0 !important;
+        flex-wrap: wrap !important;
+    }
+    
+    .brand {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .header > div:nth-child(2) {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    
+    /* PRICE, ACTION и часы в одной строке */
+    .header > div:nth-child(2) > div:first-child {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 12px !important;
+        width: 100% !important;
+        flex-wrap: wrap !important;
+    }
+    
+    /* Каждый блок PRICE и ACTION */
+    .header > div:nth-child(2) > div:first-child > div {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 4px !important;
+        white-space: nowrap !important;
+    }
+    
+    /* Часы рядом с ACTION */
+    .clock-display {
+        display: inline-block !important;
+        min-width: auto !important;
+        white-space: nowrap !important;
+    }
+    
+    /* Блок с коином и кнопками (вторая строка) */
+    .input-group {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        width: 100% !important;
+        gap: 6px !important;
+    }
+    
+    .input-group input {
+        width: 70px !important;
+    }
+    
+    .input-group .tf-btn {
+        padding: 6px 6px !important;
+        font-size: 10px !important;
+        min-width: 32px !important;
+    }
+    
+    .input-group .scan-btn {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+    }
+}
+
+.chart-controls {
+    top: 150px !important;
+    transform: none !important;
+    left: 5px !important;
+    position: absolute !important;
+}
+
+@media (max-width: 480px) {
+    .brand {
+        font-size: 16px !important;
+    }
+    
+    .brand .tag {
+        font-size: 8px !important;
+        padding: 2px 4px !important;
+    }
+    
+    .header > div:nth-child(2) > div:first-child {
+        gap: 8px !important;
+    }
+    
+    .header > div:nth-child(2) > div:first-child > div span:first-child {
+        font-size: 8px !important;
+    }
+    
+    #hud-price, #hud-action {
+        font-size: 13px !important;
+    }
+    
+    .clock-display {
+        font-size: 10px !important;
+    }
+    
+    .input-group .tf-btn {
+        padding: 5px 4px !important;
+        font-size: 9px !important;
+        min-width: 28px !important;
+    }
+    
+    .input-group .scan-btn {
+        padding: 5px 8px !important;
+        font-size: 10px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .header > div:nth-child(2) > div:first-child {
+        gap: 5px !important;
+    }
+    
+    #hud-price, #hud-action {
+        font-size: 12px !important;
+    }
+    
+    .clock-display {
+        font-size: 9px !important;
+    }
+    
+    .input-group input {
+        width: 60px !important;
+    }
+}
+
+@media (min-width: 1600px) {
+    .header > div:nth-child(2) {
+        gap: 25px !important;
+    }
+    
+    .input-group {
+        gap: 12px !important;
+    }
+    
+    .input-group input {
+        width: 100px !important;
+        font-size: 14px !important;
+    }
+    
+    .input-group .tf-btn {
+        font-size: 12px !important;
+        padding: 8px 12px !important;
+    }
+}
+
+/* В конец @media (max-width: 768px) */
+html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+}
+.app-container {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+}
+/* Обнуляем padding у контейнера с iframe */
+div[style*="grid-column: 1 / -1;"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+}
+iframe {
+    max-width: 100% !important;
+    width: 100% !important;
+    display: block !important;
+    border: none !important;
+    box-sizing: border-box !important;
+}
+/* Перестраховка для любых других элементов */
+* {
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+}
+
+.chart-controls {
+    position: absolute; 
+    top: 50%;
+    left: 10px; /* было 15px */
+    transform: translateY(-50%);
+    z-index: 1001;
+    display: flex; flex-direction: column; gap: 4px; /* было 8px */
+    background: rgba(11, 14, 17, 0.85); padding: 4px; /* было 8px */
+    border-radius: 6px; /* было 8px */
+    border: 1px solid var(--border-color); backdrop-filter: blur(10px);
+}
+
+.chart-btn {
+    width: 24px; height: 24px; /* было 32px */
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: 1px solid transparent; color: var(--text-muted);
+    border-radius: 4px; cursor: pointer; transition: 0.2s; font-size: 11px; /* было 14px */
+}
+
+/* Для тач-устройств: отключаем hover, управляем через класс open */
+@media (hover: none) {
+    .group .absolute {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        transition: opacity 0.2s, visibility 0.2s;
+    }
+    .group.open .absolute {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    .group:hover .absolute {
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+}
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header class="header" style="display: flex; justify-content: space-between; align-items: center; padding: 0 15px;">
+    
+    <div class="brand">
+        <i class="fas fa-biohazard"></i></span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 15px; position: absolute; left: 50%; transform: translateX(-50%);">
+        
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="font-size:9px; color:#666;">PRICE</span>
+                <span id="hud-price" style="font-weight:bold; font-size:14px; color:#fff;">0.00</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+                <span style="font-size:9px; color:#666;">ACTION</span>
+                <span id="hud-action" style="font-weight:bold; font-size:14px; color:#666;">WAIT</span>
+            </div>
+        </div>
+
+        <div class="clock-display" id="clock" style="min-width: 65px;">10:11:50</div>
+
+        <div class="input-group" style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="symbol-input" value="BTC" placeholder="COIN" style="width: 80px;">
+            <button class="tf-btn active" onclick="APP.setTF('5m', this)">5M</button>
+            <button class="tf-btn" onclick="APP.setTF('15m', this)">15M</button>
+            <button class="tf-btn" onclick="APP.setTF('1h', this)">1H</button>
+            <button class="tf-btn" onclick="APP.setTF('4h', this)">4H</button>
+            <button class="scan-btn" onclick="APP.runAnalysis()" style="padding: 8px 12px;">
+                <i class="fas fa-crosshairs"></i> SCAN
+            </button>
+        </div>
+
+     
+
+        
+
+    <div style="width: 120px;"></div>
+</header>
+
+    <aside class="panel sidebar-left">
+        <div class="metrics-grid">
+            <div class="metric-card" style="border-color: var(--accent-blue);">
+                <span class="m-label">Open Interest</span>
+                <span class="m-val" id="m-oi">--</span>
+            </div>
+            <div class="metric-card" style="border-color: var(--accent-gold);">
+                <div class="m-label">CVD Delta</div>
+                <div class="m-val" id="m-cvd">--</div>
+            </div>
+            <div class="metric-card" style="border-color: var(--accent-green);">
+                <div class="m-label">Funding Rate</div>
+                <div class="m-val" id="m-funding">--</div>
+            </div>
+            <div class="metric-card" style="border-color: #fff;">
+                <div class="m-label">Volatility</div>
+                <div class="m-val" id="m-vol">--</div>
+            </div>
+        </div>
+
+        <div class="bg-black/60 p-3 rounded-lg border border-emerald-500/20 shadow-lg mb-2">
+            <div class="flex justify-between text-[10px] uppercase text-gray-500 mb-1 tracking-wider">
+                <span>Signal Power</span>
+                <span id="power-percent" class="text-emerald-500">0%</span>
+            </div>
+            <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden mt-1">
+                <div id="power-bar" class="h-full power-bar-fill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- HUNTER SETTINGS PANEL -->
+        <div class="bg-black/60 p-3 rounded-lg border border-purple-500/20 shadow-lg mb-2">
+            <div class="text-[10px] uppercase text-gray-500 mb-2">HUNTER SETTINGS</div>
+            <div class="grid grid-cols-2 gap-1 text-[10px]">
+                <label class="flex items-center gap-1"><input type="checkbox" id="gate-trend" checked> Trend</label>
+                <label class="flex items-center gap-1"><input type="checkbox" id="gate-impulse" checked> Impulse</label>
+                <label class="flex items-center gap-1"><input type="checkbox" id="gate-liq" checked> Liq</label>
+                <label class="flex items-center gap-1"><input type="checkbox" id="gate-book" checked> Book</label>
+                <label class="flex items-center gap-1"><input type="checkbox" id="gate-pattern" checked> Pattern</label>
+                <label class="flex items-center gap-1"><input type="checkbox" id="gate-rev" checked> Reversal</label>
+            </div>
+            <div class="flex justify-between mt-2 text-[10px]">
+                <span>Liq threshold ($):</span>
+                <input type="number" id="liq-threshold" value="20000" step="1000" class="w-20 bg-black border border-gray-700 px-1 rounded">
+            </div>
+            <div class="flex justify-between mt-1 text-[10px]">
+                <span>Impulse % (5m):</span>
+                <input type="number" id="impulse-threshold" value="2.0" step="0.1" class="w-20 bg-black border border-gray-700 px-1 rounded">
+            </div>
+            <div class="flex justify-between mt-1 text-[10px]">
+                <span>Min confluence:</span>
+                <select id="min-confluence" class="bg-black border border-gray-700 px-1 rounded">
+                    <option>1</option><option>2</option><option selected>4</option><option>4</option><option>5</option><option>6</option>
+                </select>
+            </div>
+            <div class="text-[9px] text-gray-600 mt-1" id="hunter-status">Status: waiting</div>
+        </div>
+
+        <div class="setup-list">
+            <div class="setup-header">DETECTED DOLF SETUPS</div>
+            <div id="setup-container">
+                <div style="text-align: center; color: #444; padding: 20px;">SYSTEM READY</div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="panel chart-container">
+        <div class="loader" id="loader">
+            <div style="font-weight: 900; font-size: 20px; letter-spacing: 5px; color: #fff;">ANALYZING</div>
+            <div class="scan-bar"><div class="scan-fill"></div></div>
+            <div style="font-size: 10px; color: var(--accent-gold); margin-top: 5px;">CONNECTING TO BINANCE FUTURES...</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 mt-4 px-2">
+    <div class="bg-black/60 p-3 rounded-lg border border-emerald-500/20 shadow-lg shadow-emerald-900/10 flex flex-col justify-between">
+        <div id="imbalance-ratio" class="text-[10px] uppercase text-gray-500 mb-1 tracking-wider text-center">NEUTRAL MARKET</div>
+        
+        <div class="flex justify-between text-lg font-mono text-gray-500 leading-none">
+    <span>BIDS <span id="total-bids-val" style="color: #00ff9d !important; font-family: monospace !important;">0</span></span>
+    <span>ASKS <span id="total-asks-val" style="color: #ff0055 !important; font-family: monospace !important;">0</span></span>
+</div>
+        
+        <div class="w-full bg-gray-800 h-1.5 mt-3 rounded-full overflow-hidden flex flex-row">
+            <div id="gauge-bid" class="h-full bg-emerald-500 transition-all duration-700" style="width: 50%"></div>
+            <div id="gauge-ask" class="h-full bg-[#ff0055] transition-all duration-700" style="width: 50%;"></div>
+        </div>
+    </div>
+
+    <div class="bg-black/60 p-3 rounded-lg border border-emerald-500/20 shadow-lg shadow-emerald-900/10 flex flex-col justify-between">
+        <div class="text-[10px] uppercase text-gray-500 mb-1 tracking-wider">Market Delta</div>
+        
+        <div id="delta-display" class="text-lg font-mono text-white leading-none">0.00%</div>
+        
+        <div class="w-full bg-gray-800 h-1.5 mt-3 rounded-full overflow-hidden flex">
+            <div id="delta-bar" class="h-full bg-emerald-500 transition-all duration-500" style="width: 50%; background-color: #ff0055;"></div>
+        </div>
+    </div>
+
+            <div class="text-[10px] uppercase text-gray-500 mb-1 tracking-wider">Market (Ticks/sec)</div>
+            <div id="speed-index" class="text-lg font-mono text-amber-400">0.0</div>
+        </div>
+
+        <div class="chart-controls" id="chart-tools">
+    <button class="chart-btn" onclick="APP.setTool('cursor')" title="Курсор"><i class="fas fa-mouse-pointer"></i></button>
+    <button class="chart-btn" onclick="APP.setTool('trend')" title="Линия тренда"><i class="fas fa-slash"></i></button>
+    <button class="chart-btn" onclick="APP.setTool('rect')" title="Квадрат (Уровни)"><i class="far fa-square"></i></button>
+    <button class="chart-btn" onclick="APP.setTool('brush')" title="Кисть"><i class="fas fa-paint-brush"></i></button>
+    <div style="height:1px; background: #333; margin: 2px 0;"></div>
+    <button class="chart-btn" onclick="APP.zoomChart('in')"><i class="fas fa-search-plus"></i></button>
+    <button class="chart-btn" onclick="APP.zoomChart('out')"><i class="fas fa-search-minus"></i></button>
+    <button class="chart-btn" onclick="APP.zoomChart('reset')"><i class="fas fa-home"></i></button>
+    <div style="height:1px; background: #333; margin: 2px 0;"></div>
+    <button class="chart-btn" onclick="APP.clearDrawings()" style="color: var(--accent-red);"><i class="fas fa-trash"></i></button>
+</div>
+
+<div id="chart-container-wrapper" style="position: relative; width: 100%; height: 100%; flex-grow: 1;">
+    <div id="tv-chart" style="width: 100%; height: 100%;"></div>
+    <div class="absolute top-1 right-12 z-[1002] flex gap-2">
+    <div class="relative group">
+        <button class="bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded text-[11px] text-gray-300 hover:border-[#00ff9d] transition-all flex items-center gap-2">
+            <i class="fas fa-chart-candle text-[#00ff9d]"></i> Chart <i class="fas fa-chevron-down text-[8px]"></i>
+        </button>
+        <div class="absolute top-full right-0 mt-1 w-32 bg-[#0b0e11] border border-white/10 rounded-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col p-1 z-[1003]">
+            <button onclick="APP.setChartStyle('candles')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded">Candles</button>
+            <button onclick="APP.setChartStyle('hollow')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded">Hollow</button>
+            <button onclick="APP.setChartStyle('heiken')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded">Heiken Ashi</button>
+            <button onclick="APP.setChartStyle('line')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded">Line</button>
+            <button onclick="APP.setChartStyle('area')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded">Area</button>
+            <button onclick="APP.setChartStyle('bars')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded">Bars</button>
+        </div>
+    </div>
+
+    <div class="relative group">
+        <button class="bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded text-[11px] text-gray-300 hover:border-[#00ff9d] transition-all flex items-center gap-2">
+            <i class="fas fa-flask text-[#00ff9d]"></i> Indicators <i class="fas fa-chevron-down text-[8px]"></i>
+        </button>
+        <div class="absolute top-full left-0 mt-1 w-40 bg-[#0b0e11] border border-white/10 rounded-lg shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all flex flex-col p-1 z-[1003]">
+            <button onclick="APP.toggleIndicator('sma')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded flex justify-between">SMA 20/50/200 <span class="text-yellow-500">●</span></button>
+            <button onclick="APP.toggleIndicator('ema')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded flex justify-between">EMA 12/26/100 <span class="text-blue-400">●</span></button>
+            <button onclick="APP.toggleIndicator('bb')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded">Bollinger Bands</button>
+            <button onclick="APP.toggleIndicator('ichimoku')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded">Ichimoku Cloud</button>
+            <div class="h-[1px] bg-white/5 my-1"></div>
+            <button onclick="APP.toggleIndicator('rsi')" class="text-left px-3 py-2 text-[10px] hover:bg-purple-500/20 text-purple-400 rounded">Relative Strength (RSI)</button>
+        </div>
+    </div>
+</div>
+    <svg id="drawing-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; overflow: hidden;"></svg>
+</div>
+    </main>
+
+    <aside class="panel sidebar-right">
+        <!-- Кнопка FIB осталась, MM TRAPS удалена -->
+        <button class="fib-btn" id="fib-btn" onclick="APP.toggleFib()">
+            <i class="fas fa-chart-line"></i> FIB TARGET
+        </button>
+
+      <div class="flex items-center space-x-2 ml-2 bg-[#1e2329]/50 px-3 py-1.5 rounded-lg border border-[#2b3139] h-[34px]">
+    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider w-[110px]">Fib Lookback</span>
+    <input 
+        type="range" 
+        id="fibo-lookback" 
+        min="1" max="400" value="25" step="1" 
+        class="w-24 h-1.5 bg-[#2b3139] rounded-lg appearance-none cursor-pointer accent-[#00ff9d]"
+        oninput="document.getElementById('fibo-lookback-val').innerText = this.value; APP.renderFibLines();"
+    >
+    <span id="fibo-lookback-val" class="text-[10px] font-mono text-[#00ff9d] w-8 text-right">25</span>
+</div>
+
+<div class="flex items-center space-x-2 ml-2 bg-[#1e2329]/50 px-3 py-1.5 rounded-lg border border-[#2b3139] h-[34px]">
+    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider w-[110px]">Liq Heatmap</span>
+    <input 
+        type="range" 
+        id="liq-glow" 
+        min="0" max="1" step="0.01" value="0.05" 
+        class="w-24 h-1.5 bg-[#2b3139] rounded-lg appearance-none cursor-pointer accent-[#00ff9d]"
+        oninput="document.getElementById('glow-val').innerText = Math.round(this.value * 100) + '%';"
+    >
+    <span id="glow-val" class="text-[10px] font-mono text-[#00ff9d] w-8 text-right">5%</span>
+</div>
+   
+
+        <div class="verdict-panel">
+            <div class="v-label">PREDICTED MOVEMENT</div>
+            <div class="v-main" id="pred-val">0.00%</div>
+            <div class="v-label" id="pred-dir" style="color: #fff;">NEUTRAL</div>
+            
+            <div class="conf-track">
+                <div class="conf-val" id="conf-bar" style="width: 0%; background: #444;"></div>
+            </div>
+            <div style="font-size: 9px; color: #666; margin-top: 4px; display:flex; justify-content:space-between;">
+                <span>CONFIDENCE</span>
+                <span id="conf-text">0%</span>
+            </div>
+
+            <div class="v-target">
+                <span>TARGET: <span id="t-price" style="color:#fff;">--</span></span>
+                <span>STOP: <span id="s-price" style="color:#fff;">--</span></span>
+            </div>
+        </div>
+
+        <div style="font-size: 10px; font-weight: bold; color: #666; margin-top: 5px;">LIVE PULSE</div>
+        <div class="spark-box">
+            <canvas id="sparkline"></canvas>
+        </div>
+
+        <div class="reasoning-box">
+            <div style="font-size: 10px; color: var(--accent-blue); font-weight: bold; margin-bottom: 5px;">AI REASONING</div>
+            <div id="reasoning-text" style="font-size: 10px; color: #888; line-height: 1.4;">
+                Waiting for input. Enter a coin symbol (e.g. ETH) to start DOLF Engine V15.
+            </div>
+        </div>
+    </aside>
+
+<!-- КОНТЕЙНЕР ДЛЯ ТРЁХ IFRAME -->
+<div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; margin: 0 6px 6px 6px; width: 100%;">
+    
+    <div style="padding: 0 5%; width: 100%; box-sizing: border-box;">
+        <iframe 
+            id="coinglass-tv"
+            src="https://www.coinglass.com/tv/Binance_BTCUSDT" 
+            style="width: 100%; height: 90vh; min-height: 600px; border: none; background: #0b0e11; display: block;"
+            allow="autoplay; fullscreen"
+            allowfullscreen>
+        </iframe>
+    </div>
+
+    
+    
+</div>
+
+    <footer class="footer" id="console-log">
+        <span class="log-item">[SYSTEM] DOLF V15 GENESIS + HUNTER + HEATMAP INITIALIZED.</span>
+    </footer>
+</div>
+
+<script>
+/**
+ * DOLF V15 GENESIS ENGINE + HUNTER MODULE + LIQUIDATION HEATMAP
+ * Final Boss Edition – заменены MM TRAPS на профессиональный хитмап
+ */
+
+const APP = (function() {
+    
+    // --- CONFIGURATION ---
+    const CONFIG = {
+        api: {
+            rest: 'https://fapi.binance.com/fapi/v1',
+            ws: 'wss://fstream.binance.com/ws/'
+        },
+        limit: 1000,
+        colors: {
+            bg: '#000',
+            grid: '#161a1e',
+            text: '#848e9c',
+            green: '#00ff9d',
+            red: '#ff0055',
+            gold: '#ffbe0b',
+            blue: '#00d4ff'
+        }
+
+
+    };
+
+    // --- STATE ---
+    const STATE = {
+        symbol: 'BTCUSDT',
+        interval: '5m',
+        fibActive: false,
+        fibLines: [],
+        prices: [],
+        klines: [],
+        oiHistory: [],
+        liqMarkers: [],       // для реальных ликвидаций (WS)
+        liqWs: null,
+        chart: null,
+        series: { candle: null, volume: null, forecast: null },
+        ws: null,
+        lastPrice: 0,
+
+        // HUNTER SYSTEM
+        hunterConfig: {
+            active: true,
+            minConfluence: 4,
+            gates: {
+                trend: true,
+                impulse: true,
+                liq: true,
+                book: true,
+                pattern: true,
+                rev: true
+            },
+            thresholds: {
+                liq: 20000,
+                impulse: 2.0
+            }
+        },
+        hunterLiqSum: 0,
+        hunterLiqEvents: [],        // { time, value }
+        hunterPriceHistory: [],     // для импульса
+        hunterGlobalTrend: 'BULL',
+        hunterLocalTrend: 'BULL',
+        hunterTrendLastUpdate: 0,
+        hunterLastSignal: null,
+        hunterActiveSetups: []
+    };
+
+    // --- МАССИВ ДЛЯ ХРАНЕНИЯ ЛИНИЙ ХИТМАПА ---
+    let activeHeatmapLines = [];
+
+    // --- DOLF SETUPS (THE BRAIN) ---
+    const DOLF_SETUPS = [
+        { id: 'L1', type: 'long', name: 'ЗОЛОТОЙ СЕТАП', w: 95, desc: 'Price Up + OI Up + Funding < 0', check: (s) => s.trend > 0.5 && s.oiDelta > 1.5 && s.funding < -0.005 },
+        { id: 'L2', type: 'long', name: 'ШОРТОДОН', w: 90, desc: 'Price Down + OI Up (Accumulation)', check: (s) => s.trend < -0.5 && s.oiDelta > 2.0 },
+        { id: 'L3', type: 'long', name: 'РОСТ НА ФЛЕТЕ OI', w: 80, desc: 'Flat OI + Price Impulse', check: (s) => Math.abs(s.oiDelta) < 0.5 && s.trend > 1.0 },
+        { id: 'L4', type: 'long', name: 'CVD ДИВЕРГЕНЦИЯ', w: 85, desc: 'Price Down + CVD Up', check: (s) => s.trend < 0 && s.cvd > 0 },
+        { id: 'L5', type: 'long', name: 'ВЫКУП ЛИКВИДАЦИЙ', w: 88, desc: 'Long Liqs + Rebound', check: (s) => s.longLiqGrab && s.trend > 0.1 },
+        { id: 'L6', type: 'long', name: 'НАЧАЛО ТРЕНДА', w: 82, desc: 'Low Volatility Breakout', check: (s) => s.volatility < 1.0 && s.volSpike > 1.8 },
+        
+        { id: 'S1', type: 'short', name: 'НЕДОГОРА', w: 90, desc: 'New High + OI Drop', check: (s) => s.newHigh && s.oiDelta < -0.5 },
+        { id: 'S2', type: 'short', name: 'ДИВЕРГЕНЦИЯ OI', w: 85, desc: 'Price Up + OI Down', check: (s) => s.trend > 1.0 && s.oiDelta < -1.0 },
+        { id: 'S3', type: 'short', name: 'FOMO СВЕЧИ', w: 88, desc: 'Parabolic Move + High RSI', check: (s) => s.rsi > 75 && s.trend > 2.5 },
+        { id: 'S4', type: 'short', name: 'ШОРТ ОТ ЛИКВИДАЦИЙ', w: 86, desc: 'Short Liqs + Rejection', check: (s) => s.shortLiqGrab && s.trend < -0.1 },
+        { id: 'S5', type: 'short', name: 'ПЕРЕГРЕТЫЙ ФАНДИНГ', w: 80, desc: 'Funding > 0.03%', check: (s) => s.funding > 0.03 },
+        { id: 'S6', type: 'short', name: 'CVD ДИВЕРГЕНЦИЯ', w: 82, desc: 'Price Up + CVD Down', check: (s) => s.trend > 0 && s.cvd < 0 },
+
+        { id: 'L_CORR', type: 'long', name: 'LONG CORRECTION', w: 82, desc: 'Buy dip in strong uptrend', check: (s) => s.priceChange24h > 5 && s.trend < -1 },
+        { id: 'S_CORR', type: 'short', name: 'SHORT CORRECTION', w: 82, desc: 'Sell rally in strong downtrend', check: (s) => s.priceChange24h < -5 && s.trend > 1 }
+    ];
+
+    // --- INITIALIZATION ---
+function init() {
+    initChart();
+    this.initDrawingEvents(); 
+
+    // +++ ВСТАВЬТЕ ЭТОТ КОД СЮДА +++
+    if (window.matchMedia('(hover: none)').matches) {
+        document.querySelectorAll('.group').forEach(group => {
+            const button = group.querySelector('button');
+            const menu = group.querySelector('.absolute');
+            if (!button || !menu) return;
+
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.group.open').forEach(g => {
+                    if (g !== group) g.classList.remove('open');
+                });
+                group.classList.toggle('open');
+            });
+
+            menu.querySelectorAll('button').forEach(item => {
+                item.addEventListener('click', () => {
+                    group.classList.remove('open');
+                });
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!group.contains(e.target)) {
+                    group.classList.remove('open');
+                }
+            });
+        });
+    }
+
+        
+        
+        // --- DEATH UPDATE: ZOOM PRICE SCALE ---
+        const chartContainer = document.getElementById('tv-chart');
+        const priceScale = STATE.chart.priceScale('right');
+
+        chartContainer.addEventListener('wheel', (e) => {
+            const rect = chartContainer.getBoundingClientRect();
+            // Проверяем, что мышка над правой шкалой (последние 60 пикселей)
+            const isOverPriceScale = (e.clientX - rect.left) > (rect.width - 60);
+
+            if (isOverPriceScale) {
+                e.preventDefault();
+                
+                // Выключаем авто-масштаб, чтобы зафиксировать наши изменения
+                priceScale.applyOptions({ autoScale: false });
+
+                const options = priceScale.options();
+                const currentMargins = options.scaleMargins;
+                
+                // Коэффициент скорости зума
+                const step = 0.04; 
+                const direction = e.deltaY > 0 ? 1 : -1;
+
+                // Меняем отступы (Margins), тем самым сжимая или растягивая график
+                const newTop = Math.max(0, currentMargins.top + (direction * step));
+                const newBottom = Math.max(0, currentMargins.bottom + (direction * step));
+
+                // Ограничиваем, чтобы график не улетел в бесконечность
+                if (newTop + newBottom < 0.95) {
+                    priceScale.applyOptions({
+                        scaleMargins: {
+                            top: newTop,
+                            bottom: newBottom
+                        }
+                    });
+                }
+            }
+        }, { passive: false });
+        // ---------------------------------------
+
+        initSparkline();
+        startClock();
+        initLiquidationWebSocket();
+        bindHunterUI();
+    
+        
+        document.getElementById('symbol-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        APP.runAnalysis();  // вызываем метод объекта APP
+    }
+});
+
+        // Привязка ползунка яркости
+        const glowInput = document.getElementById('liq-glow');
+        const glowVal = document.getElementById('glow-val');
+        if (glowInput) {
+            glowInput.addEventListener('input', (e) => {
+                const val = e.target.value;
+                if (glowVal) glowVal.innerText = `${Math.round(val * 100)}%`;
+                activeHeatmapLines.forEach(item => {
+                    const finalAlpha = val * (item.baseFade || 1);
+                    item.series.applyOptions({ color: `rgba(${item.rgb}, ${finalAlpha})` });
+                });
+            });
+        }
+
+        log('[KERNEL] Chart engine ready + HUNTER armed + HEATMAP active.');
+    }
+
+    // --- CLOCK ---
+    function startClock() {
+        function update() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            const el = document.getElementById('clock');
+            if(el) el.innerText = timeString;
+        }
+        update();
+        setInterval(update, 1000);
+    }
+
+    // --- CHART ENGINE ---
+    function initChart() {
+        const container = document.getElementById('tv-chart');
+        STATE.chart = LightweightCharts.createChart(container, {
+            
+            grid: { vertLines: { color: CONFIG.colors.grid }, horzLines: { color: CONFIG.colors.grid } },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+            timeScale: { borderColor: '#333', timeVisible: true, rightOffset: 15, barSpacing: 6 },
+            rightPriceScale: {
+        visible: true,
+        autoScale: true, // Это важно для раздельных панелей
+    },
+    layout: {
+        background: { color: 'transparent' },
+        textColor: '#d1d4dc',
+    },
+        });
+
+       STATE.series.candle = STATE.chart.addCandlestickSeries({
+    upColor: '#00ff9d', downColor: '#ff0055',
+    borderVisible: false, wickUpColor: '#00ff9d', wickDownColor: '#ff0055',
+    priceFormat: {
+                type: 'custom',
+                formatter: (price) => {
+                    if (typeof price !== 'number') return price;
+                    if (price >= 10) return price.toFixed(2);
+                    return price.toFixed(8).replace(/\.?0+$/, ""); 
+                },
+                minMove: 0.00000001,
+            },
+});
+
+        STATE.series.volume = STATE.chart.addHistogramSeries({
+            color: '#26a69a',
+            priceFormat: { type: 'volume' },
+            priceScaleId: '',
+        });
+        STATE.chart.priceScale('').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+
+        STATE.series.forecast = STATE.chart.addLineSeries({
+            color: CONFIG.colors.gold, lineWidth: 2, lineStyle: 2,
+            crosshairMarkerVisible: false,
+            lastValueVisible: false, // ДОБАВИТЬ
+        priceLineVisible: false  // ДОБАВИТЬ
+        });
+
+        window.addEventListener('resize', () => {
+            STATE.chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+        });
+
+
+    }
+
+    // --- DATA FETCHING ---
+    async function runAnalysis() {
+        const btn = document.querySelector('.scan-btn');
+        const loader = document.getElementById('loader');
+        const input = document.getElementById('symbol-input');
+        
+        btn.disabled = true;
+        loader.style.display = 'flex';
+        clearUI();
+
+        let rawSymbol = input.value.trim().toUpperCase().replace('USDT', '');
+        STATE.symbol = rawSymbol + 'USDT';
+        
+        log(`[SCANNER] Initiating deep scan for ${STATE.symbol} on ${STATE.interval}...`);
+
+        /*try {
+            const [klines, oi, funding, ticker] = await Promise.all([
+                fetchAPI(`/klines?symbol=${STATE.symbol}&interval=${STATE.interval}&limit=${CONFIG.limit}`),
+                fetchAPI(`/openInterest?symbol=${STATE.symbol}`),
+                fetchAPI(`/premiumIndex?symbol=${STATE.symbol}`),
+                fetchAPI(`/ticker/24hr?symbol=${STATE.symbol}`)
+            ]);*/
+
+            try {
+    const [klines, oi, funding, ticker] = await Promise.all([
+        fetchAPI(`/klines?symbol=${STATE.symbol}&interval=${STATE.interval}&limit=${CONFIG.limit}`),
+        fetchAPI(`/openInterest?symbol=${STATE.symbol}`).catch(err => { console.warn("OI Error:", err); return null; }),
+        fetchAPI(`/premiumIndex?symbol=${STATE.symbol}`).catch(err => { console.warn("Funding Error:", err); return null; }),
+        fetchAPI(`/ticker/24hr?symbol=${STATE.symbol}`).catch(err => { console.warn("Ticker Error:", err); return null; })
+    ]);
+
+    if (!klines) throw new Error("Не удалось загрузить основные данные (свечи)");
+
+            STATE.klines = klines;
+            STATE.prices = klines.map(k => ({
+                time: k[0] / 1000,
+                open: parseFloat(k[1]), 
+                high: parseFloat(k[2]), 
+                low: parseFloat(k[3]), 
+                close: parseFloat(k[4]),
+                volume: parseFloat(k[5]),
+                buyVol: 0, 
+                sellVol: 0
+            }));
+            
+            // Получаем реальную дельту
+            const aggTrades = await fetchAPI(`/aggTrades?symbol=${STATE.symbol}&limit=1000`);
+            aggTrades.forEach(t => {
+                const tradeTime = t.T / 1000;
+                const qty = parseFloat(t.q);
+                const isBuyerMaker = t.m;
+                const candle = STATE.prices.find(p => tradeTime >= p.time && tradeTime < p.time + (STATE.interval === '5m' ? 300 : 900));
+                if (candle) {
+                    if (isBuyerMaker) candle.sellVol += qty;
+                    else candle.buyVol += qty;
+                }
+            });
+
+            const volData = klines.map(k => ({
+                time: k[0] / 1000,
+                value: parseFloat(k[5]),
+                color: 'rgba(255, 255, 255, 0.3)'
+            }));
+
+            STATE.series.candle.setData(STATE.prices);
+            STATE.series.volume.setData(volData);
+            STATE.series.forecast.setData([]);
+            STATE.lastPrice = STATE.prices[STATE.prices.length-1].close;
+
+            STATE.chart.timeScale().applyOptions({
+    rightOffset: 5 // количество свечей справа от последней
+});
+STATE.chart.timeScale().scrollToRealTime();
+
+            // Очищаем маркеры ликвидаций перед новым анализом
+            STATE.liqMarkers = [];
+            STATE.series.candle.setMarkers([]);
+
+            detectDeltaTrap();
+
+            const metrics = processMetrics(klines, oi, funding, ticker);
+            updateMetricsUI(metrics);
+
+            const powerScore = computePowerScore(metrics);
+            updatePowerUI(powerScore);
+
+            const detected = runSetupDetector(metrics);
+            STATE.hunterActiveSetups = detected;
+            updateSetupsUI(detected);
+
+            const verdict = generateVerdict(detected, metrics, STATE.prices);
+            if (metrics.squeeze) {
+                verdict.reason += ' ⚠️ SQUEEZE: готовься к взрыву!';
+            }
+            updateVerdictUI(verdict);
+            drawForecast(STATE.prices, verdict);
+
+            drawSparkline(STATE.prices.slice(-50).map(c => c.close), verdict.color);
+
+            // --- ОТРИСОВКА НОВОГО ХИТМАПА ЛИКВИДАЦИЙ ---
+            renderLiquidationHeatmap(klines);
+
+            // Запускаем WebSocket для обновлений в реальном времени
+            startWebSocket(STATE.symbol, STATE.interval);
+
+            if (STATE.fibActive) renderFibLines();
+
+            await fetchGlobalTrend();
+            updateLocalTrend();
+            checkAllGates();
+
+            log(`[SUCCESS] Analysis complete. Confidence: ${verdict.conf}%`);
+
+            if (typeof updateOrderFlow === 'function') updateOrderFlow();
+
+        } catch (e) {
+            console.error(e);
+            log(`[ERROR] Fetch Failed: ${e.message}. Check Network/CORS.`);
+            alert("API Error (CORS or Invalid Symbol). Make sure you are using a CORS extension or local proxy if running from file.");
+        } finally {
+            btn.disabled = false;
+            loader.style.display = 'none';
+        }
+    }
+
+    async function fetchAPI(endpoint) {
+        try {
+            const separator = endpoint.includes('?') ? '&' : '?';
+            const url = CONFIG.api.rest + endpoint + separator + 't=' + Date.now();
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+        } catch (e) {
+            log(`API Error: ${e.message}`, 'error');
+            throw e;
+        }
+    }
+
+    function getPricePrecision(price) {
+        if (price > 1000) return 2;
+        if (price > 100) return 3;
+        if (price > 10) return 4;
+        if (price > 1) return 5;
+        if (price > 0.1) return 6;
+        if (price > 0.01) return 7;
+        if (price > 0.001) return 8;
+        return 9;
+    }
+
+    // --- LOGIC CORE ---
+    function processMetrics(klines, oi, funding, ticker) {
+        const closes = klines.map(k => parseFloat(k[4]));
+        const vols = klines.map(k => parseFloat(k[5]));
+        const last = closes[closes.length - 1];
+        const start = closes[closes.length - 6];
+
+        const trend = ((last - start) / start) * 100;
+        
+        const range = klines.slice(-20).reduce((acc, k) => acc + (parseFloat(k[2]) - parseFloat(k[3])), 0) / 20;
+        const volatility = (range / last) * 1000;
+
+        const avgVol = vols.slice(-20).reduce((a, b) => a + b, 0) / 20;
+        const volSpike = vols[vols.length - 1] / avgVol;
+
+        const highs = klines.map(k => parseFloat(k[2]));
+        const lows = klines.map(k => parseFloat(k[3]));
+        const maxHigh = Math.max(...highs.slice(-50, -1));
+        const minLow = Math.min(...lows.slice(-50, -1));
+        const newHigh = highs[highs.length-1] > maxHigh;
+        
+        const shortLiqGrab = newHigh && closes[closes.length-1] < highs[highs.length-1];
+        const longLiqGrab = lows[lows.length-1] < minLow && closes[closes.length-1] > lows[lows.length-1];
+
+        const rsi = calculateRSI(closes, 14);
+
+        const range100 = klines.slice(-100).reduce((acc, k) => acc + (parseFloat(k[2]) - parseFloat(k[3])), 0) / 100;
+        const avgVolatility = (range100 / last) * 1000;
+        const squeeze = volatility < avgVolatility * 0.4;
+
+        return {
+            price: last,
+            trend: trend,
+            oi: parseFloat(oi.openInterest),
+            oiDelta: (Math.random() * 4 - 2), // mock, можно заменить реальным расчётом
+            funding: parseFloat(funding.lastFundingRate) * 100,
+            volatility: volatility,
+            volSpike: volSpike,
+            cvd: (Math.random() - 0.5) * 10,
+            newHigh: newHigh,
+            rsi: rsi,
+            shortLiqGrab: shortLiqGrab,
+            longLiqGrab: longLiqGrab,
+            priceChange24h: parseFloat(ticker.priceChangePercent),
+            squeeze: squeeze
+        };
+    }
+
+    function calculateRSI(values, period) {
+        if (values.length < period) return 50;
+        let gains = 0, losses = 0;
+        for (let i = values.length - period; i < values.length; i++) {
+            const diff = values[i] - values[i - 1];
+            if (diff >= 0) gains += diff; else losses -= diff;
+        }
+        const rs = gains / (losses || 1);
+        return 100 - (100 / (1 + rs));
+    }
+
+    function computePowerScore(m) {
+        let score = 0;
+        score += Math.min(Math.abs(m.trend) * 10, 30);
+        score += Math.min(m.volSpike * 8, 20);
+        score += Math.min(Math.abs(m.priceChange24h) * 2, 20);
+        score += Math.min(Math.abs(m.funding) * 100, 30);
+        return Math.min(100, Math.max(0, Math.round(score)));
+    }
+
+    function updatePowerUI(score) {
+        const percentEl = document.getElementById('power-percent');
+        const barEl = document.getElementById('power-bar');
+        if (percentEl) percentEl.innerText = score + '%';
+        if (barEl) barEl.style.width = score + '%';
+    }
+
+    function runSetupDetector(m) {
+        return DOLF_SETUPS.filter(s => {
+            try { return s.check(m); } 
+            catch(e) { return false; }
+        });
+    }
+
+    function generateVerdict(setups, m, prices) {
+        let longScore = 0, shortScore = 0;
+        
+        setups.forEach(s => s.type === 'long' ? longScore += s.w : shortScore += s.w);
+        
+        if (m.trend > 0.5) longScore += 10;
+        if (m.funding < -0.01) longScore += 20; 
+        if (m.trend < -0.5) shortScore += 10;
+
+        let total = longScore + shortScore || 1;
+        let diff = longScore - shortScore;
+        let dir = Math.abs(diff) < 20 ? 'NEUTRAL' : (diff > 0 ? 'LONG' : 'SHORT');
+        
+        let conf = Math.min(98, Math.floor((Math.abs(diff) / total) * 100) + 30);
+        if (setups.length === 0) { conf = 15; dir = 'NEUTRAL'; }
+
+        let color = dir === 'LONG' ? CONFIG.colors.green : (dir === 'SHORT' ? CONFIG.colors.red : CONFIG.colors.gold);
+
+        const lastPrice = m.price;
+        const swings = findSwings(prices, 50);
+        let targetPrice = lastPrice;
+        
+        if (dir === 'LONG') {
+            targetPrice = swings.highs.find(p => p > lastPrice * 1.002) || lastPrice * 1.02;
+        } else if (dir === 'SHORT') {
+            targetPrice = swings.lows.find(p => p < lastPrice * 0.998) || lastPrice * 0.98;
+        }
+
+        const pct = ((targetPrice - lastPrice) / lastPrice) * 100;
+
+        let reason = setups.length > 0 ? setups[0].name : 'Waiting for structure...';
+        if (m.squeeze) reason += ' ⚠️ SQUEEZE';
+
+        return {
+            dir: dir,
+            conf: conf,
+            target: targetPrice,
+            pct: pct,
+            color: color,
+            reason: reason
+        };
+    }
+
+    function drawForecast(prices, verdict) {
+        if (!STATE.chart || !prices || prices.length < 50) return;
+
+        if (!STATE.series.forecastAlt1) {
+            STATE.series.forecastAlt1 = STATE.chart.addLineSeries({ color: 'rgba(255,200,0,0.25)', lineWidth: 1, lineStyle: 2, lastValueVisible: false,
+            priceLineVisible: false });
+            STATE.series.forecastAlt2 = STATE.chart.addLineSeries({ color: 'rgba(0,200,255,0.25)', lineWidth: 1, lineStyle: 2, lastValueVisible: false,
+            priceLineVisible: false });
+        }
+
+        const closes = prices.map(p => p.close);
+        const windowSize = 300;
+        const predictSize = 30;
+
+        const normalize = (arr) => {
+            const min = Math.min(...arr);
+            const max = Math.max(...arr);
+            if (max === min) return arr.map(() => 0.5);
+            return arr.map(v => (v - min) / (max - min));
+        };
+
+        if (closes.length < windowSize + predictSize + 10) {
+            console.warn("⚠️ Недостаточно данных для поиска паттернов");
+            return;
+        }
+
+        const currentPrices = closes.slice(-windowSize);
+        const currentNorm = normalize(currentPrices);
+
+        const matches = [];
+        for (let i = 0; i < closes.length - windowSize - predictSize; i++) {
+            const histPrices = closes.slice(i, i + windowSize);
+            const histNorm = normalize(histPrices);
+            
+            let dist = 0;
+            for (let j = 0; j < windowSize; j++) {
+                dist += Math.pow(currentNorm[j] - histNorm[j], 2);
+            }
+            dist = Math.sqrt(dist);
+
+            const meanCurr = currentPrices.reduce((a, b) => a + b, 0) / windowSize;
+            const meanHist = histPrices.reduce((a, b) => a + b, 0) / windowSize;
+            let num = 0, denomCurr = 0, denomHist = 0;
+            for (let j = 0; j < windowSize; j++) {
+                const dc = currentPrices[j] - meanCurr;
+                const dh = histPrices[j] - meanHist;
+                num += dc * dh;
+                denomCurr += dc * dc;
+                denomHist += dh * dh;
+            }
+            const corr = num / Math.sqrt(denomCurr * denomHist || 1);
+
+            matches.push({ index: i, dist, corr });
+        }
+
+        if (matches.length === 0) return;
+
+        matches.sort((a, b) => {
+            if (a.corr > 0.5 && b.corr < 0.5) return -1;
+            if (a.corr < 0.5 && b.corr > 0.5) return 1;
+            return a.dist - b.dist;
+        });
+
+        const topMatches = [];
+        for (let m of matches) {
+            if (topMatches.length >= 3) break;
+            if (!topMatches.some(ex => Math.abs(ex.index - m.index) < windowSize / 2)) {
+                topMatches.push(m);
+            }
+        }
+
+        if (topMatches.length === 0) return;
+
+        const lastBar = prices[prices.length - 1];
+        const lastPrice = lastBar.close;
+        const lastTime = lastBar.time;
+        const interval = prices[1].time - prices[0].time;
+
+        const forecastPaths = topMatches.map(m => {
+            const futurePrices = closes.slice(m.index + windowSize, m.index + windowSize + predictSize);
+            const basePrice = closes[m.index + windowSize - 1];
+            const scale = lastPrice / basePrice;
+            return futurePrices.map((p, i) => ({
+                time: lastTime + (i + 1) * interval,
+                value: p * scale
+            }));
+        });
+
+        if (forecastPaths[0]) {
+            STATE.series.forecast.setData(forecastPaths[0]);
+            STATE.series.forecast.applyOptions({ 
+                color: verdict?.dir === 'LONG' ? '#00ff9d' : (verdict?.dir === 'SHORT' ? '#ff0055' : '#ffbe0b'),
+                lineWidth: 2, 
+                lineStyle: 2,
+                
+                crosshairMarkerVisible: true,
+                crosshairMarkerRadius: 1,
+                crosshairMarkerBorderColor: '#ffffff',
+                crosshairMarkerBackgroundColor: CONFIG.colors.gold,
+                
+
+            });
+        }
+        if (forecastPaths[1]) STATE.series.forecastAlt1.setData(forecastPaths[1]);
+        if (forecastPaths[2]) STATE.series.forecastAlt2.setData(forecastPaths[2]);
+    }
+
+    // --- ВСПОМОГАТЕЛЬНАЯ findSwings (оставлена для forecast) ---
+    function findSwings(prices, len) {
+        let highs = [], lows = [];
+        for (let i = 2; i < prices.length - 2; i++) {
+            const c = prices[i];
+            const p1 = prices[i-1], p2 = prices[i-2];
+            const n1 = prices[i+1], n2 = prices[i+2];
+            if (c.high > p1.high && c.high > p2.high && c.high > n1.high && c.high > n2.high) highs.push(c.high);
+            if (c.low < p1.low && c.low < p2.low && c.low < n1.low && c.low < n2.low) lows.push(c.low);
+        }
+        return { highs: highs.sort((a,b)=>a-b), lows: lows.sort((a,b)=>a-b) };
+    }
+
+    // --- НОВАЯ ФУНКЦИЯ ОТРИСОВКИ ХИТМАПА ЛИКВИДАЦИЙ ---
+    function renderLiquidationHeatmap(candles) {
+        // Очистка старых линий
+        activeHeatmapLines.forEach(item => STATE.chart.removeSeries(item.series));
+        activeHeatmapLines = [];
+
+        const levs = [10, 15, 20, 25, 30, 40, 50, 65, 80, 100];
+        let rawLevels = [];
+
+        // Для проекции в будущее
+        const lastCandleTime = candles[candles.length-1][0] / 1000;
+        const futureTime = lastCandleTime + 3600 * 150; // 150 часов вперёд
+
+        candles.forEach((c, idx) => {
+            const time = c[0] / 1000;
+            const high = parseFloat(c[2]);
+            const low = parseFloat(c[3]);
+            const vol = parseFloat(c[5]);
+            if (vol < 15) return; // фильтр шума
+
+            levs.forEach(l => {
+                // микро-рандом для органичности
+                const spread = 1 + (Math.random() * 0.0008 - 0.0004);
+                // уровень ликвидации лонгов (цена падает)
+                rawLevels.push({ 
+                    price: low * (1 - 1/l) * spread, 
+                    time, 
+                    index: idx, 
+                    type: 'L', 
+                    weight: vol / l 
+                });
+                // уровень ликвидации шортов (цена растёт)
+                rawLevels.push({ 
+                    price: high * (1 + 1/l) * spread, 
+                    time, 
+                    index: idx, 
+                    type: 'S', 
+                    weight: vol / l 
+                });
+            });
+        });
+
+        // Вычисляем endTime (момент, когда цена съела уровень)
+        rawLevels.forEach(lvl => {
+            let endTime = futureTime;
+            for (let j = lvl.index + 1; j < candles.length; j++) {
+                const cLow = parseFloat(candles[j][3]);
+                const cHigh = parseFloat(candles[j][2]);
+                if ((lvl.type === 'L' && cLow <= lvl.price) || 
+                    (lvl.type === 'S' && cHigh >= lvl.price)) {
+                    endTime = candles[j][0] / 1000;
+                    break;
+                }
+            }
+            lvl.endTime = endTime;
+        });
+
+        const currentGlow = document.getElementById('liq-glow')?.value || 0.03;
+
+        // Сортируем по весу и берём топ-130
+        rawLevels.sort((a, b) => b.weight - a.weight).slice(0, 130).forEach((lvl, idx) => {
+            // --- ELECTRIC HEATMAP PALETTE ---
+let rgb = '110, 0, 255'; // Базовый: Глубокий электрический фиолетовый
+let weight = 0.5;
+
+if (idx < 15) {
+    rgb = '255, 255, 0';   // ТОП-15: Ярко-желтый неон (самый сок)
+    weight = 3.0;
+} 
+else if (idx < 40) {
+    rgb = '0, 100, 255';   // ТОП-40: Насыщенный синий электрик
+    weight = 1.8;
+}
+else if (idx < 75) {
+    rgb = '0, 255, 255';   // ТОП-75: Голубой циан (ледяной неон)
+    weight = 1.2;
+}
+
+            // Плавное затухание с рангом
+            const fade = Math.max(0.15, 1 - (idx / 160));
+            const finalOpacity = currentGlow * fade;
+
+            const lineSeries = STATE.chart.addLineSeries({
+                color: `rgba(${rgb}, ${finalOpacity})`,
+                lineWidth: idx < 25 ? 2 : 1,
+                lineStyle: 0, // сплошная
+                lastValueVisible: false,
+                priceLineVisible: false,
+                crosshairMarkerVisible: false,
+                autoscaleInfoProvider: () => ({ priceRange: { min: lvl.price, max: lvl.price } }),
+            });
+
+            lineSeries.setData([
+                { time: lvl.time, value: lvl.price },
+                { time: lvl.endTime, value: lvl.price }
+            ]);
+
+            activeHeatmapLines.push({ series: lineSeries, rgb, baseFade: fade });
+        });
+    }
+
+    // --- WEBSOCKET & PAC-MAN (только для цены, без удаления линий) ---
+    function startWebSocket(symbol, interval) {
+        if (STATE.ws) STATE.ws.close();
+        
+        const wsUrl = `${CONFIG.api.ws}${symbol.toLowerCase()}@kline_${interval}`;
+        STATE.ws = new WebSocket(wsUrl);
+
+        STATE.ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            if (!msg.k) return;
+
+            // Внутри onmessage, после обновления свечи:
+const volUpdate = {
+    time: k.t / 1000,
+    value: parseFloat(k.v),
+    color: parseFloat(k.c) >= parseFloat(k.o) ? 'rgba(0, 255, 157, 0.3)' : 'rgba(255, 0, 85, 0.3)'
+};
+STATE.series.volume.update(volUpdate);
+
+            const k = msg.k;
+            const candle = {
+                time: k.t / 1000,
+                open: parseFloat(k.o),
+                high: parseFloat(k.h),
+                low: parseFloat(k.l),
+                close: parseFloat(k.c)
+
+                
+            };
+
+            STATE.series.candle.update(candle);
+            
+            const pEl = document.getElementById('hud-price');
+            if(pEl) {
+                pEl.innerText = candle.close.toFixed(4);
+                pEl.style.color = candle.close >= candle.open ? CONFIG.colors.green : CONFIG.colors.red;
+            }
+
+            STATE.lastPrice = candle.close;
+
+            const now = Date.now() / 1000;
+            STATE.hunterPriceHistory.push({ time: now, price: candle.close });
+            STATE.hunterPriceHistory = STATE.hunterPriceHistory.filter(p => now - p.time < 600);
+
+            // Проверка гейтов HUNTER
+            checkAllGates();
+        };
+    }
+
+    // --- REAL-TIME LIQUIDATIONS WEBSOCKET (без изменений) ---
+    function initLiquidationWebSocket() {
+        if (STATE.liqWs) STATE.liqWs.close();
+        STATE.liqWs = new WebSocket('wss://fstream.binance.com/ws/!forceOrder@arr');
+        
+        STATE.liqWs.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            const liq = data.o;
+            if (!liq) return;
+            
+            if (liq.s !== STATE.symbol) return;
+            
+            const usdValue = parseFloat(liq.q) * parseFloat(liq.p);
+            if (usdValue < 10000) return;
+
+            const isLongLiq = liq.S === 'SELL';
+            const marker = {
+                time: Math.floor(Date.now() / 1000),
+                position: isLongLiq ? 'belowBar' : 'aboveBar',
+                color: isLongLiq ? CONFIG.colors.red : CONFIG.colors.green,
+                shape: isLongLiq ? 'arrowUp' : 'arrowDown',
+                text: `LIQ ${Math.round(usdValue/1000)}k`
+            };
+
+            STATE.liqMarkers.push(marker);
+            if (STATE.liqMarkers.length > 20) STATE.liqMarkers.shift();
+            STATE.series.candle.setMarkers(STATE.liqMarkers);
+
+            const now = Date.now();
+            STATE.hunterLiqEvents.push({ time: now, value: usdValue });
+            STATE.hunterLiqEvents = STATE.hunterLiqEvents.filter(e => now - e.time < 60000);
+            STATE.hunterLiqSum = STATE.hunterLiqEvents.reduce((sum, e) => sum + e.value, 0);
+
+            if (STATE.hunterConfig.active && STATE.hunterConfig.gates.liq) {
+                const threshold = STATE.hunterConfig.thresholds.liq;
+                if (STATE.hunterLiqSum >= threshold) {
+                    // можно добавить звук
+                }
+            }
+
+            checkAllGates();
+        };
+
+        STATE.liqWs.onerror = () => log('[WS] Liquidation stream error', 'error');
+    }
+
+    // --- HUNTER функции (без изменений) ---
+    async function fetchGlobalTrend() {
+        try {
+            const url = `${CONFIG.api.rest}/klines?symbol=${STATE.symbol}&interval=1d&limit=200`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const closes = data.map(d => parseFloat(d[4]));
+            const ema200 = calculateEMA(closes, 200);
+            const currentPrice = STATE.lastPrice;
+            STATE.hunterGlobalTrend = currentPrice > ema200 ? 'BULL' : 'BEAR';
+            log(`[HUNTER] Global trend: ${STATE.hunterGlobalTrend} (EMA200=${ema200.toFixed(2)})`);
+        } catch (e) {
+            console.warn('Failed to fetch global trend', e);
+            STATE.hunterGlobalTrend = 'NEUTRAL';
+        }
+    }
+
+    function updateLocalTrend() {
+        if (STATE.prices.length < 200) return;
+        const closes = STATE.prices.map(p => p.close);
+        const ema200 = calculateEMA(closes, 200);
+        const currentPrice = STATE.lastPrice;
+        STATE.hunterLocalTrend = currentPrice > ema200 ? 'BULL' : 'BEAR';
+    }
+
+    function calculateEMA(data, period) {
+        if (data.length < period) return data[data.length-1];
+        const k = 2 / (period + 1);
+        let ema = data[0];
+        for (let i = 1; i < data.length; i++) {
+            ema = data[i] * k + ema * (1 - k);
+        }
+        return ema;
+    }
+
+    function checkImpulse() {
+        const threshold = STATE.hunterConfig.thresholds.impulse;
+        const now = Date.now() / 1000;
+        const fiveMinAgo = now - 300;
+        let oldPrice = null;
+        for (let i = STATE.hunterPriceHistory.length - 1; i >= 0; i--) {
+            if (STATE.hunterPriceHistory[i].time <= fiveMinAgo) {
+                oldPrice = STATE.hunterPriceHistory[i].price;
+                break;
+            }
+        }
+        if (!oldPrice && STATE.prices.length > 5) {
+            const lastCandle = STATE.prices[STATE.prices.length-1];
+            const targetTime = lastCandle.time - 300;
+            const candle = STATE.prices.find(p => p.time >= targetTime);
+            if (candle) oldPrice = candle.close;
+        }
+        if (!oldPrice) return false;
+        const change = ((STATE.lastPrice - oldPrice) / oldPrice) * 100;
+        return Math.abs(change) >= threshold;
+    }
+
+    function checkBookGate() {
+        return STATE.hunterActiveSetups.length > 0;
+    }
+
+    function checkPatternGate() {
+        return STATE.hunterActiveSetups.length > 0;
+    }
+
+    function checkReversalGate() {
+        return STATE.hunterActiveSetups.some(s => s.id.includes('CORR'));
+    }
+
+    function checkAllGates() {
+        if (!STATE.hunterConfig.active) return;
+
+        const gates = STATE.hunterConfig.gates;
+        const thresholds = STATE.hunterConfig.thresholds;
+        let activeCount = 0;
+        const activeNames = [];
+
+        if (gates.trend) {
+            if (STATE.hunterGlobalTrend !== 'NEUTRAL' && STATE.hunterLocalTrend !== 'NEUTRAL') {
+                if (STATE.hunterGlobalTrend === STATE.hunterLocalTrend) {
+                    activeCount++;
+                    activeNames.push('Trend');
+                }
+            }
+        }
+        if (gates.impulse) {
+            if (checkImpulse()) {
+                activeCount++;
+                activeNames.push('Impulse');
+            }
+        }
+        if (gates.liq) {
+            if (STATE.hunterLiqSum >= thresholds.liq) {
+                activeCount++;
+                activeNames.push('Liq');
+            }
+        }
+        if (gates.book) {
+            if (checkBookGate()) {
+                activeCount++;
+                activeNames.push('Book');
+            }
+        }
+        if (gates.pattern) {
+            if (checkPatternGate()) {
+                activeCount++;
+                activeNames.push('Pattern');
+            }
+        }
+        if (gates.rev) {
+            if (checkReversalGate()) {
+                activeCount++;
+                activeNames.push('Reversal');
+            }
+        }
+
+        const statusEl = document.getElementById('hunter-status');
+        if (statusEl) {
+            statusEl.innerText = `Active gates: ${activeCount}/${STATE.hunterConfig.minConfluence} (${activeNames.join(', ') || 'none'})`;
+            if (activeCount >= STATE.hunterConfig.minConfluence) {
+                statusEl.style.color = CONFIG.colors.green;
+            } else {
+                statusEl.style.color = '#666';
+            }
+        }
+
+        if (activeCount >= STATE.hunterConfig.minConfluence) {
+            const now = Date.now();
+            if (!STATE.hunterLastSignal || now - STATE.hunterLastSignal > 30000) {
+                STATE.hunterLastSignal = now;
+                triggerHunterSignal(activeNames);
+            }
+        }
+    }
+
+    let lastNotificationTime = 0;
+    const NOTIFICATION_COOLDOWN = 60000;
+    let audioContext = null;
+
+    function showNotification(title, message, type = 'info') {
+        const now = Date.now();
+        if (now - lastNotificationTime < NOTIFICATION_COOLDOWN) {
+            log(`[NOTIFICATION] Пропущено (антиспам): ${title}`);
+            return;
+        }
+        lastNotificationTime = now;
+        
+        showCustomAlert(title, message, type);
+        playNotificationSound(type);
+        log(`[${type.toUpperCase()}] ${title}: ${message}`);
+    }
+
+    function showCustomAlert(title, message, type) {
+        let alertBox = document.getElementById('customAlert');
+        if (!alertBox) {
+            alertBox = document.createElement('div');
+            alertBox.id = 'customAlert';
+            alertBox.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #0b0e11;
+                border: 2px solid var(--accent-green);
+                border-radius: 8px;
+                padding: 15px;
+                z-index: 10000;
+                color: #fff;
+                font-family: monospace;
+                box-shadow: 0 0 20px rgba(0,255,157,0.3);
+                max-width: 300px;
+                display: none;
+            `;
+            document.body.appendChild(alertBox);
+        }
+        
+        let borderColor = type === 'signal' ? '#00ff9d' : 
+                          type === 'liq' ? '#ff0055' : 
+                          type === 'squeeze' ? '#ffbe0b' : '#00d4ff';
+        
+        alertBox.style.borderColor = borderColor;
+        alertBox.innerHTML = `
+            <div style="font-weight:bold; margin-bottom:8px;">🚨 ${title}</div>
+            <div style="font-size:12px; margin-bottom:10px;">${message}</div>
+            <div style="font-size:9px; color:#666; text-align:right;">${new Date().toLocaleTimeString()}</div>
+        `;
+        
+        alertBox.style.display = 'block';
+        setTimeout(() => { alertBox.style.display = 'none'; }, 180000);
+    }
+
+    function playNotificationSound(type) {
+        try {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            if (type === 'signal') {
+                const osc1 = audioContext.createOscillator();
+                const osc2 = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                osc1.type = 'triangle';
+                osc2.type = 'sine';
+                osc1.frequency.setValueAtTime(680, audioContext.currentTime);
+                osc2.frequency.setValueAtTime(1360, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.02);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.0);
+                osc1.connect(gainNode);
+                osc2.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                osc1.start();
+                osc2.start();
+                osc1.stop(audioContext.currentTime + 1.0);
+                osc2.stop(audioContext.currentTime + 1.0);
+            } else if (type === 'liq') {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.frequency.value = 880;
+                gain.gain.value = 0.15;
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.15);
+            } else {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.frequency.value = 660;
+                gain.gain.value = 0.1;
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.2);
+            }
+        } catch (e) {
+            console.warn('Audio error:', e);
+        }
+    }
+
+    function triggerHunterSignal(activeGates) {
+        let direction = 'NEUTRAL';
+        if (STATE.hunterGlobalTrend === STATE.hunterLocalTrend) {
+            direction = STATE.hunterGlobalTrend === 'BULL' ? 'LONG' : 'SHORT';
+        } else {
+            const longCount = STATE.hunterActiveSetups.filter(s => s.type === 'long').length;
+            const shortCount = STATE.hunterActiveSetups.filter(s => s.type === 'short').length;
+            direction = longCount > shortCount ? 'LONG' : (shortCount > longCount ? 'SHORT' : 'NEUTRAL');
+        }
+
+        showNotification(
+            'HUNTER SIGNAL',
+            `Active gates: ${activeGates.join(', ')}<br>Confluence: ${activeGates.length}<br>Direction: ${direction}`,
+            'signal'
+        );
+    }
+
+    // --- SMART FIBONACCI (без изменений) ---
+    function toggleFib() {
+        STATE.fibActive = !STATE.fibActive;
+        const btn = document.getElementById('fib-btn');
+        if (btn) {
+            if (STATE.fibActive) btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
+
+        if (!STATE.fibActive) {
+            STATE.fibLines.forEach(line => STATE.series.candle.removePriceLine(line));
+            STATE.fibLines = [];
+            log('[FIB] Disabled');
+        } else {
+            renderFibLines();
+            log('[FIB] Enabled');
+        }
+    }
+
+   function renderFibLines() {
+        if (!STATE.prices || STATE.prices.length < 2) return;
+        
+        const lookback = parseInt(document.getElementById('fibo-lookback')?.value || 25);
+        const recent = STATE.prices.slice(-lookback);
+        
+        const high = Math.max(...recent.map(p => p.high));
+        const low = Math.min(...recent.map(p => p.low));
+        
+        drawFibLines(low, high, lookback);
+    }
+
+    function drawFibLines(low, high, lookback) {
+        // Очищаем старые линии
+        STATE.fibLines.forEach(line => STATE.series.candle.removePriceLine(line));
+        STATE.fibLines = [];
+
+        const diff = high - low;
+        const createLine = (price, label, color, width = 1, style = 2) => {
+            return STATE.series.candle.createPriceLine({
+                price: price,
+                color: color,
+                lineWidth: width,
+                lineStyle: style,
+                axisLabelVisible: true,
+                title: label
+            });
+        };
+
+        // Рисуем сетку
+        STATE.fibLines = [
+            // Границы (High/Low), чтобы понимать диапазон
+            createLine(high, `TOP (${lookback} bars)`, '#ffffff', 1, 0), // Сплошная белая
+            createLine(low, 'BOTTOM', '#ffffff', 1, 0),               // Сплошная белая
+            
+            // Твои рабочие уровни
+            createLine(high - diff * 0.382, '0.382 RETRACE', '#fbbf24'),
+            createLine(high - diff * 0.50,  '0.50 EQ', '#00ff9d'),
+            createLine(high - diff * 0.618, '0.618 GOLDEN', '#3b82f6')
+        ];
+    }
+
+    // --- TRAP DETECTOR (без изменений) ---
+    function detectDeltaTrap() {
+        if (STATE.prices.length < 2) return;
+        const last = STATE.prices[STATE.prices.length - 1];
+        const delta = last.buyVol - last.sellVol;
+        if (last.close > last.open && delta < -(last.volume * 0.01)) { 
+            const currentMarkers = STATE.series.candle.getMarkers() || [];
+            if (currentMarkers.length > 0 && currentMarkers[currentMarkers.length - 1].time === last.time) return;
+            STATE.series.candle.setMarkers([
+                ...currentMarkers,
+                {
+                    time: last.time,
+                    position: 'aboveBar',
+                    color: CONFIG.colors.red,
+                    shape: 'arrowDown',
+                    text: 'TRAP'
+                }
+            ]);
+            log(`[TRAP] Скрытые продажи! Дельта: ${Math.round(delta)}`, 'warning');
+        }
+    }
+
+    // --- UI HELPERS ---
+    function updateMetricsUI(m) {
+        setSafeText('m-oi', (m.oiDelta > 0 ? '+' : '') + m.oiDelta.toFixed(2) + '%', m.oiDelta > 0 ? CONFIG.colors.green : CONFIG.colors.red);
+        setSafeText('m-cvd', m.cvd.toFixed(1));
+        setSafeText('m-funding', (m.funding).toFixed(4) + '%', m.funding < 0 ? CONFIG.colors.green : CONFIG.colors.red);
+        setSafeText('m-vol', m.volatility.toFixed(2) + '%');
+    }
+
+    function setSafeText(id, text, color=null) {
+        const el = document.getElementById(id);
+        if(el) {
+            el.innerText = text;
+            if(color) el.style.color = color;
+        }
+    }
+
+    function updateSetupsUI(setups) {
+        const container = document.getElementById('setup-container');
+        if(!container) return;
+        
+        container.innerHTML = '';
+        if (setups.length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: #444; padding: 20px;">NO CLEAR SETUPS</div>';
+            return;
+        }
+        setups.forEach(s => {
+            const el = document.createElement('div');
+            el.className = `setup-item ${s.type === 'long' ? 'active' : 'active-bear'}`;
+            el.innerHTML = `
+                <div class="s-name">
+                    <span style="color:${s.type==='long'?CONFIG.colors.green:CONFIG.colors.red}">${s.name}</span>
+                    <span>${s.w}%</span>
+                </div>
+                <div class="s-desc">${s.desc}</div>
+            `;
+            container.appendChild(el);
+        });
+    }
+
+    function updateVerdictUI(v) {
+        const pVal = document.getElementById('pred-val');
+        const pDir = document.getElementById('pred-dir');
+        
+        if(pVal) {
+            pVal.innerText = (v.pct > 0 ? '+' : '') + v.pct.toFixed(2) + '%';
+            pVal.style.color = v.color;
+        }
+        
+        if(pDir) {
+            pDir.innerText = v.dir;
+            pDir.style.color = v.color;
+        }
+        
+        setSafeText('hud-action', v.dir, v.color);
+
+        const bar = document.getElementById('conf-bar');
+        if(bar) {
+            bar.style.width = v.conf + '%';
+            bar.style.background = v.color;
+        }
+        setSafeText('conf-text', v.conf + '%');
+
+        setSafeText('t-price', v.target.toFixed(4));
+        
+        const stopDist = Math.abs(v.target - STATE.lastPrice) / 2;
+        const stopPrice = v.dir === 'LONG' ? (STATE.lastPrice - stopDist) : (STATE.lastPrice + stopDist);
+        setSafeText('s-price', stopPrice.toFixed(4));
+
+        const rElem = document.getElementById('reasoning-text');
+        if(rElem) {
+            rElem.innerHTML = `
+                <span style="color:#fff">SCENARIO:</span> ${v.reason}<br>
+                <span style="color:#fff">ACTION:</span> ${v.dir} towards ${v.target.toFixed(4)}.<br>
+                <span style="color:#fff">RISK:</span> ${v.conf}% Confidence based on ${STATE.interval} history.
+            `;
+        }
+    }
+
+    function clearUI() {
+        setSafeText('pred-val', '0.00%');
+        const sc = document.getElementById('setup-container');
+        if(sc) sc.innerHTML = '';
+        STATE.hunterLiqEvents = [];
+        STATE.hunterLiqSum = 0;
+        STATE.hunterPriceHistory = [];
+        STATE.hunterActiveSetups = [];
+        // очистка линий хитмапа
+        activeHeatmapLines.forEach(item => STATE.chart.removeSeries(item.series));
+        activeHeatmapLines = [];
+    }
+
+    function log(msg, type = 'info') {
+        const footer = document.getElementById('console-log');
+        if(!footer) return;
+        const span = document.createElement('span');
+        span.className = 'log-item';
+        span.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        footer.innerHTML = ''; 
+        footer.appendChild(span);
+    }
+
+    // --- SPARKLINE ---
+    function initSparkline() {
+        const c = document.getElementById('sparkline');
+        if(!c) return;
+        c.width = c.parentElement.offsetWidth;
+        c.height = c.parentElement.offsetHeight;
+    }
+
+    function drawSparkline(data, color) {
+        const c = document.getElementById('sparkline');
+        if(!c) return;
+        const ctx = c.getContext('2d');
+        const w = c.width;
+        const h = c.height;
+        
+        ctx.clearRect(0, 0, w, h);
+        if (data.length < 2) return;
+
+        const min = Math.min(...data);
+        const max = Math.max(...data);
+        const range = max - min || 1;
+
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        
+        for(let i=0; i<data.length; i++) {
+            const x = (i / (data.length - 1)) * w;
+            const y = h - ((data[i] - min) / range) * (h - 10) - 5;
+            if(i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    // --- L2 ENGINE (без изменений) ---
+    async function updateOrderFlow() {
+        if (!STATE.symbol) return;
+        try {
+            const depthRes = await fetch(`https://fapi.binance.com/fapi/v1/depth?symbol=${STATE.symbol}&limit=1000`);
+            const depth = await depthRes.json();
+            
+            const totalBids = depth.bids.reduce((sum, d) => sum + parseFloat(d[1]), 0);
+            const totalAsks = depth.asks.reduce((sum, d) => sum + parseFloat(d[1]), 0);
+            const sumAll = totalBids + totalAsks;
+
+            const bidPct = (totalBids / sumAll) * 100;
+            const askPct = (totalAsks / sumAll) * 100;
+
+            document.getElementById('total-bids-val').innerText = Math.round(totalBids);
+            document.getElementById('total-asks-val').innerText = Math.round(totalAsks);
+            document.getElementById('total-asks-val').style.color = '#ff0055'; // Добавь это здесь
+            
+            const gBid = document.getElementById('gauge-bid');
+            const gAsk = document.getElementById('gauge-ask');
+            const imbText = document.getElementById('imbalance-ratio');
+
+            if(gBid && gAsk) {
+                gBid.style.width = `${bidPct}%`;
+                gAsk.style.width = `${askPct}%`;
+            }
+
+            const ratio = totalBids / totalAsks;
+            if (ratio > 1.5) imbText.innerText = "BULLISH PRESSURE";
+            else if (ratio < 0.6) imbText.innerText = "BEARISH PRESSURE";
+            else imbText.innerText = "NEUTRAL MARKET";
+
+            const tradesRes = await fetch(`https://fapi.binance.com/fapi/v1/trades?symbol=${STATE.symbol}&limit=100`);
+            const trades = await tradesRes.json();
+            
+            const now = Date.now();
+            const recentTrades = trades.filter(t => (now - t.time) < 2000).length;
+            const speed = (recentTrades / 2).toFixed(1);
+
+            const speedDisp = document.getElementById('speed-index');
+            if(speedDisp) {
+                speedDisp.innerText = speed;
+                speedDisp.className = `text-lg font-mono ${speed > 15 ? 'text-#ff0055' : 'text-amber-400'}`;
+            }
+            let bV = 0, sV = 0;
+            trades.forEach(t => { if(t.isBuyerMaker) sV += parseFloat(t.qty); else bV += parseFloat(t.qty); });
+            const delta = ((bV - sV) / (bV + sV)) * 100;
+            
+            const dDisp = document.getElementById('delta-display');
+            const dBar = document.getElementById('delta-bar');
+            if(dDisp && dBar) {
+                dDisp.innerText = (delta > 0 ? '+' : '') + delta.toFixed(2) + '%';
+               dDisp.style.color = delta > 0 ? '#00ff9d' : '#ff0055';
+                dBar.style.width = `${Math.min(Math.max(50 + delta, 0), 100)}%`;
+                dBar.style.backgroundColor = delta > 0 ? '#00ff9d' : '#ff0055';
+            }
+        } catch (e) { console.log("L2 Down"); }
+    }
+
+    setInterval(updateOrderFlow, 5000);
+
+    // --- HUNTER: привязка UI элементов к STATE ---
+    function bindHunterUI() {
+        document.getElementById('gate-trend').addEventListener('change', (e) => {
+            STATE.hunterConfig.gates.trend = e.target.checked;
+        });
+        document.getElementById('gate-impulse').addEventListener('change', (e) => {
+            STATE.hunterConfig.gates.impulse = e.target.checked;
+        });
+        document.getElementById('gate-liq').addEventListener('change', (e) => {
+            STATE.hunterConfig.gates.liq = e.target.checked;
+        });
+        document.getElementById('gate-book').addEventListener('change', (e) => {
+            STATE.hunterConfig.gates.book = e.target.checked;
+        });
+        document.getElementById('gate-pattern').addEventListener('change', (e) => {
+            STATE.hunterConfig.gates.pattern = e.target.checked;
+        });
+        document.getElementById('gate-rev').addEventListener('change', (e) => {
+            STATE.hunterConfig.gates.rev = e.target.checked;
+        });
+
+        document.getElementById('liq-threshold').addEventListener('input', (e) => {
+            STATE.hunterConfig.thresholds.liq = parseFloat(e.target.value) || 20000;
+        });
+        document.getElementById('impulse-threshold').addEventListener('input', (e) => {
+            STATE.hunterConfig.thresholds.impulse = parseFloat(e.target.value) || 2.0;
+        });
+        document.getElementById('min-confluence').addEventListener('change', (e) => {
+            STATE.hunterConfig.minConfluence = parseInt(e.target.value) || 3;
+        });
+        
+    }
+
+    // --- PUBLIC METHODS ---
+    return {
+        runAnalysis,
+        setTF: (tf, btn) => {
+            STATE.interval = tf;
+            document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (STATE.prices.length) runAnalysis();
+        },
+
+        // --- ИСПРАВЛЕННЫЙ ZOOM (ОРИГИНАЛЬНЫЙ + СБРОС ЦЕНЫ) ---
+        zoomChart(type) {
+            const timeScale = STATE.chart.timeScale();
+            if (type === 'in') timeScale.applyOptions({ barSpacing: timeScale.options().barSpacing * 1.2 });
+            if (type === 'out') timeScale.applyOptions({ barSpacing: timeScale.options().barSpacing * 0.8 });
+            if (type === 'reset') {
+                // Сбрасываем и время, и "смертельный зум" цены
+                STATE.chart.priceScale('right').applyOptions({ autoScale: true });
+                timeScale.fitContent();
+            }
+        },
+
+        toggleFib,      
+        renderFibLines, 
+
+        // --- НОВЫЕ ФУНКЦИИ ---
+        currentTool: 'cursor',
+        isDrawing: false,
+        tempDrawing: null,
+        indicators: {},
+
+        setTool(tool) {
+            this.currentTool = tool;
+            document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+            if (window.event) window.event.currentTarget.classList.add('active');
+            
+            const svg = document.getElementById('drawing-svg');
+            svg.style.pointerEvents = (tool === 'cursor') ? 'none' : 'all';
+            
+            STATE.chart.applyOptions({ 
+                handleScroll: tool === 'cursor', 
+                handleScale: tool === 'cursor' 
+            });
+        },
+
+        clearDrawings() {
+            const svg = document.getElementById('drawing-svg');
+            while (svg.firstChild) {
+                svg.removeChild(svg.firstChild);
+            }
+            console.log("Canvas cleared");
+        },
+
+        initDrawingEvents() {
+            const svg = document.getElementById('drawing-svg');
+            
+            window.addEventListener('keydown', e => { if(e.shiftKey) svg.style.pointerEvents = 'all'; });
+            window.addEventListener('keyup', e => { if(this.currentTool === 'cursor') svg.style.pointerEvents = 'none'; });
+
+            svg.addEventListener('mousedown', (e) => {
+                this.isDrawing = true;
+                const rect = svg.getBoundingClientRect();
+                const pos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                this.startDrawing(e.shiftKey ? 'ruler' : this.currentTool, pos);
+            });
+
+            svg.addEventListener('mousemove', (e) => {
+                if (!this.isDrawing || !this.tempDrawing) return;
+                const rect = svg.getBoundingClientRect();
+                this.updateDrawing({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+            });
+
+            window.addEventListener('mouseup', () => {
+                this.isDrawing = false;
+                if (this.tempDrawing) {
+                    if(this.tempDrawing.tool === 'ruler') {
+                        const el = document.getElementById('temp-el');
+                        const txt = document.getElementById('temp-txt');
+                        if(el) el.remove();
+                        if(txt) txt.remove();
+                    } else {
+                        const el = document.getElementById('temp-el');
+                        if(el) el.id = '';
+                    }
+                    this.tempDrawing = null;
+                }
+            });
+        },
+
+        startDrawing(tool, pos) {
+            const svg = document.getElementById('drawing-svg');
+            const price = STATE.series.candle.coordinateToPrice(pos.y);
+            this.tempDrawing = { tool, startPos: pos, startPrice: price };
+            
+            let el;
+            const mainColor = '#00ff9d'; 
+            const lineColor = '#00d4ff'; 
+
+            if (tool === 'brush') {
+                el = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                el.setAttribute('d', `M ${pos.x} ${pos.y}`);
+                el.setAttribute('stroke', mainColor);
+                el.setAttribute('fill', 'none');
+            } else if (tool === 'trend') {
+                el = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                el.setAttribute('stroke', lineColor);
+            } else {
+                el = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                el.setAttribute('stroke', mainColor);
+                el.setAttribute('fill', tool === 'ruler' ? 'rgba(0, 255, 157, 0.15)' : 'rgba(0, 255, 157, 0.05)');
+            }
+            
+            el.id = 'temp-el';
+            el.setAttribute('stroke-width', '2');
+            svg.appendChild(el);
+
+            if (tool === 'ruler') {
+                const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                txt.id = 'temp-txt';
+                txt.setAttribute('fill', mainColor);
+                txt.style.fontSize = "14px";
+                txt.style.fontWeight = "bold";
+                svg.appendChild(txt);
+            }
+        },
+
+        updateDrawing(pos) {
+            const el = document.getElementById('temp-el');
+            const d = this.tempDrawing;
+            if (!el || !d) return;
+
+            if (d.tool === 'brush') {
+                el.setAttribute('d', el.getAttribute('d') + ` L ${pos.x} ${pos.y}`);
+            } else if (d.tool === 'trend') {
+                el.setAttribute('x1', d.startPos.x); el.setAttribute('y1', d.startPos.y);
+                el.setAttribute('x2', pos.x); el.setAttribute('y2', pos.y);
+            } else {
+                const x = Math.min(pos.x, d.startPos.x);
+                const y = Math.min(pos.y, d.startPos.y);
+                const w = Math.abs(pos.x - d.startPos.x);
+                const h = Math.abs(pos.y - d.startPos.y);
+                el.setAttribute('x', x); el.setAttribute('y', y);
+                el.setAttribute('width', w); el.setAttribute('height', h);
+
+                if (d.tool === 'ruler') {
+                    const txt = document.getElementById('temp-txt');
+                    const curPrice = STATE.series.candle.coordinateToPrice(pos.y);
+                    const pc = ((curPrice - d.startPrice) / d.startPrice * 100).toFixed(2);
+                    txt.setAttribute('x', pos.x + 5); txt.setAttribute('y', pos.y - 5);
+                    txt.textContent = `${pc}%`;
+                }
+            }
+        },
+
+        
+       // --- CHART STYLES ---
+     setChartStyle(style) {
+            const candle = STATE.series.candle;
+            const green = '#00ff9d';
+            const red = '#ff0055';
+
+            // 1. Удаляем линии/области/бары, если они активны
+            if (this.extraSeries) {
+                STATE.chart.removeSeries(this.extraSeries);
+                this.extraSeries = null;
+            }
+
+            // 2. Полный сброс свечей к стандартному виду (фиксит глюк Hollow)
+            const baseOptions = {
+                visible: true,
+                upColor: green,
+                downColor: red,
+                borderVisible: true,
+                wickVisible: true,
+                borderUpColor: green,
+                borderDownColor: red,
+                wickUpColor: green,
+                wickDownColor: red,
+            };
+            candle.applyOptions(baseOptions);
+
+            // 3. Логика переключения
+           if (style === 'hollow') {
+                candle.applyOptions({
+                    // Зеленые (Up)
+                    upColor: 'transparent',
+                    borderUpColor: green,
+                    wickUpColor: green,
+                    
+                    // Красные (Down) — ТЕПЕРЬ ТОЖЕ ПОЛЫЕ
+                    downColor: 'transparent', 
+                    borderDownColor: red,
+                    wickDownColor: red,
+                });
+                candle.setData(STATE.prices);
+            }
+            else if (style === 'heiken') {
+                const haData = [];
+                STATE.prices.forEach((d, i) => {
+                    if (i === 0) haData.push(d);
+                    else {
+                        const prev = haData[i-1];
+                        haData.push({
+                            time: d.time,
+                            open: (prev.open + prev.close) / 2,
+                            close: (d.open + d.high + d.low + d.close) / 4,
+                            high: Math.max(d.high, d.open, d.close),
+                            low: Math.min(d.low, d.open, d.close)
+                        });
+                    }
+                });
+                candle.setData(haData);
+            }
+            else if (style === 'line' || style === 'area' || style === 'bars') {
+                candle.applyOptions({ visible: false }); // Прячем свечи
+                
+                if (style === 'line') {
+                    this.extraSeries = STATE.chart.addLineSeries({ color: green, lineWidth: 2 });
+                } else if (style === 'area') {
+                    this.extraSeries = STATE.chart.addAreaSeries({ 
+                        lineColor: green, 
+                        topColor: 'rgba(0, 255, 157, 0.3)', 
+                        bottomColor: 'transparent' 
+                    });
+                } else if (style === 'bars') {
+                    this.extraSeries = STATE.chart.addBarSeries({ upColor: green, downColor: red });
+                }
+                
+                const data = style === 'bars' ? STATE.prices : STATE.prices.map(p => ({ time: p.time, value: p.close }));
+                this.extraSeries.setData(data);
+            }
+            else {
+                // Обычные Candles
+                candle.setData(STATE.prices);
+            }
+        },
+
+        // --- INDICATORS ENGINE ---
+        toggleIndicator(type) {
+            if (this.indicators[type]) {
+                if (Array.isArray(this.indicators[type])) this.indicators[type].forEach(s => STATE.chart.removeSeries(s));
+                else STATE.chart.removeSeries(this.indicators[type]);
+                delete this.indicators[type];
+                return;
+            }
+
+            const data = STATE.prices;
+            // Прозрачность 60% (Alpha 0.4)
+            const alpha = 'CC'; // HEX для 40% видимости
+
+            if (type === 'sma') {
+                const s20 = STATE.chart.addLineSeries({ color: '#ffeb3b' + alpha, lineWidth: 1, title: 'SMA 20' });
+                const s50 = STATE.chart.addLineSeries({ color: '#ff9800' + alpha, lineWidth: 1, title: 'SMA 50' });
+                const s200 = STATE.chart.addLineSeries({ color: '#f44336' + alpha, lineWidth: 1, title: 'SMA 200' });
+                
+                s20.setData(this.calcMA(data, 20));
+                s50.setData(this.calcMA(data, 50));
+                s200.setData(this.calcMA(data, 200));
+                this.indicators[type] = [s20, s50, s200];
+            } 
+            else if (type === 'ema') {
+                const e12 = STATE.chart.addLineSeries({ color: '#00d4ff' + alpha, lineWidth: 1, title: 'EMA 12' });
+                const e26 = STATE.chart.addLineSeries({ color: '#e91e63' + alpha, lineWidth: 1, title: 'EMA 26' });
+                const e100 = STATE.chart.addLineSeries({ color: '#ffffff' + alpha, lineWidth: 1, title: 'EMA 100', lineStyle: 2 });
+                
+                e12.setData(this.calcMA(data, 12, true));
+                e26.setData(this.calcMA(data, 26, true));
+                e100.setData(this.calcMA(data, 100, true));
+                this.indicators[type] = [e12, e26, e100];
+            }
+            else if (type === 'ichimoku') {
+                const tenkan = STATE.chart.addLineSeries({ color: '#00d4ff' + alpha, lineWidth: 1, title: 'Tenkan' });
+                const kijun = STATE.chart.addLineSeries({ color: '#ff0055' + alpha, lineWidth: 1, title: 'Kijun' });
+                const ichiData = this.calcIchimoku(data);
+                tenkan.setData(ichiData.tenkan);
+                kijun.setData(ichiData.kijun);
+                this.indicators[type] = [tenkan, kijun];
+            }
+            else if (type === 'bb') {
+                const top = STATE.chart.addLineSeries({ color: 'rgba(255,255,255,0.25)', lineWidth: 1 });
+                const bot = STATE.chart.addLineSeries({ color: 'rgba(255,255,255,0.25)', lineWidth: 1 });
+                const bb = this.calcBB(data, 20, 2);
+                top.setData(bb.upper); bot.setData(bb.lower);
+                this.indicators[type] = [top, bot];
+            }
+            else if (type === 'rsi') {
+                // RSI оставляем ярким (100%), так как он в отдельной зоне и не мешает
+                const rsiSeries = STATE.chart.addLineSeries({
+                    color: '#8b5cf6',
+                    lineWidth: 2,
+                    priceScaleId: 'rsi-pane',
+                    title: 'RSI',
+                });
+                STATE.chart.priceScale('rsi-pane').applyOptions({
+                    scaleMargins: { top: 0.8, bottom: 0.02 },
+                    visible: false,
+                });
+                rsiSeries.createPriceLine({ price: 70, color: 'rgba(139, 92, 246, 0.2)', lineStyle: 2 });
+                rsiSeries.createPriceLine({ price: 30, color: 'rgba(139, 92, 246, 0.2)', lineStyle: 2 });
+                rsiSeries.setData(this.calcRSI(data, 14));
+                this.indicators[type] = rsiSeries;
+            }
+        
+            else if (type === 'ichimoku') {
+                const tenkan = STATE.chart.addLineSeries({ color: '#00d4ff', lineWidth: 1, title: 'Tenkan' });
+                const kijun = STATE.chart.addLineSeries({ color: '#ff0055', lineWidth: 1, title: 'Kijun' });
+                const ichiData = this.calcIchimoku(data);
+                tenkan.setData(ichiData.tenkan);
+                kijun.setData(ichiData.kijun);
+                this.indicators[type] = [tenkan, kijun];
+            }
+            else if (type === 'bb') {
+                const top = STATE.chart.addLineSeries({ color: 'rgba(255,255,255,0.2)', lineWidth: 1 });
+                const bot = STATE.chart.addLineSeries({ color: 'rgba(255,255,255,0.2)', lineWidth: 1 });
+                const bb = this.calcBB(data, 20, 2);
+                top.setData(bb.upper); bot.setData(bb.lower);
+                this.indicators[type] = [top, bot];
+            }
+        },
+
+        calcIchimoku(data) {
+            let tenkan = [], kijun = [];
+            const getMinMax = (slice) => {
+                const high = Math.max(...slice.map(d => d.high));
+                const low = Math.min(...slice.map(d => d.low));
+                return (high + low) / 2;
+            };
+            for (let i = 26; i < data.length; i++) {
+                tenkan.push({ time: data[i].time, value: getMinMax(data.slice(i-9, i)) });
+                kijun.push({ time: data[i].time, value: getMinMax(data.slice(i-26, i)) });
+            }
+            return { tenkan, kijun };
+        },
+
+        calcRSI(data, period) {
+            let res = [];
+            let avgG = 0, avgL = 0;
+            for (let i = 1; i < data.length; i++) {
+                let d = data[i].close - data[i-1].close;
+                let g = d > 0 ? d : 0, l = d < 0 ? -d : 0;
+                avgG = (avgG * (period-1) + g) / period;
+                avgL = (avgL * (period-1) + l) / period;
+                if (i > period) res.push({ time: data[i].time, value: 100 - (100 / (1 + avgG/avgL)) });
+            }
+            return res;
+        },
+
+        // Хелперы для расчетов
+        calcMA(data, period, exponential = false) {
+            let result = [];
+            for (let i = period; i < data.length; i++) {
+                const slice = data.slice(i - period, i);
+                const val = slice.reduce((a, b) => a + b.close, 0) / period;
+                result.push({ time: data[i].time, value: val });
+            }
+            return result;
+        },
+
+        calcBB(data, period, stdDev) {
+            let upper = [], lower = [];
+            for (let i = period; i < data.length; i++) {
+                const slice = data.slice(i - period, i);
+                const prices = slice.map(d => d.close);
+                const avg = prices.reduce((a, b) => a + b, 0) / period;
+                const sd = Math.sqrt(prices.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / period);
+                upper.push({ time: data[i].time, value: avg + (sd * stdDev) });
+                lower.push({ time: data[i].time, value: avg - (sd * stdDev) });
+            }
+            return { upper, lower };
+
+            
+        
+            
+        },
+        // ---------------------
+
+        init
+    };
+
+})();
+
+// Функция обновления внешних iframe (без изменений)
+function updateExternalFrames(symbol) {
+    const baseCoin = symbol.replace('USDT', '').toUpperCase();
+    
+    const tvFrame = document.getElementById('coinglass-tv');
+    if (tvFrame) {
+        tvFrame.src = `https://www.coinglass.com/tv/Binance_${baseCoin}USDT`;
+    }
+    
+    const heatFrame = document.getElementById('coinglass-heatmap');
+    if (heatFrame) {
+        heatFrame.src = `https://www.coinglass.com/pro/futures/LiquidationHeatMap?coin=${baseCoin}&type=pair`;
+    }
+    
+    const mobFrame = document.getElementById('mobchart-frame');
+    if (mobFrame) {
+        mobFrame.src = mobFrame.src;
+    }
+    
+    console.log(`[IFRAMES] Updated for: ${baseCoin}`);
+}
+
+// Перехватываем runAnalysis для обновления iframe
+const originalRunAnalysis = APP.runAnalysis;
+APP.runAnalysis = async function() {
+    const input = document.getElementById('symbol-input');
+    const rawSymbol = input.value.trim().toUpperCase().replace('USDT', '');
+    const fullSymbol = rawSymbol + 'USDT';
+    
+    updateExternalFrames(fullSymbol);
+    
+    await originalRunAnalysis.call(this);
+};
+
+APP.init();
+</script>
+</body>
+</html>
