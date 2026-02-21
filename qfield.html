@@ -251,6 +251,20 @@
         run();
     }
 
+            // Добавьте где‑нибудь после инициализации
+window.addEventListener('message', (event) => {
+    // Проверяем источник, если нужно (event.origin)
+    const data = event.data;
+    if (data && data.type === 'SET_SYMBOL_AND_SCAN') {
+        const input = document.getElementById('symbol');
+        if (input) {
+            input.value = data.symbol;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            document.getElementById('calc-btn').click();
+        }
+    }
+});
+
     window.onload = init;
 })();
 </script>
