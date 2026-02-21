@@ -526,12 +526,7 @@ div[class*="grid"] > div:nth-child(2) {
     width: 100% !important;
 }*/
 
-/* 3. Плашки сетапов и пульса — делаем их фиксированными, чтобы не прыгали */
-.panel:not(#tv-chart) {
-    height: auto !important;
-    min-height: 100px !important; /* Минималка, чтобы текст влез */
-    padding: 15px !important;
-}
+
 
 /* 4. Убираем любой конфликт со скроллом */
 .app-container {
@@ -835,7 +830,8 @@ div[class*="grid"] > div:nth-child(2) {
 <!-- КОНТЕЙНЕР ДЛЯ ТРЁХ IFRAME -->
 <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 0px; margin: 0 0px 0px 0px; width: 100%;">
 
-    <!-- НОВЫЙ iframe для Q‑Field -->
+
+            <!-- НОВЫЙ iframe для Q‑Field -->
 <div style="padding: 0 0%; width: 100%; box-sizing: border-box; margin-top: 0px;">
     <iframe 
         id="qfield-frame"
@@ -855,6 +851,8 @@ div[class*="grid"] > div:nth-child(2) {
             allowfullscreen>
         </iframe>
     </div>
+
+
     
 <script>
 /**
@@ -1021,7 +1019,7 @@ let isMeasuring = false;
 
 // Создаем элементы
 const measureDiv = document.createElement('div');
-measureDiv.style = "position:fixed; z-index:9999; color:#00ff9d; background:rgba(0,0,0,0.85); padding:4px 8px; border-radius:4px; display:none; pointer-events:none; font-size:12px; border:1px solid rgba(0,255,157,0.3); font-family:monospace; transform: translate(-50%, -100%); margin-top:-10px;";
+measureDiv.style = "position:fixed; z-index:9999; color:#00ff9d; background:rgba(0,0,0,0.85); padding:4px 8px; border-radius:4px; display:none; pointer-events:none; font-size:12px; border:1px solid rgba(0,255,157,0.3); font-family:monospace; transform: translate(-50%, -100%); margin-top:-35px;";
 document.body.appendChild(measureDiv);
 
 const measureRect = document.createElement('div');
@@ -2918,6 +2916,7 @@ APP.runAnalysis = async function() {
 };
 
 APP.init();
+APP.runAnalysis();
 </script>
 </body>
 </html>
