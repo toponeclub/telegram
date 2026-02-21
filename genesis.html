@@ -839,12 +839,21 @@ div[class*="grid"] > div:nth-child(2) {
         <iframe 
             id="coinglass-tv"
             src="https://www.coinglass.com/tv/Binance_BTCUSDT" 
-            style="width: 100%; height: 90vh; min-height: 600px; border: none; background: #0b0e11; display: block;"
+            style="width: 100%; height: 150vh; min-height: 950px; border: none; background: #0b0e11; display: block;"
             allow="autoplay; fullscreen"
             allowfullscreen>
         </iframe>
     </div>
-      </div>
+    <!-- НОВЫЙ iframe для Q‑Field -->
+<div style="padding: 0 5%; width: 100%; box-sizing: border-box; margin-top: 10px;">
+    <iframe 
+        id="qfield-frame"
+        src="https://www.t1prime.com/qfield" 
+        style="width: 100%; height: 150vh; min-height: 950px; border: none; background: #0b0e11; display: block;"
+        allow="autoplay; fullscreen"
+        allowfullscreen>
+    </iframe>
+</div>
 <script>
 /**
  * DOLF V15 GENESIS ENGINE + HUNTER MODULE + LIQUIDATION HEATMAP
@@ -2859,7 +2868,7 @@ function updateExternalFrames(symbol) {
         tvFrame.src = `https://www.coinglass.com/tv/Binance_${baseCoin}USDT`;
     }
     
-    const heatFrame = document.getElementById('coinglass-heatmap');
+   /* const heatFrame = document.getElementById('coinglass-heatmap');
     if (heatFrame) {
         heatFrame.src = `https://www.coinglass.com/pro/futures/LiquidationHeatMap?coin=${baseCoin}&type=pair`;
     }
@@ -2867,7 +2876,29 @@ function updateExternalFrames(symbol) {
     const mobFrame = document.getElementById('mobchart-frame');
     if (mobFrame) {
         mobFrame.src = mobFrame.src;
+    }*/
+
+      // --- ДОБАВЛЯЕМ ОБНОВЛЕНИЕ Q‑FIELD ---
+    const qFrame = document.getElementById('qfield-frame');
+    if (qFrame && qFrame.contentWindow && qFrame.contentDocument) {
+        try {
+            const qDoc = qFrame.contentDocument;
+            const symbolInput = qDoc.getElementById('symbol');
+            const calcBtn = qDoc.getElementById('calc-btn');
+            
+            if (symbolInput && calcBtn) {
+                // Меняем символ
+                symbolInput.value = baseCoin + 'USDT'; // или просто baseCoin, смотря что ожидает Q‑Field
+                // Триггерим событие change, если нужно
+                symbolInput.dispatchEvent(new Event('change', { bubbles: true }));
+                // Нажимаем кнопку расчёта
+                calcBtn.click();
+            }
+        } catch (e) {
+            console.warn('Не удалось обновить Q‑Field (возможно, разный домен):', e);
+        }
     }
+
     
     console.log(`[IFRAMES] Updated for: ${baseCoin}`);
 }
