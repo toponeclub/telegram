@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>QUANTUM PROBABILITY FIELD</title>
+    <style>
+        body { margin: 0; background: #030303; color: #fff; font-family: 'JetBrains Mono', monospace; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        .toolbar { padding: 10px 20px; background: #0a0a0a; border-bottom: 1px solid #222; display: flex; gap: 15px; align-items: center; font-size: 12px; }
+        input, select, button { background: #111; color: #00ff9d; border: 1px solid #333; padding: 6px 12px; font-family: inherit; border-radius: 4px; outline: none; }
+        button { cursor: pointer; font-weight: bold; background: #00ff9d; color: #000; }
+        .canvas-container { flex: 1; position: relative; width: 100%; height: 100%; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .loader { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; color: #00ff9d; font-size: 24px; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+
+<div class="toolbar">
+    <span style="font-weight: 900; color: #fff;">Q-FIELD <span style="color:#00ff9d">v4</span></span>
+    <input type="text" id="symbol" value="BTCUSDT" style="width: 80px;">
+    <select id="tf"><option value="5m" selected>5m</option><option value="15m">15m</option></select>
+    <button id="calc-btn">CALCULATE MATRIX</button>
+    <span>Температура: <input type="range" id="temp" min="0.1" max="2" step="0.1" value="0.8" style="vertical-align: middle;"></span>
+    <span id="status" style="color: #666; margin-left: auto;">Ждет сигнала...</span>
+</div>
+
+<div class="canvas-container">
+    <canvas id="chartCanvas"></canvas>
+    <div class="loader" id="loader">TENSOR COMPUTING...</div>
+</div>
+
+<script>
+(function() {
+    const STATE = {
+        data: [],
+        volProfile: [],
+        matrix: null,
+        width: 0, height: 0,
+        depth: 60, // свечей вперед
+        buckets: 200, // разрешение матрицы по оси Y
+        ctx: null,
+        temp: 0.8
+    };
+
+    // --- Математика и Ядро ---
+    
+    // 1. Lite Self-Attention (поиск контекста)
+    function calculateAttentionScores(klines, prefixLen = 20) {
+        const closes = klines.map(k => k.close);
+        const current = closes.slice(-prefixLen);
+        const cMean = current.reduce((a,b)=>a+b,0)/prefixLen;
+        const q = current.map(v => v - cMean); // Query
+        
+        const scores = [];
+        for (let i = 0; i < closes.length - prefixLen - STATE.depth; i++) {
+            const hist = closes.slice(i, i + prefixLen);
+            const hMean = hist.reduce((a,b)=>a+b,0)/prefixLen;
+            const k = hist.map(v => v - hMean); // Key
+            
+            // Dot product
+            let dot = 0;
+            for(let j=0; j<prefixLen; j++) dot += q[j] * k[j];
+            
+            scores.push({ index: i, score: dot });
+        }
+        
+        // Softmax
+        const maxScore = Math.max(...scores.map(s => s.score));
+        let sumExp = 0;
+        scores.forEach(s => {
+            s.weight = Math.exp((s.score - maxScore) / STATE.temp);
+            sumExp += s.weight;
+        });
+        scores.forEach(s => s.weight /= sumExp);
+        
+        return scores.sort((a,b) => b.weight - a.weight).slice(0, 100); // Топ 100 аттеншенов
+    }
+
+    // 2. Volume Profile (Аттракторы)
+    function buildVolumeProfile(klines) {
+        const profile = new Array(STATE.buckets).fill(0);
+        const minP = Math.min(...klines.map(k=>k.low));
+        const maxP = Math.max(...klines.map(k=>k.high));
+        const step = (maxP - minP) / STATE.buckets;
+        
+        klines.forEach(k => {
+            const idx = Math.floor((k.close - minP) / step);
+            if (idx >= 0 && idx < STATE.buckets) profile[idx] += k.volume;
+        });
+        
+        const maxV = Math.max(...profile);
+        return { minP, maxP, step, profile: profile.map(v => v / maxV) };
+    }
+
+    // 3. Генерация Матрицы Плотности (KDE)
+    function computeDensityMatrix(klines) {
+        const lastPrice = klines[klines.length-1].close;
+        const attentions = calculateAttentionScores(klines);
+        const vp = buildVolumeProfile(klines);
+        
+        // Диапазон рендеринга
+        const renderMin = lastPrice * 0.95; 
+        const renderMax = lastPrice * 1.05;
+        const pStep = (renderMax - renderMin) / STATE.buckets;
+        
+        const matrix = Array(STATE.depth).fill(0).map(() => Array(STATE.buckets).fill(0));
+        
+        // Наполняем матрицу траекториями
+        attentions.forEach(att => {
+            const histBase = klines[att.index + 19].close;
+            const scale = lastPrice / histBase;
+            
+            for(let t=0; t<STATE.depth; t++) {
+                const targetPrice = klines[att.index + 20 + t].close * scale;
+                const pIdx = Math.floor((targetPrice - renderMin) / pStep);
+                
+                if (pIdx >= 0 && pIdx < STATE.buckets) {
+                    // Сила притяжения объема
+                    const vpIdx = Math.floor((targetPrice - vp.minP) / vp.step);
+                    const gravity = (vpIdx>=0 && vpIdx<vp.buckets) ? (1 + vp.profile[vpIdx]) : 1;
+                    
+                    matrix[t][pIdx] += att.weight * gravity;
+                }
+            }
+        });
+
+        // Гауссово размытие (KDE)
+        const smoothed = Array(STATE.depth).fill(0).map(() => Array(STATE.buckets).fill(0));
+        for(let t=0; t<STATE.depth; t++) {
+            for(let p=0; p<STATE.buckets; p++) {
+                let val = 0;
+                for(let k=-2; k<=2; k++) {
+                    if (p+k >= 0 && p+k < STATE.buckets) {
+                        val += matrix[t][p+k] * Math.exp(-(k*k)/2);
+                    }
+                }
+                smoothed[t][p] = val;
+            }
+        }
+        
+        return { matrix: smoothed, min: renderMin, max: renderMax };
+    }
+
+    // --- Рендеринг ---
+    function colorMap(value) {
+        // Magma/Inferno style gradient
+        if (value < 0.05) return `rgba(0,0,0,0)`;
+        if (value < 0.2) return `rgba(75, 0, 130, ${value*2})`; // Purple
+        if (value < 0.5) return `rgba(220, 20, 60, ${value*1.5})`; // Crimson
+        if (value < 0.8) return `rgba(255, 140, 0, ${value})`; // Orange
+        return `rgba(255, 255, 255, ${value})`; // White hot
+    }
+
+    function draw() {
+        const ctx = STATE.ctx;
+        ctx.clearRect(0, 0, STATE.width, STATE.height);
+        if (!STATE.data.length) return;
+
+        const visibleHist = 100;
+        const totalX = visibleHist + STATE.depth;
+        const candleW = STATE.width / totalX;
+        
+        const histData = STATE.data.slice(-visibleHist);
+        let maxP = STATE.matrix ? STATE.matrix.max : Math.max(...histData.map(k=>k.high));
+        let minP = STATE.matrix ? STATE.matrix.min : Math.min(...histData.map(k=>k.low));
+        const pRange = maxP - minP;
+
+        function getY(price) { return STATE.height - ((price - minP) / pRange) * STATE.height; }
+        function getX(idx) { return idx * candleW; }
+
+        // 1. Отрисовка Термальной матрицы (Будущее)
+        if (STATE.matrix) {
+            const mData = STATE.matrix.matrix;
+            let maxDens = 0;
+            mData.forEach(col => col.forEach(v => { if(v > maxDens) maxDens = v; }));
+
+            const stepY = STATE.height / STATE.buckets;
+            ctx.globalCompositeOperation = 'screen';
+            
+            for(let t=0; t<STATE.depth; t++) {
+                const x = getX(visibleHist + t);
+                for(let p=0; p<STATE.buckets; p++) {
+                    const dens = mData[t][p] / (maxDens || 1);
+                    if (dens > 0.01) {
+                        ctx.fillStyle = colorMap(dens);
+                        // Инвертируем Y для отрисовки
+                        const y = STATE.height - (p/STATE.buckets)*STATE.height;
+                        ctx.fillRect(x, y - stepY, candleW + 1, stepY + 1);
+                    }
+                }
+            }
+            ctx.globalCompositeOperation = 'source-over';
+        }
+
+        // 2. Отрисовка свечей (Прошлое)
+        histData.forEach((k, i) => {
+            const x = getX(i);
+            const yO = getY(k.open), yC = getY(k.close), yH = getY(k.high), yL = getY(k.low);
+            
+            ctx.strokeStyle = '#555';
+            ctx.beginPath(); ctx.moveTo(x+candleW/2, yH); ctx.lineTo(x+candleW/2, yL); ctx.stroke();
+            
+            ctx.fillStyle = k.close >= k.open ? '#00ff9d' : '#ff0055';
+            ctx.fillRect(x + candleW*0.1, Math.min(yO, yC), candleW*0.8, Math.max(1, Math.abs(yO - yC)));
+        });
+
+        // Линия текущей цены
+        const lastP = histData[histData.length-1].close;
+        ctx.strokeStyle = '#fff'; ctx.setLineDash([2, 4]);
+        ctx.beginPath(); ctx.moveTo(0, getY(lastP)); ctx.lineTo(STATE.width, getY(lastP)); ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // --- Логика ---
+    async function run() {
+        document.getElementById('loader').style.display = 'flex';
+        try {
+            const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${document.getElementById('symbol').value}&interval=${document.getElementById('tf').value}&limit=1500`);
+            const raw = await res.json();
+            STATE.data = raw.map(k => ({ time: k[0], open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5] }));
+            
+            document.getElementById('status').innerText = 'Вычисление матрицы...';
+            // Используем timeout чтобы UI успел показать лоадер
+            setTimeout(() => {
+                STATE.matrix = computeDensityMatrix(STATE.data);
+                draw();
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('status').innerText = 'Система синхронизирована';
+            }, 50);
+        } catch(e) {
+            console.error(e);
+            document.getElementById('loader').style.display = 'none';
+        }
+    }
+
+    function init() {
+        const canvas = document.getElementById('chartCanvas');
+        STATE.ctx = canvas.getContext('2d');
+        const resize = () => {
+            STATE.width = canvas.parentElement.clientWidth;
+            STATE.height = canvas.parentElement.clientHeight;
+            canvas.width = STATE.width; canvas.height = STATE.height;
+            draw();
+        };
+        window.addEventListener('resize', resize);
+        resize();
+
+        document.getElementById('calc-btn').addEventListener('click', run);
+        document.getElementById('temp').addEventListener('input', e => { STATE.temp = +e.target.value; if(STATE.data.length) run(); });
+        
+        run();
+    }
+
+    window.onload = init;
+})();
+</script>
+</body>
+</html>
