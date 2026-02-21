@@ -519,14 +519,24 @@ div[class*="grid"] > div:nth-child(2) {
 }
 
 
-/* 2. Задаем графику конкретную высоту, чтобы он не был "индюком" 
+/*2. Задаем графику конкретную высоту, чтобы он не был "индюком" */
 #tv-chart {
-    height: 500px !important; Здесь поставь столько, сколько тебе удобно для глаз
+   
     min-height: 400px !important;
     width: 100% !important;
-}*/
+     /* Также убедимся, что контейнер графика не схлопывается */
+    .chart-container {
+        height: auto;
+        min-height: 400px;
+    }
+}
 
-
+/* 3. Плашки сетапов и пульса — делаем их фиксированными, чтобы не прыгали */
+.panel:not(#tv-chart) {
+    height: auto !important;
+    min-height: 100px !important; /* Минималка, чтобы текст влез */
+    padding: 15px !important;
+}
 
 /* 4. Убираем любой конфликт со скроллом */
 .app-container {
@@ -2186,8 +2196,8 @@ STATE.series.volume.update(volUpdate);
         // Рисуем сетку
         STATE.fibLines = [
             // Границы (High/Low), чтобы понимать диапазон
-            createLine(high, `TOP (${lookback} bars)`, '#ffffff', 1, 0), // Сплошная белая
-            createLine(low, 'BOTTOM', '#ffffff', 1, 0),               // Сплошная белая
+            createLine(high, ``, '#ffffff', 1, 0), // Сплошная белая
+            createLine(low, '', '#ffffff', 1, 0),               // Сплошная белая
             
             // Твои рабочие уровни
            createLine(high - diff * 0.382, '0.382', '#fbbf24', 1, 0),
