@@ -519,12 +519,12 @@ div[class*="grid"] > div:nth-child(2) {
 }
 
 
-/* 2. Задаем графику конкретную высоту, чтобы он не был "индюком" */
+/* 2. Задаем графику конкретную высоту, чтобы он не был "индюком" 
 #tv-chart {
-    height: 700px !important; /* Здесь поставь столько, сколько тебе удобно для глаз */
-    min-height: 500px !important;
+    height: 500px !important; Здесь поставь столько, сколько тебе удобно для глаз
+    min-height: 400px !important;
     width: 100% !important;
-}
+}*/
 
 /* 3. Плашки сетапов и пульса — делаем их фиксированными, чтобы не прыгали */
 .panel:not(#tv-chart) {
@@ -1783,6 +1783,8 @@ else if (idx < 75) {
             const msg = JSON.parse(event.data);
             if (!msg.k) return;
 
+             const k = msg.k;
+
             // Внутри onmessage, после обновления свечи:
 const volUpdate = {
     time: k.t / 1000,
@@ -1791,7 +1793,7 @@ const volUpdate = {
 };
 STATE.series.volume.update(volUpdate);
 
-            const k = msg.k;
+           
             const candle = {
                 time: k.t / 1000,
                 open: parseFloat(k.o),
