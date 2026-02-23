@@ -159,7 +159,10 @@ body {
         ::-webkit-scrollbar-thumb:hover { background: #00ff9d; }
         * { scrollbar-width: thin; scrollbar-color: #2a2e33 #050505; }
 
-       
+       .spark-flash {
+    filter: drop-shadow(0 0 6px #00ff9d);
+    transition: filter 0.08s ease;
+}
 
 iframe, #tv-chart { flex: 1; height: 100% !important; }
 
@@ -559,6 +562,29 @@ div[class*="grid"] > div:nth-child(2) {
         display: flex !important;
     }
 }
+
+.alligator-btn {
+    background: #111;
+    border: 1px solid #00ff9d;
+    color: #00ff9d;
+    padding: 10px;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+    text-align: center;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.alligator-btn.active {
+    background: #00ff9d;
+    color: #000;
+    box-shadow: 0 0 15px #00ff9d;
+}
     </style>
 </head>
 <body>
@@ -648,12 +674,14 @@ div[class*="grid"] > div:nth-child(2) {
         <div class="bg-black/60 p-3 rounded-lg border border-purple-500/20 shadow-lg mb-2">
             <div class="text-[10px] uppercase text-gray-500 mb-2">HUNTER SETTINGS</div>
             <div class="grid grid-cols-2 gap-1 text-[10px]">
+
                 <label class="flex items-center gap-1"><input type="checkbox" id="gate-trend" checked> Trend</label>
                 <label class="flex items-center gap-1"><input type="checkbox" id="gate-impulse" checked> Impulse</label>
                 <label class="flex items-center gap-1"><input type="checkbox" id="gate-liq" checked> Liq</label>
                 <label class="flex items-center gap-1"><input type="checkbox" id="gate-book" checked> Book</label>
                 <label class="flex items-center gap-1"><input type="checkbox" id="gate-pattern" checked> Pattern</label>
                 <label class="flex items-center gap-1"><input type="checkbox" id="gate-rev" checked> Reversal</label>
+                
             </div>
             <div class="flex justify-between mt-2 text-[10px]">
                 <span>Liq threshold ($):</span>
@@ -757,6 +785,8 @@ div[class*="grid"] > div:nth-child(2) {
             <button onclick="APP.toggleIndicator('ichimoku')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded">Ichimoku Cloud</button>
             <div class="h-[1px] bg-white/5 my-1"></div>
             <button onclick="APP.toggleIndicator('rsi')" class="text-left px-3 py-2 text-[10px] hover:bg-purple-500/20 text-purple-400 rounded">Relative Strength (RSI)</button>
+            <button onclick="APP.toggleIndicator('macd')" class="text-left px-3 py-2 text-[10px] hover:bg-orange-500/20 text-orange-400 rounded">MACD</button>
+            <button onclick="APP.toggleIndicator('oi')" class="text-left px-3 py-2 text-[10px] hover:bg-amber-500/20 text-amber-400 rounded">Open Interest</button>
         </div>
     </div>
 </div>
@@ -769,7 +799,9 @@ div[class*="grid"] > div:nth-child(2) {
         <button class="fib-btn" id="fib-btn" onclick="APP.toggleFib()">
             <i class="fas fa-chart-line"></i> FIB TARGET
         </button>
-
+<button class="alligator-btn" id="alligator-btn" onclick="APP.toggleAlligator()">
+    <i class=""></i> 🐊 ALLIGATOR
+</button>
       <div class="flex items-center space-x-2 ml-2 bg-[#1e2329]/50 px-3 py-1.5 rounded-lg border border-[#2b3139] h-[34px]">
     <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider w-[110px]">Fib Lookback</span>
     <input 
@@ -837,30 +869,66 @@ div[class*="grid"] > div:nth-child(2) {
         <span class="log-item">[SYSTEM] DOLF V15 GENESIS + HUNTER + HEATMAP INITIALIZED.</span>
     </footer>
 </div>
-<!-- КОНТЕЙНЕР ДЛЯ ТРЁХ IFRAME -->
-<div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 0px; margin: 0 0px 0px 0px; width: 100%;">
-
-
-            <!-- НОВЫЙ iframe для Q‑Field -->
-<div style="padding: 0 0%; width: 100%; box-sizing: border-box; margin-top: 0px;">
-    <iframe 
-        id="qfield-frame"
-        src="https://www.t1prime.com/qfield" 
-        style="width: 100%; height: 150vh; min-height: 950px; border: none; background: #0b0e11; display: block;"
-        allow="autoplay; fullscreen"
-        allowfullscreen>
-    </iframe>
-</div>
-    
-    <div style="padding: 0 1%; width: 100%; box-sizing: border-box;">
-        <iframe 
-            id="coinglass-tv"
-            src="https://www.coinglass.com/tv/Binance_BTCUSDT" 
-            style="width: 100%; height: 150vh; min-height: 950px; border: none; background: #0b0e11; display: block;"
-            allow="autoplay; fullscreen"
-            allowfullscreen>
-        </iframe>
+<!-- КОНТЕЙНЕР ДЛЯ СВИТЧЕРА С IFRAME -->
+<div style="grid-column: 1 / -1; margin-top: 10px; width: 100%; background: #0b0e11; border: 1px solid #1e2329; border-radius: 6px; overflow: hidden;">
+    <!-- Вкладки -->
+    <div style="display: flex; background: #1e2329; border-bottom: 1px solid #333;">
+        <button class="tab-button" data-tab="tab1" style="flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">T1Prime</button>
+        <button class="tab-button" data-tab="tab2" style="flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">Coinglass TV</button>
+        <button class="tab-button" data-tab="tab3" style="flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">TradingView</button>
+        <button class="tab-button" data-tab="tab4" style="flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">Heatmap</button>
     </div>
+    <!-- Контейнеры iframe -->
+    <div style="position: relative; width: 100%; height: 150vh; min-height: 950px;">
+        <iframe id="iframe-tab1" src="https://www.t1prime.com/qfield" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #0b0e11;" allow="autoplay; fullscreen" allowfullscreen></iframe>
+        <iframe id="iframe-tab2" src="https://www.coinglass.com/tv/Binance_BTCUSDT" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #0b0e11; display: none;" allow="autoplay; fullscreen" allowfullscreen></iframe>
+        <iframe id="iframe-tab3" src="https://www.tradingview.com/chart/?symbol=BTCUSDT" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #0b0e11; display: none;" allow="autoplay; fullscreen" allowfullscreen></iframe>
+        <iframe id="iframe-tab4" src="https://www.coinglass.com/pro/futures/LiquidationHeatMap?coin=BTC&type=pair" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #0b0e11; display: none;" allow="autoplay; fullscreen" allowfullscreen></iframe>
+    </div>
+</div>
+
+<!-- Скрипт для переключения вкладок -->
+<script>
+    (function() {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const iframes = {
+            tab1: document.getElementById('iframe-tab1'),
+            tab2: document.getElementById('iframe-tab2'),
+            tab3: document.getElementById('iframe-tab3'),
+            tab4: document.getElementById('iframe-tab4')
+        };
+
+        function switchTab(tabId) {
+            // Скрыть все iframe
+            Object.values(iframes).forEach(iframe => iframe.style.display = 'none');
+            // Показать выбранный
+            if (iframes[tabId]) iframes[tabId].style.display = 'block';
+            
+            // Обновить классы кнопок
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.color = '#888';
+                btn.style.background = 'transparent';
+            });
+            const activeBtn = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                activeBtn.style.color = '#00ff9d';
+                activeBtn.style.background = 'rgba(0,255,157,0.1)';
+            }
+        }
+
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                switchTab(tabId);
+            });
+        });
+
+        // По умолчанию показываем первую вкладку
+        switchTab('tab1');
+    })();
+</script>
 
 
     
@@ -910,6 +978,14 @@ let currentTimezone = 'auto';
         series: { candle: null, volume: null, forecast: null },
         ws: null,
         lastPrice: 0,
+        // Alligator
+      // Alligator
+    alligatorActive: false,
+    alligatorLines: { jaw: null, teeth: null, lips: null },
+    alligatorMarkers: [],            // все маркеры (входы и выходы)
+    alligatorPosition: null,          // текущая открытая позиция: { side, entryPrice, entryTime, stopLoss, size }
+    alligatorTrades: [],              // история сделок (для статистики)
+    alligatorEquity: 1000,            // начальный виртуальный баланс
 
         // HUNTER SYSTEM
         hunterConfig: {
@@ -1023,6 +1099,8 @@ document.getElementById('timezone-select').addEventListener('change', function()
     });
 });
         
+APP.updateAllMarkers();
+
 let measureStartPos = null; // Храним и цену, и координаты Y/X
 let lastTapTime = 0;
 let isMeasuring = false;
@@ -1105,7 +1183,16 @@ container.addEventListener('touchend', () => {
         
         // --- DEATH UPDATE: ZOOM PRICE SCALE ---
         const chartContainer = document.getElementById('tv-chart');
-        const priceScale = STATE.chart.priceScale('right');
+        // После создания chart и series
+const priceScale = STATE.chart.priceScale('right');
+priceScale.applyOptions({
+    scaleMargins: {
+        top: 0.05,  // минимальный отступ сверху (5%)
+        bottom: 0.3  // большой отступ снизу (30%) - фиксирует график по верху
+    },
+    // Важно: автоскейл должен быть включен
+    autoScale: true
+});
 
         chartContainer.addEventListener('wheel', (e) => {
             const rect = chartContainer.getBoundingClientRect();
@@ -1373,6 +1460,7 @@ STATE.chart.timeScale().scrollToRealTime();
             // Очищаем маркеры ликвидаций перед новым анализом
             STATE.liqMarkers = [];
             STATE.series.candle.setMarkers([]);
+            playNotificationSound('liq');
 
             detectDeltaTrap();
 
@@ -1400,12 +1488,20 @@ STATE.chart.timeScale().scrollToRealTime();
 
             // Запускаем WebSocket для обновлений в реальном времени
             startWebSocket(STATE.symbol, STATE.interval);
-
+            
             if (STATE.fibActive) renderFibLines();
 
             await fetchGlobalTrend();
             updateLocalTrend();
             checkAllGates();
+
+           // Автоматическое включение Open Interest при первом запуске
+if (!window.oiAutoEnabled) {
+    window.oiAutoEnabled = true;
+    setTimeout(() => {
+        this.toggleIndicator('oi');
+    }, 500);
+}
 
             log(`[SUCCESS] Analysis complete. Confidence: ${verdict.conf}%`);
 
@@ -1419,6 +1515,7 @@ STATE.chart.timeScale().scrollToRealTime();
             btn.disabled = false;
             loader.style.display = 'none';
         }
+        
     }
 
     async function fetchAPI(endpoint) {
@@ -1503,6 +1600,42 @@ STATE.chart.timeScale().scrollToRealTime();
         const rs = gains / (losses || 1);
         return 100 - (100 / (1 + rs));
     }
+
+    // Smoothed Moving Average (SMMA) – возвращает массив значений
+function smma(values, length) {
+    const out = new Array(values.length).fill(null);
+    let prev = null;
+    for (let i = length - 1; i < values.length; i++) {
+        if (i === length - 1) {
+            let sum = 0;
+            for (let j = i - length + 1; j <= i; j++) sum += values[j];
+            prev = sum / length;
+            out[i] = prev;
+        } else {
+            prev = (prev * (length - 1) + values[i]) / length;
+            out[i] = prev;
+        }
+    }
+    return out;
+}
+
+// ATR (14) – уже есть? Если нет, вставьте:
+function calculateATR(data, period) {
+    const atr = new Array(data.length).fill(null);
+    for (let i = period; i < data.length; i++) {
+        let sum = 0;
+        for (let j = i - period + 1; j <= i; j++) {
+            const tr = Math.max(
+                data[j].high - data[j].low,
+                Math.abs(data[j].high - data[j - 1].close),
+                Math.abs(data[j].low - data[j - 1].close)
+            );
+            sum += tr;
+        }
+        atr[i] = sum / period;
+    }
+    return atr;
+}
 
     function computePowerScore(m) {
         let score = 0;
@@ -1808,7 +1941,7 @@ else if (idx < 75) {
 const volUpdate = {
     time: k.t / 1000,
     value: parseFloat(k.v),
-    color: parseFloat(k.c) >= parseFloat(k.o) ? 'rgba(0, 255, 157, 0.3)' : 'rgba(255, 0, 85, 0.3)'
+    color: parseFloat(k.c) >= parseFloat(k.o) ? 'rgba(255, 255, 255, 0.3)' : 'rgba(255, 255, 255, 0.3)'
 };
 STATE.series.volume.update(volUpdate);
 
@@ -1824,6 +1957,41 @@ STATE.series.volume.update(volUpdate);
             };
 
             STATE.series.candle.update(candle);
+
+            // Если свеча закрыта (k.x === true) – проверяем сигнал Alligator и обновляем линии
+if (k.x) {
+    // Создаём объект новой свечи
+    const newCandle = {
+        time: k.t / 1000,
+        open: parseFloat(k.o),
+        high: parseFloat(k.h),
+        low: parseFloat(k.l),
+        close: parseFloat(k.c),
+        volume: parseFloat(k.v) // если нужно
+    };
+
+    // Добавляем новую свечу в STATE.prices
+    STATE.prices.push(newCandle);
+    // Ограничиваем размер, если нужно (например, храним не более 1500 свечей)
+    if (STATE.prices.length > 1500) STATE.prices.shift();
+
+    // Обновляем график свечей (уже есть в коде выше, но оставляем на всякий случай)
+    STATE.series.candle.update(newCandle);
+
+    // Обновляем объём (опционально)
+    const volUpdate = {
+        time: newCandle.time,
+        value: newCandle.volume,
+        color: newCandle.close >= newCandle.open ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.3)'
+    };
+    STATE.series.volume.update(volUpdate);
+
+    // Если Alligator активен – пересчитываем линии и проверяем сигнал
+    if (STATE.alligatorActive) {
+        APP.updateAlligatorLines();
+        APP.checkAlligatorSignal();
+    }
+}
             
             const pEl = document.getElementById('hud-price');
             if(pEl) {
@@ -1855,38 +2023,44 @@ STATE.series.volume.update(volUpdate);
             if (liq.s !== STATE.symbol) return;
             
             const usdValue = parseFloat(liq.q) * parseFloat(liq.p);
-            if (usdValue < 10000) return;
+            if (usdValue < 6000) return;
 
             const isLongLiq = liq.S === 'SELL';
             const marker = {
                 time: Math.floor(Date.now() / 1000),
                 position: isLongLiq ? 'belowBar' : 'aboveBar',
-                color: isLongLiq ? CONFIG.colors.red : CONFIG.colors.green,
+                color: isLongLiq ? CONFIG.colors.green : CONFIG.colors.red,
                 shape: isLongLiq ? 'arrowUp' : 'arrowDown',
-                text: `LIQ ${Math.round(usdValue/1000)}k`
+                text: `${Math.round(usdValue/1000)}k`
             };
 
             STATE.liqMarkers.push(marker);
             if (STATE.liqMarkers.length > 20) STATE.liqMarkers.shift();
             STATE.series.candle.setMarkers(STATE.liqMarkers);
+             // 🔔 Воспроизводим звук ликвидации
+        playNotificationSound('liq');
 
             const now = Date.now();
             STATE.hunterLiqEvents.push({ time: now, value: usdValue });
-            STATE.hunterLiqEvents = STATE.hunterLiqEvents.filter(e => now - e.time < 60000);
+            STATE.hunterLiqEvents = STATE.hunterLiqEvents.filter(e => now - e.time < 20000);
             STATE.hunterLiqSum = STATE.hunterLiqEvents.reduce((sum, e) => sum + e.value, 0);
 
             if (STATE.hunterConfig.active && STATE.hunterConfig.gates.liq) {
                 const threshold = STATE.hunterConfig.thresholds.liq;
                 if (STATE.hunterLiqSum >= threshold) {
-                    // можно добавить звук
+                    
+   
                 }
             }
 
             checkAllGates();
         };
+        
 
         STATE.liqWs.onerror = () => log('[WS] Liquidation stream error', 'error');
     }
+
+    
 
     // --- HUNTER функции (без изменений) ---
     async function fetchGlobalTrend() {
@@ -2038,7 +2212,11 @@ STATE.series.volume.update(volUpdate);
         showCustomAlert(title, message, type);
         playNotificationSound(type);
         log(`[${type.toUpperCase()}] ${title}: ${message}`);
+        
     }
+
+    
+    
 
     function showCustomAlert(title, message, type) {
         let alertBox = document.getElementById('customAlert');
@@ -2052,12 +2230,12 @@ STATE.series.volume.update(volUpdate);
                 background: #0b0e11;
                 border: 2px solid var(--accent-green);
                 border-radius: 8px;
-                padding: 15px;
+                padding: 10px;
                 z-index: 10000;
                 color: #fff;
                 font-family: monospace;
                 box-shadow: 0 0 20px rgba(0,255,157,0.3);
-                max-width: 300px;
+                max-width: 200px;
                 display: none;
             `;
             document.body.appendChild(alertBox);
@@ -2113,6 +2291,22 @@ STATE.series.volume.update(volUpdate);
                 gain.connect(audioContext.destination);
                 osc.start();
                 osc.stop(audioContext.currentTime + 0.15);
+
+                 } else if (type === 'alligator') {
+            const osc1 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc1.frequency.value = 440;
+            osc2.frequency.value = 880;
+            gain.gain.value = 0.2;
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioContext.destination);
+            osc1.start();
+            osc2.start();
+            osc1.stop(audioContext.currentTime + 0.2);
+            osc2.stop(audioContext.currentTime + 0.2);
+                
             } else {
                 const osc = audioContext.createOscillator();
                 const gain = audioContext.createGain();
@@ -2123,9 +2317,13 @@ STATE.series.volume.update(volUpdate);
                 osc.start();
                 osc.stop(audioContext.currentTime + 0.2);
             }
+            
+            
         } catch (e) {
             console.warn('Audio error:', e);
+            
         }
+        
     }
 
     function triggerHunterSignal(activeGates) {
@@ -2144,6 +2342,8 @@ STATE.series.volume.update(volUpdate);
             'signal'
         );
     }
+
+    
 
     // --- SMART FIBONACCI (без изменений) ---
     function toggleFib() {
@@ -2317,6 +2517,10 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
         // очистка линий хитмапа
         activeHeatmapLines.forEach(item => STATE.chart.removeSeries(item.series));
         activeHeatmapLines = [];
+           STATE.alligatorMarkers = [];
+    STATE.alligatorPosition = null;
+    STATE.alligatorTrades = [];
+    STATE.alligatorEquity = 1000;
     }
 
     function log(msg, type = 'info') {
@@ -2361,6 +2565,7 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
             if(i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
         ctx.stroke();
+        
     }
 
     // --- L2 ENGINE (без изменений) ---
@@ -2446,7 +2651,7 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
         });
 
         document.getElementById('liq-threshold').addEventListener('input', (e) => {
-            STATE.hunterConfig.thresholds.liq = parseFloat(e.target.value) || 20000;
+            STATE.hunterConfig.thresholds.liq = parseFloat(e.target.value) || 8000;
         });
         document.getElementById('impulse-threshold').addEventListener('input', (e) => {
             STATE.hunterConfig.thresholds.impulse = parseFloat(e.target.value) || 2.0;
@@ -2739,9 +2944,9 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
             const alpha = 'CC'; // HEX для 40% видимости
 
             if (type === 'sma') {
-                const s20 = STATE.chart.addLineSeries({ color: '#ffeb3b' + alpha, lineWidth: 1, title: 'SMA 20' });
-                const s50 = STATE.chart.addLineSeries({ color: '#ff9800' + alpha, lineWidth: 1, title: 'SMA 50' });
-                const s200 = STATE.chart.addLineSeries({ color: '#f44336' + alpha, lineWidth: 1, title: 'SMA 200' });
+                const s20 = STATE.chart.addLineSeries({ color: '#ffeb3b' + alpha, lineWidth: 1, title: 'SMA 20', priceLineVisible: false });
+                const s50 = STATE.chart.addLineSeries({ color: '#ff9800' + alpha, lineWidth: 1, title: 'SMA 50', priceLineVisible: false });
+                const s200 = STATE.chart.addLineSeries({ color: '#f44336' + alpha, lineWidth: 1, title: 'SMA 200', priceLineVisible: false });
                 
                 s20.setData(this.calcMA(data, 20));
                 s50.setData(this.calcMA(data, 50));
@@ -2749,9 +2954,9 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
                 this.indicators[type] = [s20, s50, s200];
             } 
             else if (type === 'ema') {
-                const e12 = STATE.chart.addLineSeries({ color: '#00d4ff' + alpha, lineWidth: 1, title: 'EMA 12' });
-                const e26 = STATE.chart.addLineSeries({ color: '#e91e63' + alpha, lineWidth: 1, title: 'EMA 26' });
-                const e100 = STATE.chart.addLineSeries({ color: '#ffffff' + alpha, lineWidth: 1, title: 'EMA 100', lineStyle: 2 });
+                const e12 = STATE.chart.addLineSeries({ color: '#00d4ff' + alpha, lineWidth: 1, title: 'EMA 12', priceLineVisible: false });
+                const e26 = STATE.chart.addLineSeries({ color: '#e91e63' + alpha, lineWidth: 1, title: 'EMA 26', priceLineVisible: false });
+                const e100 = STATE.chart.addLineSeries({ color: '#ffffff' + alpha, lineWidth: 1, title: 'EMA 100', lineStyle: 2, priceLineVisible: false });
                 
                 e12.setData(this.calcMA(data, 12, true));
                 e26.setData(this.calcMA(data, 26, true));
@@ -2759,16 +2964,16 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
                 this.indicators[type] = [e12, e26, e100];
             }
             else if (type === 'ichimoku') {
-                const tenkan = STATE.chart.addLineSeries({ color: '#00d4ff' + alpha, lineWidth: 1, title: 'Tenkan' });
-                const kijun = STATE.chart.addLineSeries({ color: '#ff0055' + alpha, lineWidth: 1, title: 'Kijun' });
+                const tenkan = STATE.chart.addLineSeries({ color: '#00d4ff' + alpha, lineWidth: 1, title: 'Tenkan', priceLineVisible: false });
+                const kijun = STATE.chart.addLineSeries({ color: '#ff0055' + alpha, lineWidth: 1, title: 'Kijun', priceLineVisible: false });
                 const ichiData = this.calcIchimoku(data);
                 tenkan.setData(ichiData.tenkan);
                 kijun.setData(ichiData.kijun);
                 this.indicators[type] = [tenkan, kijun];
             }
             else if (type === 'bb') {
-                const top = STATE.chart.addLineSeries({ color: 'rgba(255,255,255,0.25)', lineWidth: 1 });
-                const bot = STATE.chart.addLineSeries({ color: 'rgba(255,255,255,0.25)', lineWidth: 1 });
+                const top = STATE.chart.addLineSeries({ color: 'rgba(30, 144, 255, 0.4)', lineWidth: 1, priceLineVisible: false });
+                const bot = STATE.chart.addLineSeries({ color: 'rgba(30, 144, 255, 0.4)', lineWidth: 1, priceLineVisible: false });
                 const bb = this.calcBB(data, 20, 2);
                 top.setData(bb.upper); bot.setData(bb.lower);
                 this.indicators[type] = [top, bot];
@@ -2806,7 +3011,199 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
                 top.setData(bb.upper); bot.setData(bb.lower);
                 this.indicators[type] = [top, bot];
             }
+
+            // В toggleIndicator добавить:
+else if (type === 'macd') {
+    if (this.indicators['macd']) {
+        this.indicators['macd'].forEach(s => STATE.chart.removeSeries(s));
+        delete this.indicators['macd'];
+        return;
+    }
+
+    const data = STATE.prices;
+    if (!data || data.length < 26) return;
+
+    const macdValues = this.calcMACD(data, 12, 26, 9);
+    if (macdValues.length === 0) return;
+
+    const paneId = 'macd-pane';
+
+    // Линия MACD
+    const macdLine = STATE.chart.addLineSeries({
+        color: '#2962FF',
+        lineWidth: 2,
+        priceScaleId: paneId,
+        title: 'MACD',
+        lastValueVisible: false,
+        priceLineVisible: false,
+    });
+
+    // Линия Signal
+    const signalLine = STATE.chart.addLineSeries({
+        color: '#FF6D00',
+        lineWidth: 1,
+        priceScaleId: paneId,
+        title: 'Signal',
+        lastValueVisible: false,
+        priceLineVisible: false,
+    });
+
+    // Гистограмма
+    const histogram = STATE.chart.addHistogramSeries({
+        color: '#888',
+        priceScaleId: paneId,
+        lastValueVisible: false,
+        priceLineVisible: false,
+    });
+
+    // Настройка шкалы
+    STATE.chart.priceScale(paneId).applyOptions({
+        scaleMargins: { top: 0.7, bottom: 0.02 },
+        visible: true,
+        borderVisible: false,
+        textColor: '#888',
+    });
+
+    // Подготовка данных
+    const macdData = [];
+    const signalData = [];
+    const histData = [];
+
+    macdValues.forEach(item => {
+        macdData.push({ time: item.time, value: item.macd });
+        signalData.push({ time: item.time, value: item.signal });
+        histData.push({
+            time: item.time,
+            value: item.histogram,
+            color: item.histogram >= 0 ? '#26a69a' : '#ef5350'
+        });
+    });
+
+    macdLine.setData(macdData);
+    signalLine.setData(signalData);
+    histogram.setData(histData);
+
+    this.indicators['macd'] = [macdLine, signalLine, histogram];
+}
+else if (type === 'oi') {
+    // Если индикатор уже включён – удаляем и останавливаем интервал
+    if (this.indicators['oi']) {
+        if (this.oiUpdateInterval) {
+            clearInterval(this.oiUpdateInterval);
+            this.oiUpdateInterval = null;
+        }
+        this.indicators['oi'].forEach(s => STATE.chart.removeSeries(s));
+        delete this.indicators['oi'];
+        // Очищаем сохранённые свечи
+        STATE.oiCandles = [];
+        return;
+    }
+
+    // Панель для OI
+    const paneId = 'oi-pane';
+
+    // Создаём свечную серию (один раз)
+    const oiSeries = STATE.chart.addCandlestickSeries({
+        upColor: CONFIG.colors.green,
+        downColor: CONFIG.colors.red,
+        borderVisible: false,
+        wickVisible: true,
+        borderUpColor: CONFIG.colors.green,
+        borderDownColor: CONFIG.colors.red,
+        wickUpColor: CONFIG.colors.green,
+        wickDownColor: CONFIG.colors.red,
+        priceScaleId: paneId,
+        title: 'OI(USD)',
+        lastValueVisible: true,
+        priceLineVisible: false,
+    });
+
+    STATE.chart.priceScale(paneId).applyOptions({
+        scaleMargins: { top: 0.7, bottom: 0.1 },
+        visible: true,
+        borderVisible: false,
+        textColor: '#888',
+    });
+
+    this.indicators['oi'] = [oiSeries];
+
+    // Функция преобразования сырых данных Binance в свечной формат
+    const toCandle = (curr, prev) => ({
+        time: curr.time,
+        open: prev ? prev.value : curr.value,
+        high: Math.max(curr.value, prev ? prev.value : curr.value),
+        low: Math.min(curr.value, prev ? prev.value : curr.value),
+        close: curr.value
+    });
+
+    // Первоначальная загрузка истории (500 свечей)
+    const loadHistory = async () => {
+        try {
+            const data = await this.fetchBinanceOI(STATE.symbol, STATE.interval, 500);
+            if (!data.length) {
+                log('[OI] No historical data');
+                return;
+            }
+
+            // Строим свечи
+            const candles = [];
+            for (let i = 0; i < data.length; i++) {
+                const prev = i > 0 ? data[i-1] : null;
+                candles.push(toCandle(data[i], prev));
+            }
+            STATE.oiCandles = candles;
+            oiSeries.setData(candles);
+            log(`[OI] History loaded: ${candles.length} candles`);
+        } catch (e) {
+            console.error(e);
+            log('[OI] Error loading history');
+        }
+    };
+
+    // Функция обновления (добавление новой свечи)
+    const updateOi = async () => {
+        if (!STATE.oiCandles || STATE.oiCandles.length === 0) return;
+
+        try {
+            // Запрашиваем только последние 2 свечи
+            const newData = await this.fetchBinanceOI(STATE.symbol, STATE.interval, 2);
+            if (newData.length < 2) return;
+
+            // Последняя завершённая свеча (newData[newData.length-1])
+            const latest = newData[newData.length-1];
+            const prevLatest = newData[newData.length-2];
+
+            // Сравниваем время последней свечи в нашем массиве и новой
+            const lastCandle = STATE.oiCandles[STATE.oiCandles.length-1];
+            if (latest.time > lastCandle.time) {
+                // Новая свеча появилась
+                const newCandle = toCandle(latest, prevLatest);
+                STATE.oiCandles.push(newCandle);
+
+                // Если превысили лимит в 500 – удаляем самую старую
+                if (STATE.oiCandles.length > 500) {
+                    STATE.oiCandles.shift();
+                }
+
+                oiSeries.setData(STATE.oiCandles);
+                log(`[OI] Added new candle: ${new Date(latest.time*1000).toLocaleTimeString()}`);
+            }
+            // Если время совпадает – ничего не делаем (данные не обновились)
+        } catch (e) {
+            console.warn('[OI] Update error:', e);
+        }
+    };
+
+    // Запускаем загрузку истории, а затем устанавливаем периодическое обновление
+    loadHistory().then(() => {
+        // Обновляем раз в 30 секунд (интервал можно изменить)
+        this.oiUpdateInterval = setInterval(updateOi, 30000);
+    });
+}
+
         },
+
+
 
         calcIchimoku(data) {
             let tenkan = [], kijun = [];
@@ -2833,7 +3230,94 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
                 if (i > period) res.push({ time: data[i].time, value: 100 - (100 / (1 + avgG/avgL)) });
             }
             return res;
+            
         },
+
+        // Внутри APP (перед return) добавить:
+calcMACD(prices, fast = 12, slow = 26, signal = 9) {
+    const closes = prices.map(p => p.close);
+    const times = prices.map(p => p.time);
+    const len = closes.length;
+
+    
+
+    // Функция EMA, возвращает массив с null в начале
+    const computeEMA = (values, period) => {
+        const result = new Array(values.length).fill(null);
+        if (values.length < period) return result;
+        const k = 2 / (period + 1);
+        let ema = values[0];
+        result[0] = ema;
+        for (let i = 1; i < values.length; i++) {
+            ema = values[i] * k + ema * (1 - k);
+            result[i] = ema;
+        }
+        return result;
+    };
+
+    
+
+    const fastEMA = computeEMA(closes, fast);
+    const slowEMA = computeEMA(closes, slow);
+
+    // MACD линия (доступна после slow-1)
+    const macdLine = new Array(len).fill(null);
+    const startIdx = slow - 1;
+    for (let i = startIdx; i < len; i++) {
+        macdLine[i] = fastEMA[i] - slowEMA[i];
+    }
+
+    // Signal линия (EMA от MACD)
+    const signalLine = new Array(len).fill(null);
+    if (len > startIdx + signal) {
+        const kSig = 2 / (signal + 1);
+        let emaSig = macdLine[startIdx];
+        signalLine[startIdx] = emaSig;
+        for (let i = startIdx + 1; i < len; i++) {
+            emaSig = macdLine[i] * kSig + emaSig * (1 - kSig);
+            signalLine[i] = emaSig;
+        }
+    }
+
+    // Гистограмма
+    const histogram = new Array(len).fill(null);
+    for (let i = 0; i < len; i++) {
+        if (macdLine[i] !== null && signalLine[i] !== null) {
+            histogram[i] = macdLine[i] - signalLine[i];
+        }
+    }
+
+    // Формируем результат только для полных точек
+    const result = [];
+    for (let i = 0; i < len; i++) {
+        if (macdLine[i] !== null && signalLine[i] !== null && histogram[i] !== null) {
+            result.push({
+                time: times[i],
+                macd: macdLine[i],
+                signal: signalLine[i],
+                histogram: histogram[i]
+            });
+        }
+    }
+    return result;
+},
+
+// Загрузка исторических данных Open Interest с Binance
+fetchBinanceOI(symbol, interval, limit = 500) {
+    const url = `https://fapi.binance.com/futures/data/openInterestHist?symbol=${symbol}&period=${interval}&limit=${limit}`;
+    return fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            return data.map(item => ({
+                time: item.timestamp / 1000,
+                value: parseFloat(item.sumOpenInterestValue)
+            }));
+        })
+        .catch(err => {
+            console.error('OI fetch error:', err);
+            return [];
+        });
+},
 
         // Хелперы для расчетов
         calcMA(data, period, exponential = false) {
@@ -2858,10 +3342,240 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
             }
             return { upper, lower };
 
-            
-        
+                  
             
         },
+
+// Переключение режима Alligator
+toggleAlligator() {
+    STATE.alligatorActive = !STATE.alligatorActive;
+    const btn = document.getElementById('alligator-btn');
+    if (btn) {
+        if (STATE.alligatorActive) btn.classList.add('active');
+        else btn.classList.remove('active');
+    }
+
+    if (!STATE.alligatorActive) {
+        // Удаляем линии и сбрасываем состояние
+        if (STATE.alligatorLines.jaw) STATE.chart.removeSeries(STATE.alligatorLines.jaw);
+        if (STATE.alligatorLines.teeth) STATE.chart.removeSeries(STATE.alligatorLines.teeth);
+        if (STATE.alligatorLines.lips) STATE.chart.removeSeries(STATE.alligatorLines.lips);
+        STATE.alligatorLines = { jaw: null, teeth: null, lips: null };
+        STATE.alligatorMarkers = [];
+        STATE.alligatorPosition = null;
+        STATE.alligatorTrades = [];
+        STATE.alligatorEquity = 1000;
+        this.updateAllMarkers();
+    } else {
+        this.updateAlligatorLines();
+        this.checkAlligatorSignal(true); // принудительная проверка при включении
+    }
+},
+
+updateAlligatorLines() {
+    if (!STATE.alligatorActive || !STATE.prices || STATE.prices.length < 30) return;
+    const prices = STATE.prices;
+    const medians = prices.map(p => (p.high + p.low) / 2);
+    const jawVals = smma(medians, 13);
+    const teethVals = smma(medians, 8);
+    const lipsVals = smma(medians, 5);
+
+    const jawData = [], teethData = [], lipsData = [];
+    for (let i = 0; i < prices.length; i++) {
+        if (jawVals[i] !== null) jawData.push({ time: prices[i].time, value: jawVals[i] });
+        if (teethVals[i] !== null) teethData.push({ time: prices[i].time, value: teethVals[i] });
+        if (lipsVals[i] !== null) lipsData.push({ time: prices[i].time, value: lipsVals[i] });
+    }
+
+    if (!STATE.alligatorLines.jaw) {
+       STATE.alligatorLines.jaw = STATE.chart.addLineSeries({ 
+    color: 'rgba(41, 98, 255, 0.7)', 
+    lineWidth: 2, 
+    title: 'Jaw (13)', 
+    priceLineVisible: false 
+});
+
+STATE.alligatorLines.teeth = STATE.chart.addLineSeries({ 
+    color: 'rgba(255, 109, 0, 0.7)', 
+    lineWidth: 2, 
+    title: 'Teeth (8)', 
+    priceLineVisible: false 
+});
+
+STATE.alligatorLines.lips = STATE.chart.addLineSeries({ 
+    color: 'rgba(0, 200, 83, 0.7)', 
+    lineWidth: 2, 
+    title: 'Lips (5)', 
+    priceLineVisible: false 
+});
+    }
+    STATE.alligatorLines.jaw.setData(jawData);
+    STATE.alligatorLines.teeth.setData(teethData);
+    STATE.alligatorLines.lips.setData(lipsData);
+},
+
+checkAlligatorSignal(force = false) {
+    if (!STATE.alligatorActive) return;
+    if (STATE.prices.length < 30) return;
+
+    const prices = STATE.prices;
+    const medians = prices.map(p => (p.high + p.low) / 2);
+    const jaw = smma(medians, 13);
+    const lips = smma(medians, 5);
+    const atr = calculateATR(prices, 14);
+
+    const i = prices.length - 1; // последняя закрытая свеча
+    if (i < 2 || lips[i] === null || jaw[i] === null || lips[i-1] === null || jaw[i-1] === null) return;
+
+    const currentPrice = prices[i].close;
+    const currentTime = prices[i].time;
+
+    // Сигналы на вход
+    const buySignal = lips[i] > jaw[i] && lips[i-1] <= jaw[i-1];
+    const sellSignal = lips[i] < jaw[i] && lips[i-1] >= jaw[i-1];
+
+    // --- Если есть открытая позиция ---
+    if (STATE.alligatorPosition) {
+        const pos = STATE.alligatorPosition;
+        let exit = false;
+        let exitReason = '';
+
+        // Проверка стоп-лосса
+        if (pos.side === 'long') {
+            if (currentPrice <= pos.stopLoss) {
+                exit = true;
+                exitReason = 'stop';
+            }
+        } else {
+            if (currentPrice >= pos.stopLoss) {
+                exit = true;
+                exitReason = 'stop';
+            }
+        }
+
+        // Проверка обратного сигнала
+        if (!exit) {
+            if (pos.side === 'long' && sellSignal) {
+                exit = true;
+                exitReason = 'reverse';
+            }
+            if (pos.side === 'short' && buySignal) {
+                exit = true;
+                exitReason = 'reverse';
+            }
+        }
+
+        if (exit) {
+            // Расчёт PnL
+            const pnl = pos.side === 'long'
+                ? (currentPrice - pos.entryPrice) * pos.size
+                : (pos.entryPrice - currentPrice) * pos.size;
+            const pnlPercent = (pnl / (pos.entryPrice * pos.size)) * 100;
+
+            // Добавляем маркер выхода
+            const exitMarker = {
+                time: currentTime,
+                position: pos.side === 'long' ? 'aboveBar' : 'belowBar', // выход обычно с другой стороны
+                color: pnl >= 0 ? '#00ff9d' : '#ff0055',
+                shape: 'circle',
+                text: `EXIT ${pnlPercent > 0 ? '+' : ''}${pnlPercent.toFixed(1)}%`
+            };
+            STATE.alligatorMarkers.push(exitMarker);
+
+            // Записываем сделку в историю
+            STATE.alligatorTrades.push({
+                entryTime: pos.entryTime,
+                entryPrice: pos.entryPrice,
+                exitTime: currentTime,
+                exitPrice: currentPrice,
+                side: pos.side,
+                size: pos.size,
+                pnl: pnl,
+                pnlPercent: pnlPercent,
+                exitReason: exitReason
+            });
+
+            // Обновляем виртуальный баланс
+            STATE.alligatorEquity += pnl;
+            if (STATE.alligatorEquity < 0) STATE.alligatorEquity = 0;
+
+            // Сбрасываем позицию
+            STATE.alligatorPosition = null;
+
+            // Звук на выход (опционально)
+            // playNotificationSound('exit');
+        }
+    }
+
+    // --- Если нет позиции, проверяем вход ---
+    if (!STATE.alligatorPosition) {
+        const lastMarker = STATE.alligatorMarkers[STATE.alligatorMarkers.length - 1];
+        const alreadyMarked = lastMarker && lastMarker.time === currentTime;
+
+        if (buySignal && !alreadyMarked) {
+            // Открываем лонг
+            const size = (STATE.alligatorEquity * 0.1) / currentPrice; // 10% от баланса
+            const stopLoss = currentPrice - (atr[i] * 2);
+            STATE.alligatorPosition = {
+                side: 'long',
+                entryPrice: currentPrice,
+                entryTime: currentTime,
+                stopLoss: stopLoss,
+                size: size
+            };
+
+            const marker = {
+                time: currentTime,
+                position: 'belowBar',
+                color: '#00ff9d',
+                shape: 'arrowUp',
+                text: '🐊'
+            };
+            STATE.alligatorMarkers.push(marker);
+            if (STATE.alligatorMarkers.length > 50) STATE.alligatorMarkers.shift();
+            playNotificationSound('alligator');
+        }
+
+        if (sellSignal && !alreadyMarked) {
+            // Открываем шорт
+            const size = (STATE.alligatorEquity * 0.1) / currentPrice;
+            const stopLoss = currentPrice + (atr[i] * 2);
+            STATE.alligatorPosition = {
+                side: 'short',
+                entryPrice: currentPrice,
+                entryTime: currentTime,
+                stopLoss: stopLoss,
+                size: size
+            };
+
+            const marker = {
+                time: currentTime,
+                position: 'aboveBar',
+                color: '#ff0055',
+                shape: 'arrowDown',
+                text: '🐊'
+            };
+            STATE.alligatorMarkers.push(marker);
+            if (STATE.alligatorMarkers.length > 50) STATE.alligatorMarkers.shift();
+            playNotificationSound('alligator');
+        }
+    }
+
+    // Обновляем маркеры на графике
+    this.updateAllMarkers();
+
+    // Для отладки можно выводить баланс в консоль
+    // console.log('Alligator Equity:', STATE.alligatorEquity.toFixed(2));
+},
+
+updateAllMarkers() {
+    // Объединяем маркеры ликвидаций и alligator
+    const combined = [...STATE.liqMarkers, ...STATE.alligatorMarkers];
+    STATE.series.candle.setMarkers(combined);
+},
+
+    // ...
+
         // ---------------------
 
         init
@@ -2924,6 +3638,8 @@ APP.runAnalysis = async function() {
     
     await originalRunAnalysis.call(this);
 };
+
+
 
 APP.init();
 APP.runAnalysis();
