@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>NEXUS · Quantum PRO + Liq Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #030407; --panel: #0a0d14; --border: #1a202c;
+            --accent: #00ff9d; --accent-dim: rgba(0, 255, 157, 0.2);
+            --longs: #00ff9d; --shorts: #ff0055;
+            --text: #e2e8f0; --text-muted: #64748b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; user-select: none; outline: none; }
+        body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: var(--panel); border-bottom: 1px solid var(--border); z-index: 10; }
+        .brand { font-size: 18px; font-weight: 900; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+        .brand span { color: var(--accent); text-shadow: 0 0 10px var(--accent-dim); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; transition: 0.3s; }
+        .status-dot.live { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+        
+        /* Layout */
+        .layout { display: flex; flex: 1; height: calc(100vh - 50px); width: 100vw; overflow: hidden; transition: all 0.3s ease; }
+        .sidebar { width: 300px; min-width: 300px; background: var(--panel); border-right: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        
+        .control-group { background: #050608; border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
+        .cg-title { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+        
+        .row { display: flex; gap: 8px; margin-bottom: 10px; }
+        input[type="text"], select { flex: 1; background: #0a0d14; border: 1px solid #2d3748; color: #fff; padding: 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-align: center; }
+        button.action-btn { flex: 1; background: var(--accent); color: #000; border: none; padding: 10px; border-radius: 4px; font-weight: 900; cursor: pointer; transition: 0.2s; box-shadow: 0 0 15px var(--accent-dim); }
+        button.action-btn:hover { filter: brightness(1.2); }
+        .control-group button.action-btn {
+  width: 100%;
+  margin-top: 8px;
+}
+
+
+        
+        .slider-box { margin-bottom: 10px; }
+        .slider-header { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-bottom: 6px; }
+        .slider-val { color: var(--accent); font-weight: bold; }
+        input[type="range"] { width: 100%; -webkit-appearance: none; background: #1e293b; height: 4px; border-radius: 2px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--accent); border-radius: 50%; cursor: pointer; }
+
+        .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .metric { background: #050608; border: 1px solid var(--border); padding: 6px; border-radius: 4px; text-align: center; }
+        .metric-lbl { font-size: 9px; color: var(--text-muted); margin-bottom: 2px; }
+        .metric-val { font-size: 12px; font-weight: bold; color: #fff; }
+
+        /* Canvas */
+        .canvas-wrapper { flex: 1; position: relative; background: #000; cursor: crosshair; min-width: 0; }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 50; display: none; }
+        .spinner { width: 40px; height: 40px; border: 3px solid rgba(0,255,157,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+
+
+          /* Скрываем верхнюю панель и левый сайдбар — остаётся только график */
+            /* Растягиваем canvas на весь экран (если нужно, можно оставить как есть) */
+                /* Корректируем layout, чтобы не было лишних отступов */
+          /*
+    .header, .sidebar {
+        display: none !important;
+    }
+  
+    .canvas-wrapper {
+        width: 100vw;
+        height: 100vh;
+    }
+
+    .layout {
+        display: block;
+    }              */
+    
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="brand">NEXUS <span>QUANTUM PRO</span> <span style="font-size:10px; color:#64748b; margin-left:10px; text-shadow:none;">LIQUIDATION + MTF ENGINE</span></div>
+    <div style="display:flex; align-items:center; gap:8px; font-size:11px; color:#64748b;">
+        <div class="status-dot" id="ws-status"></div> Live Stream
+    </div>
+</div>
+
+<div class="layout">
+    <div class="sidebar">
+        <div class="control-group">
+            <div class="row">
+                <input type="text" id="symbol" value="BTCUSDT">
+                <select id="tf">
+                    <option value="1m">1m</option>
+                    <option value="5m" selected>5m</option>
+                    <option value="15m">15m</option>
+                    <option value="1h">1h</option> 
+                    <option value="1d">1d</option> 
+                </select>
+            </div>
+            <button class="action-btn" id="btn-scan">SCAN</button>
+        </div>
+        <div class="row">
+            <button id="btn-fix-mode" style="flex: 1; background: #1e293b; color: #fff; border: 1px solid var(--border); padding: 8px; border-radius: 4px; font-size: 10px; cursor: pointer;">
+                FIXED MODE: <span id="fix-status" style="color:var(--longs)">ON</span>
+            </button>
+        </div>
+
+        <div class="metrics">
+            <div class="metric"><div class="metric-lbl">Цена</div><div class="metric-val" id="m-price">--</div></div>
+            <div class="metric"><div class="metric-lbl">Тренд 4H (MTF)</div><div class="metric-val" id="m-mtf">--</div></div>
+            <div class="metric"><div class="metric-lbl">Магнит Шортов</div><div class="metric-val" id="m-shorts" style="color:var(--shorts)">--</div></div>
+            <div class="metric"><div class="metric-lbl">Магнит Лонгов</div><div class="metric-val" id="m-longs" style="color:var(--longs)">--</div></div>
+            <div class="metric"><div class="metric-lbl">Консенсус Цель</div><div class="metric-val" id="m-target">--</div></div>
+            <div class="metric"><div class="metric-lbl">Паттерны (Top N)</div><div class="metric-val" id="m-patterns" style="color:var(--accent)">--</div></div>
+        </div>
+
+        <div class="control-group">
+            <div class="cg-title">Квантовая Архитектура</div>
+            <div class="slider-box"><div class="slider-header"><span>Окно анализа (Lookback)</span><span class="slider-val" id="v-lookback">40</span></div><input type="range" id="s-lookback" min="10" max="100" value="40"></div>
+            <div class="slider-box"><div class="slider-header"><span>Глубина проекции</span><span class="slider-val" id="v-depth">60</span></div><input type="range" id="s-depth" min="10" max="150" value="60"></div>
+            <div class="slider-box"><div class="slider-header"><span>Гравитация Ликвидности</span><span class="slider-val" id="v-gravity">0.8</span></div><input type="range" id="s-gravity" min="0" max="2" step="0.1" value="0.8"></div>
+            <div class="slider-box"><div class="slider-header"><span>Шум (Температура)</span><span class="slider-val" id="v-temp">0.8</span></div><input type="range" id="s-temp" min="0.1" max="2" step="0.1" value="0.8"></div>
+        </div>
+    </div>
+
+    <div class="canvas-wrapper">
+        <canvas id="stage"></canvas>
+        <div class="overlay" id="loader"><div class="spinner"></div></div>
+    </div>
+</div>
+
+<script>
+(function(){
+    // --- STATE ---
+    const STATE = {
+        klines: [], symbol: 'BTCUSDT', tf: '5m',
+        ws: null, ctx: null, w: 0, h: 0,
+        
+        field: null, consensus: [],
+        renderRange: { min: 0, max: 0 },
+        
+        mtfBullish: true,
+        liqProfile: [],
+        
+        lookback: 40, depth: 60, gravity: 0.8, temp: 0.8, topN: 50, seed: 1337,
+        fixMode: true, lockLen: 0,
+        
+        layout: { priceW: 60, visibleCandles: 120, timeH: 20 },
+        mouse: { x: -1, y: -1, active: false }
+    };
+
+    // --- MATH & UTILS ---
+    const seededRandom = seed => () => {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+
+    const atr = (data, period=20, offset=0) => {
+        let sum = 0, start = data.length - offset - period;
+        if(start < 1) return 0;
+        for(let i=start; i < data.length - offset; i++) {
+            const h = data[i].high, l = data[i].low, pc = data[i-1].close;
+            sum += Math.max(h-l, Math.abs(h-pc), Math.abs(l-pc));
+        }
+        return sum / period;
+    };
+
+    const pearson = (x, y) => {
+        let sumX=0, sumY=0, sumXY=0, sumX2=0, sumY2=0, n = x.length;
+        for(let i=0; i<n; i++) {
+            sumX += x[i]; sumY += y[i]; sumXY += x[i]*y[i];
+            sumX2 += x[i]*x[i]; sumY2 += y[i]*y[i];
+        }
+        const num = (n * sumXY) - (sumX * sumY);
+        const den = Math.sqrt(((n * sumX2) - (sumX*sumX)) * ((n * sumY2) - (sumY*sumY)));
+        return den === 0 ? 0 : num / den;
+    };
+
+    // --- LIQUIDATION ENGINE ---
+    function computeLiquidations(rMin, rMax, buckets) {
+        let liqMap = new Float32Array(buckets);
+        const step = (rMax - rMin) / buckets;
+        const startIdx = Math.max(0, STATE.klines.length - 300);
+        
+        for(let i=startIdx; i<STATE.klines.length; i++) {
+            const k = STATE.klines[i];
+            const add = (p, w) => {
+                const idx = Math.floor((p - rMin)/step);
+                if(idx >= 0 && idx < buckets) liqMap[idx] += k.volume * w;
+            };
+            add(k.close * 1.01, 1.0); add(k.close * 0.99, 1.0);
+            add(k.close * 1.02, 0.5); add(k.close * 0.98, 0.5);
+            const idxLow = Math.floor((k.low - rMin)/step);
+            const idxHigh = Math.floor((k.high - rMin)/step);
+            for(let j = Math.max(0, idxLow); j <= Math.min(buckets-1, idxHigh); j++) liqMap[j] = 0;
+        }
+        STATE.liqProfile = liqMap;
+        const lastP = STATE.klines[STATE.klines.length-1].close;
+        let maxS=0, maxL=0, pS=0, pL=0;
+        for(let i=0; i<buckets; i++) {
+            const p = rMin + i*step;
+            if(p > lastP && liqMap[i] > maxS) { maxS=liqMap[i]; pS=p; }
+            if(p < lastP && liqMap[i] > maxL) { maxL=liqMap[i]; pL=p; }
+        }
+        document.getElementById('m-shorts').innerText = pS > 0 ? pS.toFixed(1) : '--';
+        document.getElementById('m-longs').innerText = pL > 0 ? pL.toFixed(1) : '--';
+    }
+
+    // --- CORE QUANTUM ENGINE ---
+    function computeQuantumField() {
+        if(STATE.klines.length < 500) return;
+        const random = seededRandom(STATE.seed);
+        const closes = STATE.klines.map(k => k.close);
+        const currentWindow = closes.slice(-STATE.lookback);
+        const currentATR = atr(STATE.klines, 20, 0);
+        const lastPrice = closes[closes.length-1];
+
+        const scores = [];
+        for(let i=1; i < closes.length - STATE.lookback - STATE.depth; i+=2) {
+            const histWindow = closes.slice(i, i+STATE.lookback);
+            const r = pearson(currentWindow, histWindow);
+            if(r > 0) scores.push({ index: i, score: r });
+        }
+        scores.sort((a,b) => b.score - a.score);
+        const topMatches = scores.slice(0, STATE.topN);
+        document.getElementById('m-patterns').innerText = topMatches.length;
+
+        const gridH = 150;
+        const renderRange = currentATR * 12;
+        const rMin = lastPrice - renderRange, rMax = lastPrice + renderRange;
+        const rStep = (rMax - rMin) / gridH;
+        computeLiquidations(rMin, rMax, gridH);
+        const maxLiq = Math.max(...STATE.liqProfile) || 1;
+        const matrix = Array(STATE.depth).fill(0).map(() => new Float32Array(gridH));
+
+        topMatches.forEach(match => {
+            const histATR = atr(STATE.klines, 20, STATE.klines.length - (match.index + STATE.lookback));
+            const volScale = Math.min(3, Math.max(0.3, currentATR / (histATR || currentATR)));
+            for(let v=0; v<5; v++) { 
+                let simPrice = lastPrice;
+                const pathWeight = match.score * 0.2;
+                for(let t=0; t<STATE.depth; t++) {
+                    const histNext = closes[match.index + STATE.lookback + t];
+                    const histPrev = closes[match.index + STATE.lookback + t - 1];
+                    let move = (simPrice * ((histNext - histPrev)/histPrev)) * volScale;
+                    if(STATE.mtfBullish && move < 0) move *= 0.85;
+                    if(!STATE.mtfBullish && move > 0) move *= 0.85;
+                    const noise = (random() + random() + random() - 1.5) * currentATR * 0.1 * STATE.temp;
+                    simPrice += move + noise;
+                    if(STATE.gravity > 0) {
+                        const idx = Math.floor((simPrice - rMin)/rStep);
+                        if(idx >= 0 && idx < gridH) {
+                            const pull = STATE.liqProfile[idx] / maxLiq;
+                            simPrice += (pull * move * STATE.gravity * 0.1); 
+                        }
+                    }
+                    const yIdx = Math.floor((simPrice - rMin) / rStep);
+                    if(yIdx >= 0 && yIdx < gridH) matrix[t][yIdx] += pathWeight;
+                }
+            }
+        });
+
+        const smoothed = Array(STATE.depth).fill(0).map(() => new Float32Array(gridH));
+        const kernel = [0.1, 0.2, 0.4, 0.2, 0.1];
+        for(let t=0; t<STATE.depth; t++) {
+            for(let y=2; y<gridH-2; y++) {
+                let sum = 0;
+                for(let k=-2; k<=2; k++) sum += matrix[t][y+k] * kernel[k+2];
+                smoothed[t][y] = sum;
+            }
+        }
+        const consensus = [];
+        for(let t=0; t<STATE.depth; t++) {
+            let maxD=0, maxY=0;
+            for(let y=0; y<gridH; y++) if(smoothed[t][y] > maxD) { maxD = smoothed[t][y]; maxY = y; }
+            consensus.push(rMin + maxY * rStep);
+        }
+        STATE.field = smoothed;
+        STATE.consensus = consensus;
+        STATE.renderRange = { min: rMin, max: rMax, step: rStep, buckets: gridH };
+
+        const tgtChange = ((consensus[consensus.length-1] - lastPrice)/lastPrice * 100);
+        const tgtEl = document.getElementById('m-target');
+        tgtEl.innerText = (tgtChange>0?'+':'') + tgtChange.toFixed(2) + '%';
+        tgtEl.style.color = tgtChange>0 ? 'var(--longs)' : 'var(--shorts)';
+    }
+
+    function colorMap(val) {
+        if(val < 0.02) return `rgba(0,0,0,0)`;
+        if(val < 0.2) return `rgba(75, 0, 130, ${val*2.5})`;
+        if(val < 0.5) return `rgba(220, 20, 60, ${val*2.0})`;
+        if(val < 0.8) return `rgba(255, 140, 0, ${val*1.5})`;
+        return `rgba(255, 255, 255, ${val})`;
+    }
+
+    function draw() {
+        if (!STATE.ctx || STATE.klines.length === 0) return;
+        const ctx = STATE.ctx, w = STATE.w, h = STATE.h;
+
+        const priceW = STATE.layout.priceW;
+        const timeH = STATE.layout.timeH; 
+        const cvdH = Math.floor(h * 0.22); 
+        const chartH = h - cvdH - timeH - 10; 
+        const chartW = w - priceW;
+
+        ctx.clearRect(0, 0, w, h);
+
+        const visibleCount = STATE.layout.visibleCandles;
+        const displayData = STATE.klines.slice(-visibleCount);
+        const totalSteps = visibleCount + STATE.depth;
+        const cw = chartW / totalSteps;
+
+        let minP = Math.min(...displayData.map(k => k.low));
+        let maxP = Math.max(...displayData.map(k => k.high));
+        if (STATE.field && STATE.renderRange) {
+            minP = Math.min(minP, STATE.renderRange.min);
+            maxP = Math.max(maxP, STATE.renderRange.max);
+        }
+        const pRange = (maxP - minP) || 1;
+
+        const getY = p => chartH - ((p - minP) / pRange) * chartH;
+        const getX = i => i * cw;
+
+        // --- FIXED MODE LOGIC ---
+        let offset = 0;
+        if(STATE.fixMode && STATE.lockLen > 0) {
+            offset = STATE.klines.length - STATE.lockLen;
+        }
+
+        // 1. Quantum Field (Background)
+        if (STATE.field && STATE.renderRange) {
+            let maxDens = 0;
+            STATE.field.forEach(col => col.forEach(v => { if (v > maxDens) maxDens = v; }));
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            const cellH = (chartH / STATE.renderRange.buckets) * ((STATE.renderRange.max - STATE.renderRange.min) / pRange);
+
+            for (let t = 0; t < STATE.depth; t++) {
+                const x = getX(visibleCount + t - offset); 
+                if (x + cw < 0 || x > chartW) continue;
+                for (let y = 0; y < STATE.renderRange.buckets; y++) {
+                    const dens = STATE.field[t][y] / (maxDens || 1);
+                    if (dens > 0.02) {
+                        ctx.fillStyle = colorMap(dens);
+                        const cy = getY(STATE.renderRange.min + y * STATE.renderRange.step);
+                        ctx.fillRect(x, cy - cellH, cw + 0.5, cellH + 0.5);
+                    }
+                }
+            }
+            ctx.restore();
+
+            // Ridge Line
+            ctx.beginPath(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+            STATE.consensus.forEach((p, t) => {
+                const px = getX(visibleCount + t - offset) + cw / 2;
+                const py = getY(p);
+                if(px >= 0 && px <= chartW) t === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            });
+            ctx.stroke();
+        }
+
+        // 2. Candlesticks
+        displayData.forEach((k, i) => {
+            const px = Math.floor(getX(i)) + 0.5;
+            const isUp = k.close >= k.open;
+            ctx.strokeStyle = isUp ? '#00ff9d' : '#ff0055';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(px + cw / 2, getY(k.high));
+            ctx.lineTo(px + cw / 2, getY(k.low));
+            ctx.stroke();
+            ctx.fillStyle = ctx.strokeStyle;
+            const yTop = getY(Math.max(k.open, k.close));
+            const yBottom = getY(Math.min(k.open, k.close));
+            ctx.fillRect(px + cw * 0.15, yTop, cw * 0.7, Math.max(1, yBottom - yTop));
+        });
+
+        // 3. CVD Delta
+        const cvdY = chartH + 10;
+        ctx.fillStyle = '#050608'; ctx.fillRect(0, cvdY, chartW, cvdH);
+        ctx.strokeStyle = '#1a202c'; ctx.strokeRect(0, cvdY, chartW, cvdH);
+        let cvdMin = Math.min(...displayData.map(k => k.cvd)), cvdMax = Math.max(...displayData.map(k => k.cvd));
+        ctx.beginPath(); ctx.strokeStyle = '#00f2ff'; ctx.lineWidth = 1.5;
+        displayData.forEach((k, i) => {
+            const x = getX(i) + cw / 2;
+            const y = cvdY + cvdH - 10 - ((k.cvd - cvdMin) / (cvdMax - cvdMin || 1)) * (cvdH - 20);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // 4. Price Axis & Tags
+        const lastPrice = displayData[displayData.length - 1].close;
+        const lpy = getY(lastPrice);
+        ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.beginPath(); ctx.moveTo(0, lpy); ctx.lineTo(chartW, lpy); ctx.stroke(); ctx.restore();
+        ctx.fillStyle = '#1e293b'; ctx.fillRect(chartW + 2, lpy - 10, priceW - 4, 20);
+        ctx.fillStyle = '#ffffff'; ctx.font = '10px JetBrains Mono';
+        ctx.fillText(lastPrice.toFixed(2), chartW + 8, lpy + 4);
+
+        // 5. Crosshair
+        if (STATE.mouse.active && STATE.mouse.x < chartW && STATE.mouse.y < (h - timeH)) {
+            ctx.save(); ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)'; ctx.setLineDash([3, 3]);
+            ctx.beginPath(); ctx.moveTo(STATE.mouse.x, 0); ctx.lineTo(STATE.mouse.x, h - timeH); ctx.stroke();
+            if (STATE.mouse.y < chartH) {
+                ctx.beginPath(); ctx.moveTo(0, STATE.mouse.y); ctx.lineTo(chartW, STATE.mouse.y); ctx.stroke();
+            }
+            ctx.restore();
+        }
+    }
+
+    async function fetchMTF() {
+        try {
+            let htf = '4h';
+            if (STATE.tf === '1h' || STATE.tf === '4h') htf = '1d';
+            if (STATE.tf === '1d') htf = '1w';
+            const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${STATE.symbol}&interval=${htf}&limit=50`);
+            const data = await res.json();
+            let sum = 0; data.forEach(k => sum += +k[4]);
+            const ema = sum / data.length;
+            STATE.mtfBullish = (+data[data.length - 1][4]) > ema;
+            const el = document.getElementById('m-mtf');
+            el.innerText = `${htf}: ${STATE.mtfBullish ? 'BULL' : 'BEAR'}`;
+            el.style.color = STATE.mtfBullish ? 'var(--longs)' : 'var(--shorts)';
+        } catch (e) {}
+    }
+
+    async function initData() {
+        document.getElementById('loader').style.display = 'flex';
+        try {
+            fetchMTF();
+            const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${STATE.symbol}&interval=${STATE.tf}&limit=1000`);
+            const d = await res.json();
+            let cvdSum = 0;
+            STATE.klines = d.map(k => {
+                const vol = +k[5], takerBuy = +k[9];
+                cvdSum += (takerBuy - (vol - takerBuy));
+                return { open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: vol, cvd: cvdSum, isFinal: true };
+            });
+            document.getElementById('m-price').innerText = STATE.klines[STATE.klines.length-1].close.toFixed(2);
+            computeQuantumField();
+            STATE.lockLen = STATE.klines.length; // Фиксируем точку при загрузке
+            draw(); connectWS();
+        } catch(e) { console.error(e); }
+        finally { document.getElementById('loader').style.display = 'none'; }
+    }
+
+    function connectWS() {
+        if(STATE.ws) STATE.ws.close();
+        STATE.ws = new WebSocket(`wss://fstream.binance.com/ws/${STATE.symbol.toLowerCase()}@kline_${STATE.tf}`);
+        const dot = document.getElementById('ws-status');
+        STATE.ws.onopen = () => dot.classList.add('live');
+        STATE.ws.onclose = () => { dot.classList.remove('live'); setTimeout(connectWS, 3000); };
+        STATE.ws.onmessage = (e) => {
+            const k = JSON.parse(e.data).k; if(!k) return;
+            const prev = STATE.klines[STATE.klines.length - (k.x ? 1 : 2)] || {cvd:0};
+            const delta = (+k.V) - ((+k.v) - (+k.V));
+            const candle = { open: +k.o, high: +k.h, low: +k.l, close: +k.c, volume: +k.v, cvd: prev.cvd + delta, isFinal: k.x };
+            
+            if(k.x) { 
+                STATE.klines.push(candle); 
+                if(STATE.klines.length > 1500) STATE.klines.shift(); 
+            } else { 
+                STATE.klines[STATE.klines.length-1] = candle; 
+            }
+            
+            document.getElementById('m-price').innerText = candle.close.toFixed(2);
+            // Если ФИКС выключен - пересчитываем поле постоянно
+            if(!STATE.fixMode) { computeQuantumField(); }
+            draw();
+        };
+    }
+
+    function bindUI() {
+        const cvs = document.getElementById('stage');
+        STATE.ctx = cvs.getContext('2d');
+        const fixBtn = document.getElementById('btn-fix-mode');
+        const fixStatus = document.getElementById('fix-status');
+
+        fixBtn.onclick = () => {
+            STATE.fixMode = !STATE.fixMode;
+            if(STATE.fixMode) STATE.lockLen = STATE.klines.length;
+            fixStatus.innerText = STATE.fixMode ? 'ON' : 'OFF';
+            fixStatus.style.color = STATE.fixMode ? 'var(--longs)' : 'var(--shorts)';
+            draw();
+        };
+
+        document.getElementById('btn-scan').onclick = () => {
+            computeQuantumField();
+            STATE.lockLen = STATE.klines.length;
+            draw();
+        };
+
+        const resize = () => {
+            const dpr = window.devicePixelRatio || 1;
+            const rect = cvs.parentElement.getBoundingClientRect();
+            STATE.w = rect.width; STATE.h = rect.height;
+            cvs.width = rect.width * dpr; cvs.height = rect.height * dpr;
+            STATE.ctx.setTransform(1,0,0,1,0,0); STATE.ctx.scale(dpr, dpr);
+            draw();
+        };
+        window.addEventListener('resize', resize); resize();
+
+        const syncSlider = (id, key, valId) => document.getElementById(id).addEventListener('input', e => {
+            STATE[key] = parseFloat(e.target.value); document.getElementById(valId).innerText = e.target.value;
+            if(!STATE.fixMode) computeQuantumField(); 
+            draw();
+        });
+
+        syncSlider('s-lookback', 'lookback', 'v-lookback'); syncSlider('s-depth', 'depth', 'v-depth');
+        syncSlider('s-gravity', 'gravity', 'v-gravity'); syncSlider('s-temp', 'temp', 'v-temp');
+
+        document.getElementById('symbol').addEventListener('change', e => { STATE.symbol = e.target.value.toUpperCase(); initData(); });
+        document.getElementById('tf').addEventListener('change', e => { STATE.tf = e.target.value; initData(); });
+
+        cvs.addEventListener('mousemove', e => {
+            const rect = cvs.getBoundingClientRect();
+            STATE.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top, active: true };
+            draw();
+        });
+        cvs.addEventListener('mouseleave', () => { STATE.mouse.active = false; draw(); });
+    }
+
+    window.onload = () => { bindUI(); initData(); setInterval(fetchMTF, 60000); };
+})();
+
+ // Добавляем обработчик сообщений от Genesis
+    window.addEventListener('message', (event) => {
+        const data = event.data;
+        if (data && data.type === 'SET_SYMBOL_AND_SCAN') {
+            const input = document.getElementById('symbol');
+            const tfSelect = document.getElementById('tf');
+            
+            if (input && data.symbol) {
+                input.value = data.symbol;
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            if (tfSelect && data.timeframe) {
+                tfSelect.value = data.timeframe;
+                tfSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+    });
+</script>
+</body>
+</html>
