@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>NEXUS · Thermal Matrix 2300</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #030407; --panel: rgba(10, 13, 20, 0.85); --border: rgba(30, 40, 60, 0.8);
+            --accent: #00f2ff; --longs: #00ff9d; --shorts: #ff0055;
+            --text: #f0f4fa; --text-muted: #7f8fa3;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'JetBrains Mono', monospace; user-select: none; outline: none; }
+        body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: var(--panel); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 10; }
+        .brand { font-size: 18px; font-weight: 900; letter-spacing: 1px; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+        .brand span { color: var(--accent); }
+        
+        .layout { display: flex; flex: 1; height: calc(100vh - 50px); }
+        
+        .sidebar { width: 320px; background: var(--panel); backdrop-filter: blur(10px); border-right: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 5; }
+        
+        .control-group { background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
+        .cg-title { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+        
+        .row { display: flex; gap: 8px; margin-bottom: 10px; }
+        input[type="text"], select { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: #fff; padding: 8px; border-radius: 4px; font-size: 12px; text-align: center; }
+        button.action-btn { flex: 1; background: var(--accent); color: #000; border: none; padding: 10px; border-radius: 4px; font-weight: 900; cursor: pointer; transition: 0.2s; box-shadow: 0 0 10px rgba(0, 242, 255, 0.2); }
+        button.action-btn:hover { filter: brightness(1.2); }
+        
+        .slider-box { margin-bottom: 10px; }
+        .slider-header { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-bottom: 6px; }
+        .slider-val { color: var(--accent); font-weight: bold; }
+        input[type="range"] { width: 100%; -webkit-appearance: none; background: #1e293b; height: 3px; border-radius: 2px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--accent); border-radius: 50%; cursor: pointer; }
+
+        .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .metric { background: rgba(0,0,0,0.4); border: 1px solid var(--border); padding: 8px; border-radius: 4px; text-align: center; }
+        .metric-lbl { font-size: 9px; color: var(--text-muted); margin-bottom: 4px; }
+        .metric-val { font-size: 13px; font-weight: bold; color: #fff; }
+
+        .canvas-wrapper { flex: 1; position: relative; background: #000; }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        #loader { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
+        .spinner { width: 40px; height: 40px; border: 3px solid rgba(0,242,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="brand">NEXUS <span>THERMAL LIQ MAP</span></div>
+    <div style="font-size:12px; color:var(--text-muted);">Heatmap Engine 2.0</div>
+</div>
+
+<div class="layout">
+    <div class="sidebar">
+        <div class="control-group">
+            <div class="row">
+                <input type="text" id="symbol" value="BTCUSDT">
+                <select id="tf"><option value="5m">5m</option><option value="15m" selected>15m</option><option value="1h">1h</option><option value="4h">4h</option></select>
+            </div>
+            <button class="action-btn" id="btn-scan">ОБНОВИТЬ МАТРИЦУ</button>
+        </div>
+
+        <div class="metrics">
+            <div class="metric"><div class="metric-lbl">Текущая Цена</div><div class="metric-val" id="m-price">--</div></div>
+            <div class="metric"><div class="metric-lbl">Баланс L/S</div><div class="metric-val" id="m-balance">--</div></div>
+            <div class="metric"><div class="metric-lbl">Магнит Шортов</div><div class="metric-val" id="m-shorts" style="color:var(--shorts)">--</div></div>
+            <div class="metric"><div class="metric-lbl">Магнит Лонгов</div><div class="metric-val" id="m-longs" style="color:var(--longs)">--</div></div>
+        </div>
+
+        <div class="control-group">
+            <div class="cg-title">Настройки Тепловизора</div>
+            <div class="slider-box">
+                <div class="slider-header"><span>Охват Цены (%)</span><span class="slider-val" id="v-range">24%</span></div>
+                <input type="range" id="s-range" min="0.05" max="0.30" step="0.01" value="0.24">
+            </div>
+            <div class="slider-box">
+                <div class="slider-header"><span>Размытие (Тепло)</span><span class="slider-val" id="v-blur">0</span></div>
+                <input type="range" id="s-blur" min="0" max="5" step="1" value="0">
+            </div>
+            <div class="slider-box">
+                <div class="slider-header"><span>Интенсивность</span><span class="slider-val" id="v-int">1.7</span></div>
+                <input type="range" id="s-int" min="0.1" max="3.0" step="0.1" value="1.7">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="cg-title">Модель Плечей</div>
+            <div class="slider-box">
+                <div class="slider-header"><span>Вес 100x</span><span class="slider-val" id="v-lev100">0.5</span></div>
+                <input type="range" id="s-lev100" min="0.1" max="3" step="0.1" value="0.5">
+            </div>
+            <div class="slider-box">
+                <div class="slider-header"><span>Вес 50x</span><span class="slider-val" id="v-lev50">0.8</span></div>
+                <input type="range" id="s-lev50" min="0.1" max="3" step="0.1" value="0.8">
+            </div>
+        </div>
+    </div>
+
+    <div class="canvas-wrapper">
+        <canvas id="stage"></canvas>
+        <div id="loader"><div class="spinner"></div><div style="color:var(--accent); font-weight:bold; font-size:12px; letter-spacing:2px;">СБОРКА ТЕПЛОВОЙ МАТРИЦЫ...</div></div>
+    </div>
+</div>
+
+<script>
+(function(){
+    const STATE = {
+        klines: [], symbol: 'BTCUSDT', tf: '15m', ws: null, ctx: null, w: 0, h: 0,
+        matrix: [], finalProfile: [], maxDens: 0,
+        rMin: 0, rMax: 0, buckets: 200,
+        range: 0.24, blur: 0, intensity: 1.7, lev100: 0.5, lev50: 0.8,
+        visibleCandles: 200, futureDepth: 30,
+        // новые параметры для осей и интерактива
+        mouseX: -1, mouseY: -1, mouseActive: false,
+        // фиксированные размеры областей (в логических пикселях)
+        legendW: 42,       // слева — шкала интенсивности
+        priceScaleW: 45,   // справа от графика — ценовая шкала
+        profileW: 130,     // правый профиль объёмов
+        bottomAxisH: 28,   // ось времени снизу
+        topMargin: 8,      // небольшой отступ сверху
+    };
+
+    // ========== Цветовая палитра с аддитивным свечением ==========
+    function getHeatColor(val) {
+        let v = val * STATE.intensity;
+        if(v < 0.02) return 'transparent';
+        if(v < 0.2) return `rgba(20, 80, 255, ${v * 3.0})`;    // насыщенный синий
+        if(v < 0.5) return `rgba(180, 0, 220, ${v * 2.0})`;    // фиолетовый
+        if(v < 0.8) return `rgba(255, 40, 40, ${v * 1.5})`;    // красный
+        if(v < 0.95) return `rgba(255, 200, 0, ${v})`;         // оранжевый
+        return `rgba(255, 255, 220, ${v})`;                    // белое свечение
+    }
+
+    // ========== Вспомогательные функции ==========
+    function formatTime(ts) {
+        const d = new Date(ts);
+        return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    function formatPrice(p) {
+        return p.toFixed(2);
+    }
+
+    // ========== Основной алгоритм тепловой карты (без изменений логики, адаптирован под новые данные) ==========
+    function computeHeatmap() {
+        if(STATE.klines.length < 200) return;
+        
+        const lastP = STATE.klines[STATE.klines.length-1].close;
+        STATE.rMin = lastP * (1 - STATE.range);
+        STATE.rMax = lastP * (1 + STATE.range);
+        const step = (STATE.rMax - STATE.rMin) / STATE.buckets;
+        
+        let runningLiq = new Float32Array(STATE.buckets);
+        STATE.matrix = [];
+        STATE.maxDens = 0;
+
+        const startIdx = Math.max(0, STATE.klines.length - STATE.visibleCandles - 100); 
+        
+        for(let i = startIdx; i < STATE.klines.length; i++) {
+            const k = STATE.klines[i];
+            const vol = k.volume;
+
+            const add = (target, w) => {
+                const idx = Math.floor((target - STATE.rMin) / step);
+                if(idx >= 0 && idx < STATE.buckets) runningLiq[idx] += vol * w;
+            };
+
+            add(k.close * 1.01, STATE.lev100); add(k.close * 0.99, STATE.lev100);
+            add(k.close * 1.02, STATE.lev50); add(k.close * 0.98, STATE.lev50);
+            add(k.close * 1.05, STATE.lev50*0.5); add(k.close * 0.95, STATE.lev50*0.5);
+
+            const idxLow = Math.floor((k.low - STATE.rMin) / step);
+            const idxHigh = Math.floor((k.high - STATE.rMin) / step);
+            
+            for(let j = Math.max(0, idxLow); j <= Math.min(STATE.buckets-1, idxHigh); j++) {
+                runningLiq[j] = 0; 
+            }
+
+            let blurred = new Float32Array(STATE.buckets);
+            if(STATE.blur > 0) {
+                for(let j=0; j<STATE.buckets; j++) {
+                    let sum = 0, weight = 0;
+                    for(let b=-STATE.blur; b<=STATE.blur; b++) {
+                        if(j+b >= 0 && j+b < STATE.buckets) {
+                            let w = 1 - Math.abs(b)/(STATE.blur+1);
+                            sum += runningLiq[j+b] * w;
+                            weight += w;
+                        }
+                    }
+                    blurred[j] = sum / weight;
+                    if(i >= STATE.klines.length - STATE.visibleCandles && blurred[j] > STATE.maxDens) STATE.maxDens = blurred[j];
+                }
+            } else {
+                blurred = new Float32Array(runningLiq);
+                for(let j=0; j<STATE.buckets; j++) if(blurred[j] > STATE.maxDens) STATE.maxDens = blurred[j];
+            }
+
+            if(i >= STATE.klines.length - STATE.visibleCandles) {
+                STATE.matrix.push(blurred);
+            }
+        }
+
+        STATE.finalProfile = STATE.matrix[STATE.matrix.length-1];
+
+        // Метрики (без изменений)
+        let maxS = 0, maxL = 0, pS = 0, pL = 0, sumS = 0, sumL = 0;
+        const lastPrice = STATE.klines[STATE.klines.length-1].close;
+        for(let i=0; i<STATE.buckets; i++) {
+            const p = STATE.rMin + i*step;
+            const val = STATE.finalProfile[i];
+            if(p > lastPrice) { sumS += val; if(val > maxS) { maxS = val; pS = p; } }
+            if(p < lastPrice) { sumL += val; if(val > maxL) { maxL = val; pL = p; } }
+        }
+
+        document.getElementById('m-shorts').innerText = pS > 0 ? pS.toFixed(2) : '--';
+        document.getElementById('m-longs').innerText = pL > 0 ? pL.toFixed(2) : '--';
+        const ratio = sumL / (sumS||1);
+        const balEl = document.getElementById('m-balance');
+        balEl.innerText = ratio > 1 ? `Лонги x${ratio.toFixed(1)}` : `Шорты x${(1/ratio).toFixed(1)}`;
+        balEl.style.color = ratio > 1 ? 'var(--longs)' : 'var(--shorts)';
+    }
+
+    // ========== Отрисовка всей сцены (axes, legend, profile, crosshair) ==========
+    function draw() {
+        if(!STATE.ctx || STATE.matrix.length === 0) return;
+        const ctx = STATE.ctx;
+        const w = STATE.w, h = STATE.h;
+
+        // Области отрисовки (логические координаты)
+        const { legendW, priceScaleW, profileW, bottomAxisH, topMargin } = STATE;
+        const chartX = legendW;
+        const chartY = topMargin;
+        const chartW = w - legendW - priceScaleW - profileW;
+        const chartH = h - bottomAxisH - topMargin;
+
+        const profileX = legendW + chartW + priceScaleW;
+        const priceScaleX = legendW + chartW;
+        const legendX = 0;
+
+        // Функция преобразования цены в Y (в пределах области графика)
+        const getY = (price) => {
+            return chartY + chartH - ((price - STATE.rMin) / (STATE.rMax - STATE.rMin)) * chartH;
+        };
+
+        ctx.clearRect(0, 0, w, h);
+
+        // --- 1. Фоновая сетка (полупрозрачная) ---
+        ctx.save();
+        ctx.strokeStyle = 'rgba(100,150,255,0.08)';
+        ctx.lineWidth = 0.5;
+        // горизонтальные линии цен
+        for (let i = 0; i <= 5; i++) {
+            let price = STATE.rMin + (STATE.rMax - STATE.rMin) * i / 5;
+            let y = getY(price);
+            ctx.beginPath();
+            ctx.moveTo(chartX, y);
+            ctx.lineTo(chartX + chartW, y);
+            ctx.stroke();
+        }
+        // вертикальные линии времени
+        for (let i = 0; i <= 4; i++) {
+            let x = chartX + (chartW * i) / 4;
+            ctx.beginPath();
+            ctx.moveTo(x, chartY);
+            ctx.lineTo(x, chartY + chartH);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // --- 2. Тепловая матрица (историческая + будущая проекция) ---
+        const totalX = STATE.visibleCandles + STATE.futureDepth;
+        const cw = chartW / totalX;
+        const ch = chartH / STATE.buckets;
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        // Исторические пятна
+        for(let x = 0; x < STATE.matrix.length; x++) {
+            const col = STATE.matrix[x];
+            for(let y = 0; y < STATE.buckets; y++) {
+                const norm = col[y] / (STATE.maxDens || 1);
+                if(norm > 0.02) {
+                    ctx.fillStyle = getHeatColor(norm);
+                    ctx.fillRect(chartX + x * cw, chartY + chartH - (y+1)*ch, cw+0.5, ch+1);
+                }
+            }
+        }
+        // Будущая проекция (затухающая)
+        const lastCol = STATE.matrix[STATE.matrix.length-1];
+        for(let f = 0; f < STATE.futureDepth; f++) {
+            const x = STATE.matrix.length + f;
+            for(let y = 0; y < STATE.buckets; y++) {
+                const norm = lastCol[y] / (STATE.maxDens || 1);
+                if(norm > 0.02) {
+                    ctx.fillStyle = getHeatColor(norm * (1 - f/STATE.futureDepth*0.5));
+                    ctx.fillRect(chartX + x * cw, chartY + chartH - (y+1)*ch, cw+0.5, ch+1);
+                }
+            }
+        }
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.restore();
+
+        // --- 3. Свечи (с pixel snapping: округление до половины пикселя) ---
+        const displayKlines = STATE.klines.slice(-STATE.visibleCandles);
+        ctx.save();
+        ctx.lineWidth = 1;
+        displayKlines.forEach((k, i) => {
+            const px = chartX + i * cw;
+            const isUp = k.close >= k.open;
+            const color = isUp ? '#00ff9d' : '#ff0055';
+            
+            // Фитиль: рисуем линию строго по центру свечи с rounding для чёткости
+            ctx.strokeStyle = '#94a3b8';
+            ctx.beginPath();
+            const xCenter = Math.floor(px + cw/2) + 0.5; // pixel snap
+            ctx.moveTo(xCenter, getY(k.high));
+            ctx.lineTo(xCenter, getY(k.low));
+            ctx.stroke();
+            
+            // Тело свечи с вертикальным градиентом
+            const bodyTop = Math.min(getY(k.open), getY(k.close));
+            const bodyBottom = Math.max(getY(k.open), getY(k.close));
+            const bodyHeight = Math.max(1, bodyBottom - bodyTop);
+            const gradient = ctx.createLinearGradient(0, bodyTop, 0, bodyBottom);
+            if (isUp) {
+                gradient.addColorStop(0, '#b0ffd0');
+                gradient.addColorStop(1, '#007a4f');
+            } else {
+                gradient.addColorStop(0, '#ffa0b0');
+                gradient.addColorStop(1, '#9f0030');
+            }
+            ctx.fillStyle = gradient;
+            ctx.fillRect(px + cw*0.1, bodyTop, cw*0.8, bodyHeight);
+        });
+        ctx.restore();
+
+        // --- 4. Правая ценовая шкала (Y-axis) ---
+        ctx.save();
+        ctx.fillStyle = '#7f8fa3';
+        ctx.font = '10px JetBrains Mono';
+        ctx.textAlign = 'right';
+        for (let i = 0; i <= 5; i++) {
+            let price = STATE.rMin + (STATE.rMax - STATE.rMin) * i / 5;
+            let y = getY(price);
+            if (y >= chartY && y <= chartY + chartH) {
+                ctx.fillText(formatPrice(price), priceScaleX + priceScaleW - 2, y - 2);
+            }
+        }
+        ctx.restore();
+
+        // --- 5. Легенда интенсивности (ColorBar) ---
+        ctx.save();
+        const legendHeight = chartH;
+        const legendStep = legendHeight / STATE.buckets;
+        for (let i = 0; i < STATE.buckets; i++) {
+            let norm = i / STATE.buckets; // от 0 до 1 (снизу вверх)
+            let color = getHeatColor(norm * (STATE.maxDens / (STATE.maxDens || 1)));
+            ctx.fillStyle = color;
+            ctx.fillRect(legendX + 2, chartY + legendHeight - (i+1)*legendStep, legendW-4, legendStep+0.5);
+        }
+        // подписи min/max
+        ctx.fillStyle = '#fff';
+        ctx.font = '8px JetBrains Mono';
+        ctx.textAlign = 'left';
+        ctx.fillText('0', legendX + 4, chartY + legendHeight - 4);
+        ctx.fillText(STATE.maxDens.toFixed(0), legendX + 4, chartY + 10);
+        ctx.restore();
+
+        // --- 6. Профиль объёмов (правый) + контурная линия ---
+        ctx.save();
+        ctx.fillStyle = 'rgba(10, 13, 20, 0.8)';
+        ctx.fillRect(profileX, chartY, profileW, chartH);
+        ctx.strokeStyle = '#334155';
+        ctx.strokeRect(profileX, chartY, profileW, chartH);
+
+        // Бары профиля
+        const barWidth = profileW * 0.7;
+        for(let y = 0; y < STATE.buckets; y++) {
+            const norm = lastCol[y] / (STATE.maxDens || 1);
+            if(norm > 0.01) {
+                const py = STATE.rMin + y * ((STATE.rMax - STATE.rMin)/STATE.buckets);
+                const isShorts = py > STATE.klines[STATE.klines.length-1].close;
+                ctx.fillStyle = isShorts ? `rgba(255,0,85,${0.3 + norm*0.7})` : `rgba(0,255,157,${0.3 + norm*0.7})`;
+                ctx.fillRect(profileX + (profileW - barWidth), chartY + chartH - (y+1)*ch, barWidth * norm, ch+0.5);
+            }
+        }
+
+        // Контурная линия поверх баров (CVD‑стиль)
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 0.8;
+        for(let y = 0; y < STATE.buckets; y++) {
+            const norm = lastCol[y] / (STATE.maxDens || 1);
+            const xPos = profileX + (profileW - barWidth) + barWidth * norm;
+            const yPos = chartY + chartH - (y+0.5)*ch;
+            if (y === 0) ctx.moveTo(xPos, yPos);
+            else ctx.lineTo(xPos, yPos);
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        // --- 7. Ось времени (X-axis) снизу ---
+        ctx.save();
+        ctx.fillStyle = '#a0b0c0';
+        ctx.font = '9px JetBrains Mono';
+        ctx.textAlign = 'center';
+        const timeStep = Math.max(1, Math.floor(displayKlines.length / 8));
+        for (let i = 0; i < displayKlines.length; i += timeStep) {
+            const k = displayKlines[i];
+            if (k && k.time) {
+                const x = chartX + i * cw + cw/2;
+                ctx.fillText(formatTime(k.time), x, h - bottomAxisH/2 + 3);
+            }
+        }
+        ctx.restore();
+
+        // --- 8. Линия текущей цены ---
+        ctx.save();
+        const lastPrice = STATE.klines[STATE.klines.length-1].close;
+        const priceY = getY(lastPrice);
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(chartX, priceY);
+        ctx.lineTo(chartX + chartW, priceY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // Плашка с ценой
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(chartX + chartW - 60, priceY - 10, 58, 18);
+        ctx.strokeStyle = '#aaa';
+        ctx.strokeRect(chartX + chartW - 60, priceY - 10, 58, 18);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 10px JetBrains Mono';
+        ctx.fillText(lastPrice.toFixed(2), chartX + chartW - 55, priceY + 4);
+        ctx.restore();
+
+        // --- 9. Crosshair (если мышь активна) ---
+        if (STATE.mouseActive && STATE.mouseX >= chartX && STATE.mouseX <= chartX + chartW && STATE.mouseY >= chartY && STATE.mouseY <= chartY + chartH) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctx.setLineDash([3, 3]);
+            ctx.lineWidth = 1;
+            // Вертикальная линия
+            ctx.beginPath();
+            ctx.moveTo(STATE.mouseX, chartY);
+            ctx.lineTo(STATE.mouseX, chartY + chartH);
+            ctx.stroke();
+            // Горизонтальная линия
+            ctx.beginPath();
+            ctx.moveTo(chartX, STATE.mouseY);
+            ctx.lineTo(chartX + chartW, STATE.mouseY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Тултип с данными
+            const candleIdx = Math.floor((STATE.mouseX - chartX) / cw);
+            const bucketIdx = Math.floor((chartY + chartH - STATE.mouseY) / ch);
+            if (candleIdx >= 0 && candleIdx < STATE.matrix.length && bucketIdx >= 0 && bucketIdx < STATE.buckets) {
+                const price = STATE.rMin + bucketIdx * ((STATE.rMax - STATE.rMin) / STATE.buckets);
+                const liqVal = STATE.matrix[candleIdx][bucketIdx];
+                const timeStr = displayKlines[candleIdx] ? formatTime(displayKlines[candleIdx].time) : '--';
+                
+                ctx.fillStyle = '#0a0d14';
+                ctx.shadowColor = '#00f2ff';
+                ctx.shadowBlur = 8;
+                ctx.fillRect(STATE.mouseX + 15, STATE.mouseY - 30, 130, 42);
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = '#2a3a55';
+                ctx.strokeRect(STATE.mouseX + 15, STATE.mouseY - 30, 130, 42);
+                ctx.fillStyle = '#fff';
+                ctx.font = '9px JetBrains Mono';
+                ctx.fillText(`Цена: ${formatPrice(price)}`, STATE.mouseX + 20, STATE.mouseY - 15);
+                ctx.fillText(`Время: ${timeStr}`, STATE.mouseX + 20, STATE.mouseY - 5);
+                ctx.fillText(`Liq: ${liqVal.toFixed(2)}`, STATE.mouseX + 20, STATE.mouseY + 5);
+            }
+            ctx.restore();
+        }
+    }
+
+    // ========== Загрузка данных и WebSocket ==========
+    async function init() {
+        document.getElementById('loader').style.display = 'flex';
+        try {
+            const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${STATE.symbol}&interval=${STATE.tf}&limit=1000`);
+            const d = await res.json();
+            STATE.klines = d.map(k => ({ 
+                time: k[0], open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5] 
+            }));
+            document.getElementById('m-price').innerText = STATE.klines[STATE.klines.length-1].close.toFixed(2);
+            
+            computeHeatmap(); draw(); connectWS();
+        } catch(e) { console.error(e); }
+        finally { document.getElementById('loader').style.display = 'none'; }
+    }
+
+    function connectWS() {
+        if(STATE.ws) STATE.ws.close();
+        STATE.ws = new WebSocket(`wss://fstream.binance.com/ws/${STATE.symbol.toLowerCase()}@kline_${STATE.tf}`);
+        STATE.ws.onmessage = e => {
+            const data = JSON.parse(e.data).k; if(!data) return;
+            const c = { 
+                time: data.t, open: +data.o, high: +data.h, low: +data.l, close: +data.c, volume: +data.v 
+            };
+            data.x ? STATE.klines.push(c) : STATE.klines[STATE.klines.length-1] = c;
+            if(STATE.klines.length > 2000) STATE.klines.shift();
+            
+            document.getElementById('m-price').innerText = c.close.toFixed(2);
+            requestAnimationFrame(() => { computeHeatmap(); draw(); });
+        };
+    }
+
+    // ========== UI‑привязки и настройка canvas (HiDPI) ==========
+    function bindUI() {
+        const canvas = document.getElementById('stage');
+        const ctx = canvas.getContext('2d');
+        STATE.ctx = ctx;
+
+        const resizeCanvas = () => {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            
+            // CSS размеры
+            canvas.style.width = `${rect.width}px`;
+            canvas.style.height = `${rect.height}px`;
+            
+            // Физические размеры (с учётом dpr)
+            STATE.w = rect.width;
+            STATE.h = rect.height;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            // Масштабируем контекст, чтобы все координаты были в логических пикселях
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // сброс
+            ctx.scale(dpr, dpr);
+            ctx.imageSmoothingEnabled = false; // сохраняем резкость
+            
+            draw();
+        };
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Синхронизация слайдеров
+        const sync = (id, key, vId, p) => document.getElementById(id).addEventListener('input', e => {
+            STATE[key] = parseFloat(e.target.value); 
+            document.getElementById(vId).innerText = p ? (STATE[key]*100).toFixed(0)+'%' : STATE[key];
+            if(STATE.klines.length) { computeHeatmap(); draw(); }
+        });
+
+        sync('s-range', 'range', 'v-range', true);
+        sync('s-blur', 'blur', 'v-blur', false);
+        sync('s-int', 'intensity', 'v-int', false);
+        sync('s-lev100', 'lev100', 'v-lev100', false);
+        sync('s-lev50', 'lev50', 'v-lev50', false);
+
+        document.getElementById('symbol').addEventListener('change', e => { STATE.symbol = e.target.value.toUpperCase(); init(); });
+        document.getElementById('tf').addEventListener('change', e => { STATE.tf = e.target.value; init(); });
+        document.getElementById('btn-scan').onclick = () => { computeHeatmap(); draw(); };
+
+        // Интерактивность: отслеживание мыши
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = STATE.w / rect.width;   // логические пиксели / CSS пиксели
+            const scaleY = STATE.h / rect.height;
+            STATE.mouseX = (e.clientX - rect.left) * scaleX;
+            STATE.mouseY = (e.clientY - rect.top) * scaleY;
+            STATE.mouseActive = true;
+            draw();
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            STATE.mouseActive = false;
+            draw();
+        });
+    }
+
+    window.onload = () => { bindUI(); init(); };
+})();
+
+// Добавляем обработчик сообщений от Genesis
+window.addEventListener('message', (event) => {
+    console.log('Thermal Map получил сообщение:', event.data);
+    const data = event.data;
+    if (data && data.type === 'SET_SYMBOL_AND_SCAN') {
+        const input = document.getElementById('symbol');
+        if (input && data.symbol) {
+            input.value = data.symbol;
+            // Перезагружаем данные с новым символом
+            init();
+        }
+    }
+});
+</script>
+</body>
+</html>
