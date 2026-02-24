@@ -610,6 +610,8 @@ div[class*="grid"] > div:nth-child(2) {
 }
     </style>
 </head>
+
+
 <body>
 
 <div class="app-container">
@@ -693,40 +695,56 @@ div[class*="grid"] > div:nth-child(2) {
             </div>
         </div>
 
-        <!-- HUNTER SETTINGS PANEL -->
-        <div class="bg-black/60 p-3 rounded-lg border border-purple-500/20 shadow-lg mb-2">
-            <div class="text-[10px] uppercase text-gray-500 mb-2">HUNTER SETTINGS</div>
-            <div class="grid grid-cols-2 gap-1 text-[10px]">
-
-                <label class="flex items-center gap-1"><input type="checkbox" id="gate-trend" checked> Trend</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="gate-impulse" checked> Impulse</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="gate-liq" checked> Liq</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="gate-book" checked> Book</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="gate-pattern" checked> Pattern</label>
-                <label class="flex items-center gap-1"><input type="checkbox" id="gate-rev" checked> Reversal</label>
-                
-            </div>
-            <div class="flex justify-between mt-2 text-[10px]">
-                <span>Liq threshold ($):</span>
-                <input type="number" id="liq-threshold" value="20000" step="1000" class="w-20 bg-black border border-gray-700 px-1 rounded">
-            </div>
-            <div class="flex justify-between mt-1 text-[10px]">
-                <span>Impulse % (5m):</span>
-                <input type="number" id="impulse-threshold" value="2.0" step="0.1" class="w-20 bg-black border border-gray-700 px-1 rounded">
-            </div>
-            <div class="flex justify-between mt-1 text-[10px]">
-                <span>Min confluence:</span>
-                <select id="min-confluence" class="bg-black border border-gray-700 px-1 rounded">
-                    <option>1</option><option>2</option><option selected>4</option><option>4</option><option>5</option><option>6</option>
-                </select>
-            </div>
-            <div class="text-[9px] text-gray-600 mt-1" id="hunter-status">Status: waiting</div>
+      <!-- HUNTER SETTINGS PANEL -->
+<div class="bg-black/60 p-3 rounded-lg border border-purple-500/20 shadow-lg mb-2">
+    <div class="flex justify-between items-center cursor-pointer" id="hunter-toggle-header">
+        <div class="text-[10px] uppercase text-gray-500 mb-0">HUNTER SETTINGS</div>
+        <span id="hunter-toggle-icon" class="text-gray-400">▶</span>
+    </div>
+    <div id="hunter-settings-content" class="mt-2" style="display: none;">
+        <div class="grid grid-cols-2 gap-1 text-[10px]">
+            <label class="flex items-center gap-1"><input type="checkbox" id="gate-trend" checked> Trend</label>
+            <label class="flex items-center gap-1"><input type="checkbox" id="gate-impulse" checked> Impulse</label>
+            <label class="flex items-center gap-1"><input type="checkbox" id="gate-liq" checked> Liq</label>
+            <label class="flex items-center gap-1"><input type="checkbox" id="gate-book" checked> Book</label>
+            <label class="flex items-center gap-1"><input type="checkbox" id="gate-pattern" checked> Pattern</label>
+            <label class="flex items-center gap-1"><input type="checkbox" id="gate-rev" checked> Reversal</label>
         </div>
+        <div class="flex justify-between mt-2 text-[10px]">
+            <span>Liq threshold ($):</span>
+            <input type="number" id="liq-threshold" value="20000" step="1000" class="w-20 bg-black border border-gray-700 px-1 rounded">
+        </div>
+        <div class="flex justify-between mt-1 text-[10px]">
+            <span>Impulse % (5m):</span>
+            <input type="number" id="impulse-threshold" value="2.0" step="0.1" class="w-20 bg-black border border-gray-700 px-1 rounded">
+        </div>
+        <div class="flex justify-between mt-1 text-[10px]">
+            <span>Min confluence:</span>
+            <select id="min-confluence" class="bg-black border border-gray-700 px-1 rounded">
+                <option>1</option>
+                <option>2</option>
+                <option>4</option>
+                <option selected>5</option>
+                <option>6</option>
+            </select>
+        </div>
+        <div class="text-[9px] text-gray-600 mt-1" id="hunter-status">Status: waiting</div>
+    </div>
+</div>
 
         <div class="setup-list">
             <div class="setup-header">DETECTED DOLF SETUPS</div>
             <div id="setup-container">
                 <div style="text-align: center; color: #444; padding: 20px;">SYSTEM READY</div>
+                
+            </div>
+            <div class="reasoning-box">
+       
+        
+             <div style="font-size: 10px; color: var(--accent-blue); font-weight: bold; margin-bottom: 5px;">AI REASONING</div>
+            <div id="reasoning-text" style="font-size: 10px; color: #888; line-height: 1.4;">
+                Waiting for input. Enter a coin symbol (e.g. ETH) to start DOLF Engine V15.
+                </div>
             </div>
         </div>
     </aside>
@@ -827,7 +845,7 @@ div[class*="grid"] > div:nth-child(2) {
 <button class="alligator-btn" id="alligator-btn" onclick="APP.toggleAlligator()">
     <i class=""></i> 🐊 ALLIGATOR
 </button>
-<button class="stats-btn" id="stats-btn" onclick="APP.showAlligatorStats()"> STATS </button>
+<button class="stats-btn" id="stats-btn" onclick="APP.showAlligatorStats()">
     <i class="fas fa-chart-bar"></i> STATS
 </button>
       <div class="flex items-center space-x-2 ml-2 bg-[#1e2329]/50 px-3 py-1.5 rounded-lg border border-[#2b3139] h-[34px]">
@@ -879,12 +897,14 @@ div[class*="grid"] > div:nth-child(2) {
             <canvas id="sparkline"></canvas>
         </div>
 
-        <div class="reasoning-box">
-            <div style="font-size: 10px; color: var(--accent-blue); font-weight: bold; margin-bottom: 5px;">AI REASONING</div>
-            <div id="reasoning-text" style="font-size: 10px; color: #888; line-height: 1.4;">
-                Waiting for input. Enter a coin symbol (e.g. ETH) to start DOLF Engine V15.
-            </div>
-        </div>
+      <div class="reasoning-box" style="position: relative; padding: 0; overflow: hidden; background: #0b0e11;">
+    <iframe id="qfield-frame"
+        src="https://www.t1prime.com/qfieldno"
+        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #0b0e11;"
+        allow="autoplay; fullscreen"
+        allowfullscreen>
+    </iframe>
+</div>
     </aside>
 
 
@@ -901,17 +921,47 @@ div[class*="grid"] > div:nth-child(2) {
 <div style="grid-column: 1 / -1; margin-top: 10px; width: 100%; background: #0b0e11; border: 1px solid #1e2329; border-radius: 6px; overflow: hidden;">
     <!-- Вкладки -->
     <div style="display: flex; background: #1e2329; border-bottom: 1px solid #333;">
-        <button class="tab-button" data-tab="tab1" style="flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">T1Prime</button>
-        <button class="tab-button" data-tab="tab2" style="flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">Coinglass TV</button>
-        <button class="tab-button" data-tab="tab3" style="flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">TradingView</button>
-        <button class="tab-button" data-tab="tab4" style="flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">Heatmap</button>
+        <button class="tab-button" data-tab="tab1" style="flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">QField</button>
+        <button class="tab-button" data-tab="tab2" style="flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">Coinglass</button>
+        <button class="tab-button" data-tab="tab3" style="flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">Heatmap</button>
+        <button class="tab-button" data-tab="tab4" style="display: none; flex: 1; padding: 8px; background: transparent; border: none; color: #888; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.2s;">Heatmap</button>
     </div>
     <!-- Контейнеры iframe -->
-    <div style="position: relative; width: 100%; height: 150vh; min-height: 950px;">
+    <div style="position: relative; width: 100%; height: 100vh; min-height: 950px;">
         <iframe id="iframe-tab1" src="https://www.t1prime.com/qfield" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #0b0e11;" allow="autoplay; fullscreen" allowfullscreen></iframe>
         <iframe id="iframe-tab2" src="https://www.coinglass.com/tv/Binance_BTCUSDT" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #0b0e11; display: none;" allow="autoplay; fullscreen" allowfullscreen></iframe>
-        <iframe id="iframe-tab3" src="https://www.tradingview.com/chart/?symbol=BTCUSDT" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #0b0e11; display: none;" allow="autoplay; fullscreen" allowfullscreen></iframe>
+        <iframe id="iframe-tab3" src="https://www.t1prime.com/qfieldmap" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #0b0e11; display: none;" allow="autoplay; fullscreen" allowfullscreen></iframe>
         <iframe id="iframe-tab4" src="https://www.coinglass.com/pro/futures/LiquidationHeatMap?coin=BTC&type=pair" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #0b0e11; display: none;" allow="autoplay; fullscreen" allowfullscreen></iframe>
+    </div>
+</div>
+
+<div id="stats-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 900px; max-height: 80vh; background: #0b0e11; border: 2px solid #3b82f6; border-radius: 8px; z-index: 10001; padding: 20px; overflow-y: auto; box-shadow: 0 0 30px rgba(59,130,246,0.5); color: #fff; font-family: monospace;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2 style="color: #3b82f6; margin: 0;">🐊 ALLIGATOR TRADES REPORT</h2>
+        <button onclick="document.getElementById('stats-modal').style.display='none'" style="background: transparent; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
+    </div>
+    <div id="stats-summary" style="margin-bottom: 20px; padding: 10px; background: #1e2329; border-radius: 4px;">
+        <!-- Summary will be inserted here -->
+    </div>
+    <div style="overflow-x: auto;">
+        <table id="stats-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+            <thead>
+                <tr style="border-bottom: 1px solid #333;">
+                    <th style="text-align: left; padding: 8px;">Entry Time</th>
+                    <th style="text-align: left; padding: 8px;">Exit Time</th>
+                    <th style="text-align: right; padding: 8px;">Entry Price</th>
+                    <th style="text-align: right; padding: 8px;">Exit Price</th>
+                    <th style="text-align: right; padding: 8px;">PnL %</th>
+                    <th style="text-align: center; padding: 8px;">Reason</th>
+                </tr>
+            </thead>
+            <tbody id="stats-tbody">
+                <!-- Rows will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+    <div style="margin-top: 15px; text-align: right; font-size: 10px; color: #666;">
+        * Equity start: 1000 USD
     </div>
 </div>
 
@@ -1137,6 +1187,8 @@ APP.updateAllMarkers();
 let measureStartPos = null; // Храним и цену, и координаты Y/X
 let lastTapTime = 0;
 let isMeasuring = false;
+
+
 
 // Создаем элементы
 const measureDiv = document.createElement('div');
@@ -1530,13 +1582,13 @@ STATE.chart.timeScale().scrollToRealTime();
             updateLocalTrend();
             checkAllGates();
 
-           // Автоматическое включение Open Interest при первом запуске
+  /*         // Автоматическое включение Open Interest при первом запуске
 if (!window.oiAutoEnabled) {
     window.oiAutoEnabled = true;
     setTimeout(() => {
         this.toggleIndicator('oi');
     }, 1500);
-}
+}  */
 
             log(`[SUCCESS] Analysis complete. Confidence: ${verdict.conf}%`);
 
@@ -2320,6 +2372,8 @@ if (k.x) {
         alertBox.style.display = 'block';
         setTimeout(() => { alertBox.style.display = 'none'; }, 180000);
     }
+
+    
 
     function playNotificationSound(type) {
         try {
@@ -3212,7 +3266,7 @@ else if (type === 'oi') {
 
         try {
 
-            await new Promise(resolve => setTimeout(resolve, 3000));
+           // await new Promise(resolve => setTimeout(resolve, 500));
             const data = await this.fetchBinanceOI(STATE.symbol, STATE.interval, 500);
             if (!data.length) {
                 log('[OI] No historical data');
@@ -3571,6 +3625,7 @@ processFullHistory() {
                 // Звук на выход
             //    playNotificationSound('alligator');
             }
+            
             
         }
 
@@ -4007,7 +4062,57 @@ updateAllMarkers() {
     STATE.series.candle.setMarkers(combined);
 },
 
+showAlligatorStats() {
+    const modal = document.getElementById('stats-modal');
+    if (!modal) return;
 
+    const trades = STATE.alligatorTrades || [];
+    const equityStart = 1000;
+    const equityCurrent = STATE.alligatorEquity || equityStart;
+    const totalPnl = equityCurrent - equityStart;
+    const totalPnlPercent = (totalPnl / equityStart) * 100;
+
+    let wins = 0, losses = 0;
+    trades.forEach(t => {
+        if (t.pnl > 0) wins++;
+        else if (t.pnl < 0) losses++;
+    });
+    const winRate = trades.length ? (wins / trades.length * 100).toFixed(1) : 0;
+
+    const summaryDiv = document.getElementById('stats-summary');
+    summaryDiv.innerHTML = `
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+            <div><span style="color: #888;">Total Trades</span> <br> <span style="font-size: 18px; font-weight: bold;">${trades.length}</span></div>
+            <div><span style="color: #888;">Win Rate</span> <br> <span style="font-size: 18px; font-weight: bold; color: ${winRate >= 50 ? '#00ff9d' : '#ff0055'};">${winRate}%</span></div>
+            <div><span style="color: #888;">Total PnL</span> <br> <span style="font-size: 18px; font-weight: bold; color: ${totalPnl >= 0 ? '#00ff9d' : '#ff0055'};">${totalPnl > 0 ? '+' : ''}${totalPnl.toFixed(2)} USD</span></div>
+            <div><span style="color: #888;">Return</span> <br> <span style="font-size: 18px; font-weight: bold; color: ${totalPnl >= 0 ? '#00ff9d' : '#ff0055'};">${totalPnlPercent > 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}%</span></div>
+        </div>
+    `;
+
+    const tbody = document.getElementById('stats-tbody');
+    tbody.innerHTML = '';
+    if (trades.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">No trades yet</td></tr>';
+    } else {
+        trades.slice().reverse().forEach(t => {
+            const entryTime = new Date(t.entryTime * 1000).toLocaleString();
+            const exitTime = new Date(t.exitTime * 1000).toLocaleString();
+            const pnlColor = t.pnl >= 0 ? '#00ff9d' : '#ff0055';
+            const reason = t.exitReason === 'stop' ? '🛑 Stop' : (t.exitReason === 'reverse' ? '🔄 Reverse' : t.exitReason);
+            const row = `<tr style="border-bottom: 1px solid #222;">
+                <td style="padding: 6px;">${entryTime}</td>
+                <td style="padding: 6px;">${exitTime}</td>
+                <td style="text-align: right; padding: 6px;">${t.entryPrice.toFixed(4)}</td>
+                <td style="text-align: right; padding: 6px;">${t.exitPrice.toFixed(4)}</td>
+                <td style="text-align: right; padding: 6px; color: ${pnlColor};">${t.pnlPercent > 0 ? '+' : ''}${t.pnlPercent.toFixed(2)}%</td>
+                <td style="text-align: center; padding: 6px;">${reason}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    modal.style.display = 'block';
+},
 
     // ...
 
@@ -4025,10 +4130,10 @@ updateAllMarkers() {
 function updateExternalFrames(symbol) {
     const baseCoin = symbol.replace('USDT', '').toUpperCase();
     
-    const tvFrame = document.getElementById('coinglass-tv');
+  /*  const tvFrame = document.getElementById('coinglass-tv');
     if (tvFrame) {
         tvFrame.src = `https://www.coinglass.com/tv/Binance_${baseCoin}USDT`;
-    }
+    }*/
     
    /* const heatFrame = document.getElementById('coinglass-heatmap');
     if (heatFrame) {
@@ -4040,29 +4145,97 @@ function updateExternalFrames(symbol) {
         mobFrame.src = mobFrame.src;
     }*/
 
-      // --- ДОБАВЛЯЕМ ОБНОВЛЕНИЕ Q‑FIELD ---
+   // --- ОБНОВЛЕНИЕ Q‑FIELD через postMessage ---
+   // --- Q‑Field в правой панели (qfield-frame) ---
     const qFrame = document.getElementById('qfield-frame');
-    if (qFrame && qFrame.contentWindow && qFrame.contentDocument) {
+    if (qFrame && qFrame.contentWindow) {
         try {
-            const qDoc = qFrame.contentDocument;
-            const symbolInput = qDoc.getElementById('symbol');
-            const calcBtn = qDoc.getElementById('calc-btn');
-            
-            if (symbolInput && calcBtn) {
-                // Меняем символ
-                symbolInput.value = baseCoin + 'USDT'; // или просто baseCoin, смотря что ожидает Q‑Field
-                // Триггерим событие change, если нужно
-                symbolInput.dispatchEvent(new Event('change', { bubbles: true }));
-                // Нажимаем кнопку расчёта
-                calcBtn.click();
-            }
+            qFrame.contentWindow.postMessage({
+                type: 'SET_SYMBOL_AND_SCAN',
+                symbol: symbol   // например "BTCUSDT"
+            }, '*');
+            console.log(`[QField Panel] Отправлен символ ${symbol}`);
         } catch (e) {
-            console.warn('Не удалось обновить Q‑Field (возможно, разный домен):', e);
+            console.warn('Ошибка отправки в QField Panel:', e);
         }
     }
 
     
-    console.log(`[IFRAMES] Updated for: ${baseCoin}`);
+     // --- QField Pro (первая вкладка) ---
+       const qPro = document.getElementById('iframe-tab1');
+    if (qPro && qPro.contentWindow) {
+        try {
+            qPro.contentWindow.postMessage({
+                type: 'SET_SYMBOL_AND_SCAN',
+                symbol: symbol
+                // timeframe больше не передаём
+            }, '*');
+            console.log(`[QField Pro] отправлен символ ${symbol}`);
+        } catch (e) {
+            console.warn('Ошибка отправки в QField Pro:', e);
+        }
+    }
+
+
+
+    // --- Coinglass TV (если нужно) ---
+    const tvFrame = document.getElementById('iframe-tab2');
+    if (tvFrame) {
+        tvFrame.src = `https://www.coinglass.com/tv/Binance_${baseCoin}USDT`;
+    }
+}
+
+
+function updateExternalFrames(symbol) {
+    const baseCoin = symbol.replace('USDT', '').toUpperCase();
+
+    // --- Q‑Field в правой панели (простой) ---
+    const qFrame = document.getElementById('qfield-frame');
+    if (qFrame && qFrame.contentWindow) {
+        try {
+            qFrame.contentWindow.postMessage({
+                type: 'SET_SYMBOL_AND_SCAN',
+                symbol: symbol
+            }, '*');
+            console.log(`[QField Panel] Отправлен символ ${symbol}`);
+        } catch (e) {
+            console.warn('Ошибка отправки в QField Panel:', e);
+        }
+    }
+
+    // --- QField Pro (первая вкладка) ---
+    const qPro = document.getElementById('iframe-tab1');
+    if (qPro && qPro.contentWindow) {
+        try {
+            qPro.contentWindow.postMessage({
+                type: 'SET_SYMBOL_AND_SCAN',
+                symbol: symbol
+            }, '*');
+            console.log(`[QField Pro] отправлен символ ${symbol}`);
+        } catch (e) {
+            console.warn('Ошибка отправки в QField Pro:', e);
+        }
+    }
+
+    // --- Coinglass TV (вторая вкладка) ---
+    const tvFrame = document.getElementById('iframe-tab2');
+    if (tvFrame) {
+        tvFrame.src = `https://www.coinglass.com/tv/Binance_${baseCoin}USDT`;
+    }
+
+    // --- Thermal Map (третья вкладка) ---
+    const qThermal = document.getElementById('iframe-tab3');
+    if (qThermal && qThermal.contentWindow) {
+        try {
+            qThermal.contentWindow.postMessage({
+                type: 'SET_SYMBOL_AND_SCAN',
+                symbol: symbol
+            }, '*');
+            console.log(`[Thermal Map] отправлен символ ${symbol}`);
+        } catch (e) {
+            console.warn('Ошибка отправки в Thermal Map:', e);
+        }
+    }
 }
 
 window.addEventListener('click', (e) => {
@@ -4089,92 +4262,22 @@ APP.runAnalysis = async function() {
 APP.init();
 
 // ===== МЕТОД СТАТИСТИКИ (добавляем после создания APP) =====
-APP.showAlligatorStats = function() {
-    const modal = document.getElementById('stats-modal');
-    if (!modal) return;
-
-    const trades = STATE.alligatorTrades || [];
-    const equityStart = 1000;
-    const equityCurrent = STATE.alligatorEquity || equityStart;
-    const totalPnl = equityCurrent - equityStart;
-    const totalPnlPercent = (totalPnl / equityStart) * 100;
-
-    let wins = 0, losses = 0;
-    trades.forEach(t => {
-        if (t.pnl > 0) wins++;
-        else if (t.pnl < 0) losses++;
-    });
-    const winRate = trades.length ? (wins / trades.length * 100).toFixed(1) : 0;
-
-    const summaryDiv = document.getElementById('stats-summary');
-    if (summaryDiv) {
-        summaryDiv.innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
-                <div><span style="color: #888;">Total Trades</span><br><span style="font-size: 18px; font-weight: bold;">${trades.length}</span></div>
-                <div><span style="color: #888;">Win Rate</span><br><span style="font-size: 18px; font-weight: bold; color: ${winRate >= 50 ? '#00ff9d' : '#ff0055'};">${winRate}%</span></div>
-                <div><span style="color: #888;">Total PnL</span><br><span style="font-size: 18px; font-weight: bold; color: ${totalPnl >= 0 ? '#00ff9d' : '#ff0055'};">${totalPnl > 0 ? '+' : ''}${totalPnl.toFixed(2)} USD</span></div>
-                <div><span style="color: #888;">Return</span><br><span style="font-size: 18px; font-weight: bold; color: ${totalPnl >= 0 ? '#00ff9d' : '#ff0055'};">${totalPnlPercent > 0 ? '+' : ''}${totalPnlPercent.toFixed(2)}%</span></div>
-            </div>
-        `;
-    }
-
-    const tbody = document.getElementById('stats-tbody');
-    if (tbody) {
-        tbody.innerHTML = '';
-        if (trades.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #666;">No trades yet</td></tr>';
-        } else {
-            trades.slice().reverse().forEach(t => {
-                const entryTime = new Date(t.entryTime * 1000).toLocaleString();
-                const exitTime = new Date(t.exitTime * 1000).toLocaleString();
-                const pnlColor = t.pnl >= 0 ? '#00ff9d' : '#ff0055';
-                const reason = t.exitReason === 'stop' ? '🛑 Stop' : (t.exitReason === 'reverse' ? '🔄 Reverse' : t.exitReason);
-                const row = `<tr style="border-bottom: 1px solid #222;">
-                    <td style="padding: 6px;">${entryTime}</td>
-                    <td style="padding: 6px;">${exitTime}</td>
-                    <td style="text-align: right; padding: 6px;">${t.entryPrice.toFixed(4)}</td>
-                    <td style="text-align: right; padding: 6px;">${t.exitPrice.toFixed(4)}</td>
-                    <td style="text-align: right; padding: 6px; color: ${pnlColor};">${t.pnlPercent > 0 ? '+' : ''}${t.pnlPercent.toFixed(2)}%</td>
-                    <td style="text-align: center; padding: 6px;">${reason}</td>
-                </tr>`;
-                tbody.innerHTML += row;
-            });
-        }
-    }
-
-    modal.style.display = 'block';
-};
+//удалено
 APP.runAnalysis();
 
+// Сворачивание/разворачивание панели Hunter
+const hunterHeader = document.getElementById('hunter-toggle-header');
+const hunterContent = document.getElementById('hunter-settings-content');
+const hunterIcon = document.getElementById('hunter-toggle-icon');
+if (hunterHeader && hunterContent && hunterIcon) {
+    hunterHeader.addEventListener('click', () => {
+        const isHidden = hunterContent.style.display === 'none';
+        hunterContent.style.display = isHidden ? 'block' : 'none';
+        hunterIcon.textContent = isHidden ? '▼' : '▶';
+    });
+}
+
 </script>
-<div id="stats-modal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 900px; max-height: 80vh; background: #0b0e11; border: 2px solid #3b82f6; border-radius: 8px; z-index: 10001; padding: 20px; overflow-y: auto; box-shadow: 0 0 30px rgba(59,130,246,0.5); color: #fff; font-family: monospace;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h2 style="color: #3b82f6; margin: 0;">🐊 ALLIGATOR TRADES REPORT</h2>
-        <button onclick="document.getElementById('stats-modal').style.display='none'" style="background: transparent; border: none; color: #fff; font-size: 20px; cursor: pointer;">&times;</button>
-    </div>
-    <div id="stats-summary" style="margin-bottom: 20px; padding: 10px; background: #1e2329; border-radius: 4px;">
-        <!-- Summary will be inserted here -->
-    </div>
-    <div style="overflow-x: auto;">
-        <table id="stats-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
-            <thead>
-                <tr style="border-bottom: 1px solid #333;">
-                    <th style="text-align: left; padding: 8px;">Entry Time</th>
-                    <th style="text-align: left; padding: 8px;">Exit Time</th>
-                    <th style="text-align: right; padding: 8px;">Entry Price</th>
-                    <th style="text-align: right; padding: 8px;">Exit Price</th>
-                    <th style="text-align: right; padding: 8px;">PnL %</th>
-                    <th style="text-align: center; padding: 8px;">Reason</th>
-                </tr>
-            </thead>
-            <tbody id="stats-tbody">
-                <!-- Rows will be inserted here -->
-            </tbody>
-        </table>
-    </div>
-    <div style="margin-top: 15px; text-align: right; font-size: 10px; color: #666;">
-        * Equity start: 1000 USD
-    </div>
-</div>
+
 </body>
 </html>
