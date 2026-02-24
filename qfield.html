@@ -532,7 +532,7 @@
 })();
 
 window.addEventListener('message', (event) => {
-    console.log('QField получил сообщение:', event.data);
+    console.log('QField Pro получил сообщение:', event.data);
     const data = event.data;
     if (data && data.type === 'SET_SYMBOL_AND_SCAN') {
         const input = document.getElementById('symbol');
@@ -545,6 +545,8 @@ window.addEventListener('message', (event) => {
             tfSelect.value = data.timeframe;
             tfSelect.dispatchEvent(new Event('change', { bubbles: true }));
         }
+        // 👇 Добавляем клик по кнопке SCAN
+        document.getElementById('btn-scan')?.click();
     }
 });
 </script>
