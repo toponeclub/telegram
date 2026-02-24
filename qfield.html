@@ -531,23 +531,22 @@
     window.onload = () => { bindUI(); initData(); setInterval(fetchMTF, 60000); };
 })();
 
- // Добавляем обработчик сообщений от Genesis
-    window.addEventListener('message', (event) => {
-        const data = event.data;
-        if (data && data.type === 'SET_SYMBOL_AND_SCAN') {
-            const input = document.getElementById('symbol');
-            const tfSelect = document.getElementById('tf');
-            
-            if (input && data.symbol) {
-                input.value = data.symbol;
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-            if (tfSelect && data.timeframe) {
-                tfSelect.value = data.timeframe;
-                tfSelect.dispatchEvent(new Event('change', { bubbles: true }));
-            }
+window.addEventListener('message', (event) => {
+    console.log('QField получил сообщение:', event.data);
+    const data = event.data;
+    if (data && data.type === 'SET_SYMBOL_AND_SCAN') {
+        const input = document.getElementById('symbol');
+        const tfSelect = document.getElementById('tf');
+        if (input && data.symbol) {
+            input.value = data.symbol;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
         }
-    });
+        if (tfSelect && data.timeframe) {
+            tfSelect.value = data.timeframe;
+            tfSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
+});
 </script>
 </body>
 </html>
