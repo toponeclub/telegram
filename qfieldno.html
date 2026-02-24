@@ -6,6 +6,8 @@
     <style>
         body { margin: 0; background: #030303; color: #fff; font-family: 'JetBrains Mono', monospace; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
         .toolbar { padding: 10px 20px; background: #0a0a0a; border-bottom: 1px solid #222; display: flex; gap: 15px; align-items: center; font-size: 12px; }
+        /* Для скрытия панели инструментов раскомментируйте следующую строку: */
+       .toolbar { display: none; } 
         input, select, button { background: #111; color: #00ff9d; border: 1px solid #333; padding: 6px 12px; font-family: inherit; border-radius: 4px; outline: none; }
         button { cursor: pointer; font-weight: bold; background: #00ff9d; color: #000; }
         .canvas-container { flex: 1; position: relative; width: 100%; height: 100%; }
@@ -18,7 +20,12 @@
 <div class="toolbar">
     <span style="font-weight: 900; color: #fff;">Q-FIELD <span style="color:#00ff9d">v4</span></span>
     <input type="text" id="symbol" value="BTCUSDT" style="width: 80px;">
-    <select id="tf"><option value="5m" selected>5m</option><option value="15m">15m</option></select>
+    <select id="tf">
+        <option value="5m" selected>5m</option>
+        <option value="15m">15m</option>
+        <option value="1h">1h</option>
+        <option value="4h">4h</option>
+    </select>
     <button id="calc-btn">CALCULATE MATRIX</button>
     <span>Температура: <input type="range" id="temp" min="0.1" max="2" step="0.1" value="0.8" style="vertical-align: middle;"></span>
     <span id="status" style="color: #666; margin-left: auto;">Ждет сигнала...</span>
@@ -44,7 +51,6 @@
 
     // --- Математика и Ядро ---
     
-    // 1. Lite Self-Attention (поиск контекста)
     function calculateAttentionScores(klines, prefixLen = 20) {
         const closes = klines.map(k => k.close);
         const current = closes.slice(-prefixLen);
@@ -57,14 +63,12 @@
             const hMean = hist.reduce((a,b)=>a+b,0)/prefixLen;
             const k = hist.map(v => v - hMean); // Key
             
-            // Dot product
             let dot = 0;
             for(let j=0; j<prefixLen; j++) dot += q[j] * k[j];
             
             scores.push({ index: i, score: dot });
         }
         
-        // Softmax
         const maxScore = Math.max(...scores.map(s => s.score));
         let sumExp = 0;
         scores.forEach(s => {
@@ -73,10 +77,9 @@
         });
         scores.forEach(s => s.weight /= sumExp);
         
-        return scores.sort((a,b) => b.weight - a.weight).slice(0, 100); // Топ 100 аттеншенов
+        return scores.sort((a,b) => b.weight - a.weight).slice(0, 100);
     }
 
-    // 2. Volume Profile (Аттракторы)
     function buildVolumeProfile(klines) {
         const profile = new Array(STATE.buckets).fill(0);
         const minP = Math.min(...klines.map(k=>k.low));
@@ -92,20 +95,17 @@
         return { minP, maxP, step, profile: profile.map(v => v / maxV) };
     }
 
-    // 3. Генерация Матрицы Плотности (KDE)
     function computeDensityMatrix(klines) {
         const lastPrice = klines[klines.length-1].close;
         const attentions = calculateAttentionScores(klines);
         const vp = buildVolumeProfile(klines);
         
-        // Диапазон рендеринга
         const renderMin = lastPrice * 0.95; 
         const renderMax = lastPrice * 1.05;
         const pStep = (renderMax - renderMin) / STATE.buckets;
         
         const matrix = Array(STATE.depth).fill(0).map(() => Array(STATE.buckets).fill(0));
         
-        // Наполняем матрицу траекториями
         attentions.forEach(att => {
             const histBase = klines[att.index + 19].close;
             const scale = lastPrice / histBase;
@@ -115,7 +115,6 @@
                 const pIdx = Math.floor((targetPrice - renderMin) / pStep);
                 
                 if (pIdx >= 0 && pIdx < STATE.buckets) {
-                    // Сила притяжения объема
                     const vpIdx = Math.floor((targetPrice - vp.minP) / vp.step);
                     const gravity = (vpIdx>=0 && vpIdx<vp.buckets) ? (1 + vp.profile[vpIdx]) : 1;
                     
@@ -124,7 +123,6 @@
             }
         });
 
-        // Гауссово размытие (KDE)
         const smoothed = Array(STATE.depth).fill(0).map(() => Array(STATE.buckets).fill(0));
         for(let t=0; t<STATE.depth; t++) {
             for(let p=0; p<STATE.buckets; p++) {
@@ -141,14 +139,12 @@
         return { matrix: smoothed, min: renderMin, max: renderMax };
     }
 
-    // --- Рендеринг ---
     function colorMap(value) {
-        // Magma/Inferno style gradient
         if (value < 0.05) return `rgba(0,0,0,0)`;
-        if (value < 0.2) return `rgba(75, 0, 130, ${value*2})`; // Purple
-        if (value < 0.5) return `rgba(220, 20, 60, ${value*1.5})`; // Crimson
-        if (value < 0.8) return `rgba(255, 140, 0, ${value})`; // Orange
-        return `rgba(255, 255, 255, ${value})`; // White hot
+        if (value < 0.2) return `rgba(75, 0, 130, ${value*2})`;
+        if (value < 0.5) return `rgba(220, 20, 60, ${value*1.5})`;
+        if (value < 0.8) return `rgba(255, 140, 0, ${value})`;
+        return `rgba(255, 255, 255, ${value})`;
     }
 
     function draw() {
@@ -168,7 +164,6 @@
         function getY(price) { return STATE.height - ((price - minP) / pRange) * STATE.height; }
         function getX(idx) { return idx * candleW; }
 
-        // 1. Отрисовка Термальной матрицы (Будущее)
         if (STATE.matrix) {
             const mData = STATE.matrix.matrix;
             let maxDens = 0;
@@ -183,7 +178,6 @@
                     const dens = mData[t][p] / (maxDens || 1);
                     if (dens > 0.01) {
                         ctx.fillStyle = colorMap(dens);
-                        // Инвертируем Y для отрисовки
                         const y = STATE.height - (p/STATE.buckets)*STATE.height;
                         ctx.fillRect(x, y - stepY, candleW + 1, stepY + 1);
                     }
@@ -192,7 +186,6 @@
             ctx.globalCompositeOperation = 'source-over';
         }
 
-        // 2. Отрисовка свечей (Прошлое)
         histData.forEach((k, i) => {
             const x = getX(i);
             const yO = getY(k.open), yC = getY(k.close), yH = getY(k.high), yL = getY(k.low);
@@ -204,23 +197,22 @@
             ctx.fillRect(x + candleW*0.1, Math.min(yO, yC), candleW*0.8, Math.max(1, Math.abs(yO - yC)));
         });
 
-        // Линия текущей цены
         const lastP = histData[histData.length-1].close;
         ctx.strokeStyle = '#fff'; ctx.setLineDash([2, 4]);
         ctx.beginPath(); ctx.moveTo(0, getY(lastP)); ctx.lineTo(STATE.width, getY(lastP)); ctx.stroke();
         ctx.setLineDash([]);
     }
 
-    // --- Логика ---
     async function run() {
         document.getElementById('loader').style.display = 'flex';
         try {
-            const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${document.getElementById('symbol').value}&interval=${document.getElementById('tf').value}&limit=1500`);
+            const symbol = document.getElementById('symbol').value;
+            const interval = document.getElementById('tf').value;
+            const res = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=1500`);
             const raw = await res.json();
             STATE.data = raw.map(k => ({ time: k[0], open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5] }));
             
             document.getElementById('status').innerText = 'Вычисление матрицы...';
-            // Используем timeout чтобы UI успел показать лоадер
             setTimeout(() => {
                 STATE.matrix = computeDensityMatrix(STATE.data);
                 draw();
@@ -251,19 +243,24 @@
         run();
     }
 
-            // Добавьте где‑нибудь после инициализации
-window.addEventListener('message', (event) => {
-    // Проверяем источник, если нужно (event.origin)
-    const data = event.data;
-    if (data && data.type === 'SET_SYMBOL_AND_SCAN') {
-        const input = document.getElementById('symbol');
-        if (input) {
-            input.value = data.symbol;
-            input.dispatchEvent(new Event('change', { bubbles: true }));
+    // Обработчик сообщений от родительского окна
+    window.addEventListener('message', (event) => {
+        const data = event.data;
+        if (data && data.type === 'SET_SYMBOL_AND_SCAN') {
+            const input = document.getElementById('symbol');
+            const tfSelect = document.getElementById('tf');
+            if (input) {
+                input.value = data.symbol; // ожидается что-то вроде "BTCUSDT"
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            // Если передан таймфрейм, устанавливаем его
+            if (tfSelect && data.timeframe) {
+                tfSelect.value = data.timeframe;
+                tfSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
             document.getElementById('calc-btn').click();
         }
-    }
-});
+    });
 
     window.onload = init;
 })();
