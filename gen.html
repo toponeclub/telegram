@@ -8,6 +8,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -35,13 +36,13 @@ body {
 }
         .app-container {
             display: grid;
-            grid-template-columns: 320px 1fr 300px;
-            grid-template-rows: 60px 1fr 30px;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: 60px 1fr auto;
            width: 100%; height: 100vh;       /* ← теперь точно 100vh */
-            gap: 6px; padding: 6px;
+            gap: 0px; padding: 0px;
         }
 
-        .panel { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .panel { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 0px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
         
         .header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 2px solid var(--accent-green); background: #080a0d; flex-direction: row; }
         .brand { font-size: 20px; font-weight: 900; letter-spacing: -1px; color: var(--accent-green); display: flex; align-items: center; gap: 8px; }
@@ -75,6 +76,7 @@ body {
         .s-desc { font-size: 9px; color: #666; margin-top: 2px; line-height: 1.2; }
 
         .chart-container { grid-column: 2 / 3; grid-row: 2 / 3; position: relative; background: #000; }
+        
         #tv-chart { width: 100%; height: 100%; }
         
         .tf-overlay { position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; gap: 4px; background: rgba(0,0,0,0.7); padding: 4px; border-radius: 6px; backdrop-filter: blur(4px); border: 1px solid #333; }
@@ -93,7 +95,7 @@ body {
         .fib-btn.active { background: #fbbf24; color: #000; box-shadow: 0 0 15px #fbbf24; }
 
         .verdict-panel { background: linear-gradient(145deg, #10141a, #050505); border: 1px solid var(--border-color); border-radius: 6px; padding: 15px; text-align: center; flex-shrink: 0; }
-        .v-main { font-size: 28px; font-weight: 900; margin: 5px 0; text-shadow: 0 0 20px currentColor; }
+        .v-main { font-size: 18px; font-weight: 900; margin: 5px 0; text-shadow: 0 0 20px currentColor; }
         .v-label { font-size: 10px; color: #666; letter-spacing: 2px; text-transform: uppercase; }
         .v-target { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #333; display: flex; justify-content: space-between; font-size: 11px; }
         
@@ -703,6 +705,22 @@ button {
     user-select: none;
 }
 
+/* Полноэкранный режим для контейнера графика */
+.chart-container:fullscreen {
+    background-color: var(--bg-dark);
+    padding: 10px;
+}
+.chart-container:-webkit-full-screen {
+    background-color: var(--bg-dark);
+    padding: 10px;
+}
+.chart-container:-moz-full-screen {
+    background-color: var(--bg-dark);
+    padding: 10px;
+}
+
+
+
     </style>
 </head>
 
@@ -795,24 +813,29 @@ button {
 
        
 
-         <div class="verdict-panel">
-            <div class="v-label">PREDICTED MOVEMENT</div>
-            <div class="v-main" id="pred-val">0.00%</div>
-            <div class="v-label" id="pred-dir" style="color: #fff;">NEUTRAL</div>
-            
-            <div class="conf-track">
-                <div class="conf-val" id="conf-bar" style="width: 0%; background: #444;"></div>
-            </div>
-            <div style="font-size: 9px; color: #666; margin-top: 4px; display:flex; justify-content:space-between;">
-                <span>CONFIDENCE</span>
-                <span id="conf-text">0%</span>
-            </div>
-
-            <div class="v-target">
-                <span>TARGET: <span id="t-price" style="color:#fff;">--</span></span>
-                <span>STOP: <span id="s-price" style="color:#fff;">--</span></span>
-            </div>
+         <div class="bg-black/60 p-3 rounded-lg border border-emerald-500/20 shadow-lg mb-2">
+    <div class="flex justify-between items-center cursor-pointer" id="verdict-toggle-header">
+        <div class="text-[10px] uppercase text-gray-500 mb-0">PREDICTED MOVEMENT</div>
+        <span id="verdict-toggle-icon" class="text-gray-400">▶</span>
+    </div>
+    <div id="verdict-content" class="mt-2" style="display: none;">
+        <div class="v-main" id="pred-val">0.00%</div>
+        <div class="v-label" id="pred-dir" style="color: #fff;">NEUTRAL</div>
+        
+        <div class="conf-track">
+            <div class="conf-val" id="conf-bar" style="width: 0%; background: #444;"></div>
         </div>
+        <div style="font-size: 9px; color: #666; margin-top: 4px; display:flex; justify-content:space-between;">
+            <span>CONFIDENCE</span>
+            <span id="conf-text">0%</span>
+        </div>
+
+        <div class="v-target">
+            <span>TARGET: <span id="t-price" style="color:#fff;">--</span></span>
+            <span>STOP: <span id="s-price" style="color:#fff;">--</span></span>
+        </div>
+    </div>
+</div>
 
        
 
@@ -862,7 +885,7 @@ button {
             <div style="font-size: 10px; color: var(--accent-gold); margin-top: 5px;">CONNECTING TO BINANCE FUTURES...</div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 mt-4 px-2">
+        <div class="grid grid-cols-2 gap-1 mt-0 px-1">
     <div class="bg-black/60 p-3 rounded-lg border border-emerald-500/20 shadow-lg shadow-emerald-900/10 flex flex-col justify-between">
         <div id="imbalance-ratio" class="text-[10px] uppercase text-gray-500 mb-1 tracking-wider text-center">NEUTRAL MARKET</div>
         
@@ -899,11 +922,17 @@ button {
     <button class="chart-btn" onclick="APP.zoomChart('out')"><i class="fas fa-search-minus"></i></button>
     <div style="height:1px; background: #333; margin: 2px 0;"></div>
     <button class="chart-btn" onclick="APP.zoomChart('reset')"><i class="fas fa-home"></i></button>
+    <div style="height:1px; background: #333; margin: 2px 0;"></div>
+<button class="chart-btn" id="snipping-btn" onclick="APP.copyScreenshotToClipboard()"><i class="fas fa-camera"></i></button>
+    <!-- Новая кнопка fullscreen -->
+    <div style="height:1px; background: #333; margin: 2px 0;"></div>
+    <button class="chart-btn" id="fullscreen-btn" onclick="APP.toggleFullScreen()"><i class="fas fa-expand"></i></button>
+    
 </div>
 
 <div id="chart-container-wrapper" style="position: relative; width: 100%; height: 100%; flex-grow: 1;">
     <div id="tv-chart" style="width: 100%; height: 100%;"></div>
-    <div class="absolute top-1 right-12 z-[1002] flex gap-2">
+    <div class="absolute top-1 right-12 z-[1002] flex gap-1">
     <div class="relative group">
         <button class="bg-black/60 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded text-[11px] text-gray-300 hover:border-[#00ff9d] transition-all flex items-center gap-2">
             <i class="fas fa-chart-candle text-[#00ff9d]"></i> 
@@ -924,12 +953,20 @@ button {
             <i class="fas fa-flask text-[#00ff9d]"></i>Ind<i class="fas fa-chevron-down text-[8px]"></i>
         </button>
 <div class="absolute right-0 mt-2 w-32 bg-[#1e2329] border border-[#2b3139] rounded-md shadow-xl opacity-0 invisible transition-all flex flex-col p-1 z-[1003]">   
-            <button onclick="APP.toggleIndicator('momentum')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded flex justify-between">Momentum <span class="text-cyan-400">●</span></button> 
+   
+    <button onclick="APP.toggleIndicator('momentum')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded flex justify-between">Momentum <span class="text-cyan-400">●</span></button> 
+     <button onclick="APP.toggleIndicator('lsr')" class="text-left px-3 py-2 text-[10px] hover:bg-blue-500/20 text-blue-400 rounded flex justify-between">
+    L/S R <span class="text-blue-400">●</span>
+</button>        
+<button onclick="APP.toggleIndicator('lsrDelta')" class="text-left px-3 py-2 text-[10px] hover:bg-yellow-500/20 text-yellow-400 rounded flex justify-between">
+    L/S R Delta <span class="text-yellow-400">●</span>
+</button>
             <button onclick="APP.toggleIndicator('oi')" class="text-left px-3 py-2 text-[10px] hover:bg-amber-500/20 text-amber-400 rounded">Open Interest</button>
             <button onclick="APP.toggleIndicator('liqHist')" class="text-left px-3 py-2 text-[10px] hover:bg-pink-500/20 text-pink-400 rounded">Liq History</button>
             <button onclick="APP.toggleIndicator('macd')" class="text-left px-3 py-2 text-[10px] hover:bg-orange-500/20 text-orange-400 rounded">MACD</button>
             <button onclick="APP.toggleIndicator('rsi')" class="text-left px-3 py-2 text-[10px] hover:bg-purple-500/20 text-purple-400 rounded">Relative Strength (RSI)</button>
             <div class="h-[1px] bg-white/5 my-1"></div>
+            <button onclick="APP.toggleIndicator('volume')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded">Volume</button>
             <button onclick="APP.toggleIndicator('sma')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded flex justify-between">SMA 20/50/200 <span class="text-yellow-500">●</span></button>
             <button onclick="APP.toggleIndicator('ema')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded flex justify-between">EMA 12/26/100 <span class="text-blue-400">●</span></button>
             <button onclick="APP.toggleIndicator('bb')" class="text-left px-3 py-2 text-[10px] hover:bg-white/5 rounded">Bollinger Bands</button>
@@ -960,7 +997,7 @@ button {
         id="fibo-lookback" 
         min="1" max="400" value="25" step="1" 
         class="flex-1 h-1.5 bg-[#2b3139] rounded-lg appearance-none cursor-pointer accent-[#00ff9d]"
-        oninput="document.getElementById('fibo-lookback-val').innerText = this.value; APP.renderFibLines();"
+        oninput="document.getElementById('fibo-lookback-val').innerText = this.value; APP.handleFibSlider();"
     >
     <span id="fibo-lookback-val" class="text-[10px] font-mono text-[#00ff9d] w-8 text-right">25</span>
     <div class="flex gap-1">
@@ -1045,14 +1082,11 @@ button {
     
 </div>
 
-    <footer class="footer" id="console-log">
-        <span class="log-item">[SYSTEM] DOLF V15 GENESIS + HUNTER + HEATMAP INITIALIZED.</span>
-    </footer>
+  
 </div>
 <!-- КОНТЕЙНЕР ДЛЯ СВИТЧЕРА С IFRAME -->
 
    
-<div style="grid-column: 1 / -1; margin-top: 10px; width: 100%; background: #0b0e11; border: 1px solid #1e2329; border-radius: 6px; overflow: hidden;">
     <!-- Вкладки -->
    
 
@@ -1193,6 +1227,7 @@ liqHistInterval: null,
     alligatorEquity: 1000,            // начальный виртуальный баланс
     liqHistData: [],          // для хранения агрегированных ликвидаций
 liqHistInterval: null,    // для таймера обновления
+indicatorUpdaters: {}, // ключ – тип индикатора, значение – функция обновления
 
     
 
@@ -1271,6 +1306,16 @@ document.title = `${STATE.symbol}`;
         group.classList.toggle('open');
     });
 
+ // Единый таймер для обновления индикаторов (кроме OI)
+setInterval(() => {
+    Object.values(STATE.indicatorUpdaters).forEach(updater => {
+        try {
+            updater();
+        } catch (e) {
+            console.warn('Error in indicator updater:', e);
+        }
+    });
+}, 30000); // каждые 30 секунд
     
 
     // Клик по пункту меню (Закрыть)
@@ -1450,7 +1495,7 @@ priceScale.applyOptions({
         startClock();
         initLiquidationWebSocket();
         bindHunterUI();
-    
+    this.initFullscreenButton(); // <-- добавить здесь
         
         document.getElementById('symbol-input').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
@@ -1731,7 +1776,7 @@ if (!window.oiAutoEnabled) {
         } catch (e) {
             console.error(e);
             log(`[ERROR] Fetch Failed: ${e.message}. Check Network/CORS.`);
-            alert("API Error (CORS or Invalid Symbol). Make sure you are using a CORS extension or local proxy if running from file.");
+          //  alert("API Error (CORS or Invalid Symbol). Make sure you are using a CORS extension or local proxy if running from file.");
         } finally {
             btn.disabled = false;
             loader.style.display = 'none';
@@ -2186,6 +2231,8 @@ STATE.series.volume.update(volUpdate);
 
             // Если свеча закрыта (k.x === true) – проверяем сигнал Alligator и обновляем линии
 if (k.x) {
+     // Сначала обновление индикаторов (используют старые данные)
+    Object.values(STATE.indicatorUpdaters).forEach(updater => updater());
     // Создаём объект новой свечи
     const newCandle = {
         time: k.t / 1000,
@@ -2194,15 +2241,30 @@ if (k.x) {
         low: parseFloat(k.l),
         close: parseFloat(k.c),
         volume: parseFloat(k.v) // если нужно
+        
+        
     };
 
-    // Добавляем новую свечу в STATE.prices
+        // Добавляем новую свечу в STATE.prices
     STATE.prices.push(newCandle);
     // Ограничиваем размер, если нужно (например, храним не более 1500 свечей)
     if (STATE.prices.length > 1500) STATE.prices.shift();
 
     // Обновляем график свечей (уже есть в коде выше, но оставляем на всякий случай)
     STATE.series.candle.update(newCandle);
+    
+
+      // Обновляем все остальные индикаторы (кроме OI)
+    Object.values(STATE.indicatorUpdaters).forEach(updater => {
+        try {
+            updater();
+        } catch (e) {
+            console.warn('Error updating indicator:', e);
+        }
+    });
+
+
+
 
     // Обновляем объём (опционально)
     const volUpdate = {
@@ -2240,78 +2302,73 @@ if (k.x) {
 
     // --- REAL-TIME LIQUIDATIONS WEBSOCKET (без изменений) ---
     function initLiquidationWebSocket() {
-        if (STATE.liqWs) STATE.liqWs.close();
-        STATE.liqWs = new WebSocket('wss://fstream.binance.com/ws/!forceOrder@arr');
-        
-        STATE.liqWs.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            const liq = data.o;
-            if (!liq) return;
-            
-            if (liq.s !== STATE.symbol) return;
-            
-            const usdValue = parseFloat(liq.q) * parseFloat(liq.p);
-            if (usdValue < 6000) return;
+    if (STATE.liqWs) STATE.liqWs.close();
+    STATE.liqWs = new WebSocket('wss://fstream.binance.com/ws/!forceOrder@arr');
 
-            const isLongLiq = liq.S === 'SELL';
-            
-             const marker = {
-    time: Math.floor(Date.now() / 1000),
-    position: isLongLiq ? 'belowBar' : 'aboveBar',
-    color: isLongLiq ? CONFIG.colors.green : CONFIG.colors.red,
-   // shape: 'circle',  // ← добавляем форму
-    text: `${Math.round(usdValue/1000)}k`
-};
+    STATE.liqWs.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const liq = data.o;
+        if (!liq) return;
 
-            STATE.liqMarkers.push(marker);
-            if (STATE.liqMarkers.length > 20) STATE.liqMarkers.shift();
-            APP.updateAllMarkers();
+        if (liq.s !== STATE.symbol) return;
 
+        const usdValue = parseFloat(liq.q) * parseFloat(liq.p);
+        if (usdValue < 6000) return; // фильтр мелких ликвидаций
 
-            // Обновление индикатора Liq History
-if (this.indicators['liqHist'] && STATE.prices.length > 0) {
-    const lastCandle = STATE.prices[STATE.prices.length - 1];
-    const candleTime = lastCandle.time;
-    const histData = STATE.liqHistData;
-    const lastHist = histData[histData.length - 1];
-    if (lastHist && lastHist.time === candleTime) {
-        // Обновляем последний столбец
-        if (isLongLiq) {
-            lastHist.value += usdValue;
-            lastHist.color = '#00ff9d'; // если была смесь, можно оставить доминирующий цвет
-        } else {
-            lastHist.value += usdValue;
-            lastHist.color = '#ff0055';
+        const isLongLiq = liq.S === 'SELL';
+
+        // Маркер для графика (без shape – только текст)
+        const marker = {
+            time: Math.floor(Date.now() / 1000),
+            position: isLongLiq ? 'belowBar' : 'aboveBar',
+            color: isLongLiq ? CONFIG.colors.green : CONFIG.colors.red,
+            text: `${Math.round(usdValue/1000)}k`
+        };
+
+        STATE.liqMarkers.push(marker);
+        if (STATE.liqMarkers.length > 20) STATE.liqMarkers.shift();
+        APP.updateAllMarkers(); // используем APP, а не this
+
+        // Обновление индикатора Liq History (если включён)
+        if (APP.indicators && APP.indicators['liqHist'] && STATE.prices.length > 0) {
+            const lastCandle = STATE.prices[STATE.prices.length - 1];
+            const candleTime = lastCandle.time;
+            const histData = STATE.liqHistData;
+            const lastHist = histData[histData.length - 1];
+            if (lastHist && lastHist.time === candleTime) {
+                if (isLongLiq) {
+                    lastHist.value += usdValue;
+                    lastHist.color = '#00ff9d';
+                } else {
+                    lastHist.value += usdValue;
+                    lastHist.color = '#ff0055';
+                }
+                APP.indicators['liqHist'].update(lastHist); // тоже через APP
+            }
         }
-        this.indicators['liqHist'].update(lastHist);
-    } else {
-        // Если свеча новая, добавим запись позже (можно создать)
-        // Но проще дождаться следующего обновления через таймер
-    }
-}
-             // 🔔 Воспроизводим звук ликвидации
+
+        // Воспроизводим звук (перед ним не должно быть ошибок)
+        console.log('Liquidation received, playing sound'); // отладка
         playNotificationSound('liq');
 
-            const now = Date.now();
-            STATE.hunterLiqEvents.push({ time: now, value: usdValue });
-            STATE.hunterLiqEvents = STATE.hunterLiqEvents.filter(e => now - e.time < 20000);
-            STATE.hunterLiqSum = STATE.hunterLiqEvents.reduce((sum, e) => sum + e.value, 0);
+        // Hunter-логика
+        const now = Date.now();
+        STATE.hunterLiqEvents.push({ time: now, value: usdValue });
+        STATE.hunterLiqEvents = STATE.hunterLiqEvents.filter(e => now - e.time < 20000);
+        STATE.hunterLiqSum = STATE.hunterLiqEvents.reduce((sum, e) => sum + e.value, 0);
 
-            if (STATE.hunterConfig.active && STATE.hunterConfig.gates.liq) {
-                const threshold = STATE.hunterConfig.thresholds.liq;
-                if (STATE.hunterLiqSum >= threshold) {
-                    
-   
-                }
+        if (STATE.hunterConfig.active && STATE.hunterConfig.gates.liq) {
+            const threshold = STATE.hunterConfig.thresholds.liq;
+            if (STATE.hunterLiqSum >= threshold) {
+                // здесь можно добавить логику
             }
-            
-            checkAllGates();
-        };
-        
+        }
 
-        STATE.liqWs.onerror = () => log('[WS] Liquidation stream error', 'error');
-    }
+        checkAllGates();
+    };
 
+    STATE.liqWs.onerror = () => log('[WS] Liquidation stream error', 'error');
+}
     
 
     // --- HUNTER функции (без изменений) ---
@@ -2572,6 +2629,8 @@ if (this.indicators['liqHist'] && STATE.prices.length > 0) {
                 gain.connect(audioContext.destination);
                 osc.start();
                 osc.stop(audioContext.currentTime + 0.15);
+
+                
 
                 
 
@@ -2953,11 +3012,11 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
     return {
         runAnalysis,
         setTF: (tf, btn) => {
-            STATE.interval = tf;
-            document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            if (STATE.prices.length) runAnalysis();
-        },
+    STATE.interval = tf;
+    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (STATE.prices.length) APP.runAnalysis();   // было runAnalysis()
+},
 
         // --- ИСПРАВЛЕННЫЙ ZOOM (ОРИГИНАЛЬНЫЙ + СБРОС ЦЕНЫ) ---
         zoomChart(type) {
@@ -3243,6 +3302,71 @@ setupRangeButtons: function() {
     }
 },
 
+
+// Инициализация кнопки fullscreen – обновление иконки при изменении режима
+initFullscreenButton() {
+    const updateIcon = () => {
+        const btn = document.getElementById('fullscreen-btn');
+        if (!btn) return;
+        const icon = btn.querySelector('i');
+        if (document.fullscreenElement) {
+            icon.className = 'fas fa-compress';
+        } else {
+            icon.className = 'fas fa-expand';
+            // Выход из полноэкранного режима – пересоздаём график с небольшой задержкой
+            setTimeout(() => {
+                this.recreateChart();
+            }, 150);
+        }
+    };
+
+    document.addEventListener('fullscreenchange', updateIcon);
+    document.addEventListener('webkitfullscreenchange', updateIcon);
+    document.addEventListener('mozfullscreenchange', updateIcon);
+    document.addEventListener('MSFullscreenChange', updateIcon);
+},
+
+// Переключение полноэкранного режима
+toggleFullScreen() {
+    const container = document.querySelector('.chart-container');
+    if (!document.fullscreenElement) {
+        // Вход в полноэкранный режим
+        if (container.requestFullscreen) {
+            container.requestFullscreen();
+        } else if (container.webkitRequestFullscreen) {
+            container.webkitRequestFullscreen();
+        } else if (container.msRequestFullscreen) {
+            container.msRequestFullscreen();
+        }
+    } else {
+        // Выход из полноэкранного режима
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+        // Принудительно пересчитываем размеры после выхода
+        setTimeout(() => {
+            this.resizeChart();
+            // Эмулируем событие resize для возможных слушателей
+            window.dispatchEvent(new Event('resize'));
+        }, 100);
+    }
+},
+
+resizeChart() {
+    if (STATE.chart) {
+        const container = document.getElementById('tv-chart');
+        if (container) {
+            STATE.chart.applyOptions({
+                width: container.clientWidth,
+                height: container.clientHeight
+            });
+        }
+    }
+},
         
        // --- CHART STYLES ---
      setChartStyle(style) {
@@ -3343,408 +3467,550 @@ setupRangeButtons: function() {
         },
 
         // --- INDICATORS ENGINE ---
-        toggleIndicator(type) {
-            if (this.indicators[type]) {
-                if (Array.isArray(this.indicators[type])) this.indicators[type].forEach(s => STATE.chart.removeSeries(s));
-                else STATE.chart.removeSeries(this.indicators[type]);
-                delete this.indicators[type];
-                return;
-            }
+       toggleIndicator(type) {
 
-            const data = STATE.prices;
-            // Прозрачность 60% (Alpha 0.4)
-            const alpha = 'CC'; // HEX для 40% видимости
-
-            if (type === 'sma') {
-                const s20 = STATE.chart.addLineSeries({ color: '#ffeb3b' + alpha, lineWidth: 1, title: 'SMA 20', priceLineVisible: false });
-                const s50 = STATE.chart.addLineSeries({ color: '#ff9800' + alpha, lineWidth: 1, title: 'SMA 50', priceLineVisible: false });
-                const s200 = STATE.chart.addLineSeries({ color: '#f44336' + alpha, lineWidth: 1, title: 'SMA 200', priceLineVisible: false });
-                
-                s20.setData(this.calcMA(data, 20));
-                s50.setData(this.calcMA(data, 50));
-                s200.setData(this.calcMA(data, 200));
-                this.indicators[type] = [s20, s50, s200];
-            } 
-            else if (type === 'ema') {
-                const e12 = STATE.chart.addLineSeries({ color: '#00d4ff' + alpha, lineWidth: 1, title: 'EMA 12', priceLineVisible: false });
-                const e26 = STATE.chart.addLineSeries({ color: '#e91e63' + alpha, lineWidth: 1, title: 'EMA 26', priceLineVisible: false });
-                const e100 = STATE.chart.addLineSeries({ color: '#ffffff' + alpha, lineWidth: 1, title: 'EMA 100', lineStyle: 2, priceLineVisible: false });
-                
-                e12.setData(this.calcMA(data, 12, true));
-                e26.setData(this.calcMA(data, 26, true));
-                e100.setData(this.calcMA(data, 100, true));
-                this.indicators[type] = [e12, e26, e100];
-            }
-            else if (type === 'ichimoku') {
-                const tenkan = STATE.chart.addLineSeries({ color: '#00d4ff' + alpha, lineWidth: 1, title: 'Tenkan', priceLineVisible: false });
-                const kijun = STATE.chart.addLineSeries({ color: '#ff0055' + alpha, lineWidth: 1, title: 'Kijun', priceLineVisible: false });
-                const ichiData = this.calcIchimoku(data);
-                tenkan.setData(ichiData.tenkan);
-                kijun.setData(ichiData.kijun);
-                this.indicators[type] = [tenkan, kijun];
-            }
-            else if (type === 'bb') {
-                const top = STATE.chart.addLineSeries({ color: 'rgba(30, 144, 255, 0.4)', lineWidth: 1, priceLineVisible: false });
-                const bot = STATE.chart.addLineSeries({ color: 'rgba(30, 144, 255, 0.4)', lineWidth: 1, priceLineVisible: false });
-                const bb = this.calcBB(data, 20, 2);
-                top.setData(bb.upper); bot.setData(bb.lower);
-                this.indicators[type] = [top, bot];
-            }
-            else if (type === 'rsi') {
-                // RSI оставляем ярким (100%), так как он в отдельной зоне и не мешает
-                const rsiSeries = STATE.chart.addLineSeries({
-                    color: '#8b5cf6',
-                    lineWidth: 2,
-                    priceScaleId: 'rsi-pane',
-                    title: 'RSI',
-                });
-                STATE.chart.priceScale('rsi-pane').applyOptions({
-                    scaleMargins: { top: 0.8, bottom: 0.02 },
-                    visible: false,
-                });
-                rsiSeries.createPriceLine({ price: 70, color: 'rgba(139, 92, 246, 0.2)', lineStyle: 2 });
-                rsiSeries.createPriceLine({ price: 30, color: 'rgba(139, 92, 246, 0.2)', lineStyle: 2 });
-                rsiSeries.setData(this.calcRSI(data, 14));
-                this.indicators[type] = rsiSeries;
-            }
-
-             // ⬇️ Добавить этот блок
-    else if (type === 'momentum') {
-        this.toggleMomentum(); // вызываем ваш отдельный метод
-    }
-
-        
-            else if (type === 'ichimoku') {
-                const tenkan = STATE.chart.addLineSeries({ color: '#00d4ff', lineWidth: 1, title: 'Tenkan' });
-                const kijun = STATE.chart.addLineSeries({ color: '#ff0055', lineWidth: 1, title: 'Kijun' });
-                const ichiData = this.calcIchimoku(data);
-                tenkan.setData(ichiData.tenkan);
-                kijun.setData(ichiData.kijun);
-                this.indicators[type] = [tenkan, kijun];
-            }
-            else if (type === 'bb') {
-                const top = STATE.chart.addLineSeries({ color: 'rgba(255,255,255,0.2)', lineWidth: 1 });
-                const bot = STATE.chart.addLineSeries({ color: 'rgba(255,255,255,0.2)', lineWidth: 1 });
-                const bb = this.calcBB(data, 20, 2);
-                top.setData(bb.upper); bot.setData(bb.lower);
-                this.indicators[type] = [top, bot];
-            }
-
-
-            else if (type === 'liqHist') {
-    if (this.indicators['liqHist']) {
-        STATE.chart.removeSeries(this.indicators['liqHist']);
-        delete this.indicators['liqHist'];
-        if (this.liqHistInterval) {
-            clearInterval(this.liqHistInterval);
-            this.liqHistInterval = null;
+         // Special handling for volume visibility toggle
+    if (type === 'volume') {
+        const volSeries = STATE.series.volume;
+        if (!volSeries) return;
+        const isVisible = volSeries.options().visible;
+        volSeries.applyOptions({ visible: !isVisible });
+        // Сохраняем состояние (опционально, для единообразия)
+        if (!this.indicators['volume']) {
+            this.indicators['volume'] = true; // просто маркер, что переключали
         }
-        STATE.liqHistData = [];
+        log(`[Volume] ${!isVisible ? 'Shown' : 'Hidden'}`);
+        return; // важно: не выполняем дальнейший код удаления/создания
+    }
+    // Если индикатор уже включён – удаляем его
+    if (this.indicators[type]) {
+        // Удаляем из списка обновлений
+        delete STATE.indicatorUpdaters[type];
+        
+        // Удаляем серию(и) с графика
+        if (Array.isArray(this.indicators[type])) {
+            this.indicators[type].forEach(s => STATE.chart.removeSeries(s));
+        } else {
+            STATE.chart.removeSeries(this.indicators[type]);
+        }
+        delete this.indicators[type];
+        
+        // Для некоторых индикаторов нужно очистить дополнительные данные
+        if (type === 'lsr') {
+            STATE.lsrData = null;
+            if (this.lsrUpdateInterval) clearInterval(this.lsrUpdateInterval);
+        }
+        if (type === 'lsrDelta') {
+            STATE.lsrDeltaData = null;
+            if (this.lsrDeltaUpdateInterval) clearInterval(this.lsrDeltaUpdateInterval);
+        }
+        if (type === 'liqHist') {
+            STATE.liqHistData = [];
+            if (this.liqHistInterval) clearInterval(this.liqHistInterval);
+        }
+        if (type === 'momentum') {
+            STATE.momentumData = null;
+            if (this.momentumInterval) clearInterval(this.momentumInterval);
+        }
+        if (type === 'oi') {
+            if (this.oiUpdateInterval) clearInterval(this.oiUpdateInterval);
+            STATE.oiCandles = [];
+        }
         return;
     }
 
-    const paneId = 'liqhist-pane';
-    const liqSeries = STATE.chart.addHistogramSeries({
-        color: '#888',
-        priceFormat: { type: 'volume' },
-        priceScaleId: paneId,
-        title: 'Liq History',
-        lastValueVisible: false,
-        priceLineVisible: false
-    });
+    // --- Далее создание индикаторов ---
+    const data = STATE.prices;
+    const alpha = 'CC'; // для прозрачности линий
 
-    STATE.chart.priceScale(paneId).applyOptions({
-        scaleMargins: { top: 0.8, bottom: 0.02 },
-        visible: true,
-        borderVisible: false,
-        textColor: '#888',
-    });
+    // ========== SMA ==========
+    if (type === 'sma') {
+        const s20 = STATE.chart.addLineSeries({ color: '#ffeb3b' + alpha, lineWidth: 1, title: 'SMA 20', priceLineVisible: false });
+        const s50 = STATE.chart.addLineSeries({ color: '#ff9800' + alpha, lineWidth: 1, title: 'SMA 50', priceLineVisible: false });
+        const s200 = STATE.chart.addLineSeries({ color: '#f44336' + alpha, lineWidth: 1, title: 'SMA 200', priceLineVisible: false });
+        
+        s20.setData(this.calcMA(data, 20));
+        s50.setData(this.calcMA(data, 50));
+        s200.setData(this.calcMA(data, 200));
+        this.indicators[type] = [s20, s50, s200];
 
-    this.indicators['liqHist'] = liqSeries;
+        // Функция обновления
+        STATE.indicatorUpdaters[type] = () => {
+            if (!this.indicators[type]) return;
+            this.indicators[type][0].setData(this.calcMA(STATE.prices, 20));
+            this.indicators[type][1].setData(this.calcMA(STATE.prices, 50));
+            this.indicators[type][2].setData(this.calcMA(STATE.prices, 200));
+        };
+    }
 
-    // Загрузка исторических ликвидаций
-    const loadHistory = async () => {
-        const data = await fetchBinanceLiqHistory(STATE.symbol, 500);
-        if (!data.length) {
-            log('[LiqHist] No historical data');
+    // ========== EMA ==========
+    else if (type === 'ema') {
+        const e12 = STATE.chart.addLineSeries({ color: '#00d4ff' + alpha, lineWidth: 1, title: 'EMA 12', priceLineVisible: false });
+        const e26 = STATE.chart.addLineSeries({ color: '#e91e63' + alpha, lineWidth: 1, title: 'EMA 26', priceLineVisible: false });
+        const e100 = STATE.chart.addLineSeries({ color: '#ffffff' + alpha, lineWidth: 1, title: 'EMA 100', lineStyle: 2, priceLineVisible: false });
+        
+        e12.setData(this.calcMA(data, 12, true));
+        e26.setData(this.calcMA(data, 26, true));
+        e100.setData(this.calcMA(data, 100, true));
+        this.indicators[type] = [e12, e26, e100];
+
+        STATE.indicatorUpdaters[type] = () => {
+            if (!this.indicators[type]) return;
+            this.indicators[type][0].setData(this.calcMA(STATE.prices, 12, true));
+            this.indicators[type][1].setData(this.calcMA(STATE.prices, 26, true));
+            this.indicators[type][2].setData(this.calcMA(STATE.prices, 100, true));
+        };
+    }
+
+    // ========== Ichimoku ==========
+    else if (type === 'ichimoku') {
+        const tenkan = STATE.chart.addLineSeries({ color: '#00d4ff' + alpha, lineWidth: 1, title: 'Tenkan', priceLineVisible: false });
+        const kijun = STATE.chart.addLineSeries({ color: '#ff0055' + alpha, lineWidth: 1, title: 'Kijun', priceLineVisible: false });
+        const ichiData = this.calcIchimoku(data);
+        tenkan.setData(ichiData.tenkan);
+        kijun.setData(ichiData.kijun);
+        this.indicators[type] = [tenkan, kijun];
+
+        STATE.indicatorUpdaters[type] = () => {
+            if (!this.indicators[type]) return;
+            const newIchi = this.calcIchimoku(STATE.prices);
+            this.indicators[type][0].setData(newIchi.tenkan);
+            this.indicators[type][1].setData(newIchi.kijun);
+        };
+    }
+
+    // ========== Bollinger Bands ==========
+    else if (type === 'bb') {
+        const top = STATE.chart.addLineSeries({ color: 'rgba(30, 144, 255, 0.4)', lineWidth: 1, priceLineVisible: false });
+        const bot = STATE.chart.addLineSeries({ color: 'rgba(30, 144, 255, 0.4)', lineWidth: 1, priceLineVisible: false });
+        const bb = this.calcBB(data, 20, 2);
+        top.setData(bb.upper);
+        bot.setData(bb.lower);
+        this.indicators[type] = [top, bot];
+
+        STATE.indicatorUpdaters[type] = () => {
+            if (!this.indicators[type]) return;
+            const newBB = this.calcBB(STATE.prices, 20, 2);
+            this.indicators[type][0].setData(newBB.upper);
+            this.indicators[type][1].setData(newBB.lower);
+        };
+    }
+
+    // ========== RSI ==========
+    else if (type === 'rsi') {
+        const paneId = 'rsi-pane';
+        const rsiSeries = STATE.chart.addLineSeries({
+            color: '#8b5cf6',
+            lineWidth: 2,
+            priceScaleId: paneId,
+            title: 'RSI',
+            priceLineVisible: false,
+        });
+        STATE.chart.priceScale(paneId).applyOptions({
+            scaleMargins: { top: 0.8, bottom: 0.02 },
+            visible: false,
+        });
+        rsiSeries.createPriceLine({ price: 70, color: 'rgba(139, 92, 246, 0.2)', lineStyle: 2 });
+        rsiSeries.createPriceLine({ price: 30, color: 'rgba(139, 92, 246, 0.2)', lineStyle: 2 });
+        rsiSeries.setData(this.calcRSI(data, 14));
+        this.indicators[type] = rsiSeries;
+
+        STATE.indicatorUpdaters[type] = () => {
+            if (!this.indicators[type]) return;
+            this.indicators[type].setData(this.calcRSI(STATE.prices, 14));
+        };
+    }
+
+    // ========== Momentum ==========
+    else if (type === 'momentum') {
+        this.toggleMomentum(); // существующий метод
+        // Добавим в updater (функция должна быть реализована)
+        STATE.indicatorUpdaters[type] = () => {
+            if (!this.indicators[type]) return;
+            this.recalcMomentum(); // создадим этот метод позже
+        };
+    }
+
+    // ========== L/S Ratio ==========
+    else if (type === 'lsr') {
+        const paneId = 'lsr-pane';
+        const lineSeries = STATE.chart.addLineSeries({
+            color: '#3b82f6',
+            lineWidth: 2,
+            priceScaleId: paneId,
+            title: 'L/S Ratio',
+            lastValueVisible: true,
+            priceLineVisible: false,
+            crosshairMarkerVisible: true,
+            crosshairMarkerRadius: 4,
+        });
+        STATE.chart.priceScale(paneId).applyOptions({
+            scaleMargins: { top: 0.8, bottom: 0.02 },
+            visible: true,
+            borderVisible: false,
+            textColor: '#888',
+        });
+        this.indicators['lsr'] = lineSeries;
+
+        const loadLSR = async () => {
+            const data = await this.fetchBinanceLSR(STATE.symbol, STATE.interval, 500);
+            if (!data.length) {
+                log('[LSR] No data');
+                return;
+            }
+            STATE.lsrData = data;
+            lineSeries.setData(data);
+            log(`[LSR] History loaded: ${data.length} candles`);
+        };
+        loadLSR();
+
+        // Функция обновления (будет вызываться таймером)
+        STATE.indicatorUpdaters['lsr'] = async () => {
+            if (!this.indicators['lsr'] || !STATE.lsrData) return;
+            const newData = await this.fetchBinanceLSR(STATE.symbol, STATE.interval, 2);
+            if (newData.length < 2) return;
+            const latest = newData[newData.length - 1];
+            const lastStored = STATE.lsrData[STATE.lsrData.length - 1];
+            if (latest.time > lastStored.time) {
+                STATE.lsrData.push(latest);
+                if (STATE.lsrData.length > 500) STATE.lsrData.shift();
+                this.indicators['lsr'].setData(STATE.lsrData);
+                log(`[LSR] Added new candle`);
+            }
+        };
+    }
+
+    // ========== LSR Delta ==========
+    else if (type === 'lsrDelta') {
+        const paneId = 'lsrDelta-pane';
+        const lineSeries = STATE.chart.addLineSeries({
+            color: '#fbbf24',
+            lineWidth: 2,
+            priceScaleId: paneId,
+            title: 'LSR Divergence',
+            lastValueVisible: true,
+            priceLineVisible: false,
+            crosshairMarkerVisible: true,
+            crosshairMarkerRadius: 4,
+        });
+        STATE.chart.priceScale(paneId).applyOptions({
+            scaleMargins: { top: 0.8, bottom: 0.02 },
+            visible: true,
+            borderVisible: false,
+            textColor: '#888',
+        });
+        this.indicators['lsrDelta'] = lineSeries;
+
+        const loadLSRDelta = async () => {
+            if (!STATE.prices || STATE.prices.length < 50) {
+                log('[LSR Delta] Need at least 50 candles');
+                return;
+            }
+            const lsrData = await this.fetchBinanceLSR(STATE.symbol, STATE.interval, 500);
+            if (!lsrData.length) {
+                log('[LSR Delta] No LSR data');
+                return;
+            }
+            const lsrMap = new Map();
+            lsrData.forEach(d => lsrMap.set(d.time, d.value));
+            const points = [];
+            STATE.prices.forEach(p => {
+                const lsr = lsrMap.get(p.time);
+                if (lsr !== undefined) points.push({ time: p.time, price: p.close, lsr: lsr });
+            });
+            if (points.length < 50) {
+                log('[LSR Delta] Not enough aligned points');
+                return;
+            }
+            const WINDOW = 50;
+            const deltaData = [];
+            for (let i = WINDOW; i < points.length; i++) {
+                const windowLsr = points.slice(i - WINDOW, i).map(p => p.lsr);
+                const windowPrice = points.slice(i - WINDOW, i).map(p => p.price);
+                const meanLsr = windowLsr.reduce((a, b) => a + b, 0) / WINDOW;
+                const stdLsr = Math.sqrt(windowLsr.reduce((sum, val) => sum + (val - meanLsr) ** 2, 0) / WINDOW);
+                const meanPrice = windowPrice.reduce((a, b) => a + b, 0) / WINDOW;
+                const stdPrice = Math.sqrt(windowPrice.reduce((sum, val) => sum + (val - meanPrice) ** 2, 0) / WINDOW);
+                if (stdLsr === 0 || stdPrice === 0) continue;
+                const zLsr = (points[i].lsr - meanLsr) / stdLsr;
+                const zPrice = (points[i].price - meanPrice) / stdPrice;
+                deltaData.push({ time: points[i].time, value: zLsr - zPrice });
+            }
+            if (deltaData.length === 0) {
+                log('[LSR Delta] No divergence data');
+                return;
+            }
+            STATE.lsrDeltaData = deltaData;
+            lineSeries.setData(deltaData);
+            log(`[LSR Delta] Loaded ${deltaData.length} points`);
+        };
+        loadLSRDelta();
+
+        STATE.indicatorUpdaters['lsrDelta'] = async () => {
+            if (!this.indicators['lsrDelta']) return;
+            // Простейший вариант – перезагрузить весь индикатор
+            await loadLSRDelta();
+        };
+    }
+
+    // ========== Liq History ==========
+    else if (type === 'liqHist') {
+        if (this.indicators['liqHist']) {
+            STATE.chart.removeSeries(this.indicators['liqHist']);
+            delete this.indicators['liqHist'];
+            if (this.liqHistInterval) {
+                clearInterval(this.liqHistInterval);
+                this.liqHistInterval = null;
+            }
+            STATE.liqHistData = [];
             return;
         }
 
-        // Группируем по свечам текущего таймфрейма
-        const tfSeconds = STATE.interval === '1m' ? 60 :
-                          STATE.interval === '5m' ? 300 :
-                          STATE.interval === '15m' ? 900 :
-                          STATE.interval === '1h' ? 3600 :
-                          STATE.interval === '4h' ? 14400 : 86400;
-
-        const candleMap = new Map();
-        STATE.prices.forEach(c => {
-            candleMap.set(c.time, { long: 0, short: 0 });
+        const paneId = 'liqhist-pane';
+        const liqSeries = STATE.chart.addHistogramSeries({
+            color: '#888',
+            priceFormat: { type: 'volume' },
+            priceScaleId: paneId,
+            title: 'Liq History',
+            lastValueVisible: false,
+            priceLineVisible: false
         });
 
-        data.forEach(liq => {
-            const liqTime = Math.floor(liq.time / 1000); // в секунды
-            // Находим свечу, к которой относится ликвидация (ближайшее меньшее время, кратное tfSeconds)
-            const candleTime = Math.floor(liqTime / tfSeconds) * tfSeconds;
-            const candle = candleMap.get(candleTime);
-            if (candle) {
-                if (liq.side === 'BUY') {
-                    // Ликвидация шортов (покупают) – обычно зелёные
-                    candle.long += liq.usdValue;
-                } else {
-                    // Ликвидация лонгов (продают) – красные
-                    candle.short += liq.usdValue;
-                }
-            }
+        STATE.chart.priceScale(paneId).applyOptions({
+            scaleMargins: { top: 0.8, bottom: 0.02 },
+            visible: true,
+            borderVisible: false,
+            textColor: '#888',
         });
 
-        // Формируем данные для гистограммы: для каждой свечи либо зелёный столбец (long), либо красный (short)
-        const histData = [];
-        STATE.prices.forEach(c => {
-            const val = candleMap.get(c.time);
-            if (val) {
-                if (val.long > 0 || val.short > 0) {
-                    // Если есть ликвидации, показываем максимальную сторону
-                    if (val.long > val.short) {
-                        histData.push({ time: c.time, value: val.long, color: '#00ff9d' });
-                    } else if (val.short > val.long) {
-                        histData.push({ time: c.time, value: val.short, color: '#ff0055' });
-                    } else {
-                        histData.push({ time: c.time, value: val.long, color: '#888' });
-                    }
-                } else {
-                    histData.push({ time: c.time, value: 0, color: '#888' });
-                }
-            }
-        });
+        this.indicators['liqHist'] = liqSeries;
 
-        STATE.liqHistData = histData;
-        liqSeries.setData(histData);
-        log(`[LiqHist] History loaded: ${histData.length} candles`);
-    };
-
-    loadHistory();
-
-    // Периодическое обновление (каждые 30 секунд)
-    this.liqHistInterval = setInterval(() => {
-        if (STATE.liqHistData.length > 0) {
-            // Здесь можно добавить обновление последней свечи через WebSocket
-            // Но так как ликвидации уже приходят через WebSocket, мы будем обновлять их в обработчике
-        }
-    }, 30000);
-}
-
-            // В toggleIndicator добавить:
-else if (type === 'macd') {
-    if (this.indicators['macd']) {
-        this.indicators['macd'].forEach(s => STATE.chart.removeSeries(s));
-        delete this.indicators['macd'];
-        return;
-    }
-
-    const data = STATE.prices;
-    if (!data || data.length < 26) return;
-
-    const macdValues = this.calcMACD(data, 12, 26, 9);
-    if (macdValues.length === 0) return;
-
-    const paneId = 'macd-pane';
-
-    // Линия MACD
-    const macdLine = STATE.chart.addLineSeries({
-        color: '#2962FF',
-        lineWidth: 2,
-        priceScaleId: paneId,
-        title: 'MACD',
-        lastValueVisible: false,
-        priceLineVisible: false,
-    });
-
-    // Линия Signal
-    const signalLine = STATE.chart.addLineSeries({
-        color: '#FF6D00',
-        lineWidth: 1,
-        priceScaleId: paneId,
-        title: 'Signal',
-        lastValueVisible: false,
-        priceLineVisible: false,
-    });
-
-    // Гистограмма
-    const histogram = STATE.chart.addHistogramSeries({
-        color: '#888',
-        priceScaleId: paneId,
-        lastValueVisible: false,
-        priceLineVisible: false,
-    });
-
-    // Настройка шкалы
-    STATE.chart.priceScale(paneId).applyOptions({
-        scaleMargins: { top: 0.7, bottom: 0.02 },
-        visible: true,
-        borderVisible: false,
-        textColor: '#888',
-    });
-
-    // Подготовка данных
-    const macdData = [];
-    const signalData = [];
-    const histData = [];
-
-    macdValues.forEach(item => {
-        macdData.push({ time: item.time, value: item.macd });
-        signalData.push({ time: item.time, value: item.signal });
-        histData.push({
-            time: item.time,
-            value: item.histogram,
-            color: item.histogram >= 0 ? '#26a69a' : '#ef5350'
-        });
-    });
-
-    macdLine.setData(macdData);
-    signalLine.setData(signalData);
-    histogram.setData(histData);
-
-    this.indicators['macd'] = [macdLine, signalLine, histogram];
-}
-else if (type === 'oi') {
-    // Если индикатор уже включён – удаляем и останавливаем интервал
-    if (this.indicators['oi']) {
-        if (this.oiUpdateInterval) {
-            clearInterval(this.oiUpdateInterval);
-            this.oiUpdateInterval = null;
-        }
-        this.indicators['oi'].forEach(s => STATE.chart.removeSeries(s));
-        delete this.indicators['oi'];
-        // Очищаем сохранённые свечи
-        STATE.oiCandles = [];
-        return;
-    }
-
-    // Панель для OI
-    const paneId = 'oi-pane';
-
-    // Создаём свечную серию (один раз)
-    const oiSeries = STATE.chart.addCandlestickSeries({
-        upColor: CONFIG.colors.green,
-        downColor: CONFIG.colors.red,
-        borderVisible: false,
-        wickVisible: true,
-        borderUpColor: CONFIG.colors.green,
-        borderDownColor: CONFIG.colors.red,
-        wickUpColor: CONFIG.colors.green,
-        wickDownColor: CONFIG.colors.red,
-        priceScaleId: paneId,
-        title: 'OI(USD)',
-        lastValueVisible: true,
-        priceLineVisible: false,
-    });
-
-    STATE.chart.priceScale(paneId).applyOptions({
-        scaleMargins: { top: 0.7, bottom: 0.1 },
-        visible: true,
-        borderVisible: false,
-        textColor: '#888',
-    });
-
-    this.indicators['oi'] = [oiSeries];
-
-    // Функция преобразования сырых данных Binance в свечной формат
-    const toCandle = (curr, prev) => ({
-        time: curr.time,
-        open: prev ? prev.value : curr.value,
-        high: Math.max(curr.value, prev ? prev.value : curr.value),
-        low: Math.min(curr.value, prev ? prev.value : curr.value),
-        close: curr.value
-    });
-
-    // Первоначальная загрузка истории (500 свечей)
-    const loadHistory = async () => {
-
-        try {
-
-           // await new Promise(resolve => setTimeout(resolve, 500));
-            const data = await this.fetchBinanceOI(STATE.symbol, STATE.interval, 500);
+        // Загрузка исторических ликвидаций (используем Bybit)
+        const loadHistory = async () => {
+            const data = await fetchBinanceLiqHistory(STATE.symbol, 500);
             if (!data.length) {
-                log('[OI] No historical data');
+                log('[LiqHist] No historical data');
                 return;
             }
-
-            // Строим свечи
-            const candles = [];
-            for (let i = 0; i < data.length; i++) {
-                const prev = i > 0 ? data[i-1] : null;
-                candles.push(toCandle(data[i], prev));
-            }
-            STATE.oiCandles = candles;
-            oiSeries.setData(candles);
-            log(`[OI] History loaded: ${candles.length} candles`);
-        } catch (e) {
-            console.error(e);
-            log('[OI] Error loading history');
-        }
-    };
-
-
-
-    // Функция обновления (добавление новой свечи)
-    const updateOi = async () => {
-        if (!STATE.oiCandles || STATE.oiCandles.length === 0) return;
-
-        try {
-            // Запрашиваем только последние 2 свечи
-            const newData = await this.fetchBinanceOI(STATE.symbol, STATE.interval, 2);
-            if (newData.length < 2) return;
-
-            // Последняя завершённая свеча (newData[newData.length-1])
-            const latest = newData[newData.length-1];
-            const prevLatest = newData[newData.length-2];
-
-            // Сравниваем время последней свечи в нашем массиве и новой
-            const lastCandle = STATE.oiCandles[STATE.oiCandles.length-1];
-            if (latest.time > lastCandle.time) {
-                // Новая свеча появилась
-                const newCandle = toCandle(latest, prevLatest);
-                STATE.oiCandles.push(newCandle);
-
-                // Если превысили лимит в 500 – удаляем самую старую
-                if (STATE.oiCandles.length > 500) {
-                    STATE.oiCandles.shift();
+            const tfSeconds = STATE.interval === '1m' ? 60 :
+                              STATE.interval === '5m' ? 300 :
+                              STATE.interval === '15m' ? 900 :
+                              STATE.interval === '1h' ? 3600 :
+                              STATE.interval === '4h' ? 14400 : 86400;
+            const candleMap = new Map();
+            STATE.prices.forEach(c => {
+                candleMap.set(c.time, { long: 0, short: 0 });
+            });
+            data.forEach(liq => {
+                const liqTime = Math.floor(liq.time / 1000);
+                const candleTime = Math.floor(liqTime / tfSeconds) * tfSeconds;
+                const candle = candleMap.get(candleTime);
+                if (candle) {
+                    if (liq.side === 'BUY') candle.long += liq.usdValue;
+                    else candle.short += liq.usdValue;
                 }
+            });
+            const histData = [];
+            STATE.prices.forEach(c => {
+                const val = candleMap.get(c.time);
+                if (val) {
+                    if (val.long > 0 || val.short > 0) {
+                        if (val.long > val.short) histData.push({ time: c.time, value: val.long, color: '#00ff9d' });
+                        else if (val.short > val.long) histData.push({ time: c.time, value: val.short, color: '#ff0055' });
+                        else histData.push({ time: c.time, value: val.long, color: '#888' });
+                    } else {
+                        histData.push({ time: c.time, value: 0, color: '#888' });
+                    }
+                }
+            });
+            STATE.liqHistData = histData;
+            liqSeries.setData(histData);
+            log(`[LiqHist] History loaded: ${histData.length} candles`);
+        };
+        loadHistory();
 
-                oiSeries.setData(STATE.oiCandles);
-                log(`[OI] Added new candle: ${new Date(latest.time*1000).toLocaleTimeString()}`);
+        // Обновление (будет вызываться таймером) – пока просто перезагружаем историю
+        STATE.indicatorUpdaters['liqHist'] = async () => {
+            if (!this.indicators['liqHist']) return;
+            await loadHistory();
+        };
+    }
+
+    // ========== MACD ==========
+    else if (type === 'macd') {
+        const paneId = 'macd-pane';
+        const macdLine = STATE.chart.addLineSeries({
+            color: '#2962FF',
+            lineWidth: 2,
+            priceScaleId: paneId,
+            title: 'MACD',
+            lastValueVisible: false,
+            priceLineVisible: false,
+        });
+        const signalLine = STATE.chart.addLineSeries({
+            color: '#FF6D00',
+            lineWidth: 1,
+            priceScaleId: paneId,
+            title: 'Signal',
+            lastValueVisible: false,
+            priceLineVisible: false,
+        });
+        const histogram = STATE.chart.addHistogramSeries({
+            color: '#888',
+            priceScaleId: paneId,
+            lastValueVisible: false,
+            priceLineVisible: false,
+        });
+        STATE.chart.priceScale(paneId).applyOptions({
+            scaleMargins: { top: 0.7, bottom: 0.02 },
+            visible: true,
+            borderVisible: false,
+            textColor: '#888',
+        });
+
+        const macdValues = this.calcMACD(data, 12, 26, 9);
+        if (macdValues.length === 0) return;
+
+        const macdData = macdValues.map(v => ({ time: v.time, value: v.macd }));
+        const signalData = macdValues.map(v => ({ time: v.time, value: v.signal }));
+        const histData = macdValues.map(v => ({ time: v.time, value: v.histogram, color: v.histogram >= 0 ? '#26a69a' : '#ef5350' }));
+
+        macdLine.setData(macdData);
+        signalLine.setData(signalData);
+        histogram.setData(histData);
+
+        this.indicators['macd'] = [macdLine, signalLine, histogram];
+
+        STATE.indicatorUpdaters['macd'] = () => {
+            if (!this.indicators['macd']) return;
+            const newVals = this.calcMACD(STATE.prices, 12, 26, 9);
+            if (newVals.length === 0) return;
+            this.indicators['macd'][0].setData(newVals.map(v => ({ time: v.time, value: v.macd })));
+            this.indicators['macd'][1].setData(newVals.map(v => ({ time: v.time, value: v.signal })));
+            this.indicators['macd'][2].setData(newVals.map(v => ({ time: v.time, value: v.histogram, color: v.histogram >= 0 ? '#26a69a' : '#ef5350' })));
+        };
+    }
+
+    // ========== Open Interest ==========
+    else if (type === 'oi') {
+        // Оставляем как есть (с его собственным таймером)
+        if (this.indicators['oi']) {
+            if (this.oiUpdateInterval) {
+                clearInterval(this.oiUpdateInterval);
+                this.oiUpdateInterval = null;
             }
-            // Если время совпадает – ничего не делаем (данные не обновились)
-        } catch (e) {
-            console.warn('[OI] Update error:', e);
+            if (Array.isArray(this.indicators['oi'])) {
+                this.indicators['oi'].forEach(s => STATE.chart.removeSeries(s));
+            } else {
+                STATE.chart.removeSeries(this.indicators['oi']);
+            }
+            delete this.indicators['oi'];
+            STATE.oiCandles = [];
+            return;
         }
-    };
+
+        const paneId = 'oi-pane';
+        const oiSeries = STATE.chart.addCandlestickSeries({
+            upColor: CONFIG.colors.green,
+            downColor: CONFIG.colors.red,
+            borderVisible: false,
+            wickVisible: true,
+            borderUpColor: CONFIG.colors.green,
+            borderDownColor: CONFIG.colors.red,
+            wickUpColor: CONFIG.colors.green,
+            wickDownColor: CONFIG.colors.red,
+            priceScaleId: paneId,
+            title: 'OI(USD)',
+            lastValueVisible: true,
+            priceLineVisible: false,
+        });
+
+        STATE.chart.priceScale(paneId).applyOptions({
+            scaleMargins: { top: 0.7, bottom: 0.1 },
+            visible: true,
+            borderVisible: false,
+            textColor: '#888',
+        });
+
+        this.indicators['oi'] = [oiSeries];
+
+        const toCandle = (curr, prev) => ({
+            time: curr.time,
+            open: prev ? prev.value : curr.value,
+            high: Math.max(curr.value, prev ? prev.value : curr.value),
+            low: Math.min(curr.value, prev ? prev.value : curr.value),
+            close: curr.value
+        });
+
+        const loadHistory = async () => {
+            try {
+                const data = await this.fetchBinanceOI(STATE.symbol, STATE.interval, 500);
+                if (!data.length) {
+                    log('[OI] No historical data');
+                    return;
+                }
+                const candles = [];
+                for (let i = 0; i < data.length; i++) {
+                    const prev = i > 0 ? data[i-1] : null;
+                    candles.push(toCandle(data[i], prev));
+                }
+                STATE.oiCandles = candles;
+                oiSeries.setData(candles);
+                log(`[OI] History loaded: ${candles.length} candles`);
+            } catch (e) {
+                console.error(e);
+                log('[OI] Error loading history');
+            }
+        };
+
+        const updateOi = async () => {
+            if (!STATE.oiCandles || STATE.oiCandles.length === 0) return;
+            try {
+                const newData = await this.fetchBinanceOI(STATE.symbol, STATE.interval, 2);
+                if (newData.length < 2) return;
+                const latest = newData[newData.length-1];
+                const prevLatest = newData[newData.length-2];
+                const lastCandle = STATE.oiCandles[STATE.oiCandles.length-1];
+                if (latest.time > lastCandle.time) {
+                    const newCandle = toCandle(latest, prevLatest);
+                    STATE.oiCandles.push(newCandle);
+                    if (STATE.oiCandles.length > 500) STATE.oiCandles.shift();
+                    oiSeries.setData(STATE.oiCandles);
+                    log(`[OI] Added new candle: ${new Date(latest.time*1000).toLocaleTimeString()}`);
+                }
+            } catch (e) {
+                console.warn('[OI] Update error:', e);
+            }
+        };
+
+        loadHistory().then(() => {
+            this.oiUpdateInterval = setInterval(updateOi, 30000);
+        });
+    
 
 
+   
 
-    // Запускаем загрузку истории, а затем устанавливаем периодическое обновление
-    loadHistory().then(() => {
-        // Обновляем раз в 30 секунд (интервал можно изменить)
-        this.oiUpdateInterval = setInterval(updateOi, 30000);
-    });
-
-    // Загрузка исторических ликвидаций с Binance (до 1000 записей)
+    // Загрузка исторических ликвидаций (через Bybit recent-trade)
 async function fetchBinanceLiqHistory(symbol, limit = 500) {
-    const url = `https://fapi.binance.com/fapi/v1/allForceOrders?symbol=${symbol}&limit=${limit}`;
+    // Bybit требует тикер в формате SOLUSDT (без изменений)
+    const url = `https://api.bybit.com/v5/market/recent-trade?category=linear&symbol=${symbol}&limit=${limit}`;
     try {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        return data.map(item => ({
-            time: item.time, // миллисекунды
-            side: item.side, // 'BUY' или 'SELL'
+        const json = await res.json();
+        if (json.retCode !== 0) throw new Error(`Bybit error: ${json.retMsg}`);
+        
+        // Преобразуем данные Bybit в наш внутренний формат
+        return (json.result?.list || []).map(item => ({
+            time: parseInt(item.time), // миллисекунды
+            side: item.side === 'Buy' ? 'BUY' : 'SELL', // приводим к верхнему регистру
             price: parseFloat(item.price),
-            qty: parseFloat(item.origQty),
-            usdValue: parseFloat(item.price) * parseFloat(item.origQty)
+            qty: parseFloat(item.size),
+            usdValue: parseFloat(item.price) * parseFloat(item.size)
         }));
     } catch (err) {
-        console.error('Liq History fetch error:', err);
+        console.error('Liq History fetch error (Bybit):', err);
         return [];
     }
 }
@@ -3771,7 +4037,22 @@ async function fetchBinanceLiqHistory(symbol, limit = 500) {
 };             */
         },
 
-
+fetchBinanceLSR(symbol, interval, limit = 500) {
+    const url = `https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${symbol}&period=${interval}&limit=${limit}`;
+    return fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            // Binance возвращает массив, отсортированный по времени (от старых к новым)
+            return data.map(item => ({
+                time: item.timestamp / 1000,  // переводим мс → секунды
+                value: parseFloat(item.longShortRatio)
+            }));
+        })
+        .catch(err => {
+            console.error('LSR fetch error:', err);
+            return [];
+        });
+},
 
         calcIchimoku(data) {
             let tenkan = [], kijun = [];
@@ -3947,6 +4228,7 @@ toggleAlligator() {
             this.checkAlligatorSignal(true);
         }
     }
+    
 },
 
 
@@ -4245,7 +4527,7 @@ checkAlligatorSignal(force = false) {
 
             sendTelegramSignal(STATE.symbol, 'LONG', currentPrice);
             STATE.alligatorMarkers.push(marker);
-            if (STATE.alligatorMarkers.length > 50) STATE.alligatorMarkers.shift();
+            if (STATE.alligatorMarkers.length > 200) STATE.alligatorMarkers.shift();
             playNotificationSound('alligator');
         }
 
@@ -4490,8 +4772,7 @@ checkAlligatorSignal(force = false) {
 
 
 updateAllMarkers() {
-    // Объединяем маркеры ликвидаций и alligator
-    const combined = [...STATE.liqMarkers, ...STATE.alligatorMarkers];
+    const combined = [...STATE.alligatorMarkers, ...STATE.liqMarkers]; // сначала аллмгатор
     STATE.series.candle.setMarkers(combined);
 },
 
@@ -4550,6 +4831,7 @@ showAlligatorStats() {
 toggleMomentum: function() {
     const type = 'momentum';
     if (this.indicators[type]) {
+        delete STATE.indicatorUpdaters['momentum'];   // <-- добавить эту строку
         if (this.momentumInterval) clearInterval(this.momentumInterval);
         this.indicators[type].forEach(s => STATE.chart.removeSeries(s));
         delete this.indicators[type];
@@ -4578,6 +4860,8 @@ toggleMomentum: function() {
     });
 
     this.indicators[type] = [lineSeries];
+
+
 
     const loadMomentum = async () => {
         const oiData = await this.fetchBinanceOI(STATE.symbol, STATE.interval, 500);
@@ -4693,10 +4977,144 @@ toggleMomentum: function() {
 
         STATE.momentumData = smoothedMomentum;
 
-        this.momentumInterval = setInterval(() => {}, 30000);
     };
 
     loadMomentum();
+    STATE.indicatorUpdaters['momentum'] = loadMomentum;  // <-- добавить эту строку
+
+    
+    
+},
+
+recreateChart() {
+    // Сохраняем все необходимые данные
+    const prices = STATE.prices;
+    const klines = STATE.klines;
+    const alligatorActive = STATE.alligatorActive;
+    const indicatorsState = { ...this.indicators }; // если нужно сохранить индикаторы
+
+    // Полностью удаляем старый график
+    if (STATE.chart) {
+        STATE.chart.remove(); // в LightweightCharts нет метода remove(), но можно удалить контейнер и создать заново
+    }
+    const container = document.getElementById('tv-chart');
+    // Очищаем содержимое контейнера (LightweightCharts создаёт внутри canvas'ы)
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+
+    // Заново инициализируем график (как в initChart)
+    STATE.chart = LightweightCharts.createChart(container, {
+        grid: { vertLines: { color: CONFIG.colors.grid }, horzLines: { color: CONFIG.colors.grid } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        timeScale: { borderColor: '#333', timeVisible: true, rightOffset: 15, barSpacing: 6 },
+        rightPriceScale: { visible: true, autoScale: true },
+        layout: { background: { color: 'transparent' }, textColor: '#d1d4dc' },
+    });
+
+    // Пересоздаём серии
+    STATE.series.candle = STATE.chart.addCandlestickSeries({
+        upColor: CONFIG.colors.green, downColor: CONFIG.colors.red,
+        borderVisible: false, wickUpColor: CONFIG.colors.green, wickDownColor: CONFIG.colors.red,
+        priceFormat: {
+            type: 'custom',
+            formatter: (price) => {
+                if (typeof price !== 'number') return price;
+                if (price >= 10) return price.toFixed(2);
+                return price.toFixed(8).replace(/\.?0+$/, "");
+            },
+            minMove: 0.00000001,
+        },
+    });
+
+    STATE.series.volume = STATE.chart.addHistogramSeries({
+        color: '#26a69a',
+        priceFormat: { type: 'volume' },
+        priceScaleId: '',
+    });
+    STATE.chart.priceScale('').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+
+    STATE.series.forecast = STATE.chart.addLineSeries({
+        color: CONFIG.colors.gold, lineWidth: 2, lineStyle: 2,
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+        priceLineVisible: false
+    });
+
+    // Устанавливаем данные
+    if (prices && prices.length) {
+        STATE.series.candle.setData(prices);
+        const volData = klines.map(k => ({
+            time: k[0] / 1000,
+            value: parseFloat(k[5]),
+            color: 'rgba(255,255,255,0.3)'
+        }));
+        STATE.series.volume.setData(volData);
+    }
+
+    // Восстанавливаем маркеры
+    this.updateAllMarkers();
+
+    // Если Alligator был активен – пересоздаём линии
+    if (alligatorActive) {
+        this.updateAlligatorLines();
+        this.checkAlligatorSignal(true);
+    }
+
+    // Сбрасываем масштаб
+    STATE.chart.timeScale().fitContent();
+    STATE.chart.priceScale('right').applyOptions({
+        scaleMargins: { top: 0.05, bottom: 0.3 },
+        autoScale: true
+    });
+
+    log('[Fullscreen] Chart recreated');
+},
+
+copyScreenshotToClipboard() {
+    const container = document.querySelector('.chart-container');
+    if (!container) return;
+    
+    html2canvas(container, {
+        backgroundColor: '#0b0e11',
+        scale: 2,
+        logging: false,
+        allowTaint: false,
+        useCORS: true
+    }).then(canvas => {
+        canvas.toBlob(blob => {
+            if (!blob) {
+                log('[Screenshot] Failed to create blob', 'error');
+                return;
+            }
+            try {
+                navigator.clipboard.write([
+                    new ClipboardItem({ [blob.type]: blob })
+                ]).then(() => {
+                    log('[Screenshot] Copied to clipboard');
+                }).catch(err => {
+                    console.error('Clipboard write error:', err);
+                    log('[Screenshot] Copy failed', 'error');
+                });
+            } catch (err) {
+                console.error('Clipboard API error:', err);
+                log('[Screenshot] Copy failed', 'error');
+            }
+        });
+    }).catch(err => {
+        console.error('Screenshot error:', err);
+        log('[Screenshot] Failed', 'error');
+    });
+},
+
+handleFibSlider() {
+    // Если фибо выключено – включаем (кнопка станет активной, линии нарисуются)
+    if (!STATE.fibActive) {
+        this.toggleFib();
+    } else {
+        // Если уже включено – просто обновляем линии
+        this.renderFibLines();
+    }
 },
 
     // ...
@@ -4706,6 +5124,7 @@ toggleMomentum: function() {
         init
         
     };
+
 
 })();
 
@@ -4762,78 +5181,11 @@ function updateExternalFrames(symbol) {
     }
 
     
-     // --- QField Pro (первая вкладка) ---
-       const qPro = document.getElementById('iframe-tab1');
-    if (qPro && qPro.contentWindow) {
-        try {
-            qPro.contentWindow.postMessage({
-                type: 'SET_SYMBOL_AND_SCAN',
-                symbol: symbol
-                // timeframe больше не передаём
-            }, '*');
-            console.log(`[QField Pro] отправлен символ ${symbol}`);
-        } catch (e) {
-            console.warn('Ошибка отправки в QField Pro:', e);
-        }
-    }
 
-
-
-    // --- Coinglass TV (если нужно) ---
-    const tvFrame = document.getElementById('iframe-tab2');
-    if (tvFrame) {
-        tvFrame.src = `https://www.coinglass.com/tv/Binance_${baseCoin}USDT`;
-    }
 }
 
 
-function updateExternalFrames(symbol) {
-    const baseCoin = symbol.replace('USDT', '').toUpperCase();
 
-    // --- Q‑Field в правой панели (простой) ---
-    const qFrame = document.getElementById('qfield-frame');
-    if (qFrame && qFrame.contentWindow) {
-        try {
-            qFrame.contentWindow.postMessage({
-                type: 'SET_SYMBOL_AND_SCAN',
-                symbol: symbol
-            }, '*');
-            console.log(`[QField Panel] Отправлен символ ${symbol}`);
-        } catch (e) {
-            console.warn('Ошибка отправки в QField Panel:', e);
-        }
-    }
-
-    // --- QField Pro (первая вкладка) ---
-    const qPro = document.getElementById('iframe-tab1');
-    if (qPro && qPro.contentWindow) {
-        try {
-            qPro.contentWindow.postMessage({
-                type: 'SET_SYMBOL_AND_SCAN',
-                symbol: symbol
-            }, '*');
-            console.log(`[QField Pro] отправлен символ ${symbol}`);
-        } catch (e) {
-            console.warn('Ошибка отправки в QField Pro:', e);
-        }
-    }
-
- 
-
-    // --- Thermal Map (третья вкладка) ---
-    const qThermal = document.getElementById('iframe-tab3');
-    if (qThermal && qThermal.contentWindow) {
-        try {
-            qThermal.contentWindow.postMessage({
-                type: 'SET_SYMBOL_AND_SCAN',
-                symbol: symbol
-            }, '*');
-            console.log(`[Thermal Map] отправлен символ ${symbol}`);
-        } catch (e) {
-            console.warn('Ошибка отправки в Thermal Map:', e);
-        }
-    }
-}
 
 window.addEventListener('click', (e) => {
     const modal = document.getElementById('stats-modal');
@@ -4893,74 +5245,63 @@ function testTelegramConnection() {
 function sendTelegramSignal(symbol, side, price, pnlPercent = null) {
     const token = document.getElementById('tgToken').value.trim();
     const chatId = document.getElementById('tgChat').value.trim();
-    if (!token || !chatId) return;
 
     const baseCoin = symbol.replace('USDT', '');
-    const emoji = side === 'LONG' ? '🟢' : '🔴';
-    const action = side === 'LONG' ? 'BUY' : 'SELL';
+    const directionEmoji = side === 'LONG' ? '🟢' : '🔴';
+    const action = side === 'LONG' ? 'LONG' : 'SHORT';
     
-    let message = `${emoji} ALLIGATOR SIGNAL\n`;
-    message += `Symbol: ${baseCoin}/USDT\n`;
-    message += `Action: ${action}\n`;
-    message += `Price: $${price.toFixed(2)}\n`;
-    message += `Time: ${new Date().toLocaleString()}\n`;
-    
+    // Формируем сообщение по образцу
+    let message = `🐊 ${baseCoin} ${action} ${directionEmoji}\n`;
+    message += `💵 Price: ${price.toFixed(2)}\n`;
     if (pnlPercent !== null) {
-        const pnlEmoji = pnlPercent >= 0 ? '✅' : '❌';
-        message += `PnL: ${pnlPercent > 0 ? '+' : ''}${pnlPercent.toFixed(2)}%\n`;
+        const sign = pnlPercent > 0 ? '+' : '';
+        message += `👉 Exit: ${sign}${pnlPercent.toFixed(2)}%\n`;
     }
-    
-    message += `\n<a href="https://www.coinglass.com/tv/Binance_${symbol}">📊 Chart</a>`;
+    message += `📊 <a href="https://www.coinglass.com/tv/Binance_${symbol}">CHART</a> 🧬 <a href="https://t1prime.com/gen/${symbol}">GEN</a>`;
 
-    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            chat_id: chatId,
-            text: message,
-            parse_mode: 'HTML',
-            disable_web_page_preview: true
+    // --- Отправка в Telegram (если есть токен и chatId) ---
+    if (token && chatId) {
+        fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: message,
+                parse_mode: 'HTML',
+                disable_web_page_preview: true
+            })
         })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.ok) {
-            log(`[Telegram] Signal sent for ${symbol}`);
-        } else {
-            log(`[Telegram] Error: ${data.description}`, 'warn');
-        }
-    })
-    .catch(err => log(`[Telegram] Network error: ${err.message}`, 'warn'));
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok) {
+                log(`[Telegram] Signal sent for ${symbol}`);
+            } else {
+                log(`[Telegram] Error: ${data.description}`, 'warn');
+            }
+        })
+        .catch(err => log(`[Telegram] Network error: ${err.message}`, 'warn'));
+    } else {
+        log(`[Telegram] Skipped (no credentials)`, 'info');
+    }
 
-    // КОНСТАНТА URL ВНУТРИ ФУНКЦИИ - ТЕПЕРЬ ВСЕГДА ДОСТУПНА
-    const CONNECTOR_URL = 'http://localhost:3000/signal'; 
-    
-    const payload = {
-        symbol: symbol,   // Символ
-        message: message   // ТОТ ЖЕ САМЫЙ ТЕКСТ 1 В 1
-    };
-    
-    // Отправляем запрос
+    // --- Отправка на локальный коннектор (всегда) ---
+    const CONNECTOR_URL = 'http://localhost:3000/signal';
+    const payload = { symbol, message };
     fetch(CONNECTOR_URL, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     })
     .then(response => {
         if (response.ok) {
-            log(`Connector triggered for ${symbol}`, 'success', symbol);
+            log(`Connector triggered for ${symbol}`, 'success');
         } else {
-            // Если код не 200/201, это ошибка сервера
-            log(`Connector Error (${response.status})`, 'warn', symbol);
+            log(`Connector Error (${response.status})`, 'warn');
         }
     })
     .catch(e => {
-        // Ошибка подключения (если CORS или сервер выключен)
-        log(`Connector Connection Error: Is Connector running? ${e.message}`, 'warn', symbol);
+        log(`Connector Connection Error: Is Connector running? ${e.message}`, 'warn');
     });
-
-   
-
 }
 
 
@@ -4978,6 +5319,18 @@ if (hunterHeader && hunterContent && hunterIcon) {
         const isHidden = hunterContent.style.display === 'none';
         hunterContent.style.display = isHidden ? 'block' : 'none';
         hunterIcon.textContent = isHidden ? '▼' : '▶';
+    });
+}
+
+// Сворачивание/разворачивание панели Predicted Movement
+const verdictHeader = document.getElementById('verdict-toggle-header');
+const verdictContent = document.getElementById('verdict-content');
+const verdictIcon = document.getElementById('verdict-toggle-icon');
+if (verdictHeader && verdictContent && verdictIcon) {
+    verdictHeader.addEventListener('click', () => {
+        const isHidden = verdictContent.style.display === 'none';
+        verdictContent.style.display = isHidden ? 'block' : 'none';
+        verdictIcon.textContent = isHidden ? '▼' : '▶';
     });
 }
 
