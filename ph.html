@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>PH V16 · PERFECT VISION SCALE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --bg: #020203; --panel: #0b0e11; --border: #1e2329; --blue: #00d4ff; --green: #00ff9d; --red: #ff0055; }
+        body { background: var(--bg); color: #eaeaea; font-family: 'JetBrains Mono', monospace; height: 100vh; overflow: hidden; margin: 0; display: flex; flex-direction: column; }
+        .main-layout { display: grid; grid-template-columns: 320px 1fr; gap: 10px; padding: 10px; flex: 1; min-height: 0; }
+        @media (max-width: 768px) {
+            .main-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+            .panel:first-child { order: 2; }
+            .panel:last-child { order: 1; height: 50vh; }
+        }
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; }
+        .canvas-container { position: relative; background: #000; display: flex; justify-content: center; align-items: center; overflow: hidden; flex: 1; }
+        canvas { cursor: crosshair; touch-action: none; background: #000; width: 100%; height: 100%; object-fit: contain; }
+        .btn { padding: 10px; border-radius: 8px; font-weight: bold; text-transform: uppercase; font-size: 11px; transition: 0.2s; cursor: pointer; border: 1px solid transparent; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        .btn-blue { background: var(--blue); color: #000; }
+        .btn-gray { background: #1a1a1a; border-color: #333; color: #ccc; }
+        .btn-orange { background: #ff9d00; color: #000; }
+        .btn-green { background: var(--green); color: #000; }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .loader { position: absolute; inset: 0; background: rgba(0,0,0,0.8); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 50; }
+        .match-info { position: absolute; top: 20px; right: 20px; text-align: right; background: rgba(0,0,0,0.7); padding: 15px; border-radius: 10px; border: 1px solid var(--border); z-index: 10; }
+        input[type="file"] { display: none; }
+        .tf-group, .period-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .tf-btn, .period-btn { padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 10px; cursor: pointer; border: 1px solid #333; background: #1a1a1a; color: #ccc; }
+        .tf-btn.active, .period-btn.active { background: var(--blue); color: #000; border-color: var(--blue); }
+        .download-block { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 12px; margin-top: 10px; }
+        .download-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+        .download-row select, .download-row input { background: #1a1a1a; border: 1px solid #333; color: white; padding: 6px; border-radius: 4px; font-size: 11px; }
+        .nav-controls { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 8px; }
+        .nav-btn { padding: 6px 12px; background: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #ccc; font-size: 10px; cursor: pointer; }
+        .nav-btn:not(:disabled):hover { background: #333; }
+        .nav-btn.active { background: var(--blue); color: #000; }
+        .match-counter { font-size: 10px; color: #888; }
+    </style>
+</head>
+<body>
+
+<header class="bg-[#080a0d] border-b border-[#1e2329] p-3 px-5 flex justify-between items-center">
+    <div class="flex items-center gap-2">
+        <i class="fas fa-crosshairs text-[var(--blue)]"></i>
+        <span class="font-black italic text-lg uppercase">PH <span class="text-[var(--blue)]">V16</span></span>
+    </div>
+    <div id="db-stat" class="text-[9px] text-gray-500 font-bold border border-[#222] px-3 py-1 rounded-full uppercase">DB Offline</div>
+</header>
+
+<div class="main-layout">
+    <aside class="panel p-5 space-y-4 overflow-y-auto">
+        <!-- Загрузка CSV -->
+        <label class="block border border-dashed border-gray-800 hover:border-[var(--blue)] p-3 rounded-xl text-center cursor-pointer transition bg-black/20">
+            <input type="file" id="csv-input" class="hidden" accept=".csv" multiple>
+            <div class="text-[10px] font-bold text-gray-400 uppercase" id="load-text">1. Загрузить CSV</div>
+        </label>
+
+               <!-- НОВЫЙ БЛОК: Скачать CSV с Binance (сворачиваемый) -->
+        <div class="download-block">
+            <div class="flex items-center justify-between cursor-pointer" id="download-toggle">
+                <div class="text-[9px] font-bold text-gray-400 uppercase">1.1 Скачать CSV с Binance</div>
+                <i class="fas fa-chevron-down text-gray-500 text-xs transition-transform" id="download-chevron"></i>
+            </div>
+            <div id="download-content" class="mt-3 hidden">
+                <div class="download-row">
+                    <span class="text-[10px] w-16">Символ</span>
+                    <input type="text" id="dl-symbol" value="BTC" class="flex-1" placeholder="BTC">
+                </div>
+                <div class="download-row">
+                    <span class="text-[10px] w-16">Рынок</span>
+                    <select id="dl-market" class="flex-1">
+                        <option value="spot">spot</option>
+                        <option value="futures">futures</option>
+                    </select>
+                </div>
+                <div class="download-row">
+                    <span class="text-[10px] w-16">ТФ</span>
+                    <select id="dl-interval" class="flex-1">
+                        <option value="5m">5m</option>
+                        <option value="15m">15m</option>
+                        <option value="1h">1h</option>
+                    </select>
+                    <span class="text-[8px] text-gray-600">(синхр. с окном)</span>
+                </div>
+                <div class="download-row">
+                    <span class="text-[10px] w-16">Месяцев</span>
+                    <input type="number" id="dl-months" value="3" min="1" max="12" class="w-20">
+                </div>
+                <button id="copy-command-btn" class="btn btn-green w-full text-[10px] py-2">
+                    <i class="fas fa-copy"></i> Скопировать команду
+                </button>
+                <div class="text-[8px] text-gray-600 mt-2 text-center">
+                    Запустите в терминале (требуется Python и binance)
+                </div>
+            </div>
+        </div>
+
+        <!-- Блок загрузки скриншотов -->
+        <div class="space-y-2 pt-2 border-t border-[#1a1a1a]">
+            <div class="text-[9px] font-bold text-gray-600 uppercase">2. Распознавание</div>
+            <div class="grid grid-cols-2 gap-2">
+                <button id="btn-paste" class="btn btn-orange w-full"><i class="fas fa-paste"></i> Вставить</button>
+                <label for="screenshot-file" class="btn btn-orange w-full cursor-pointer"><i class="fas fa-file-image"></i> Загрузить</label>
+                <input type="file" id="screenshot-file" class="hidden" accept="image/*">
+            </div>
+        </div>
+
+        <!-- Блок быстрого выбора окна -->
+        <div class="space-y-3 pt-4 border-t border-[#1a1a1a]">
+            <div class="text-[9px] font-bold text-gray-600 uppercase">3. Быстрый выбор окна</div>
+            <div class="tf-group flex justify-between">
+                <button id="tf-5m" class="tf-btn active" data-tf="5m">5m</button>
+                <button id="tf-15m" class="tf-btn" data-tf="15m">15m</button>
+                <button id="tf-1h" class="tf-btn" data-tf="1h">1h</button>
+            </div>
+            <div class="period-group grid grid-cols-3 gap-1">
+                <button class="period-btn" data-period="1h">1ч</button>
+                <button class="period-btn" data-period="4h">4ч</button>
+                <button class="period-btn" data-period="12h">12ч</button>
+                <button class="period-btn" data-period="1d">1д</button>
+                <button class="period-btn" data-period="3d">3д</button>
+                <button class="period-btn" data-period="7d">7д</button>
+            </div>
+        </div>
+
+        <!-- Настройки и кнопки -->
+        <div class="space-y-4 pt-4 border-t border-[#1a1a1a]">
+            <div class="grid grid-cols-2 gap-2">
+                <div class="bg-black/40 p-2 rounded">
+                    <label class="text-[8px] text-gray-500 uppercase block">Окно</label>
+                    <input type="number" id="win-size" value="60" class="bg-transparent text-white w-full outline-none font-bold text-xs">
+                </div>
+                <div class="bg-black/40 p-2 rounded">
+                    <label class="text-[8px] text-gray-500 uppercase block">Прогноз</label>
+                    <input type="number" id="fore-size" value="40" class="bg-transparent text-white w-full outline-none font-bold text-xs">
+                </div>
+            </div>
+            <button id="scan-btn" class="btn btn-blue w-full" disabled>Найти совпадение</button>
+            
+            <!-- Блок навигации по результатам -->
+            <div class="nav-controls">
+                <button id="prev-match-btn" class="nav-btn" disabled>← Предыдущее</button>
+                <span id="match-counter" class="match-counter">0 / 0</span>
+                <button id="next-match-btn" class="nav-btn" disabled>Следующее →</button>
+            </div>
+
+            <button id="clear-btn" class="w-full text-[9px] text-gray-700 font-bold hover:text-white uppercase">Очистить холст</button>
+        </div>
+    </aside>
+
+    <main class="panel canvas-container" id="c-box">
+        <canvas id="processing-canvas" class="hidden"></canvas>
+        <div class="loader" id="loader">
+            <div class="w-8 h-8 border-4 border-[var(--blue)] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <div class="match-info hidden" id="info-box">
+            <div class="text-3xl font-black text-[var(--blue)]" id="score-text">0%</div>
+            <div class="text-[9px] text-gray-500 font-bold uppercase" id="date-text">RESULT</div>
+        </div>
+        <canvas id="main-canvas"></canvas>
+    </main>
+</div>
+
+<script>
+const App = {
+    history: [], points: [], isDrawing: false, rendered: false,
+    canvas: null, ctx: null, pCanvas: null, pCtx: null,
+    currentTf: '5m',
+    candlesPerHour: { '5m': 12, '15m': 4, '1h': 1 },
+    // Новые переменные для множественного поиска
+    allMatches: [],          // массив { index, error }
+    currentMatchIndex: -1,
+    totalMatches: 0,
+
+    init() {
+        this.canvas = document.getElementById('main-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.pCanvas = document.getElementById('processing-canvas');
+        this.pCtx = this.pCanvas.getContext('2d');
+        this.resize();
+        this.bindEvents();
+        this.initTfButtons();
+        this.initPeriodButtons();
+        this.initDownloadSync();
+        this.updateNavButtons();
+    },
+
+    resize() {
+        const b = document.getElementById('c-box');
+        this.canvas.width = this.pCanvas.width = b.clientWidth - 20;
+        this.canvas.height = this.pCanvas.height = b.clientHeight - 20;
+        this.drawGrid();
+    },
+
+    drawGrid() {
+        this.ctx.strokeStyle = '#0a0a0d';
+        this.ctx.lineWidth = 1;
+        for(let i=0; i<this.canvas.width; i+=50) { this.ctx.beginPath(); this.ctx.moveTo(i,0); this.ctx.lineTo(i,this.canvas.height); this.ctx.stroke(); }
+        for(let i=0; i<this.canvas.height; i+=50) { this.ctx.beginPath(); this.ctx.moveTo(0,i); this.ctx.lineTo(this.canvas.width,i); this.ctx.stroke(); }
+    },
+
+    bindEvents() {
+        const getXY = (e) => {
+            const r = this.canvas.getBoundingClientRect();
+            const cx = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+            const cy = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+            return { x: cx - r.left, y: this.canvas.height - (cy - r.top) };
+        };
+
+                // Сворачивание/разворачивание блока скачивания
+        const toggle = document.getElementById('download-toggle');
+        const content = document.getElementById('download-content');
+        const chevron = document.getElementById('download-chevron');
+        if (toggle && content && chevron) {
+            toggle.addEventListener('click', () => {
+                content.classList.toggle('hidden');
+                chevron.classList.toggle('fa-chevron-down');
+                chevron.classList.toggle('fa-chevron-up');
+            });
+        }
+
+        this.canvas.addEventListener('mousedown', (e) => {
+            if (this.rendered) return;
+            e.preventDefault();
+            this.points = [];
+            this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+            this.drawGrid();
+            this.isDrawing = true;
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = '#00d4ff';
+            this.ctx.lineWidth = 4;
+            document.getElementById('info-box').classList.add('hidden');
+            this.resetMatches(); // новый рисунок сбрасывает результаты
+        });
+
+        this.canvas.addEventListener('touchstart', (e) => {
+            if (this.rendered) return;
+            e.preventDefault();
+            this.points = [];
+            this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+            this.drawGrid();
+            this.isDrawing = true;
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = '#00d4ff';
+            this.ctx.lineWidth = 4;
+            document.getElementById('info-box').classList.add('hidden');
+            this.resetMatches();
+        }, { passive: false });
+
+        window.addEventListener('mousemove', (e) => {
+            if(!this.isDrawing) return;
+            const p = getXY(e);
+            this.ctx.lineTo(p.x, this.canvas.height - p.y);
+            this.ctx.stroke();
+            this.points.push(p);
+            this.toggleBtn();
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if(!this.isDrawing) return;
+            e.preventDefault();
+            const p = getXY(e);
+            this.ctx.lineTo(p.x, this.canvas.height - p.y);
+            this.ctx.stroke();
+            this.points.push(p);
+            this.toggleBtn();
+        }, { passive: false });
+
+        window.addEventListener('mouseup', () => this.isDrawing = false);
+        window.addEventListener('touchend', () => this.isDrawing = false);
+
+        window.addEventListener('paste', (e) => {
+            for (let item of e.clipboardData.items) {
+                if (item.type.indexOf("image") !== -1) this.processImage(item.getAsFile());
+            }
+        });
+
+        document.getElementById('btn-paste').onclick = async () => {
+            try {
+                const items = await navigator.clipboard.read();
+                for (let item of items) {
+                    for (let type of item.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await item.getType(type);
+                            this.processImage(blob);
+                            return;
+                        }
+                    }
+                }
+                alert("Буфер не содержит изображения");
+            } catch (err) { 
+                alert("Не удалось прочитать буфер. Попробуйте Ctrl+V напрямую."); 
+            }
+        };
+
+        document.getElementById('screenshot-file').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) this.processImage(file);
+            e.target.value = '';
+        });
+
+        document.getElementById('csv-input').onchange = (e) => this.loadCSV(e.target.files);
+        document.getElementById('scan-btn').onclick = () => this.scanAll();
+        document.getElementById('clear-btn').onclick = () => this.reset();
+        
+        // Кнопки навигации
+        document.getElementById('prev-match-btn').addEventListener('click', () => this.prevMatch());
+        document.getElementById('next-match-btn').addEventListener('click', () => this.nextMatch());
+
+        // Кнопка копирования команды
+        document.getElementById('copy-command-btn').addEventListener('click', () => this.copyDownloadCommand());
+    },
+
+    
+
+    // Сброс всех результатов (при изменении входных данных)
+    resetMatches() {
+        this.allMatches = [];
+        this.currentMatchIndex = -1;
+        this.totalMatches = 0;
+        this.updateNavButtons();
+        document.getElementById('match-counter').innerText = '0 / 0';
+    },
+
+    // Обновление состояния кнопок навигации
+    updateNavButtons() {
+        const prevBtn = document.getElementById('prev-match-btn');
+        const nextBtn = document.getElementById('next-match-btn');
+        const counter = document.getElementById('match-counter');
+        
+        if (this.totalMatches > 0) {
+            counter.innerText = `${this.currentMatchIndex + 1} / ${this.totalMatches}`;
+            prevBtn.disabled = this.currentMatchIndex <= 0;
+            nextBtn.disabled = this.currentMatchIndex >= this.totalMatches - 1;
+        } else {
+            counter.innerText = '0 / 0';
+            prevBtn.disabled = true;
+            nextBtn.disabled = true;
+        }
+    },
+
+    // Отображение текущего совпадения по индексу allMatches[currentMatchIndex]
+    renderCurrentMatch() {
+        if (this.currentMatchIndex < 0 || this.currentMatchIndex >= this.totalMatches) return;
+        const match = this.allMatches[this.currentMatchIndex];
+        const win = parseInt(document.getElementById('win-size').value);
+        const fore = parseInt(document.getElementById('fore-size').value);
+        this.render(match.index, win, fore, match.error);
+    },
+
+    // Переход к следующему совпадению
+    nextMatch() {
+        if (this.currentMatchIndex < this.totalMatches - 1) {
+            this.currentMatchIndex++;
+            this.renderCurrentMatch();
+            this.updateNavButtons();
+        }
+    },
+
+    // Переход к предыдущему совпадению
+    prevMatch() {
+        if (this.currentMatchIndex > 0) {
+            this.currentMatchIndex--;
+            this.renderCurrentMatch();
+            this.updateNavButtons();
+        }
+    },
+
+    // Синхронизация выпадающего списка таймфреймов с активной кнопкой
+    initDownloadSync() {
+        const intervalSelect = document.getElementById('dl-interval');
+        const tfBtns = document.querySelectorAll('.tf-btn');
+        tfBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                intervalSelect.value = btn.dataset.tf;
+            });
+        });
+        intervalSelect.value = this.currentTf;
+    },
+
+    copyDownloadCommand() {
+        const symbol = document.getElementById('dl-symbol').value.trim().toUpperCase();
+        const market = document.getElementById('dl-market').value;
+        const interval = document.getElementById('dl-interval').value;
+        const months = document.getElementById('dl-months').value;
+        if (!symbol) { alert('Введите символ'); return; }
+        const command = `py getpandas.py --symbol ${symbol} --months ${months} --interval ${interval} --market ${market}`;
+        navigator.clipboard.writeText(command).then(() => {
+            alert('Команда скопирована!\nВставьте в терминал и запустите.');
+        }).catch(() => {
+            alert('Не удалось скопировать. Скопируйте вручную:\n' + command);
+        });
+    },
+
+    initTfButtons() {
+        const tfBtns = document.querySelectorAll('.tf-btn');
+        tfBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                tfBtns.forEach(b => b.classList.remove('active', 'btn-blue'));
+                btn.classList.add('active', 'btn-blue');
+                this.currentTf = btn.dataset.tf;
+                this.resetMatches(); // смена таймфрейма сбрасывает результаты
+            });
+        });
+    },
+
+    initPeriodButtons() {
+        const periodBtns = document.querySelectorAll('.period-btn');
+        periodBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const period = btn.dataset.period;
+                this.calculateWindow(period);
+                this.resetMatches(); // изменение окна сбрасывает результаты
+            });
+        });
+    },
+
+    calculateWindow(period) {
+        let hours = 0;
+        if (period.endsWith('h')) hours = parseInt(period);
+        else if (period.endsWith('d')) hours = parseInt(period) * 24;
+        const candles = hours * this.candlesPerHour[this.currentTf];
+        document.getElementById('win-size').value = candles;
+    },
+
+    toggleBtn() {
+        document.getElementById('scan-btn').disabled = !(this.history.length > 0 && this.points.length > 5);
+    },
+
+    async processImage(file) {
+        if(!file) return;
+        document.getElementById('loader').style.display = 'flex';
+        try {
+            const img = await new Promise(res => {
+                const r = new FileReader();
+                r.onload = e => { const i = new Image(); i.onload = () => res(i); i.src = e.target.result; };
+                r.readAsDataURL(file);
+            });
+
+            this.pCtx.clearRect(0,0,this.pCanvas.width,this.pCanvas.height);
+            this.pCtx.drawImage(img, 0, 0, this.pCanvas.width, this.pCanvas.height);
+
+            const imageData = this.pCtx.getImageData(0,0,this.pCanvas.width,this.pCanvas.height);
+            const data = imageData.data;
+            const W = this.pCanvas.width, H = this.pCanvas.height;
+
+            // Определение фона
+            const colorHist = {};
+            for(let i=0; i<data.length; i+=4) {
+                const r = data[i], g = data[i+1], b = data[i+2];
+                const key = (r<<16)|(g<<8)|b;
+                colorHist[key] = (colorHist[key]||0)+1;
+            }
+            let bgKey = 0, maxCnt = 0;
+            for(let key in colorHist) {
+                if(colorHist[key] > maxCnt) { maxCnt = colorHist[key]; bgKey = parseInt(key); }
+            }
+            const bgR = (bgKey>>16)&255, bgG = (bgKey>>8)&255, bgB = bgKey&255;
+
+            const threshold = 100;
+            const minClusterHeight = 10;
+            let rawPath = [];
+            const startX = Math.floor(W * 0.01);
+            const endX = Math.floor(W * 0.99);
+            const startY = Math.floor(H * 0.1);
+            const endY = Math.floor(H * 0.9);
+
+            for(let x = startX; x < endX; x++) {
+                let candidates = [];
+                for(let y = startY; y < endY; y++) {
+                    const idx = (y * W + x) * 4;
+                    const dr = Math.abs(data[idx] - bgR);
+                    const dg = Math.abs(data[idx+1] - bgG);
+                    const db = Math.abs(data[idx+2] - bgB);
+                    const dist = dr + dg + db;
+                    if(dist > threshold) candidates.push(y);
+                }
+                if(candidates.length === 0) continue;
+                let clusters = [];
+                let current = [candidates[0]];
+                for(let i=1; i<candidates.length; i++) {
+                    if(candidates[i] - candidates[i-1] <= 2) current.push(candidates[i]);
+                    else {
+                        if(current.length >= minClusterHeight) clusters.push(current);
+                        current = [candidates[i]];
+                    }
+                }
+                if(current.length >= minClusterHeight) clusters.push(current);
+                if(clusters.length === 0) continue;
+                let bestCluster = clusters.reduce((a,b) => a.length >= b.length ? a : b);
+                bestCluster.sort((a,b)=>a-b);
+                const medianY = bestCluster[Math.floor(bestCluster.length/2)];
+                rawPath.push({ x: x, y: H - medianY });
+            }
+            if(rawPath.length < 10) throw new Error("График не распознан");
+
+            // Сглаживание
+            let smoothed = [];
+            for(let i=0; i<rawPath.length; i++) {
+                let window = [];
+                for(let j=Math.max(0,i-2); j<=Math.min(rawPath.length-1,i+2); j++) window.push(rawPath[j].y);
+                window.sort((a,b)=>a-b);
+                const medianY = window[Math.floor(window.length/2)];
+                smoothed.push({ x: rawPath[i].x, y: medianY });
+            }
+
+            // Нормализация под размер canvas
+            const minX = Math.min(...smoothed.map(p=>p.x)), maxX = Math.max(...smoothed.map(p=>p.x));
+            const minY = Math.min(...smoothed.map(p=>p.y)), maxY = Math.max(...smoothed.map(p=>p.y));
+            const rangeX = maxX - minX || 1, rangeY = maxY - minY || 1;
+            const padX = 20, padY = 40;
+            const targetW = this.canvas.width - padX*2;
+            const targetH = this.canvas.height - padY*2;
+            this.points = smoothed.map(p => ({
+                x: padX + ((p.x - minX) / rangeX) * targetW,
+                y: padY + ((p.y - minY) / rangeY) * targetH
+            }));
+
+            this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+            this.drawGrid();
+            this.ctx.beginPath();
+            this.ctx.strokeStyle = '#00d4ff';
+            this.ctx.lineWidth = 3;
+            this.points.forEach((p, i) => {
+                if(i===0) this.ctx.moveTo(p.x, this.canvas.height - p.y);
+                else this.ctx.lineTo(p.x, this.canvas.height - p.y);
+            });
+            this.ctx.stroke();
+            
+            document.getElementById('info-box').classList.add('hidden');
+            this.rendered = false;
+            this.resetMatches(); // новый рисунок сбрасывает результаты
+            this.toggleBtn();
+
+        } catch(e) { 
+            alert("График не распознан. Попробуйте другой скриншот."); 
+            console.error(e);
+        }
+        document.getElementById('loader').style.display = 'none';
+    },
+
+    async loadCSV(files) {
+        this.history = [];
+        for (let f of files) {
+            const txt = await f.text();
+            txt.split('\n').slice(1).forEach(l => {
+                const c = l.split(','); if(c.length < 5) return;
+                this.history.push({ t: c[0], o: +c[1], h: +c[2], l: +c[3], c: +c[4] });
+            });
+        }
+        document.getElementById('db-stat').innerText = `DB: ${this.history.length}`;
+        document.getElementById('db-stat').classList.replace('text-gray-500', 'text-[var(--green)]');
+        this.resetMatches(); // новые данные сбрасывают результаты
+        this.toggleBtn();
+    },
+
+    reset() {
+        this.points = [];
+        this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+        this.drawGrid();
+        document.getElementById('info-box').classList.add('hidden');
+        this.rendered = false;
+        this.resetMatches();
+        this.toggleBtn();
+    },
+
+    // Новый метод: сканирует все возможные окна и сохраняет все совпадения
+    scanAll() {
+    const win = parseInt(document.getElementById('win-size').value);
+    const fore = parseInt(document.getElementById('fore-size').value);
+    const target = this.resample(this.points, win);
+    
+    const norm = (arr) => {
+        const min = Math.min(...arr), max = Math.max(...arr), r = max - min || 1;
+        return arr.map(v => (v - min) / r);
+    };
+    const tNorm = norm(target);
+    
+    const maxIndex = this.history.length - win - fore;
+    if (maxIndex <= 0) {
+        alert("Недостаточно данных для заданного окна и прогноза");
+        return;
+    }
+
+    // Собираем все индексы с ошибками
+    let matches = [];
+    for (let i = 0; i < maxIndex; i++) {
+        const hNorm = norm(this.history.slice(i, i+win).map(b => b.c));
+        let err = 0;
+        for(let j=0; j<win; j++) err += Math.pow(tNorm[j] - hNorm[j], 2);
+        err /= win;
+        matches.push({ index: i, error: err });
+    }
+
+    // Сортируем по возрастанию ошибки (лучшие первые)
+    matches.sort((a, b) => a.error - b.error);
+
+    // Фильтруем, чтобы окна не пересекались
+    const minDistance = win; // можно регулировать (например, win/2 для более плотного поиска)
+    let filtered = [];
+    for (let m of matches) {
+        let overlap = false;
+        for (let f of filtered) {
+            if (Math.abs(m.index - f.index) < minDistance) {
+                overlap = true;
+                break;
+            }
+        }
+        if (!overlap) filtered.push(m);
+    }
+
+    this.allMatches = filtered;
+    this.totalMatches = filtered.length;
+    this.currentMatchIndex = 0;
+    this.updateNavButtons();
+    
+    if (this.totalMatches > 0) {
+        this.renderCurrentMatch();
+    } else {
+        alert("Не найдено ни одного непересекающегося совпадения");
+    }
+},
+
+    resample(pts, num) {
+        const res = [];
+        const xMin = pts[0].x, xMax = pts[pts.length-1].x, step = (xMax-xMin)/(num-1);
+        for(let i=0; i<num; i++) {
+            const curX = xMin + i*step;
+            let val = pts[0].y;
+            for(let p of pts) { if(p.x >= curX) { val = p.y; break; } }
+            res.push(val);
+        }
+        return res;
+    },
+
+    render(idx, win, fore, err) {
+        const data = this.history.slice(idx, idx + win + fore);
+        const prices = data.map(d => [d.o, d.h, d.l, d.c]).flat();
+        const minP = Math.min(...prices), maxP = Math.max(...prices), rangeP = maxP - minP || 1;
+
+        this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
+        this.drawGrid();
+
+        const px = 40, py = 40;
+        const w = this.canvas.width - px*2, h = this.canvas.height - py*2;
+        const barW = w / (win + fore);
+
+        data.forEach((d, i) => {
+            const x = px + i * barW;
+            const getY = (p) => (this.canvas.height - py) - ((p - minP)/rangeP * h);
+            const oY = getY(d.o), hY = getY(d.h), lY = getY(d.l), cY = getY(d.c);
+            const color = i < win ? '#00d4ff' : (d.c >= d.o ? '#00ff9d' : '#ff0055');
+            
+            this.ctx.strokeStyle = this.ctx.fillStyle = color;
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath(); this.ctx.moveTo(x + barW/2, hY); this.ctx.lineTo(x + barW/2, lY); this.ctx.stroke();
+            this.ctx.fillRect(x + barW*0.1, Math.min(oY, cY), barW*0.8, Math.abs(oY-cY)||1);
+        });
+
+        document.getElementById('info-box').classList.remove('hidden');
+        document.getElementById('score-text').innerText = Math.max(0, 100 - err*18).toFixed(1) + '%';
+        document.getElementById('date-text').innerText = data[0].t;
+        this.rendered = true;
+    }
+};
+
+App.init();
+</script>
+</body>
+</html>
