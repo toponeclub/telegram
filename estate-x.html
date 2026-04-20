@@ -3,510 +3,1540 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>ESTATE.X — Win Your Dream Home in Thailand</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700;14..32,800;14..32,900&display=swap" rel="stylesheet">
+    <title>ESTATE.X — Donate. Protect. Win a Villa in Thailand.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --gold: #c9a84c;
+            --gold-dim: rgba(201,168,76,0.18);
+            --gold-border: rgba(201,168,76,0.28);
+            --white: #f5f4f0;
+            --muted: rgba(245,244,240,0.45);
+            --faint: rgba(245,244,240,0.1);
+            --faintest: rgba(245,244,240,0.04);
+            --border: rgba(245,244,240,0.08);
+            --border-strong: rgba(245,244,240,0.14);
+            --bg: #060605;
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 22px;
+            --radius-xl: 32px;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #050505; color: #fff; overflow-x: hidden; line-height: 1.5; }
-        .static-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; background: radial-gradient(ellipse at 20% 30%, #0a0a0a, #000000); }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-        
-        /* HEADER */
-        .glass-nav { display: flex; justify-content: space-between; align-items: center; padding: 30px 0; }
-        .logo { font-size: 28px; font-weight: 900; letter-spacing: 4px; background: linear-gradient(135deg, #fff 0%, #d4af37 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .nav-links { display: flex; gap: 25px; }
-        .nav-link { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px; font-weight: 600; text-transform: uppercase; transition: 0.3s; }
-        .nav-link:hover { color: #d4af37; }
-
-        /* HERO */
-        .hero { text-align: center; padding: 40px 0 60px; }
-        .badge { display: inline-block; background: rgba(212, 175, 55, 0.15); padding: 8px 20px; border-radius: 100px; font-size: 12px; font-weight: 700; color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.4); margin-bottom: 25px; }
-        h1 { font-size: clamp(36px, 7vw, 90px); font-weight: 900; line-height: 1; letter-spacing: -2px; margin-bottom: 20px; }
-        .gold-gradient { background: linear-gradient(135deg, #d4af37 0%, #f9e186 50%, #d4af37 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .hero-description { font-size: 18px; color: rgba(255,255,255,0.6); max-width: 800px; margin: 0 auto 40px; }
-
-        /* CENTRAL PROPERTY IMAGE */
-/* Общий контейнер для блоков презентации */
-.content-block {
-    max-width: 900px; /* Единая ширина для виллы и для книги */
-    margin: 0 auto 40px;
-}
-
-/* Специфика для фрейма виллы */
-.property-frame {
-    width: 100%;
-    border-radius: 40px;
-    overflow: hidden;
-    position: relative;
-    border: 1px solid rgba(255,255,255,0.1);
-    cursor: pointer;
-}
-
-.property-frame img {
-    width: 100%;
-    height: auto;
-    display: block;
-    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.property-frame:hover img {
-    transform: scale(1.05); /* Легкий зум при наведении */
-}
-        .property-label { position: absolute; bottom: 30px; left: 30px; background: rgba(0,0,0,0.8); padding: 15px 25px; border-radius: 15px; border-left: 4px solid #d4af37; backdrop-filter: blur(10px); }
-        .property-label span { display: block; font-size: 12px; color: #d4af37; font-weight: 700; }
-        .property-label strong { font-size: 20px; }
-
-        /* PRICING TIERS */
-        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 25px; margin-bottom: 80px; }
-        .tier-card { background: rgba(20, 20, 20, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 30px; padding: 40px 30px; text-align: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; display: flex; flex-direction: column; }
-        .tier-card:hover { transform: translateY(-10px); border-color: #d4af37; background: rgba(20, 20, 20, 0.9); box-shadow: 0 20px 40px rgba(212, 175, 55, 0.15); }
-        
-        .tier-popular { border-color: #d4af37; background: linear-gradient(180deg, rgba(212,175,55,0.1) 0%, rgba(0,0,0,0) 100%); }
-        .popular-badge { position: absolute; top: 15px; right: -30px; background: #d4af37; color: #000; font-size: 10px; font-weight: 900; padding: 5px 40px; transform: rotate(45deg); }
-
-        .tier-name { font-size: 14px; font-weight: 800; color: rgba(255,255,255,0.5); text-transform: uppercase; margin-bottom: 15px; }
-        .tier-price { font-size: 48px; font-weight: 900; margin-bottom: 20px; }
-        .tier-price span { font-size: 18px; color: rgba(255,255,255,0.4); }
-
-        .tier-features { list-style: none; margin-bottom: 30px; flex-grow: 1; }
-        .tier-features li { margin-bottom: 12px; font-size: 14px; color: rgba(255,255,255,0.8); }
-        .tier-features li i { color: #d4af37; margin-right: 8px; }
-        .highlight-tickets { font-weight: 900; color: #fff; border-bottom: 2px solid #d4af37; }
-
-        .buy-btn { display: block; width: 100%; background: #fff; color: #000; padding: 18px; border-radius: 100px; text-decoration: none; font-weight: 800; font-size: 14px; text-transform: uppercase; transition: 0.3s; }
-        .tier-card:hover .buy-btn { background: #d4af37; color: #000; box-shadow: 0 10px 20px rgba(212, 175, 55, 0.4); }
-        
-        .sub-card { border-style: dashed; border-color: rgba(212, 175, 55, 0.5); }
-
-        /* TRUST FOOTER */
-        .trust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; padding: 60px 0; border-top: 1px solid rgba(255,255,255,0.05); }
-        .trust-item { text-align: center; }
-        .trust-item i { font-size: 28px; color: #d4af37; margin-bottom: 15px; }
-        .trust-item h4 { font-size: 16px; margin-bottom: 8px; }
-        .trust-item p { font-size: 12px; color: rgba(255,255,255,0.4); }
-
-        footer { text-align: center; padding: 40px 0; font-size: 11px; color: rgba(255,255,255,0.3); border-top: 1px solid rgba(255,255,255,0.05); }
-
-        @media (max-width: 768px) {
-            .pricing-grid { grid-template-columns: 1fr; }
-            .trust-grid { grid-template-columns: 1fr; }
-            h1 { font-size: 42px; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--white);
+            overflow-x: hidden;
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(ellipse 80% 60% at 15% 20%, rgba(201,168,76,0.04) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 85% 80%, rgba(201,168,76,0.03) 0%, transparent 55%),
+                #060605;
+        }
+        .container { max-width: 1160px; margin: 0 auto; padding: 0 28px; }
+        .eyebrow {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 10px; font-weight: 600; letter-spacing: 0.18em;
+            text-transform: uppercase; color: var(--gold);
+        }
+        .eyebrow::before {
+            content: ''; display: block; width: 18px; height: 1px;
+            background: var(--gold); opacity: 0.6;
         }
 
-        /* Стилизация чекбокса */
-.custom-checkbox {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 22px;
-    height: 22px;
-    border: 2px solid rgba(212, 175, 55, 0.5);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.03);
-    cursor: pointer;
-    position: relative;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
-}
+        /* ── NAV ── */
+        .glass-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 32px 0 28px; border-bottom: 1px solid var(--border);
+        }
+        .logo {
+            font-family: 'Instrument Serif', serif; font-style: italic;
+            font-size: 24px; font-weight: 400; letter-spacing: 0.02em;
+        }
+        .logo span { color: var(--gold); }
+        .nav-links { display: flex; gap: 32px; align-items: center; }
+        .nav-link {
+            color: var(--muted); text-decoration: none; font-size: 12px;
+            font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; transition: color 0.2s;
+        }
+        .nav-link:hover { color: var(--white); }
+        .nav-link.cta {
+            color: var(--white); border: 1px solid var(--border-strong);
+            padding: 8px 18px; border-radius: 4px; transition: border-color 0.2s;
+        }
+        .nav-link.cta:hover { border-color: var(--gold); color: var(--gold); }
 
-.custom-checkbox:checked {
-    background: #d4af37;
-    border-color: #d4af37;
-    box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
-}
+        /* ── HERO ── */
+        .hero { padding: 72px 0 56px; text-align: center; }
+        .badge {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 6px 16px; border-radius: 4px; font-size: 10px; font-weight: 600;
+            color: var(--gold); border: 1px solid var(--gold-border);
+            letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 32px;
+        }
+        h1 {
+            font-family: 'DM Sans', sans-serif; font-size: clamp(40px, 7.5vw, 92px);
+            font-weight: 700; line-height: 0.96; letter-spacing: -0.03em; margin-bottom: 24px;
+        }
+        h1 em {
+            font-family: 'Instrument Serif', serif; font-style: italic;
+            font-weight: 400; letter-spacing: -0.01em;
+        }
+        .gold-gradient {
+            background: linear-gradient(120deg, #b8922d 0%, #e8c96a 45%, #c9a84c 100%);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        .hero-description { font-size: 17px; color: var(--muted); max-width: 680px; margin: 0 auto 48px; line-height: 1.65; }
 
-.custom-checkbox:checked::after {
-    content: '\f00c';
-    font-family: 'Font Awesome 5 Free';
-    font-weight: 900;
-    color: #000;
-    font-size: 12px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
+        /* ── PROPERTY ── */
+        .content-block { max-width: 900px; margin: 0 auto 40px; }
+        .property-frame {
+            width: 100%; border-radius: var(--radius-xl); overflow: hidden;
+            position: relative; border: 1px solid var(--border); cursor: pointer;
+        }
+        .property-frame img { width: 100%; height: auto; display: block; transition: transform 0.8s cubic-bezier(0.25,1,0.5,1); }
+        .property-frame:hover img { transform: scale(1.03); }
+        .property-label {
+            position: absolute; bottom: 24px; left: 24px;
+            background: rgba(6,6,5,0.82); padding: 14px 22px;
+            border-radius: var(--radius-md); border-left: 2px solid var(--gold);
+        }
+        .property-label span { display: block; font-size: 9px; color: var(--gold); font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 4px; }
+        .property-label strong { font-size: 16px; font-weight: 600; letter-spacing: 0.04em; }
 
-.custom-checkbox:hover {
-    border-color: #d4af37;
-    background: rgba(212, 175, 55, 0.1);
-}
+        /* ── IMPACT ── */
+        .impact-wrap { background: var(--faintest); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 44px 36px; }
+        .impact-header { text-align: center; margin-bottom: 36px; }
+        .impact-header .section-icon {
+            width: 40px; height: 40px; border: 1px solid var(--gold-border); border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            color: var(--gold); font-size: 14px; margin-bottom: 16px;
+        }
+        .impact-header h3 { font-size: 20px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.01em; }
+        .impact-header p { font-size: 13px; color: var(--muted); }
+        .impact-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 1px; background: var(--border); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 20px;
+        }
+        .impact-item { background: var(--bg); padding: 28px 20px; text-align: center; }
+        .impact-number {
+            font-family: 'Instrument Serif', serif; font-style: italic;
+            font-size: 42px; font-weight: 400; color: var(--gold); line-height: 1; margin-bottom: 8px;
+        }
+        .impact-item p { font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: 0.04em; }
+        .impact-footnote { font-size: 11px; text-align: center; color: rgba(245,244,240,0.2); letter-spacing: 0.06em; }
 
-/* Эффект для текста Chainlink */
-.chainlink-verify {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    justify-content: center;
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
-    opacity: 0.6;
-    transition: opacity 0.3s;
-}
+        /* ── BOOK ── */
+        .book-wrap {
+            background: var(--faintest); border: 1px solid var(--border);
+            border-radius: var(--radius-xl); padding: 48px 40px;
+            display: flex; align-items: center; gap: 52px; flex-wrap: wrap; position: relative; overflow: hidden;
+        }
+        .book-cover-inner { position: relative; width: 220px; transition: transform 0.4s ease; cursor: pointer; }
+        .book-cover-inner:hover { transform: translateY(-6px) rotateY(-4deg); }
+        .book-cover-inner img {
+            width: 100%; height: auto; border-radius: 4px 14px 14px 4px;
+            box-shadow: 24px 24px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(201,168,76,0.15); display: block;
+        }
+        .book-info { flex: 1; min-width: 280px; }
+        .free-tag { display: inline-block; background: var(--gold); color: #060605; font-size: 9px; font-weight: 700; padding: 4px 8px; border-radius: 3px; letter-spacing: 0.1em; text-transform: uppercase; margin-right: 8px; }
+        .instant-tag { font-size: 11px; color: var(--muted); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+        .book-title { font-size: clamp(22px, 3.5vw, 30px); font-weight: 700; margin: 14px 0 18px; letter-spacing: -0.02em; line-height: 1.15; }
+        .book-desc { color: var(--muted); margin-bottom: 28px; font-size: 15px; line-height: 1.65; }
+        .book-features { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding-top: 24px; border-top: 1px solid var(--border); }
+        .book-feat { display: flex; align-items: center; gap: 10px; font-size: 13px; color: rgba(245,244,240,0.75); }
+        .book-feat i { color: var(--gold); font-size: 12px; flex-shrink: 0; }
 
-.chainlink-verify:hover {
-    opacity: 1;
-}
+        /* ── TERMS ── */
+        .terms-box { max-width: 600px; margin: 0 auto 40px; background: var(--faintest); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px 28px; }
+        .terms-label { cursor: pointer; display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+        .custom-checkbox {
+            appearance: none; -webkit-appearance: none; width: 20px; height: 20px;
+            border: 1px solid var(--gold-border); border-radius: 4px; background: transparent;
+            cursor: pointer; position: relative; transition: all 0.2s ease; flex-shrink: 0; margin-top: 1px;
+        }
+        .custom-checkbox:checked { background: var(--gold); border-color: var(--gold); }
+        .custom-checkbox:checked::after {
+            content: '\f00c'; font-family: 'Font Awesome 5 Free'; font-weight: 900;
+            color: #060605; font-size: 10px; position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+        .custom-checkbox:hover { border-color: var(--gold); }
+        .terms-text { font-size: 13px; color: var(--muted); line-height: 1.6; }
+        .terms-text a { color: var(--gold); text-decoration: none; border-bottom: 1px solid var(--gold-border); font-weight: 500; }
+        .chainlink-verify { display: flex; align-items: center; gap: 8px; justify-content: center; padding-top: 14px; border-top: 1px solid var(--border); opacity: 0.5; transition: opacity 0.2s; }
+        .chainlink-verify:hover { opacity: 0.9; }
+        .chainlink-verify span { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; color: rgba(245,244,240,0.6); text-transform: uppercase; }
+        .chain-blue { color: #4a6cf7; }
+
+        /* ── LIVE COUNTER ── */
+        #live-counter-box {
+            position: fixed; bottom: 20px; right: 20px; background: rgba(6,6,5,0.92);
+            padding: 9px 16px; border-radius: 100px; border: 1px solid var(--border-strong);
+            z-index: 9999; display: flex; align-items: center; gap: 9px;
+            font-size: 12px; font-weight: 500; letter-spacing: 0.04em;
+        }
+        @keyframes pulse-green { 0% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.5); } 100% { opacity:1; transform:scale(1); } }
+        @keyframes pulse-gold { 0% { box-shadow:0 0 0 0 rgba(201,168,76,0.5); } 70% { box-shadow:0 0 0 8px rgba(201,168,76,0); } 100% { box-shadow:0 0 0 0 rgba(201,168,76,0); } }
+
+        /* ── SECTION INTRO ── */
+        .section-intro { text-align: center; margin-bottom: 44px; }
+        .section-intro h2 { font-size: clamp(26px, 4vw, 40px); font-weight: 700; letter-spacing: -0.025em; margin-top: 14px; line-height: 1.1; }
+        .section-intro p { font-size: 15px; color: var(--muted); margin-top: 10px; }
+
+        /* ── PRICING TIERS ── */
+        .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 0; }
+        .tier-card {
+            background: var(--faintest); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 36px 28px; text-align: center;
+            transition: border-color 0.3s, background 0.3s, transform 0.2s;
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
+            cursor: pointer;
+        }
+        .tier-card:hover { border-color: var(--gold-border); background: rgba(201,168,76,0.04); }
+        .tier-card.selected { border-color: var(--gold); background: rgba(201,168,76,0.07); transform: translateY(-3px); }
+        .tier-popular { border-color: var(--gold-border); background: rgba(201,168,76,0.05); }
+        .popular-badge {
+            position: absolute; top: 14px; right: -28px;
+            background: var(--gold); color: #060605; font-size: 9px; font-weight: 800;
+            padding: 5px 38px; transform: rotate(45deg); letter-spacing: 0.08em;
+        }
+        .tier-name { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 20px; }
+        .tier-price { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 52px; font-weight: 400; margin-bottom: 6px; line-height: 1; letter-spacing: -0.02em; }
+        .tier-price span { font-family: 'DM Sans', sans-serif; font-style: normal; font-size: 13px; color: var(--muted); letter-spacing: 0.04em; }
+        .tier-divider { width: 32px; height: 1px; background: var(--border-strong); margin: 20px auto; }
+        .tier-features { list-style: none; margin-bottom: 32px; flex-grow: 1; text-align: left; }
+        .tier-features li { margin-bottom: 13px; font-size: 13.5px; color: rgba(245,244,240,0.78); display: flex; align-items: center; gap: 10px; }
+        .tier-features li i { color: var(--gold); font-size: 11px; flex-shrink: 0; width: 12px; }
+        .highlight-tickets { font-weight: 700; color: var(--white); }
+
+        /* Custom amount tier */
+        .custom-amount-wrap { margin-bottom: 24px; }
+        .custom-amount-label { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; display: block; }
+        .custom-amount-input-row { display: flex; align-items: center; gap: 0; background: rgba(245,244,240,0.05); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); overflow: hidden; }
+        .currency-prefix { padding: 0 14px; font-size: 18px; color: var(--gold); font-family: 'Instrument Serif', serif; font-style: italic; border-right: 1px solid var(--border); line-height: 54px; }
+        .custom-amount-input {
+            flex: 1; background: transparent; border: none; outline: none;
+            color: var(--white); font-family: 'Instrument Serif', serif; font-style: italic;
+            font-size: 32px; padding: 10px 14px; width: 100%;
+            -moz-appearance: textfield;
+        }
+        .custom-amount-input::-webkit-outer-spin-button,
+        .custom-amount-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        .buy-btn {
+            display: block; width: 100%; background: var(--white); color: #060605;
+            padding: 16px; border-radius: var(--radius-sm); text-decoration: none;
+            font-weight: 700; font-size: 12px; text-transform: uppercase;
+            letter-spacing: 0.1em; transition: background 0.2s, color 0.2s;
+            border: none; cursor: pointer; margin-top: auto;
+        }
+        .buy-btn:hover { background: var(--gold); }
+        .tier-popular .buy-btn, .tier-card.selected .buy-btn { background: var(--gold); }
+        .tier-popular .buy-btn:hover { background: #e8c96a; }
+        .disabled-link { pointer-events: none; opacity: 0.25; filter: grayscale(1); cursor: not-allowed; }
+
+        /* ── INLINE CHECKOUT ── */
+        .checkout-wrapper {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+            opacity: 0;
+        }
+        .checkout-wrapper.open {
+            max-height: 1000px;
+            opacity: 1;
+        }
+        .checkout-panel {
+            margin-top: 20px;
+            background: var(--faintest);
+            border: 1px solid var(--gold-border);
+            border-radius: var(--radius-xl);
+            padding: 44px 40px;
+            position: relative;
+        }
+
+        .checkout-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 36px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .checkout-title-wrap {}
+        .checkout-title-wrap .eyebrow { margin-bottom: 10px; }
+        .checkout-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        .checkout-summary {
+            text-align: right;
+        }
+        .checkout-amount-label { font-size: 10px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 4px; }
+        .checkout-amount-display {
+            font-family: 'Instrument Serif', serif;
+            font-style: italic;
+            font-size: 38px;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .checkout-tier-name { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: 0.06em; }
+
+        .checkout-close {
+            position: absolute; top: 20px; right: 24px;
+            background: none; border: none; color: var(--muted);
+            font-size: 20px; cursor: pointer; transition: color 0.2s; line-height: 1;
+        }
+        .checkout-close:hover { color: var(--white); }
+
+        /* Form fields */
+        .checkout-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 28px; }
+        .field-group { display: flex; flex-direction: column; gap: 8px; }
+        .field-group.full { grid-column: 1 / -1; }
+        .field-label { font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+        .field-input {
+            background: rgba(245,244,240,0.04);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            color: var(--white);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .field-input:focus { border-color: var(--gold); }
+        .field-input::placeholder { color: rgba(245,244,240,0.2); }
+
+        /* Network selector */
+        .network-selector { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+        .network-option {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 10px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            position: relative;
+        }
+        .network-option:hover { border-color: var(--gold-border); background: rgba(201,168,76,0.03); }
+        .network-option.active { border-color: var(--gold); background: rgba(201,168,76,0.08); }
+        .network-option input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+        .network-icon { font-size: 16px; margin-bottom: 8px; }
+        .network-name { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+        .network-tag { font-size: 7px; color: var(--muted); letter-spacing: 0.08em; font-family: 'DM Mono', monospace; }
+
+       
+
+        /* Wallet display */
+        .wallet-display {
+            background: rgba(245,244,240,0.03);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: none;
+        }
+        .wallet-display.visible { display: block; }
+        .wallet-display-label { font-size: 10px; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px; }
+        .wallet-address-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .wallet-address-text {
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            color: var(--white);
+            letter-spacing: 0.04em;
+            flex: 1;
+            word-break: break-all;
+        }
+        .copy-btn {
+            background: none; border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm); padding: 7px 14px;
+            color: var(--muted); font-size: 11px; font-weight: 600;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .copy-btn:hover { border-color: var(--gold); color: var(--gold); }
+        .copy-btn.copied { border-color: #22c55e; color: #22c55e; }
+
+        .wallet-instruction {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 12px;
+            line-height: 1.6;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .wallet-instruction strong { color: var(--gold); }
+
+        /* Submit */
+        .checkout-submit {
+            width: 100%;
+            background: var(--gold);
+            color: #060605;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 18px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .checkout-submit:hover { background: #e8c96a; transform: translateY(-1px); }
+        .checkout-submit:active { transform: translateY(0); }
+        .checkout-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* Success state */
+        .checkout-success {
+            display: none;
+            text-align: center;
+            padding: 20px 0;
+        }
+        .checkout-success.visible { display: block; }
+        .success-icon {
+            width: 56px; height: 56px;
+            border: 1px solid rgba(34,197,94,0.3);
+            border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            color: #22c55e; font-size: 22px; margin-bottom: 20px;
+        }
+        .success-title { font-size: 22px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.01em; }
+        .success-text { font-size: 14px; color: var(--muted); line-height: 1.65; max-width: 420px; margin: 0 auto; }
+
+        /* ── PROGRESS ── */
+        .progress-section {
+            max-width: 900px; margin: 60px auto 40px;
+            background: var(--faintest); border: 1px solid var(--border);
+            border-radius: var(--radius-xl); padding: 40px 40px;
+        }
+        .progress-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .progress-label h3 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+        .progress-label p { font-size: 12px; color: var(--muted); margin-top: 4px; }
+        .progress-pct { font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 500; color: var(--gold); letter-spacing: -0.02em; }
+        .progress-track { width: 100%; height: 3px; background: var(--border-strong); border-radius: 100px; overflow: hidden; margin-bottom: 14px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), #e8c96a); border-radius: 100px; transition: width 1s ease; }
+        .progress-bottom { display: flex; justify-content: space-between; align-items: center; }
+        .progress-donors { font-size: 12px; color: var(--muted); }
+        .progress-donors strong { color: var(--white); }
+        .progress-target { font-size: 11px; color: rgba(245,244,240,0.25); font-family: 'DM Mono', monospace; letter-spacing: 0.06em; }
+
+        /* ── MILESTONE PATH ── */
+        .pro-path-section { padding: 80px 0; overflow: hidden; }
+        .pro-path-header { text-align: center; margin-bottom: 52px; }
+        .pro-status { display: inline-flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 0.2em; color: var(--gold); font-weight: 600; text-transform: uppercase; margin-bottom: 12px; }
+        .pro-title { font-size: clamp(24px, 4vw, 36px); font-weight: 700; letter-spacing: -0.025em; }
+        .pro-viewport { width: 100%; overflow-x: auto; padding: 30px 0 50px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .pro-viewport::-webkit-scrollbar { display: none; }
+        .pro-container { display: flex; align-items: center; padding: 0 5vw; width: max-content; margin: 0 auto; }
+        .pro-line { width: 48px; height: 1px; background: var(--border); flex-shrink: 0; }
+        .pro-line.passed { background: var(--gold); }
+        .pro-line.active { background: linear-gradient(90deg, var(--gold), rgba(245,244,240,0.1)); }
+        .pro-node { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+        .pro-name { font-size: 9px; font-weight: 600; color: rgba(245,244,240,0.3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; height: 12px; text-align: center; }
+        .pro-card { width: 120px; height: 120px; background: var(--faintest); border: 1px solid var(--border); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; transition: 0.3s ease; overflow: hidden; }
+        .pro-card img { max-width: 82%; max-height: 82%; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
+        .pro-milestone { margin-top: 14px; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; color: rgba(245,244,240,0.2); letter-spacing: 0.08em; }
+        .pro-node.passed .pro-card { border-color: var(--gold-border); }
+        .pro-node.passed .pro-name { color: rgba(245,244,240,0.7); }
+        .pro-node.passed .pro-milestone { color: var(--gold); }
+        .pro-node.current .pro-card { border-color: var(--gold); transform: scale(1.08); background: rgba(201,168,76,0.07); box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
+        .pro-node.current .pro-name { color: var(--gold); }
+        .pro-node.current .pro-milestone { color: var(--white); }
+        .pro-node.locked { opacity: 0.3; }
+        .pro-node.locked img { filter: grayscale(1); }
+
+        /* ── TRUST GRID ── */
+        .trust-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 20px 0 0; }
+        .trust-item { padding: 44px 28px; border-right: 1px solid var(--border); }
+        .trust-item:last-child { border-right: none; }
+        .trust-icon-wrap { width: 36px; height: 36px; border: 1px solid var(--border-strong); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 13px; margin-bottom: 16px; }
+        .trust-item h4 { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px; }
+        .trust-item p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+        /* ── MODAL ── */
+        #rules-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
+        .modal-inner { background: #0e0d0b; border: 1px solid var(--border-strong); width: 100%; max-width: 780px; max-height: 82vh; border-radius: var(--radius-xl); position: relative; display: flex; flex-direction: column; }
+        #close-rules { position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; z-index: 10; transition: color 0.2s; }
+        #close-rules:hover { color: var(--white); }
+        .modal-body { padding: 44px; overflow-y: auto; font-size: 14px; color: var(--muted); line-height: 1.7; }
+        .modal-body h2 { color: var(--white); margin-bottom: 24px; font-weight: 700; letter-spacing: -0.01em; font-size: 20px; }
+        .modal-body h3 { color: var(--gold); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px; margin-top: 24px; }
+        .modal-footnote { opacity: 0.18; font-size: 9px; margin-top: 20px; letter-spacing: 0.04em; }
+
+        /* ── TELEGRAM CONFIG BLOCK ── */
+        .tg-config-block {
+            max-width: 900px;
+            margin: 48px auto 0;
+            border: 1px dashed rgba(245,244,240,0.08);
+            border-radius: var(--radius-xl);
+            padding: 36px 40px;
+            position: relative;
+        }
+        .tg-config-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(42,132,255,0.1);
+            border: 1px solid rgba(42,132,255,0.2);
+            border-radius: 4px;
+            padding: 5px 12px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #4a8fff;
+            margin-bottom: 16px;
+        }
+        .tg-config-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.01em; }
+        .tg-config-desc { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.6; max-width: 560px; }
+        .tg-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .tg-field { display: flex; flex-direction: column; gap: 8px; }
+        .tg-field label { font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,244,240,0.35); }
+        .tg-field input {
+            background: rgba(42,132,255,0.05);
+            border: 1px solid rgba(42,132,255,0.15);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            color: var(--white);
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .tg-field input:focus { border-color: rgba(42,132,255,0.5); }
+        .tg-field input::placeholder { color: rgba(245,244,240,0.15); }
+        .tg-save-btn {
+            margin-top: 18px;
+            background: rgba(42,132,255,0.15);
+            border: 1px solid rgba(42,132,255,0.3);
+            border-radius: var(--radius-sm);
+            padding: 13px 28px;
+            color: #4a8fff;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .tg-save-btn:hover { background: rgba(42,132,255,0.25); border-color: rgba(42,132,255,0.5); }
+        .tg-save-btn.saved { background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); color: #22c55e; }
+        .tg-status { font-size: 11px; color: var(--muted); margin-top: 12px; }
+        .tg-status.connected { color: #22c55e; }
+
+        /* ── NOTIFICATION POPUP ── */
+        .sales-notification {
+            position: fixed; bottom: 20px; left: 20px;
+            background: rgba(10,10,9,0.95); border: 1px solid var(--border-strong);
+            border-radius: var(--radius-md); padding: 12px 18px;
+            display: flex; align-items: center; gap: 13px; z-index: 10000;
+            transform: translateX(-150%); transition: transform 0.5s cubic-bezier(0.23,1,0.32,1); max-width: 310px;
+        }
+        .sales-notification.active { transform: translateX(0); }
+        .sales-icon { width: 30px; height: 30px; border: 1px solid rgba(34,197,94,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #22c55e; flex-shrink: 0; font-size: 12px; }
+        .sales-text { font-size: 12px; color: rgba(245,244,240,0.8); line-height: 1.45; }
+        .sales-text strong { color: var(--white); }
+        .sales-text span { color: var(--gold); font-weight: 700; }
+
+        /* ── FOOTER ── */
+        footer { text-align: center; padding: 48px 0; font-size: 11px; color: rgba(245,244,240,0.2); letter-spacing: 0.04em; line-height: 1.8; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) { .pricing-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) {
+            .trust-grid { grid-template-columns: 1fr; }
+            .trust-item { border-right: none; border-bottom: 1px solid var(--border); }
+            .trust-item:last-child { border-bottom: none; }
+            h1 { font-size: 42px; }
+            .book-wrap { gap: 32px; }
+            .book-cover-inner { width: 160px; }
+            .impact-grid { grid-template-columns: 1fr; }
+            .checkout-fields { grid-template-columns: 1fr; }
+            .network-selector { grid-template-columns: repeat(3,1fr); gap: 8px; }
+            .checkout-panel { padding: 28px 22px; }
+            .checkout-header { flex-direction: column; }
+            .checkout-summary { text-align: left; }
+            .tg-fields { grid-template-columns: 1fr; }
+            .progress-section { padding: 28px 24px; }
+            .pro-card { width: 96px; height: 96px; border-radius: 10px; }
+            .pro-line { width: 30px; }
+        }
+        @media (max-width: 480px) {
+            .sales-notification { width: calc(100% - 40px); }
+            .nav-links { display: none; }
+        }
     </style>
 </head>
 <body>
 
-<div class="static-bg"></div>
-
 <div class="container">
     <nav class="glass-nav">
-        <div class="logo">ESTATE.X</div>
+        <div class="logo">ESTATE<span>.</span>X</div>
         <div class="nav-links">
-            <a href="#tiers" class="nav-link">ENTER NOW</a>
-        
+            <a href="#tiers" class="nav-link cta">Donate Now</a>
         </div>
     </nav>
 
+    <!-- HERO -->
     <div class="hero">
        
-        <h1>OWN THIS VILLA <br> FOR <span class="gold-gradient">JUST €1</span></h1>
+        <h1>PROTECT PHUKET <br>&amp; WIN <em class="gold-gradient">THIS VILLA</em></h1>
         <p class="hero-description">
-            Get the 2026 Real Estate Investment Guide and receive automatic bonus entries into the property giveaway. 100% transparent. No hidden conditions.
+            Every donation restores mangroves &amp; coral reefs. <br> As a thank you get  The $1M Roadmap Guide + automatic entries to win the prizes.
         </p>
-         <div class="badge">⚡ EXCLUSIVE OPPORTUNITY ⚡</div>
     </div>
 
-  <div class="content-block">
-    <div class="property-frame">
-        <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1600&q=80" alt="Luxury Villa Phuket">
-        <div class="property-label" style="backdrop-filter: blur(10px); background: rgba(0,0,0,0.6);">
-            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                <i class="fas fa-map-marker-alt" style="color: #d4af37; font-size: 10px;"></i>
-                <span style="font-size: 10px; letter-spacing: 2px; font-weight: 700; opacity: 0.8;">LOCATION</span>
+    <!-- PROPERTY IMAGE -->
+    <div class="content-block">
+        <div class="property-frame">
+            <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1600&q=80" alt="Luxury Villa Phuket">
+            <div class="property-label">
+                <span><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i>Location</span>
+                <strong>PHUKET, THAILAND</strong>
             </div>
-            <strong style="font-size: 18px; letter-spacing: 1px;">PHUKET, THAILAND</strong>
         </div>
     </div>
-</div>
 
-<div class="content-block">
-    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; padding: 50px 40px; display: flex; align-items: center; gap: 50px; flex-wrap: wrap; position: relative; overflow: hidden;">
+    <!-- IMPACT BLOCK -->
+    <div class="content-block">
+        <div class="impact-wrap">
+            <div class="impact-header">
+                <div class="section-icon"><i class="fas fa-hand-holding-heart"></i></div>
+                <h3>Where your donation goes</h3>
+                <p>100% transparency — ocean conservation + prize fund</p>
+            </div>
+            <div class="impact-grid">
+                <div class="impact-item">
+                    <div class="impact-number">30%</div>
+                    <p>Mangrove &amp; Reef Restoration</p>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-number">20%</div>
+                    <p>Local Community &amp; Education</p>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-number">50%</div>
+                    <p>Prize Fund + Operations</p>
+                </div>
+            </div>
+            <p class="impact-footnote">Partner: Phuket Marine Foundation (official MOU)</p>
+        </div>
+    </div>
+
+    <!-- BOOK BLOCK -->
+    <div class="content-block">
+        <div class="book-wrap">
+            <div class="book-cover-wrap">
+                <div class="book-cover-inner">
+                    <img src="http://t1prime.com/roadmap_cover.png" alt="The $1M Roadmap">
+                    <div style="position:absolute;inset:0;background:linear-gradient(108deg,rgba(255,255,255,0.06) 0%,transparent 50%);pointer-events:none;border-radius:4px 14px 14px 4px;"></div>
+                </div>
+            </div>
+            <div class="book-info">
+                <div style="margin-bottom:14px;">
+                    <span class="free-tag">Free Gift</span>
+                    <span class="instant-tag">Instant PDF Access</span>
+                </div>
+                <h2 class="book-title">The $1M Roadmap</h2>
+                <p class="book-desc">Our way to say thanks — a complete real estate strategy guide. Learn to build a portfolio from scratch.</p>
+                <div class="book-features">
+                    <div class="book-feat"><i class="fas fa-check"></i> 84-Page Strategy</div>
+                    <div class="book-feat"><i class="fas fa-check"></i> Bonus entries included</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+   
+
+    <!-- PRICING TIERS -->
+    <div class="section-intro" style="margin-top:20px;" id="tiers">
         
-        <div style="position: absolute; top: -50%; left: -10%; width: 400px; height: 400px; background: rgba(212,175,55,0.05); filter: blur(100px); z-index: 0;"></div>
-
-        <div style="flex: 1; min-width: 280px; display: flex; justify-content: center; z-index: 1;">
-            <div style="position: relative; width: 240px; transition: transform 0.4s ease; cursor: pointer;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                <img src="http://t1prime.com/roadmap_cover.png" alt="The $1M Roadmap" style="width: 100%; height: auto; border-radius: 5px 15px 15px 5px; box-shadow: 30px 30px 60px rgba(0,0,0,0.8); display: block; border: 1px solid rgba(212,175,55,0.2);">
-                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(105deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0) 50%); pointer-events: none; border-radius: 5px 15px 15px 5px;"></div>
-            </div>
-        </div>
-
-        <div style="flex: 2; min-width: 300px; z-index: 1;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                <span style="background: #d4af37; color: #000; font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 4px;">DIGITAL PRODUCT</span>
-                <span style="color: rgba(255,255,255,0.4); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Instant PDF Access</span>
-            </div>
-            <h2 style="font-size: clamp(24px, 4vw, 32px); font-weight: 900; margin-bottom: 20px; line-height: 1.2;">Master the Real Estate Market</h2>
-            <p style="color: rgba(255,255,255,0.6); margin-bottom: 25px; font-size: 16px; line-height: 1.6;">
-                The $1M Roadmap is your ultimate guide to property investment. Learn how to build a portfolio from scratch.
-            </p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 25px;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-check-circle" style="color: #d4af37; font-size: 14px;"></i>
-                    <span style="font-size: 13px; color: rgba(255,255,255,0.8);">84-Page Strategy</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-check-circle" style="color: #d4af37; font-size: 14px;"></i>
-                    <span style="font-size: 13px; color: rgba(255,255,255,0.8);">Bonus Entry Incl.</span>
-                </div>
-            </div>
-        </div>
+        <h2>Support the Mission</h2>
+        <p>Every contribution directly funds ocean restoration</p>
     </div>
-</div>
 
-    <div style="max-width: 600px; margin: 0 auto 40px; text-align: center; background: rgba(255,255,255,0.03); padding: 20px; border-radius: 20px; border: 1px solid rgba(212,175,55,0.2);">
-    <label style="cursor: pointer; display: flex; align-items: flex-start; text-align: left; gap: 15px; margin-bottom: 20px;">
+     <!-- TERMS CHECKBOX -->
+    <div class="terms-box">
+        <label class="terms-label">
             <input type="checkbox" id="terms-checkbox" class="custom-checkbox">
-            <span style="font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.5; padding-top: 2px;">
-                I have read and agree to the <a href="javascript:void(0)" id="open-rules" style="color: #d4af37; text-decoration: none; font-weight: 600; border-bottom: 1px solid rgba(212,175,55,0.3);">Official Rules & Terms</a>, including the milestone conditions and age requirements.
+            <span class="terms-text">
+                I confirm my donation is voluntary and agree to the <a href="javascript:void(0)" id="open-rules">Official Rules &amp; Terms</a>, including milestone conditions and age 18+.
             </span>
         </label>
         <div class="chainlink-verify">
-            <img src="https://cryptologos.cc/logos/chainlink-link-logo.png?v=042" alt="Chainlink" style="height: 14px; filter: grayscale(1) brightness(2);">
-            <span style="font-size: 11px; font-weight: 700; letter-spacing: 1px; color: rgba(255,255,255,0.5); text-transform: uppercase;">
-                Verified by <span style="color: #375bd4;">Chainlink</span> VRF
-            </span>
+            <img src="https://cryptologos.cc/logos/chainlink-link-logo.png?v=042" alt="Chainlink" style="height:13px;filter:grayscale(1) brightness(2);">
+            <span>Verified by <span class="chain-blue">Chainlink</span> VRF</span>
         </div>
+    </div>
+
+    <!-- LIVE COUNTER -->
+    <div id="live-counter-box">
+        <span style="width:5px;height:5px;background:#22c55e;border-radius:50%;display:inline-block;animation:pulse-green 2s infinite;"></span>
+        <span style="color:rgba(245,244,240,0.75);"><span id="live-users-count">1,402</span> Users</span>
+    </div>
+
+    <div class="section-intro" style="margin-top:20px;" id="tiers">
+        <div class="eyebrow">Choose your level</div>
+
+    <div class="pricing-grid">
+
+        
+
+        <!-- TIER 1: Supporter -->
+        <div class="tier-card" id="card-1" onclick="selectTier(1, 1, 'Supporter')">
+            <div class="tier-name">Supporter</div>
+            <div class="tier-price">€1 <span>/ donation</span></div>
+            <div class="tier-divider"></div>
+            <ul class="tier-features">
+                <li><i class="fas fa-file-pdf"></i> The $1M Roadmap</li>
+                <li><i class="fas fa-ticket-alt"></i> <span class="highlight-tickets">1 Entry Ticket</span></li>
+            </ul>
+            <button class="buy-btn disabled-link" id="btn-1">Donate €1 → Get 1 Ticket</button>
+        </div>
+
+        <!-- TIER 2: Pro Donor — MOST IMPACT -->
+        <div class="tier-card tier-popular" id="card-2" onclick="selectTier(2, 25, 'Pro Donor')">
+            <div class="popular-badge">MOST IMPACT</div>
+            <div class="tier-name">Pro Donor</div>
+            <div class="tier-price">€25 <span>/ donation</span></div>
+            <div class="tier-divider"></div>
+            <ul class="tier-features">
+                <li><i class="fas fa-file-pdf"></i> Full Investment Guide</li>
+                <li><i class="fas fa-ticket-alt"></i> <span class="highlight-tickets">250 Entry Tickets</span></li>
+                <li><i class="fas fa-chart-line"></i> 250× higher impact</li>
+            </ul>
+            <button class="buy-btn disabled-link" id="btn-2">Donate €25 → Get 250 Tickets</button>
+        </div>
+
+        <!-- TIER 3: Custom Amount -->
+        <div class="tier-card" id="card-3">
+            <div class="tier-name">Whale Donor</div>
+            <div class="custom-amount-wrap">
+                <span class="custom-amount-label">Your amount</span>
+                <div class="custom-amount-input-row">
+                    <div class="currency-prefix">€</div>
+                    <input type="number" class="custom-amount-input" id="custom-amount-val" value="100" min="25" max="100000" onclick="event.stopPropagation()">
+                </div>
+            </div>
+            <ul class="tier-features">
+                <li><i class="fas fa-crown"></i> VIP Portfolio + Private Updates</li>
+                <li><i class="fas fa-ticket-alt"></i> <span class="highlight-tickets">20× tickets per €</span></li>
+                <li><i class="fas fa-star"></i> Maximum winning power</li>
+            </ul>
+            <button class="buy-btn disabled-link" id="btn-3" onclick="selectCustomTier()">Donate → Get Max Tickets</button>
+        </div>
+
+    </div>
+
+    <!-- INLINE CHECKOUT PANEL -->
+    <div class="checkout-wrapper" id="checkout-wrapper">
+        <div class="checkout-panel">
+            <button class="checkout-close" onclick="closeCheckout()">×</button>
+
+            <div class="checkout-header">
+                <div class="checkout-title-wrap">
+                    <div class="eyebrow">Secure Donation</div>
+                    <div class="checkout-title">Complete your contribution</div>
+                </div>
+                <div class="checkout-summary">
+                    <div class="checkout-amount-label">Your donation</div>
+                    <div class="checkout-amount-display" id="checkout-amount-display">€25</div>
+                    <div class="checkout-tier-name" id="checkout-tier-name">Pro Donor · 250 Tickets</div>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <div id="checkout-form-body">
+                <div class="checkout-fields">
+                    <div class="field-group">
+                        <label class="field-label">First Name *</label>
+                        <input type="text" class="field-input" id="f-name" placeholder="Your name" required>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Email *</label>
+                        <input type="email" class="field-input" id="f-email" placeholder="you@email.com" required>
+                    </div>
+                </div>
+
+               <div class="field-label" style="margin-bottom:14px;">Select payment network *</div>
+<div class="network-selector">
+    <label class="network-option" onclick="selectNetwork('tron', this)">
+        <input type="radio" name="network" value="tron">
+        <div class="network-icon">🔴</div>
+        <div class="network-name">TRON</div>
+        <div class="network-tag">TRC-20 · USDT</div>
+    </label>
+    
+    <label class="network-option opt-poly" onclick="selectNetwork('polygon', this)">
+        <input type="radio" name="network" value="polygon">
+        <div class="network-icon">🔵</div>
+        <div class="network-name">Polygon</div>
+        <div class="network-tag">MATIC · USDT</div>
+    </label>
+    
+    <label class="network-option" onclick="selectNetwork('bnb', this)">
+        <input type="radio" name="network" value="bnb">
+        <div class="network-icon">🟡</div>
+        <div class="network-name">BNB Chain</div>
+        <div class="network-tag">BEP-20 · USDT</div>
+    </label>
+
+    <label class="network-option opt-sol" onclick="selectNetwork('solana', this)">
+        <input type="radio" name="network" value="solana">
+        <div class="network-icon">🟣</div>
+        <div class="network-name">SOLANA</div>
+        <div class="network-tag">SOL · USDT</div>
+    </label>
 </div>
 
-<div id="live-counter-box" style="position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); padding: 8px 15px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.1); z-index: 9999; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
-    <span style="width: 6px; height: 6px; background: #22c55e; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #22c55e; animation: pulse-green 2s infinite;"></span>
-    <span style="font-size: 12px; color: #fff; font-family: sans-serif; font-weight: 500; letter-spacing: 0.5px;">
-        <span id="live-users-count">1,402</span> online
-    </span>
-</div>
+                <!-- Wallet display -->
+                <div class="wallet-display" id="wallet-display">
+                    <div class="wallet-display-label" id="wallet-network-label">Send USDT (TRC-20) to this address</div>
+                    <div class="wallet-address-row">
+                        <div class="wallet-address-text" id="wallet-address-text">—</div>
+                        <button class="copy-btn" id="copy-btn" onclick="copyAddress()">Copy</button>
+                    </div>
+                    <div class="wallet-instruction">
+                        Send exactly <strong id="wallet-amount-hint">€25</strong> worth of USDT to this address.<br>
+                        Then paste your transaction hash below so we can confirm your entry.
+                    </div>
+                </div>
+
+                <!-- TX hash -->
+                <div class="checkout-fields" style="margin-top:0; margin-bottom:20px;">
+                    <div class="field-group full">
+                        <label class="field-label">Transaction Hash *</label>
+                        <input type="text" class="field-input" id="f-txhash" placeholder="0x... or paste your TX ID after sending" style="font-family:'DM Mono',monospace; font-size:12px;">
+                    </div>
+                </div>
+
+                <button class="checkout-submit disabled-link" id="submit-btn" onclick="submitDonation()">
+                    Confirm Donation &amp; Claim Tickets →
+                </button>
+                <div style="text-align:center; margin-top:14px; font-size:11px; color:var(--muted);">
+                    You'll receive your PDF guide &amp; entry confirmation by email within 24h
+                </div>
+            </div>
+
+            <!-- Success -->
+            <div class="checkout-success" id="checkout-success">
+                <div class="success-icon"><i class="fas fa-check"></i></div>
+                <div class="success-title">Donation Submitted!</div>
+                <p class="success-text">Thank you for supporting ocean conservation. We'll verify your transaction and send your PDF guide + ticket confirmation to your email within 24 hours.</p>
+            </div>
+        </div>
+    </div>
+
+    <section class="crypto-guide-wrap">
+    <div class="guide-container">
+        <div class="guide-header">
+            <span class="guide-badge">⚡ 3 MINUTES — YOU'RE AN EXPERT</span>
+            <h1 class="guide-title">PAY WITH CRYPTO <span style="color:var(--gold);">Without Fear</span></h1>
+            <p class="guide-sub">Crypto is just digital money. <strong>USDT</strong> is a "crypto-dollar" ≈ $1. <br> To send it, you need a <strong>crypto wallet</strong> – an app on your phone.</p>
+        </div>
+
+        <div class="guide-steps">
+            
+            <div class="step-card">
+                <div class="step-num">01</div>
+                <h3 class="step-h"><i class="fas fa-download" style="margin-right:10px; color:var(--gold);"></i>Install a Wallet</h3>
+                <p class="step-p">Download one of these trusted portals to Web3. Create a new wallet and <strong>write down the 12-word secret phrase</strong> on paper.</p>
+                
+                <div class="wallet-options">
+                    <div class="w-item"><i class="fa-solid fa-shield-halved"></i> Trust Wallet<span>iOS / Android / Simple</span></div>
+                    <div class="w-item"><i class="fa-solid fa-fox"></i> MetaMask<span>Industry Standard</span></div>
+                    <div class="w-item"><i class="fa-solid fa-ghost"></i> Phantom<span>Fastest (Solana & Multi)</span></div>
+                </div>
+                
+                <div class="golden-rule">
+                    <strong>GOLDEN RULE:</strong> Your 12 words are your master password. If you lose them, you lose the money. <strong>Never</strong> share them or take a screenshot!
+                </div>
+            </div>
+
+            <div class="step-card highlight">
+                <div class="step-num">02</div>
+                <h3 class="step-h"><i class="fas fa-coins" style="margin-right:10px; color:var(--gold);"></i>Buy USDT</h3>
+                <p class="step-p">You can buy crypto ($100–500) directly via your phone or through global exchanges:</p>
+                
+                <div class="ramp-options">
+                    <div class="r-item"><i class="fa-brands fa-apple"></i> Apple Pay</div>
+                    <div class="r-item"><i class="fa-brands fa-google-pay"></i> Google Pay</div>
+                    <div class="r-item"><i class="fa-solid fa-credit-card"></i> Card / P2P</div>
+                </div>
+                
+                <p class="step-sub-p" style="font-size:13px; margin-top:15px; color:var(--muted);">
+                    <strong>Easiest way:</strong> Inside Trust Wallet, click <b>"Buy"</b> → select <b>USDT</b>. Use MoonPay or Simplex providers for instant delivery to your app.
+                </p>
+                <div class="info-note" style="margin-top:15px; background:rgba(255,255,255,0.03); padding:10px; border-radius:10px; font-size:11px;">
+                    <i class="fas fa-exchange-alt" style="color:var(--gold);"></i> <strong>Pro Tip:</strong> For lower fees on large amounts, use <b>Binance</b> or <b>Bybit</b> P2P, then withdraw to your wallet.
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-num">03</div>
+                <h3 class="step-h"><i class="fas fa-paper-plane" style="margin-right:10px; color:var(--gold);"></i>Send via Network</h3>
+                <p class="step-p">The most critical part. <strong>Always</strong> ensure the network matches our address:</p>
+                
+                <div class="network-grid">
+                    <div class="n-box sol-network">
+                        <strong>SOLANA (SOL)</strong>
+                        <span>Fastest. Fees < $0.01.</span>
+                    </div>
+                    <div class="n-box active">
+                        <strong>TRC-20 (USDT)</strong>
+                        <span>The Standard. Fee ~$1.</span>
+                    </div>
+                    <div class="n-box">
+                        <strong>BNB CHAIN (BSC)</strong>
+                        <span>Stable & Cheap fee.</span>
+                    </div>
+                </div>
+
+                <div class="final-action" style="margin-top:20px;">
+                    1. Copy our address from the form <br>
+                    2. In Wallet: Click <b>Send</b> → Paste Address <br>
+                    3. Select matching <b>Network</b> <br>
+                    4. Check fee and <b>Confirm</b>.
+                </div>
+                
+                <div class="warning-note" style="margin-top:15px; font-size:11px; color:#ff8888; border:1px solid rgba(255,0,0,0.2); padding:10px; border-radius:10px;">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> If you choose the wrong network, funds are lost forever. Double-check!
+                </div>
+            </div>
+    
+
+                    <!-- Карточка 4: Чек-лист (теперь step-card) -->
+            <div class="step-card">
+                <div class="step-num">04</div>
+                <h3 class="step-h"><i class="fas fa-clipboard-list" style="margin-right:10px; color:var(--gold);"></i>Pre‑payment Checklist</h3>
+                <p class="step-p">Make sure everything is ready before you hit “Send”.</p>
+                
+                <div class="checklist-items" style="display: flex; flex-direction: column; gap: 14px; margin-top: 20px;">
+                    <div><i class="fas fa-check-circle" style="color:#22c55e; width: 20px;"></i> Wallet installed</div>
+                    <div><i class="fas fa-check-circle" style="color:#22c55e; width: 20px;"></i> USDT/SOL on your balance</div>
+                    <div><i class="fas fa-check-circle" style="color:#22c55e; width: 20px;"></i> Address & Network match (TRC‑20 → TRC‑20)</div>
+                    <div><i class="fas fa-check-circle" style="color:#22c55e; width: 20px;"></i> Test amount ($5) sent first for large transfers</div>
+                </div>
+                
+                <div class="final-action" style="margin-top: 25px; background: #000; padding: 15px; border-radius: 12px; font-family: 'DM Mono', monospace; font-size: 12px; line-height: 1.8;">
+                    <i class="fas fa-rocket" style="color:var(--gold); margin-right: 8px;"></i> <strong>Done!</strong> After sending, copy the <b>TXID</b> — that's your digital receipt.
+                </div>
+            </div>
+    </div>
+</section>
 
 <style>
-@keyframes pulse-green {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.4); opacity: 0.6; }
-    100% { transform: scale(1); opacity: 1; }
+/* PREMIUM CRYPTO GUIDE STYLES */
+.crypto-guide-wrap { padding: 100px 0px; background: transparent; font-family: 'DM Sans', sans-serif; }
+.guide-container { max-width: 1100px; margin: 0 auto; }
+
+
+.guide-header { text-align: center; margin-bottom: 60px; }
+.guide-badge { font-size: 10px; letter-spacing: 3px; color: var(--gold); font-weight: 800; text-transform: uppercase; border: 1px solid var(--gold-border); padding: 6px 15px; border-radius: 50px; background: var(--gold-dim); }
+.guide-title {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 48px;
+    color: var(--white);
+    margin-top: 20px; 
+    
+}
+.guide-steps { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 25px; }
+
+.step-card { 
+    background: rgba(255,255,255,0.02); 
+    border: 1px solid rgba(255,255,255,0.05); 
+    padding: 40px 30px; 
+    border-radius: 24px; 
+    position: relative;
+    backdrop-filter: blur(10px);
+    transition: 0.4s ease;
+}
+/*.step-card:hover { border-color: var(--gold-border); background: rgba(255,255,255,0.04); transform: translateY(-5px); }*/
+.step-card.highlight { border-color: var(--gold-border); background: rgba(201,168,76,0.03); }
+
+.step-num { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--gold); margin-bottom: 20px; opacity: 0.6; }
+.step-h { font-size: 22px; font-weight: 600; color: #fff; margin-bottom: 15px; }
+.step-p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 25px; }
+
+/* Wallets & Ramps */
+.wallet-options, .ramp-options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; }
+.w-item, .r-item { 
+    display: flex; align-items: center; gap: 12px; 
+    padding: 12px 15px; background: rgba(255,255,255,0.03); 
+    border-radius: 12px; font-size: 14px; color: #fff; font-weight: 600;
+}
+.w-item i, .r-item i { color: var(--gold); font-size: 18px; width: 24px; }
+.w-item span { font-size: 10px; font-weight: 400; color: var(--muted); margin-left: auto; }
+
+.golden-rule { 
+    font-size: 11px; background: rgba(255,0,0,0.05); border: 1px solid rgba(255,0,0,0.15); 
+    padding: 12px; border-radius: 10px; color: #ff8888; line-height: 1.4;
+}
+
+.network-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.n-box { padding: 15px; border: 1px solid var(--faint); border-radius: 12px; transition: 0.3s; }
+.n-box.active { border-color: var(--gold); background: var(--gold-dim); }
+.n-box strong { display: block; color: var(--gold); font-size: 14px; margin-bottom: 4px; }
+.n-box span { font-size: 11px; color: var(--muted); }
+
+.final-action { font-family: 'DM Mono', monospace; font-size: 12px; color: #fff; background: #000; padding: 15px; border-radius: 12px; line-height: 1.8; }
+
+@media (max-width: 900px) {
+    .guide-steps { grid-template-columns: 1fr; }
+    .guide-title { font-size: 36px; }
 }
 </style>
 
-<div class="pricing-grid" id="tiers">
-    <div class="tier-card">
-        <div class="tier-name">Starter Pack</div>
-        <div class="tier-price">€1 <span>/ one-time</span></div>
-        <ul class="tier-features">
-            <li><i class="fas fa-file-pdf"></i> The $1M Roadmap</li>
-            <li><i class="fas fa-ticket-alt"></i> <span class="highlight-tickets">1 Entry Ticket</span></li>
-              </ul>
-        <a href="ТВОЯ_ССЫЛКА_WHOP_1_EURO" class="buy-btn disabled-link">Get 1 Ticket</a>
-    </div>
-
-    <div class="tier-card tier-popular">
-        <div class="popular-badge">BEST VALUE</div>
-        <div class="tier-name">Power Pack</div>
-        <div class="tier-price">€10 <span>/ one-time</span></div>
-        <ul class="tier-features">
-            <li><i class="fas fa-file-pdf"></i> Full Investment Guide</li>
-            <li><i class="fas fa-ticket-alt"></i> <span class="highlight-tickets">100 Entry Tickets</span></li>
-            <li><i class="fas fa-bolt"></i> 100x Winning Chance</li>
-        </ul>
-        <a href="ТВОЯ_ССЫЛКА_WHOP_10_EURO" class="buy-btn disabled-link">Get 100 Tickets</a>
-    </div>
-
-    <div class="tier-card">
-        <div class="tier-name">Whale Pack</div>
-        <div class="tier-price">€50 <span>/ one-time</span></div>
-        <ul class="tier-features">
-            <li><i class="fas fa-crown"></i> VIP Investment Portfolio</li>
-            <li><i class="fas fa-ticket-alt"></i> <span class="highlight-tickets">1,000 Entry Tickets</span></li>
-            <li><i class="fas fa-star"></i> 1000x Winning Chance</li>
-        </ul>
-        <a href="ТВОЯ_ССЫЛКА_WHOP_50_EURO" class="buy-btn disabled-link">Get 1000 Tickets</a>
-    </div>
-
-    <div class="tier-card sub-card">
-        <div class="tier-name">Insider Club</div>
-        <div class="tier-price">€5 <span>/ monthly</span></div>
-        <ul class="tier-features">
-            <li><i class="fas fa-sync"></i> Monthly Market Reports</li>
-            <li><i class="fas fa-ticket-alt"></i> <span class="highlight-tickets">500 Monthly Tickets</span></li>
-            <li><i class="fas fa-infinity"></i> Always in the Game</li>
-        </ul>
-        <a href="ТВОЯ_ССЫЛКА_WHOP_SUBSCRIPTION" class="buy-btn disabled-link">Subscribe</a>
-        
-      </div>  
-   
-    
-   
-    
-</div>
-<div class="main-progress-container" style="max-width: 500px; margin: 20px auto; text-align: center;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
-        <span style="font-size: 10px; text-transform: uppercase; color: rgba(255,255,255,0.4); letter-spacing: 2px; font-weight: 700;">Global Entry Progress</span>
-        <span id="progress-text-main" style="font-family: monospace; color: #d4af37; font-size: 14px; font-weight: 700;">82.472%</span>
-    </div>
-    
-    <div style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
-        <div id="progress-fill-main" style="position: absolute; top: 0; left: 0; height: 100%; background: #d4af37; width: 82.472%; transition: width 1s ease-in-out; box-shadow: 0 0 15px rgba(212,175,55,0.3);"></div>
-    </div>
-    
-    <p style="font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 10px;">Draw starts automatically at 100%</p>
-</div>
-<div id="rules-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); backdrop-filter:blur(10px); z-index:9999; justify-content:center; align-items:center; padding:20px;">
-    <div style="background:#111; border:1px solid #d4af37; width:100%; max-width:800px; max-height:80vh; border-radius:30px; position:relative; display:flex; flex-direction:column; box-shadow:0 0 50px rgba(212,175,55,0.2);">
-        <button id="close-rules" style="position:absolute; top:20px; right:20px; background:none; border:none; color:#fff; font-size:24px; cursor:pointer; z-index:10;">&times;</button>
-        <div style="padding:40px; overflow-y:auto; font-size:14px; color:rgba(255,255,255,0.7); line-height:1.6;">
-            <h2 style="color:#fff; margin-bottom:20px; font-weight:900;">OFFICIAL RULES & TERMS</h2>
-            <p><strong>Last Updated: April 18, 2026</strong></p><br>
-            <h3 style="color:#d4af37;">1. BINDING AGREEMENT</h3>
-            <p>By purchasing the "Digital Investment Guide" or entering via the "No Purchase Necessary" method, you agree to these Official Rules.</p><br>
-            <h3 style="color:#d4af37;">2. ELIGIBILITY</h3>
-            <p>Participants must be at least 18 years of age. Open worldwide except where prohibited by law.</p><br>
-            <h3 style="color:#d4af37;">3. THE MILESTONE CONDITION</h3>
-            <p>The Property Draw occurs once the threshold of 50,000 active participants is reached. If not met within 12 months, the Cash Alternative applies.</p><br>
-            <h3 style="color:#d4af37;">4. CASH ALTERNATIVE</h3>
-            <p>If the Milestone is not met, a Cash Prize equal to 60% of the net total entry pool will be awarded instead of the property title.</p><br>
-            <h3 style="color:#d4af37;">5. NO PURCHASE NECESSARY</h3>
-            <p>To enter without purchase, mail a handwritten postcard to our office in Labuan, Malaysia. Each valid mail-in counts as one entry.</p><br>
-            <p style="opacity: 0.2; font-size: 9px; margin-top: 20px; letter-spacing: 0.5px;">
-        Odds of winning depend on the total number of entries. Max estimated odds for the grand prize are 1:200,000. 
-        Participation does not guarantee a win. Digital product is non-refundable.
-    </p>
+    <!-- PROGRESS BAR -->
+    <div class="progress-section">
+        <div class="progress-top">
+            <div class="progress-label">
+                <div class="eyebrow" style="margin-bottom:10px;">Campaign Status</div>
+                <h3>Milestone Progress</h3>
+                <p>Goal: 50,000 active donors for the Property Draw</p>
             </div>
+            <div class="progress-pct" id="progress-text-main">82.473%</div>
+        </div>
+        <div class="progress-track">
+            <div class="progress-fill" id="progress-fill-main" style="width:82.47251%"></div>
+        </div>
+        <div class="progress-bottom">
+            <div class="progress-donors"><strong>41,236</strong> of 50,000 donors</div>
+            <div class="progress-target">TARGET: 50K</div>
+        </div>
     </div>
-</div>
 
-<style>
-    .disabled-link { pointer-events: none; opacity: 0.3; filter: grayscale(1); cursor: not-allowed; transition: 0.3s; }
-</style>
+</div><!-- /container -->
 
-<script>
-    const checkbox = document.getElementById('terms-checkbox');
-    const buttons = document.querySelectorAll('.buy-btn');
-    const modal = document.getElementById('rules-modal');
-    const openBtn = document.getElementById('open-rules');
-    const closeBtn = document.getElementById('close-rules');
+<!-- MILESTONE PATH -->
+<section class="pro-path-section">
+    <div class="pro-path-header">
+        <div class="pro-status"><span style="width:18px;height:1px;background:var(--gold);opacity:0.5;display:inline-block;"></span> Global Mission Progress</div>
+        <h2 class="pro-title">Milestone Rewards</h2>
+        <p style="font-size: 13px; color: var(--muted); margin-top: 12px; max-width: 600px; margin-left: auto; margin-right: auto;">
+    At every milestone, random active donors receive premium gifts — from AirPods to a Tesla.
+</p>
+    </div>
 
-    // Активация кнопок
-    checkbox.addEventListener('change', function() {
-        buttons.forEach(btn => {
-            if (this.checked) {
-                btn.classList.remove('disabled-link');
-                btn.style.opacity = "1";
-            } else {
-                btn.classList.add('disabled-link');
-                btn.style.opacity = "0.3";
-            }
-        });
-    });
+    <div class="pro-viewport">
+        <div class="pro-container">
+            <div class="pro-node passed">
+                <div class="pro-name">10x AirPods Pro 3</div>
+                <div class="pro-card"><img src="https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcQ8eJWcctivm7USmltf8nsFm_Kx6GX7XZAPq1yU1igNxXmVGrIZWEHFowQJhtyq6nAL5oMoPnrfxQEnQulB3QW1-VnIhV1NpwyxA2xBatF7PrRFMOT-jfy6&usqp=CAc" alt=""></div>
+                <div class="pro-milestone">5K</div>
+            </div>
+            <div class="pro-line passed"></div>
+            <div class="pro-node passed">
+                <div class="pro-name">5x Ray-Ban Meta</div>
+                <div class="pro-card"><img src="data:image/jpeg;base64,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" alt=""></div>
+                <div class="pro-milestone">10K</div>
+            </div>
+            <div class="pro-line active"></div>
+            <div class="pro-node current">
+                <div class="pro-name">5x iPhone 17 PRO MAX</div>
+                <div class="pro-card"><img src="data:image/jpeg;base64,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" alt=""></div>
+                <div class="pro-milestone">25K</div>
+            </div>
+            <div class="pro-line"></div>
+            <div class="pro-node locked">
+                <div class="pro-name">5x Vision Pro</div>
+                <div class="pro-card"><img src="data:image/jpeg;base64,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" alt=""></div>
+                <div class="pro-milestone">50K</div>
+            </div>
+            <div class="pro-line"></div>
+            <div class="pro-node locked">
+                <div class="pro-name">3x Rolex Sub</div>
+                <div class="pro-card"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcShdGUG7NcYALgfXJw8Xh8teJa0HL74rkJafA&s" alt=""></div>
+                <div class="pro-milestone">125K</div>
+            </div>
+            <div class="pro-line"></div>
+            <div class="pro-node locked">
+                <div class="pro-name">Tesla Model 3</div>
+                <div class="pro-card"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRXWswi5CNV9zcbce0CKnFms7FHZ-FaaHBFYezxYLCB&s" alt=""></div>
+                <div class="pro-milestone">250K</div>
+            </div>
+            <div class="pro-line"></div>
+            <div class="pro-node locked ultimate">
+                <div class="pro-name">Luxury Thai Villa</div>
+                <div class="pro-card"><img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1600&q=80" alt=""></div>
+                <div class="pro-milestone">500K</div>
+            </div>
+        </div>
+    </div>
+</section>
 
-    // Управление модальным окном
-    openBtn.onclick = () => modal.style.display = "flex";
-    closeBtn.onclick = () => modal.style.display = "none";
-    window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; }
-</script>
+<div class="container">
 
-
-
+    <!-- TRUST GRID -->
     <div class="trust-grid">
         <div class="trust-item">
-            <i class="fas fa-link"></i>
-            <h4>PROVABLY FAIR</h4>
+            <div class="trust-icon-wrap"><i class="fas fa-link"></i></div>
+            <h4>Provably Fair</h4>
             <p>Winner selected via Chainlink VRF blockchain technology.</p>
         </div>
         <div class="trust-item">
-            <div class="trust-icon"><i class="fas fa-gavel"></i></div>
-            <h4>LEGAL & SECURE</h4>
+            <div class="trust-icon-wrap"><i class="fas fa-gavel"></i></div>
+            <h4>Legal &amp; Secure</h4>
             <p>Full property transfer handled by registered Thai lawyers.</p>
         </div>
         <div class="trust-item">
-            <i class="fas fa-globe"></i>
-            <h4>GLOBAL ACCESS</h4>
+            <div class="trust-icon-wrap"><i class="fas fa-globe"></i></div>
+            <h4>Global Access</h4>
             <p>Open to participants worldwide (where legally permitted).</p>
         </div>
     </div>
 
-    
+   <!-- Скрытая конфигурация Telegram (только для администратора) -->
+<script>
+    // ═══════════════════════════════════════════════════════════
+    // ВСТАВЬ СВОИ ДАННЫЕ ОТ TELEGRAM БОТА (только сюда)
+    // ═══════════════════════════════════════════════════════════
+    const TELEGRAM_BOT_TOKEN = '7672223015:AAFKcBctFgqS7NGUq1_lbnHNCEo6Fionbqs';  // пример: "1234567890:ABCdefGHIjkl..."
+    const TELEGRAM_CHAT_ID    = '591775682';     // пример: "-100123456789"
+    // ═══════════════════════════════════════════════════════════
+
+    // Переопределяем функцию отправки, чтобы она использовала эти константы
+    window.sendTelegramNotification = function(data, onDone) {
+        const msg = 
+`🎯 *New ESTATE.X Donation*
+
+👤 *Name:* ${data.name}
+📧 *Email:* ${data.email}
+💰 *Amount:* ${data.amount}
+🎫 *Tier:* ${data.tier}
+🔗 *Network:* ${data.network.toUpperCase()}
+🔑 *TX Hash:* \`${data.txhash}\`
+🕐 *Time:* ${data.timestamp}`;
+
+        fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg, parse_mode: 'Markdown' })
+        })
+        .then(() => onDone && onDone())
+        .catch(() => onDone && onDone());
+    };
+
+    // Отключаем старую функцию сохранения (чтобы не было ошибок, если кто-то её вызовет)
+    window.saveTgConfig = function() {
+        console.log("Telegram config is hardcoded, no UI needed");
+    };
+</script>
+<!-- Конец скрытой конфигурации Telegram -->
 
     <footer>
-        © 2026 ESTATE.X — DIGITAL PRODUCT SALES. <br>
-        THE PROPERTY GIVEAWAY IS A PROMOTIONAL BONUS. NO PURCHASE NECESSARY TO ENTER. VOID WHERE PROHIBITED.
+        © 2026 ESTATE.X — OCEAN &amp; LAND TRUST INITIATIVE.<br>
+        This is a charitable sweepstakes. Donations support marine conservation in Thailand. Prize awarded as a promotional gratitude.
     </footer>
 </div>
-<style>
-    .sales-notification {
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        background: rgba(10, 10, 10, 0.9);
-        border: 1px solid rgba(212, 175, 55, 0.3);
-        border-radius: 12px;
-        padding: 10px 18px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        z-index: 10000;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.6);
-        transform: translateX(-150%);
-        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-        backdrop-filter: blur(15px);
-        max-width: 320px;
-    }
-    .sales-notification.active { transform: translateX(0); }
-    .sales-icon { width: 32px; height: 32px; background: rgba(212, 175, 55, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #d4af37; flex-shrink: 0; }
-    .sales-text { font-size: 12.5px; color: rgba(255,255,255,0.85); line-height: 1.4; }
-    .sales-text strong { color: #fff; font-weight: 700; }
-    .sales-text span { color: #d4af37; font-weight: 900; }
-    
-    @media (max-width: 480px) {
-        .sales-notification { width: calc(100% - 40px); left: 20px; bottom: 30px; }
-    }
-</style>
 
+
+
+<!-- RULES MODAL -->
+<div id="rules-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.92); z-index:9999; justify-content:center; align-items:center; padding:20px;">
+    <div class="modal-inner">
+        <button id="close-rules">&times;</button>
+        <div class="modal-body">
+            <h2>OFFICIAL RULES &amp; TERMS — CHARITABLE SWEEPSTAKES</h2>
+            <p><strong>Last Updated: April 18, 2026</strong></p>
+            <h3>1. Binding Agreement</h3>
+            <p>By donating to ESTATE.X initiative, you agree to these Official Rules. This is a fundraising campaign for marine conservation.</p>
+            <h3>2. Eligibility</h3>
+            <p>Participants must be at least 18 years of age. Open worldwide except where prohibited by law.</p>
+            <h3>3. The Milestone Condition</h3>
+            <p>The Property Draw occurs once the threshold of 50,000 active donors is reached. If not met within 12 months, the Cash Alternative applies.</p>
+            <h3>4. Cash Alternative</h3>
+            <p>If the Milestone is not met, a Cash Prize equal to 60% of the net total donation pool will be awarded instead of the property title.</p>
+            <h3>5. Donation &amp; Gift</h3>
+            <p>Donations are voluntary and support ocean restoration. As a thank you, every donor receives a digital guide and entry tickets.</p>
+            <p class="modal-footnote">Odds depend on total entries. Max estimated odds for the grand prize are 1:200,000. Digital gift is non-refundable.</p>
+        </div>
+    </div>
+</div>
+
+<!-- SALE POPUP -->
 <div id="sales-pop" class="sales-notification">
-    <div class="sales-icon" style="color: #22c55e;"><i class="fas fa-check-circle"></i></div>
+    <div class="sales-icon"><i class="fas fa-check-circle"></i></div>
     <div class="sales-text" id="sales-content"></div>
 </div>
 
 <script>
-   const data = {
-    names: ['Albert', 'Anna', 'Kail', 'Moussa', 'Jin', 'Elena', 'Marco', 'Yuki', 'Sarah', 'Ahmed', 'Lars', 'Ivan', 'Chloe', 'Diego', 'Fatimah', 'Hans', 'Igor', 'Javier', 'Kim', 'Luca', 'Mei', 'Nikolai', 'Omar', 'Priya', 'Rosa', 'Sven', 'Tariq', 'Ursula', 'Victor', 'Wang', 'Xavier', 'Yasmine', 'Zoe', 'Liam', 'Noah', 'Oliver', 'Emma', 'Ava', 'Sophia', 'Mia', 'Lucas', 'Mason', 'Ethan', 'Logan'],
-    countries: [
-        { n: 'Albania', c: 'al' }, { n: 'Russia', c: 'ru' }, { n: 'Spain', c: 'es' }, 
-        { n: 'Thailand', c: 'th' }, { n: 'France', c: 'fr' }, { n: 'Japan', c: 'jp' }, 
-        { n: 'UAE', c: 'ae' }, { n: 'USA', c: 'us' }, { n: 'Germany', c: 'de' }, 
-        { n: 'Brazil', c: 'br' }, { n: 'UK', c: 'gb' }, { n: 'Italy', c: 'it' }, 
-        { n: 'Canada', c: 'ca' }, { n: 'Australia', c: 'au' }, { n: 'Mexico', c: 'mx' }, 
-        { n: 'Turkey', c: 'tr' }, { n: 'Kazakhstan', c: 'kz' }, { n: 'Poland', c: 'pl' }, 
-        { n: 'Norway', c: 'no' }, { n: 'Sweden', c: 'se' }, { n: 'Portugal', c: 'pt' }, 
-        { n: 'Vietnam', c: 'vn' }, { n: 'Singapore', c: 'sg' }, { n: 'Cyprus', c: 'cy' }, 
-        { n: 'Malta', c: 'mt' }, { n: 'Switzerland', c: 'ch' }, { n: 'Netherlands', c: 'nl' }
-    ],
-    providers: ['@gmail.com', '@yahoo.com', '@icloud.com', '@outlook.com', '@mail.ru', '@proton.me', '@yandex.com', '@hotmail.com'],
-    tickets: [1, 100, 100, 500, 500, 1000, 1000, 1000]
-};
+    // ═══════════════════════════════════
+    // WALLET ADDRESSES — вставь свои сюда
+    // ═══════════════════════════════════
+    const WALLETS = {
+        tron:    'ВСТАВЬ_АДРЕС_TRON_TRC20_СЮДА',     // TRON TRC-20 USDT
+        polygon: 'ВСТАВЬ_АДРЕС_POLYGON_USDT_СЮДА',   // Polygon USDT (MATIC network)
+        bnb:     'ВСТАВЬ_АДРЕС_BNB_CHAIN_USDT_СЮДА',  // BNB Chain BEP-20 USDT
+           solana:  'ВСТАВЬ_АДРЕС_SOLANA_USDT_СЮДА'
+    };
 
-function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    const NETWORK_LABELS = {
+        tron:    'Send USDT (TRC-20) to this address',
+        polygon: 'Send USDT (Polygon) to this address',
+        bnb:     'Send USDT (BEP-20) to this address',
+            solana:  'Send USDT (Solana) to this address'
+    };
 
-function showNextSale() {
-    const name = getRandom(data.names);
-    const countryObj = getRandom(data.countries);
-    const ticket = getRandom(data.tickets);
-    const provider = getRandom(data.providers);
-    const age = Math.floor(Math.random() * (52 - 18 + 1)) + 18;
+    // ── State ──
+    let currentTier = null;
+    let currentAmount = 0;
+    let currentTierName = '';
+    let selectedNetwork = null;
+
+    // ── Checkbox enables donate buttons ──
+    const checkbox = document.getElementById('terms-checkbox');
+    checkbox.addEventListener('change', function() {
+        document.querySelectorAll('.buy-btn').forEach(btn => {
+            btn.classList.toggle('disabled-link', !this.checked);
+        });
+    });
+
+    // ── Tier selection ──
+    function selectTier(tierId, amount, name) {
+        if (!checkbox.checked) return;
+        currentTier = tierId;
+        currentAmount = amount;
+        currentTierName = name;
+
+        document.querySelectorAll('.tier-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById('card-' + tierId).classList.add('selected');
+
+        openCheckout(amount, name);
+    }
+
+    function selectCustomTier() {
+        if (!checkbox.checked) return;
+        const val = parseInt(document.getElementById('custom-amount-val').value) || 100;
+        currentTier = 3;
+        currentAmount = val;
+        currentTierName = 'Whale Donor';
+        document.querySelectorAll('.tier-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById('card-3').classList.add('selected');
+        openCheckout(val, 'Whale Donor');
+    }
+
+    function openCheckout(amount, tierName) {
+        const tickets = tierName === 'Supporter' ? '1 Ticket' : tierName === 'Pro Donor' ? '250 Tickets' : Math.round(amount * 20).toLocaleString() + ' Tickets';
+        document.getElementById('checkout-amount-display').textContent = '€' + amount;
+        document.getElementById('checkout-tier-name').textContent = tierName + ' · ' + tickets;
+        document.getElementById('wallet-amount-hint').textContent = '€' + amount;
+
+        // Reset form
+        document.getElementById('checkout-form-body').style.display = 'block';
+        document.getElementById('checkout-success').classList.remove('visible');
+        resetNetworks();
+
+        const wrapper = document.getElementById('checkout-wrapper');
+        wrapper.classList.add('open');
+        setTimeout(() => wrapper.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+
+    function closeCheckout() {
+        document.getElementById('checkout-wrapper').classList.remove('open');
+        document.querySelectorAll('.tier-card').forEach(c => c.classList.remove('selected'));
+        currentTier = null;
+    }
+
+    // ── Network selection ──
+    function selectNetwork(net, el) {
+        selectedNetwork = net;
+        document.querySelectorAll('.network-option').forEach(o => o.classList.remove('active'));
+        el.classList.add('active');
+
+        const display = document.getElementById('wallet-display');
+        display.classList.add('visible');
+        document.getElementById('wallet-network-label').textContent = NETWORK_LABELS[net];
+        document.getElementById('wallet-address-text').textContent = WALLETS[net];
+
+        const copyBtn = document.getElementById('copy-btn');
+        copyBtn.textContent = 'Copy';
+        copyBtn.classList.remove('copied');
+    }
+
+    function resetNetworks() {
+        selectedNetwork = null;
+        document.querySelectorAll('.network-option').forEach(o => o.classList.remove('active'));
+        document.getElementById('wallet-display').classList.remove('visible');
+        document.getElementById('f-txhash').value = '';
+    }
+
+    // ── Copy address ──
+    function copyAddress() {
+        const addr = WALLETS[selectedNetwork];
+        if (!addr) return;
+        navigator.clipboard.writeText(addr).then(() => {
+            const btn = document.getElementById('copy-btn');
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2500);
+        });
+    }
+
+    // ── Submit donation ──
+    function submitDonation() {
+        const name    = document.getElementById('f-name').value.trim();
+        const email   = document.getElementById('f-email').value.trim();
+        const txhash  = document.getElementById('f-txhash').value.trim();
+
+        if (!name || !email || !selectedNetwork || !txhash) {
+            alert('Please fill in all fields, select a network and paste your transaction hash.');
+            return;
+        }
+
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+
+        const payload = {
+            name, email,
+            amount: '€' + currentAmount,
+            tier: currentTierName,
+            network: selectedNetwork,
+            txhash,
+            timestamp: new Date().toLocaleString('ru-RU')
+        };
+
+        sendTelegramNotification(payload, () => {
+            document.getElementById('checkout-form-body').style.display = 'none';
+            document.getElementById('checkout-success').classList.add('visible');
+        });
+
+        // Отправка данных в PHP для записи в CSV
+fetch('log.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+        name: name,
+        email: email,
+        amount: '€' + currentAmount,
+        tier: currentTierName,
+        network: selectedNetwork,
+        txhash: txhash
+    })
+}).catch(err => console.log('CSV save error:', err));
+    }
+
+    // ========== НОВАЯ ФУНКЦИЯ ОТПРАВКИ В TELEGRAM (использует константы) ==========
+function sendTelegramNotification(data, onDone) {
+    // Проверяем, определены ли константы (из скрытого блока)
+    if (typeof TELEGRAM_BOT_TOKEN === 'undefined' || typeof TELEGRAM_CHAT_ID === 'undefined') {
+        console.warn('Telegram constants missing. Simulating success.');
+        if (onDone) onDone();
+        return;
+    }
     
-    const maskedMail = name.charAt(0).toLowerCase() + '***' + provider;
+    const msg = 
+`🎯 *New ESTATE.X Donation*
 
-    // Генерируем ссылку на картинку флага (используем надежный сервис flagcdn)
-    const flagImg = `<img src="https://flagcdn.com/w20/${countryObj.c}.png" style="width:20px; vertical-align:middle; margin-right:5px; border-radius:2px;">`;
+👤 *Name:* ${data.name}
+📧 *Email:* ${data.email}
+💰 *Amount:* ${data.amount}
+🎫 *Tier:* ${data.tier}
+🔗 *Network:* ${data.network.toUpperCase()}
+🔑 *TX Hash:* \`${data.txhash}\`
+🕐 *Time:* ${data.timestamp}`;
 
-    const content = `<strong>${name}</strong> (${age}y) from ${flagImg}${countryObj.n}<br>just secured <span>${ticket.toLocaleString()} tickets</span> <br><small style="opacity:0.5">${maskedMail}</small>`;
-    
-    document.getElementById('sales-content').innerHTML = content;
-    const pop = document.getElementById('sales-pop');
-    
-    pop.classList.add('active');
-    
-    setTimeout(() => {
-        pop.classList.remove('active');
-    }, 6000);
-
-    const nextTime = Math.floor(Math.random() * (25000 - 8000 + 1)) + 8000;
-    setTimeout(showNextSale, nextTime);
+    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg, parse_mode: 'Markdown' })
+    })
+    .then(() => {
+        if (onDone) onDone();
+    })
+    .catch((err) => {
+        console.warn('Telegram send error:', err);
+        if (onDone) onDone(); // всё равно продолжаем
+    });
 }
 
-    // Первый запуск через 4 секунды
+// ========== ИСПРАВЛЕННАЯ ФУНКЦИЯ SUBMIT ==========
+function submitDonation() {
+    const name    = document.getElementById('f-name').value.trim();
+    const email   = document.getElementById('f-email').value.trim();
+    const txhash  = document.getElementById('f-txhash').value.trim();
+
+    if (!name || !email || !selectedNetwork || !txhash) {
+        alert('Please fill in all fields, select a network and paste your transaction hash.');
+        return;
+    }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    const payload = {
+        name, email,
+        amount: '€' + currentAmount,
+        tier: currentTierName,
+        network: selectedNetwork,
+        txhash,
+        timestamp: new Date().toLocaleString('en-US')
+    };
+
+    // 1. Отправка в Telegram
+    sendTelegramNotification(payload, () => {
+        // 2. Локальное сохранение в localStorage (имитация лог-файла)
+        try {
+            let donations = JSON.parse(localStorage.getItem('estatex_donations') || '[]');
+            donations.push(payload);
+            localStorage.setItem('estatex_donations', JSON.stringify(donations));
+            console.log('✅ Donation saved locally');
+        } catch(e) {
+            console.warn('Local save error:', e);
+        }
+
+        // 3. Показать успех
+        document.getElementById('checkout-form-body').style.display = 'none';
+        document.getElementById('checkout-success').classList.add('visible');
+        btn.textContent = 'Payment Sent!';
+    });
+}
+
+    // ── Modal ──
+    const modal   = document.getElementById('rules-modal');
+    const openBtn = document.getElementById('open-rules');
+    const closeBtn= document.getElementById('close-rules');
+    openBtn.onclick  = () => modal.style.display = "flex";
+    closeBtn.onclick = () => modal.style.display = "none";
+    window.onclick   = (e) => { if (e.target === modal) modal.style.display = "none"; };
+
+    // ── Sale Popup ──
+    const data = {
+        names: ['Albert','Anna','Kail','Moussa','Jin','Elena','Marco','Yuki','Sarah','Ahmed','Lars','Ivan','Chloe','Diego','Fatimah','Hans','Igor','Javier','Kim','Luca','Mei','Nikolai','Omar','Priya','Rosa','Sven','Tariq','Ursula','Victor','Wang','Xavier','Yasmine','Zoe','Liam','Noah','Oliver','Emma','Ava','Sophia','Mia','Lucas','Mason','Ethan','Logan'],
+        countries: [
+            {n:'Albania',c:'al'},{n:'Russia',c:'ru'},{n:'Spain',c:'es'},
+            {n:'Thailand',c:'th'},{n:'France',c:'fr'},{n:'Japan',c:'jp'},
+            {n:'UAE',c:'ae'},{n:'USA',c:'us'},{n:'Germany',c:'de'},
+            {n:'Brazil',c:'br'},{n:'UK',c:'gb'},{n:'Italy',c:'it'},
+            {n:'Canada',c:'ca'},{n:'Australia',c:'au'},{n:'Mexico',c:'mx'},
+            {n:'Norway',c:'no'},{n:'Sweden',c:'se'},{n:'Portugal',c:'pt'},
+            {n:'Singapore',c:'sg'},{n:'Switzerland',c:'ch'},{n:'Netherlands',c:'nl'}
+        ],
+        providers: ['@gmail.com','@yahoo.com','@icloud.com','@outlook.com','@proton.me'],
+        donated: [1,25,25,100,100,100,250,500]
+    };
+    function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function showNextSale() {
+        const name = getRandom(data.names);
+        const co   = getRandom(data.countries);
+        const amt  = getRandom(data.donated);
+        const prov = getRandom(data.providers);
+        const age  = Math.floor(Math.random() * 34) + 18;
+        const mail = name.charAt(0).toLowerCase() + '***' + prov;
+        const flag = `<img src="https://flagcdn.com/w20/${co.c}.png" style="width:18px;vertical-align:middle;margin-right:4px;border-radius:2px;">`;
+        document.getElementById('sales-content').innerHTML =
+            `<strong>${name}</strong> (${age}y) from ${flag}${co.n}<br>just donated <span>€${amt.toLocaleString()}</span><br><small style="opacity:0.4">${mail}</small>`;
+        const pop = document.getElementById('sales-pop');
+        pop.classList.add('active');
+        setTimeout(() => pop.classList.remove('active'), 6000);
+        setTimeout(showNextSale, Math.floor(Math.random() * 17000) + 8000);
+    }
     setTimeout(showNextSale, 4000);
 
-    // --- LIVE USERS (Нижний угол) ---
-let activeUsers = Math.floor(Math.random() * (1650 - 1200 + 1)) + 1200;
-const userDisplay = document.getElementById('live-users-count');
+    // ── Live users ──
+    let activeUsers = Math.floor(Math.random() * 450) + 1200;
+    const userDisplay = document.getElementById('live-users-count');
+    function driftUsers() {
+        activeUsers += Math.floor(Math.random() * 5) - 2;
+        userDisplay.innerText = activeUsers.toLocaleString();
+        setTimeout(driftUsers, Math.random() * 4000 + 2000);
+    }
+    driftUsers();
 
-function driftUsers() {
-    const change = Math.floor(Math.random() * 5) - 2; // Изменение на -2, -1, 0, 1, 2
-    activeUsers += change;
-    userDisplay.innerText = activeUsers.toLocaleString();
-    setTimeout(driftUsers, Math.random() * 4000 + 2000);
+    // ── Progress bar ──
+    let currentPct = 82.47251;
+    const fill = document.getElementById('progress-fill-main');
+    const text = document.getElementById('progress-text-main');
+    function updateProgress() {
+        currentPct += Math.random() * 0.0008;
+        if (currentPct > 99.9) currentPct = 99.9;
+        fill.style.width = currentPct + '%';
+        text.innerText = currentPct.toFixed(3) + '%';
+        setTimeout(updateProgress, Math.random() * 30000 + 15000);
+    }
+    updateProgress();
+
+    // ── ВАЛИДАЦИЯ И АКТИВАЦИЯ КНОПКИ CONFIRM DONATION ──
+function isValidTxHash(hash) {
+    return hash && typeof hash === 'string' && hash.trim().length >= 50;
 }
-driftUsers();
 
-// --- PROGRESS (Под заголовком) ---
-let currentPct = 82.47251; 
-const fill = document.getElementById('progress-fill-main');
-const text = document.getElementById('progress-text-main');
+const submitBtn = document.getElementById('submit-btn');
+const nameInput = document.getElementById('f-name');
+const emailInput = document.getElementById('f-email');
+const txHashInput = document.getElementById('f-txhash');
 
-function updateProgress() {
-    // Очень маленькие шаги для натуральности
-    currentPct += (Math.random() * 0.0008);
-    if (currentPct > 99.9) currentPct = 99.9;
+function checkFormCompletion() {
+    const isTermsChecked = document.getElementById('terms-checkbox').checked;
+    const isNetworkSelected = selectedNetwork !== null;
+    const isNameFilled = nameInput.value.trim() !== '';
+    const isEmailFilled = emailInput.value.trim() !== '';
+    const isTxValid = isValidTxHash(txHashInput.value);
+
+    const allValid = isTermsChecked && isNetworkSelected && isNameFilled && isEmailFilled && isTxValid;
     
-    fill.style.width = currentPct + '%';
-    text.innerText = currentPct.toFixed(3) + '%';
+    if (allValid) {
+        submitBtn.classList.remove('disabled-link');
+        submitBtn.disabled = false;
+    } else {
+        submitBtn.classList.add('disabled-link');
+        submitBtn.disabled = true;
+    }
     
-    // Рост происходит каждые 15-45 секунд (имитация реальных оплат)
-    setTimeout(updateProgress, Math.random() * 30000 + 15000);
+    // Подсветка поля TX hash красным, если невалиден
+    if (txHashInput.value.trim() !== '' && !isTxValid) {
+        txHashInput.style.borderColor = '#dc3545';
+    } else {
+        txHashInput.style.borderColor = '';
+    }
 }
-updateProgress();
+
+// Добавляем слушатели событий
+nameInput.addEventListener('input', checkFormCompletion);
+emailInput.addEventListener('input', checkFormCompletion);
+txHashInput.addEventListener('input', checkFormCompletion);
+document.getElementById('terms-checkbox').addEventListener('change', checkFormCompletion);
+
+// Переопределяем selectNetwork, чтобы при выборе сети тоже проверять
+const originalSelectNetwork = window.selectNetwork;
+window.selectNetwork = function(net, el) {
+    originalSelectNetwork(net, el);
+    checkFormCompletion();
+};
+
+// Также при сбросе сетей (resetNetworks) нужно перепроверить, но resetNetworks вызывается только в openCheckout
+// Чтобы не переопределять resetNetworks, просто добавим вызов checkFormCompletion в конец существующей функции resetNetworks
+if (typeof resetNetworks === 'function') {
+    const originalResetNetworks = resetNetworks;
+    window.resetNetworks = function() {
+        originalResetNetworks();
+        checkFormCompletion();
+    };
+}
+
+// Первоначальная проверка при загрузке
+setTimeout(checkFormCompletion, 100);
 </script>
+
+
+
 </body>
 </html>
