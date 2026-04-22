@@ -995,7 +995,7 @@ button {
     <input 
         type="range" 
         id="fibo-lookback" 
-        min="1" max="400" value="25" step="1" 
+        min="1" max="1000" value="25" step="1" 
         class="flex-1 h-1.5 bg-[#2b3139] rounded-lg appearance-none cursor-pointer accent-[#00ff9d]"
         oninput="document.getElementById('fibo-lookback-val').innerText = this.value; APP.handleFibSlider();"
     >
@@ -1021,6 +1021,23 @@ button {
         <button class="w-5 h-5 flex items-center justify-center bg-black/50 border border-gray-600 rounded text-[#00ff9d] hover:bg-[#00ff9d] hover:text-black transition text-sm font-bold" data-liq="dec">−</button>
         <button class="w-5 h-5 flex items-center justify-center bg-black/50 border border-gray-600 rounded text-[#00ff9d] hover:bg-[#00ff9d] hover:text-black transition text-sm font-bold" data-liq="inc">+</button>
     </div>
+</div>
+
+<!-- Настройка минимальной суммы ликвидации -->
+<div class="flex items-center gap-2 bg-[#1e2329]/50 px-3 py-1.5 rounded-lg border border-[#2b3139] h-[34px] w-full mt-2">
+    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">LIQ (USD)</span>
+    <input type="text" id="min-liq-usd" value="3000" class="flex-1 min-w-0 bg-black border border-gray-700 px-2 py-1 rounded text-white text-xs text-right">
+    <div class="flex gap-1 flex-shrink-0">
+        <button class="w-5 h-5 flex items-center justify-center bg-black/50 border border-gray-600 rounded text-[#00ff9d] hover:bg-[#00ff9d] hover:text-black transition text-sm font-bold" data-minliq="dec">−</button>
+        <button class="w-5 h-5 flex items-center justify-center bg-black/50 border border-gray-600 rounded text-[#00ff9d] hover:bg-[#00ff9d] hover:text-black transition text-sm font-bold" data-minliq="inc">+</button>
+    </div>
+</div>
+
+<!-- ALLIGATOR VOLUME THRESHOLD -->
+<div class="flex items-center gap-2 bg-[#1e2329]/50 px-3 py-1.5 rounded-lg border border-[#2b3139] h-[34px] w-full mt-2">
+    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">VOL%</span>
+    <input type="number" id="alligator-vol-threshold" value="0" step="0.01" min="0" max="1" class="flex-1 bg-black border border-gray-700 px-2 py-1 rounded text-white text-xs text-right">
+    <div class="text-[9px] text-gray-500">0=off</div>
 </div>
    
  <!-- HUNTER SETTINGS PANEL -->
@@ -1052,8 +1069,8 @@ button {
                 <option>1</option>
                 <option>2</option>
                 <option>4</option>
-                <option selected>5</option>
-                <option>6</option>
+                <option>5</option>
+                <option selected>6</option>
             </select>
         </div>
         <div class="text-[9px] text-gray-600 mt-1" id="hunter-status">Status: waiting</div>
@@ -1194,7 +1211,7 @@ const APP = (function() {
 
     };
 
-    
+   
 
     // Внутри APP добавьте:
 let currentTimezone = 'auto';
@@ -1209,6 +1226,8 @@ let currentTimezone = 'auto';
         klines: [],
         oiHistory: [],
         liqMarkers: [],       // для реальных ликвидаций (WS)
+        maxVolumeHistory: 0,   // максимальный объём за всю историю
+        alligatorVolumeThreshold: 0, // по умолчанию фильтр отключён
         liqWs: null,
         chart: null,
         liqHistSeries: null,
@@ -1229,12 +1248,24 @@ liqHistInterval: null,
 liqHistInterval: null,    // для таймера обновления
 indicatorUpdaters: {}, // ключ – тип индикатора, значение – функция обновления
 
+recalcAlligatorHistory() {
+    if (!STATE.alligatorActive) return;
+    // Очищаем текущие данные Alligator, чтобы пересчитать с новым порогом
+    STATE.alligatorMarkers = [];
+    STATE.alligatorTrades = [];
+    STATE.alligatorPosition = null;
+    STATE.alligatorEquity = 1000;
+    this.processFullHistory();
+    this.updateAllMarkers();
+    log(`[Alligator] Recalculated with volume threshold ${STATE.alligatorVolumeThreshold}`);
+},
+
     
 
         // HUNTER SYSTEM
         hunterConfig: {
             active: true,
-            minConfluence: 5,
+            minConfluence: 6,
             gates: {
                 trend: true,
                 impulse: true,
@@ -1456,6 +1487,73 @@ priceScale.applyOptions({
     autoScale: true
 });
 
+// Управление минимальной суммой ликвидации с удержанием кнопок
+const minLiqDec = document.querySelector('[data-minliq="dec"]');
+const minLiqInc = document.querySelector('[data-minliq="inc"]');
+const minLiqInput = document.getElementById('min-liq-usd');
+
+if (minLiqDec && minLiqInc && minLiqInput) {
+    const updateMinLiq = (delta) => {
+        let val = parseInt(minLiqInput.value);
+        if (isNaN(val)) val = 3000;
+        val += delta;
+        if (val < 0) val = 0;
+        minLiqInput.value = val;
+    };
+
+    let repeatInterval = null;
+    let repeatTimeout = null;
+    let activeDelta = 0;
+
+    const stopRepeat = () => {
+        if (repeatTimeout) {
+            clearTimeout(repeatTimeout);
+            repeatTimeout = null;
+        }
+        if (repeatInterval) {
+            clearInterval(repeatInterval);
+            repeatInterval = null;
+        }
+        activeDelta = 0;
+    };
+
+    const startRepeat = (delta, event) => {
+        event.preventDefault();
+        if (activeDelta !== 0 && activeDelta !== delta) stopRepeat();
+        activeDelta = delta;
+
+        // Первое изменение по клику (мгновенно)
+        updateMinLiq(delta);
+
+        // Задержка перед началом автоповтора
+        repeatTimeout = setTimeout(() => {
+            if (activeDelta !== delta) return;
+            repeatInterval = setInterval(() => {
+                if (activeDelta === delta) {
+                    updateMinLiq(delta);
+                } else {
+                    stopRepeat();
+                }
+            }, 100); // повтор каждые 100 мс
+            repeatTimeout = null;
+        }, 400);
+    };
+
+    minLiqDec.addEventListener('mousedown', (e) => startRepeat(-500, e));
+    minLiqInc.addEventListener('mousedown', (e) => startRepeat(500, e));
+
+    // Останавливаем повтор при отпускании кнопки или уходе курсора
+    const stopHandler = () => stopRepeat();
+    minLiqDec.addEventListener('mouseup', stopHandler);
+    minLiqDec.addEventListener('mouseleave', stopHandler);
+    minLiqInc.addEventListener('mouseup', stopHandler);
+    minLiqInc.addEventListener('mouseleave', stopHandler);
+    minLiqDec.addEventListener('touchend', stopHandler);
+    minLiqInc.addEventListener('touchend', stopHandler);
+    minLiqDec.addEventListener('touchcancel', stopHandler);
+    minLiqInc.addEventListener('touchcancel', stopHandler);
+}
+
         chartContainer.addEventListener('wheel', (e) => {
             const rect = chartContainer.getBoundingClientRect();
             // Проверяем, что мышка над правой шкалой (последние 60 пикселей)
@@ -1503,6 +1601,24 @@ priceScale.applyOptions({
     }
 });
 
+const volInput = document.getElementById('alligator-vol-threshold');
+if (volInput) {
+    // установим начальное значение из атрибута
+    STATE.alligatorVolumeThreshold = parseFloat(volInput.value) || 0;
+    volInput.addEventListener('change', () => {
+        let val = parseFloat(volInput.value);
+        if (isNaN(val)) val = 0;
+        if (val < 0) val = 0;
+        if (val > 1) val = 1;
+        STATE.alligatorVolumeThreshold = val;
+        volInput.value = val;
+        // Если Alligator активен, пересчитать историю с новым порогом
+        if (STATE.alligatorActive) {
+            this.recalcAlligatorHistory();
+        }
+    });
+}
+
         // Привязка ползунка яркости
         const glowInput = document.getElementById('liq-glow');
         const glowVal = document.getElementById('glow-val');
@@ -1547,7 +1663,20 @@ priceScale.applyOptions({
 }, 1000);
     }
 
-
+const volInput = document.getElementById('alligator-vol-threshold');
+if (volInput) {
+    volInput.addEventListener('change', () => {
+        let val = parseFloat(volInput.value);
+        if (isNaN(val)) val = 0;
+        if (val < 0) val = 0;
+        if (val > 1) val = 1;
+        STATE.alligatorVolumeThreshold = val;
+        // Если Alligator активен, пересчитать историю
+        if (STATE.alligatorActive) {
+            this.recalcAlligatorHistory();
+        }
+    });
+}
 
     // --- CHART ENGINE ---
     function initChart() {
@@ -1692,6 +1821,7 @@ function applyTimezone(tz) {
                 buyVol: 0, 
                 sellVol: 0
             }));
+            STATE.maxVolumeHistory = Math.max(...STATE.prices.map(p => p.volume));
             
             // Получаем реальную дельту
             const aggTrades = await fetchAPI(`/aggTrades?symbol=${STATE.symbol}&limit=1000`);
@@ -1711,6 +1841,7 @@ function applyTimezone(tz) {
                 value: parseFloat(k[5]),
                 color: 'rgba(255, 255, 255, 0.3)'
             }));
+            
 
             STATE.series.candle.setData(STATE.prices);
             STATE.series.volume.setData(volData);
@@ -1721,6 +1852,9 @@ function applyTimezone(tz) {
     rightOffset: 5 // количество свечей справа от последней
 });
 STATE.chart.timeScale().scrollToRealTime();
+
+STATE.chart.priceScale('right').applyOptions({ autoScale: true });
+
 
             // Очищаем маркеры ликвидаций перед новым анализом
             STATE.liqMarkers = [];
@@ -1900,8 +2034,10 @@ function calculateATR(data, period) {
         }
         atr[i] = sum / period;
     }
-    return atr;
+    return atr;    
 }
+
+
 
     function computePowerScore(m) {
         let score = 0;
@@ -1968,6 +2104,8 @@ function calculateATR(data, period) {
             reason: reason
         };
     }
+
+    
 
     function drawForecast(prices, verdict) {
         if (!STATE.chart || !prices || prices.length < 50) return;
@@ -2247,6 +2385,7 @@ if (k.x) {
 
         // Добавляем новую свечу в STATE.prices
     STATE.prices.push(newCandle);
+    if (newCandle.volume > STATE.maxVolumeHistory) STATE.maxVolumeHistory = newCandle.volume;
     // Ограничиваем размер, если нужно (например, храним не более 1500 свечей)
     if (STATE.prices.length > 1500) STATE.prices.shift();
 
@@ -2301,7 +2440,7 @@ if (k.x) {
     }
 
     // --- REAL-TIME LIQUIDATIONS WEBSOCKET (без изменений) ---
-    function initLiquidationWebSocket() {
+   function initLiquidationWebSocket() {
     if (STATE.liqWs) STATE.liqWs.close();
     STATE.liqWs = new WebSocket('wss://fstream.binance.com/ws/!forceOrder@arr');
 
@@ -2313,7 +2452,8 @@ if (k.x) {
         if (liq.s !== STATE.symbol) return;
 
         const usdValue = parseFloat(liq.q) * parseFloat(liq.p);
-        if (usdValue < 6000) return; // фильтр мелких ликвидаций
+        const minLiq = parseInt(document.getElementById('min-liq-usd')?.value) || 3000;
+        if (usdValue < minLiq) return; // фильтр мелких ликвидаций
 
         const isLongLiq = liq.S === 'SELL';
 
@@ -2326,7 +2466,7 @@ if (k.x) {
         };
 
         STATE.liqMarkers.push(marker);
-        if (STATE.liqMarkers.length > 20) STATE.liqMarkers.shift();
+        if (STATE.liqMarkers.length > 2000) STATE.liqMarkers.shift();
         APP.updateAllMarkers(); // используем APP, а не this
 
         // Обновление индикатора Liq History (если включён)
@@ -2369,8 +2509,124 @@ if (k.x) {
 
     STATE.liqWs.onerror = () => log('[WS] Liquidation stream error', 'error');
 }
-    
 
+
+
+
+ /*   // --- Bybit ---
+    STATE.liqWsBybit = new WebSocket('wss://stream.bybit.com/v5/public/linear');
+    STATE.liqWsBybit.onopen = () => {
+        // Подписка на ликвидации
+        const subscribeMsg = {
+            op: 'subscribe',
+            args: ['liquidation']
+        };
+        STATE.liqWsBybit.send(JSON.stringify(subscribeMsg));
+    };
+    STATE.liqWsBybit.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.topic === 'liquidation' && data.data) {
+            const liq = data.data;
+            // Bybit symbol: например "BTCUSDT"
+            if (liq.symbol !== STATE.symbol) return;
+
+            const usdValue = parseFloat(liq.size) * parseFloat(liq.price);
+            if (usdValue < 4000) return;
+
+            const isLongLiq = liq.side === 'Sell'; // Sell → long liquidation
+
+            const marker = {
+                time: Math.floor(Date.now() / 1000),
+                position: isLongLiq ? 'belowBar' : 'aboveBar',
+                color: isLongLiq ? CONFIG.colors.green : CONFIG.colors.red,
+                text: `Y:${Math.round(usdValue / 1000)}k`
+            };
+
+            STATE.liqMarkers.push(marker);
+            if (STATE.liqMarkers.length > 20) STATE.liqMarkers.shift();
+            APP.updateAllMarkers();
+
+            // Аналогичное обновление Liq History (можно вынести в общую функцию)
+            if (APP.indicators && APP.indicators['liqHist'] && STATE.prices.length > 0) {
+                const lastCandle = STATE.prices[STATE.prices.length - 1];
+                const candleTime = lastCandle.time;
+                const histData = STATE.liqHistData;
+                const lastHist = histData[histData.length - 1];
+                if (lastHist && lastHist.time === candleTime) {
+                    if (isLongLiq) {
+                        lastHist.value += usdValue;
+                        lastHist.color = '#00ff9d';
+                    } else {
+                        lastHist.value += usdValue;
+                        lastHist.color = '#ff0055';
+                    }
+                    APP.indicators['liqHist'].update(lastHist);
+                }
+            }
+        }
+    };
+    STATE.liqWsBybit.onerror = () => log('[WS] Bybit liquidation stream error', 'error');
+
+    // --- OKX ---
+    STATE.liqWsOkx = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
+    STATE.liqWsOkx.onopen = () => {
+        // Подписка на ликвидации
+        const subscribeMsg = {
+            op: 'subscribe',
+            args: [{
+                channel: 'liquidation',
+                instId: STATE.symbol.replace('USDT', '-USDT-SWAP') // например BTC-USDT-SWAP
+            }]
+        };
+        STATE.liqWsOkx.send(JSON.stringify(subscribeMsg));
+    };
+    STATE.liqWsOkx.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.arg && data.arg.channel === 'liquidation' && data.data) {
+            const liq = data.data[0]; // массив с одним объектом
+            // OKX instId: например "BTC-USDT-SWAP"
+            const expectedInstId = STATE.symbol.replace('USDT', '-USDT-SWAP');
+            if (liq.instId !== expectedInstId) return;
+
+            const usdValue = parseFloat(liq.sz) * parseFloat(liq.fillPx);
+            if (usdValue < 4000) return;
+
+            const isLongLiq = liq.side === 'sell'; // sell → long liquidation
+
+            const marker = {
+                time: Math.floor(Date.now() / 1000),
+                position: isLongLiq ? 'belowBar' : 'aboveBar',
+                color: isLongLiq ? CONFIG.colors.green : CONFIG.colors.red,
+                text: `O:${Math.round(usdValue / 1000)}k`
+            };
+
+            STATE.liqMarkers.push(marker);
+            if (STATE.liqMarkers.length > 20) STATE.liqMarkers.shift();
+            APP.updateAllMarkers();
+
+            // Обновление Liq History (аналогично)
+            if (APP.indicators && APP.indicators['liqHist'] && STATE.prices.length > 0) {
+                const lastCandle = STATE.prices[STATE.prices.length - 1];
+                const candleTime = lastCandle.time;
+                const histData = STATE.liqHistData;
+                const lastHist = histData[histData.length - 1];
+                if (lastHist && lastHist.time === candleTime) {
+                    if (isLongLiq) {
+                        lastHist.value += usdValue;
+                        lastHist.color = '#00ff9d';
+                    } else {
+                        lastHist.value += usdValue;
+                        lastHist.color = '#ff0055';
+                    }
+                    APP.indicators['liqHist'].update(lastHist);
+                }
+            }
+        }
+    };
+    STATE.liqWsOkx.onerror = () => log('[WS] OKX liquidation stream error', 'error');
+}
+    
+*/
     // --- HUNTER функции (без изменений) ---
     async function fetchGlobalTrend() {
     try {
@@ -3001,7 +3257,7 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
             STATE.hunterConfig.thresholds.impulse = parseFloat(e.target.value) || 2.0;
         });
         document.getElementById('min-confluence').addEventListener('change', (e) => {
-            STATE.hunterConfig.minConfluence = parseInt(e.target.value) || 5;
+            STATE.hunterConfig.minConfluence = parseInt(e.target.value) || 6;
         });
         
     }
@@ -3048,7 +3304,13 @@ adjustFibLookback(delta) {
 
     input.value = val;
     span.innerText = val;
-    this.renderFibLines(); // перерисовка линий Фибоначчи
+
+    // Если фибо не активно — включаем его (кнопка станет активной, линии появятся)
+    if (!STATE.fibActive) {
+        this.toggleFib();   // этот метод включает фибо и вызывает renderFibLines
+    } else {
+        this.renderFibLines(); // просто перерисовываем линии с новым lookback
+    }
 },
 
 adjustLiqGlow(delta) {
@@ -3159,6 +3421,7 @@ setupRangeButtons: function() {
         isDrawing: false,
         tempDrawing: null,
         indicators: {},
+        savedVisibleRange: null,
 
         setTool(tool) {
             this.currentTool = tool;
@@ -3330,6 +3593,13 @@ initFullscreenButton() {
 toggleFullScreen() {
     const container = document.querySelector('.chart-container');
     if (!document.fullscreenElement) {
+
+        // Сохраняем позицию перед fullscreen
+if (STATE.chart) {
+    const timeScale = STATE.chart.timeScale();
+    const visibleRange = timeScale.getVisibleLogicalRange();
+    if (visibleRange) this.savedVisibleRange = visibleRange;
+}
         // Вход в полноэкранный режим
         if (container.requestFullscreen) {
             container.requestFullscreen();
@@ -4347,6 +4617,9 @@ processFullHistory() {
             const alreadyMarked = lastMarker && lastMarker.time === currentTime && (lastMarker.shape === 'arrowUp' || lastMarker.shape === 'arrowDown');
 
             if (buySignal && !alreadyMarked) {
+               const threshold = STATE.alligatorVolumeThreshold;
+    const volumeOk = threshold <= 0 || (prices[i].volume && prices[i].volume >= STATE.maxVolumeHistory * threshold);
+    if (volumeOk) {
                 const size = (STATE.alligatorEquity * 0.1) / currentPrice;
                 const stopLoss = currentPrice - (atr[i] * 2);
                 STATE.alligatorPosition = {
@@ -4367,8 +4640,11 @@ processFullHistory() {
                 STATE.alligatorMarkers.push(marker);
              //   playNotificationSound('alligator');
             }
-
+}
             if (sellSignal && !alreadyMarked) {
+                const threshold = STATE.alligatorVolumeThreshold;
+    const volumeOk = threshold <= 0 || (prices[i].volume && prices[i].volume >= STATE.maxVolumeHistory * threshold);
+    if (volumeOk) {
                 const size = (STATE.alligatorEquity * 0.1) / currentPrice;
                 const stopLoss = currentPrice + (atr[i] * 2);
                 STATE.alligatorPosition = {
@@ -4390,7 +4666,7 @@ processFullHistory() {
                // playNotificationSound('alligator');
             }
         }
-        
+        }
 
         // Ограничиваем количество маркеров (опционально)
         if (STATE.alligatorMarkers.length > 500) STATE.alligatorMarkers.shift();
@@ -4507,6 +4783,9 @@ checkAlligatorSignal(force = false) {
 
         if (buySignal && !alreadyMarked) {
             // Открываем лонг
+            const threshold = STATE.alligatorVolumeThreshold;
+    const volumeOk = threshold <= 0 || (prices[i].volume && prices[i].volume >= STATE.maxVolumeHistory * threshold);
+    if (volumeOk) {
             const size = (STATE.alligatorEquity * 0.1) / currentPrice; // 10% от баланса
             const stopLoss = currentPrice - (atr[i] * 2);
             STATE.alligatorPosition = {
@@ -4530,9 +4809,13 @@ checkAlligatorSignal(force = false) {
             if (STATE.alligatorMarkers.length > 200) STATE.alligatorMarkers.shift();
             playNotificationSound('alligator');
         }
+}
 
         if (sellSignal && !alreadyMarked) {
             // Открываем шорт
+            const threshold = STATE.alligatorVolumeThreshold;
+    const volumeOk = threshold <= 0 || (prices[i].volume && prices[i].volume >= STATE.maxVolumeHistory * threshold);
+    if (volumeOk) {
             const size = (STATE.alligatorEquity * 0.1) / currentPrice;
             const stopLoss = currentPrice + (atr[i] * 2);
             STATE.alligatorPosition = {
@@ -4557,7 +4840,7 @@ checkAlligatorSignal(force = false) {
             playNotificationSound('alligator');
         }
     }
-
+}
     
 
     // Обновляем маркеры на графике
@@ -4712,6 +4995,9 @@ checkAlligatorSignal(force = false) {
 
         if (buySignal && !alreadyMarked) {
             // Открываем лонг
+            const threshold = STATE.alligatorVolumeThreshold;
+    const volumeOk = threshold <= 0 || (prices[i].volume && prices[i].volume >= STATE.maxVolumeHistory * threshold);
+    if (volumeOk) {
             const size = (STATE.alligatorEquity * 0.1) / currentPrice; // 10% от баланса
             const stopLoss = currentPrice - (atr[i] * 2);
             STATE.alligatorPosition = {
@@ -4733,9 +5019,12 @@ checkAlligatorSignal(force = false) {
             if (STATE.alligatorMarkers.length > 50) STATE.alligatorMarkers.shift();
             playNotificationSound('alligator');
         }
-
+}
         if (sellSignal && !alreadyMarked) {
             // Открываем шорт
+            const threshold = STATE.alligatorVolumeThreshold;
+    const volumeOk = threshold <= 0 || (prices[i].volume && prices[i].volume >= STATE.maxVolumeHistory * threshold);
+    if (volumeOk) {
             const size = (STATE.alligatorEquity * 0.1) / currentPrice;
             const stopLoss = currentPrice + (atr[i] * 2);
             STATE.alligatorPosition = {
@@ -4759,7 +5048,7 @@ checkAlligatorSignal(force = false) {
         }
 
     }
-
+}
     
 
     // Обновляем маркеры на графике
@@ -5041,6 +5330,12 @@ recreateChart() {
         priceLineVisible: false
     });
 
+    if (this.currentChartStyle && this.currentChartStyle !== 'candles') this.setChartStyle(this.currentChartStyle);
+
+    STATE.series.forecastAlt1 = STATE.series.forecastAlt1 = null;
+    STATE.series.forecastAlt1 = STATE.series.forecastAlt2 = null;
+    STATE.series.forecastAlt1 = STATE.series.forecastAlt3 = null;
+
     // Устанавливаем данные
     if (prices && prices.length) {
         STATE.series.candle.setData(prices);
@@ -5052,6 +5347,8 @@ recreateChart() {
         STATE.series.volume.setData(volData);
     }
 
+    
+
     // Восстанавливаем маркеры
     this.updateAllMarkers();
 
@@ -5062,14 +5359,24 @@ recreateChart() {
     }
 
     // Сбрасываем масштаб
+    // Восстанавливаем позицию, если была сохранена
+if (this.savedVisibleRange) {
+    STATE.chart.timeScale().setVisibleLogicalRange(this.savedVisibleRange);
+    this.savedVisibleRange = null;
+} else {
     STATE.chart.timeScale().fitContent();
+}
     STATE.chart.priceScale('right').applyOptions({
         scaleMargins: { top: 0.05, bottom: 0.3 },
         autoScale: true
     });
 
+    
+
     log('[Fullscreen] Chart recreated');
 },
+
+
 
 copyScreenshotToClipboard() {
     const container = document.querySelector('.chart-container');
@@ -5121,7 +5428,7 @@ handleFibSlider() {
 
         // ---------------------
 
-        init
+        init: init
         
     };
 
