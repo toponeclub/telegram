@@ -1,11 +1,483 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <script>
-      window.location.href = "https://whop.com/top1club/top1club";
-    </script>
-  </head>
-  <body></body>
-</html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-C8KYSGXYNJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-C8KYSGXYNJ');
+</script>
+    <title>T1 PRIME HUB v2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #050505;
+            --neon: #00ffd5;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(0, 255, 213, 0.1);
+            --text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+        }
 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif; background: var(--bg); color: #fff;
+            overflow-x: hidden; min-height: 100dvh;
+            background-image: radial-gradient(circle at 50% 0%, rgba(0,255,213,0.1), transparent 50%);
+        }
+
+        /* HUB Layout */
+        #hub {
+            padding: 5vh 5vw; min-height: 100dvh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.4s ease;
+        }
+
+        .header { text-align: center; margin-bottom: 2rem; width: 100%; }
+        .header h1 { font-weight: 900; font-size: 2.5rem; letter-spacing: 4px; text-shadow: 0 0 20px rgba(0,255,213,0.3); }
+
+        /* Bento Grid */
+        .bento-grid {
+            display: grid; width: 100%; max-width: 1200px;
+            grid-template-columns: 1fr; gap: 15px;
+        }
+
+        .bento-item {
+            position: relative; background: var(--glass);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 30px; cursor: pointer; overflow: hidden;
+            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex; flex-direction: column; justify-content: flex-end;
+            min-height: 200px;
+        }
+
+        /* Фоновые картинки */
+        .item-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            opacity: 0.2; /* 30% Прозрачность как запрошено */
+            transition: opacity 0.4s, transform 0.4s;
+            z-index: 1;
+        }
+
+        /* Иконка и Текст (Поверх картинки) */
+        .item-content { position: relative; z-index: 2; }
+
+        /* Градиентные свечения внутри карточек при наведении */
+        .bento-item::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(0,255,213,0.05) 0%, transparent 60%);
+            opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 3;
+        }
+
+        .bento-item:hover {
+            transform: translateY(-5px) scale(1.02);
+            border-color: rgba(0, 255, 213, 0.3);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5), 0 0 15px rgba(0,255,213,0.05);
+        }
+        .bento-item:hover::before { opacity: 1; }
+        .bento-item:hover .item-bg { transform: scale(1.05); opacity: 0.4; }
+
+        .bento-item i { font-size: 2.5rem; color: var(--neon); margin-bottom: 15px; text-shadow: 0 0 10px rgba(0,255,213,0.5); }
+        .bento-item h2 { font-size: 1.5rem; font-weight: 900; margin-bottom: 5px; text-shadow: var(--text-shadow); }
+        .bento-item p { font-size: 0.85rem; color: rgba(255,255,255,0.7); font-weight: 300; text-shadow: var(--text-shadow); }
+
+
+
+        /* Адаптация сетки для Desktop (2 столбца) */
+        @media (min-width: 768px) {
+            .bento-grid {
+                grid-template-columns: 2fr 1fr; /* Левый столбец шире */
+                grid-template-rows: 250px 180px; /* Высота рядов */
+                gap: 20px;
+                grid-template-areas:
+                  "club estate"
+                  "ai trading";
+            }
+            .item-club { grid-area: club; min-height: 100%; }
+            .item-estate { grid-area: estate; }
+            .item-ai { grid-area: ai; }
+            .item-trading { grid-area: trading; }
+
+            .header h1 { font-size: 4rem; }
+        }
+
+        /* SPA Viewer */
+        #viewer-container {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
+            z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+            background: var(--bg); display: flex; flex-direction: column;
+        }
+        #viewer-container.active { opacity: 1; pointer-events: auto; }
+
+        /* Навигация внутри проекта (чтобы вернуться) */
+        .top-nav {
+            height: 60px; background: rgba(5, 5, 5, 0.9); backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex; align-items: center; padding: 0 20px; position: absolute;
+            width: 100%; top: 0; z-index: 101;
+        }
+        .back-btn {
+            background: transparent; color: var(--neon); border: none;
+            font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px;
+            transition: color 0.3s;
+        }
+        .back-btn:hover { color: #fff; }
+
+        iframe { width: 100%; height: 100%; border: none; padding-top: 60px; }
+
+        /* Эффект расширения карточки */
+        .expanding-card {
+            position: fixed !important; z-index: 99 !important; transition: all 0.5s cubic-bezier(0.8, 0, 0.2, 1) !important;
+            border-radius: 0 !important; background: var(--bg) !important;
+        }
+        .expanding-card .item-bg { opacity: 0; } /* Скрываем картинку при расширении для чистого перехода */
+
+        /* Настройка скроллбара для всей страницы и всех элементов */
+::-webkit-scrollbar {
+    width: 6px; /* Ширина скролла */
+}
+
+::-webkit-scrollbar-track {
+    background: #050505; /* Цвет дорожки (под фон) */
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 213, 0.3); /* Цвет самого ползунка (неон с прозрачностью) */
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 213, 0.6); /* Ярче при наведении */
+}
+
+/* Для Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 255, 213, 0.3) #050505;
+}
+
+
+
+/* Jarvis Style Waitlist (Compact) */
+#waitlist-container {
+    width: 100%; max-width: 800px; margin: 50px auto; padding: 30px;
+    background: rgba(0, 255, 213, 0.03); 
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    display: none; opacity: 0; transition: all 0.5s ease;
+    text-align: center;
+    clip-path: polygon(0 15px, 15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+}
+
+.waitlist-title { 
+    font-size: 1.4rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 5px; 
+    text-transform: uppercase; color: #fff;
+}
+
+.waitlist-subtitle { 
+    color: var(--neon); font-size: 0.8rem; margin-bottom: 20px; 
+    text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;
+}
+
+.waitlist-form { 
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; 
+}
+
+.waitlist-input {
+    background: rgba(0,0,0,0.7); border: 1px solid rgba(0, 255, 213, 0.2);
+    color: #fff; padding: 12px 15px; font-size: 0.9rem;
+    outline: none; transition: 0.3s; min-width: 240px;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+
+.waitlist-input:focus { border-color: var(--neon); background: rgba(0, 255, 213, 0.05); }
+
+.waitlist-btn {
+    background: var(--neon); color: #000; font-weight: 900; border: none; 
+    padding: 12px 25px; cursor: pointer; transition: 0.3s;
+    font-size: 0.8rem; letter-spacing: 1px;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+}
+
+.waitlist-btn:hover { 
+    background: #fff; transform: translateY(-2px); 
+    box-shadow: 0 0 20px rgba(0,255,213,0.4); 
+}
+
+.close-waitlist {
+    background: none; border: none; color: rgba(255,255,255,0.4); 
+    cursor: pointer; margin-top: 15px; font-size: 0.7rem; 
+    text-transform: uppercase; letter-spacing: 2px; transition: 0.3s;
+}
+
+.close-waitlist:hover { color: var(--neon); }
+
+/* Custom Scrollbar for Hub and Containers */
+#viewer-container iframe::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    width: 5px;
+}
+
+#viewer-container iframe::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+    background: #050505;
+}
+
+#viewer-container iframe::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, transparent, var(--neon), transparent);
+    border-radius: 10px;
+}
+
+/* Firefox */
+#viewer-container iframe, 
+body {
+    scrollbar-width: thin;
+    scrollbar-color: var(--neon) #050505;
+}
+    </style>
+</head>
+<body>
+
+<div id="hub">
+    <div class="header">
+        <h1>T1 PRIME</h1>
+    </div>
+
+    <div class="bento-grid">
+        <div class="bento-item item-club" onclick="openProject(this, 'club')">
+            <div class="item-bg" style="background-image: url('https://www.t1prime.com/club.png');"></div>
+            <div class="item-content">
+                <i class="fa-solid fa-crown"></i>
+                <h2>Top 1% Club</h2>
+                <p>Exclusive access, elite network, and premium content.</p>
+            </div>
+        </div>
+
+        <div class="bento-item item-estate" onclick="openProject(this, 'estate-x')">
+            <div class="item-bg" style="background-image: url('https://www.t1prime.com/estate.png');"></div>
+            <div class="item-content">
+                <i class="fa-solid fa-building"></i>
+                <h2>Estate-X Rewards</h2>
+                <p>Preserve nature, win dream property & get guides.</p>
+            </div>
+        </div>
+
+       
+            <div class="bento-item item-ai" onclick="openWaitlist('AI Automation')">
+            <div class="item-bg" style="background-image: url('https://www.t1prime.com/ai.png');"></div>
+            <div class="item-content">
+                <i class="fa-solid fa-microchip"></i>
+                <h2>AI Automation</h2>
+                <p>Next-gen tools for scalable digital growth.</p>
+            </div>
+        </div>
+
+        
+            <div class="bento-item item-trading" onclick="openWaitlist('Trading Engine')">
+            <div class="item-bg" style="background-image: url('https://www.t1prime.com/trading.png');"></div>
+            <div class="item-content">
+                <i class="fa-solid fa-chart-line"></i>
+                <h2>Trading Engine</h2>
+                <p>Advanced algorithmic tools & strategies.</p>
+            </div>
+        </div>
+    </div>
+
+
+<div id="viewer-container">
+    <div class="top-nav">
+        <button class="back-btn" onclick="closeProject()">
+            <i class="fa-solid fa-arrow-left"></i> Hub
+        </button>
+    </div>
+    <iframe id="project-frame" src=""></iframe>
+</div>
+
+
+
+<div id="waitlist-container">
+    <div class="waitlist-title">Priority Access: <span id="wl-project-name" style="color: var(--neon);">System</span></div>
+    <div class="waitlist-subtitle">Join the waitlist to be notified on launch.</div>
+    <form class="waitlist-form" onsubmit="submitWaitlist(event)">
+        <input type="text" id="wl-name" class="waitlist-input" placeholder="Name" required>
+        <input type="email" id="wl-email" class="waitlist-input" placeholder="E-mail" required>
+        <button type="submit" class="waitlist-btn">JOIN</button>
+    </form>
+    <button class="close-waitlist" onclick="hideWaitlist()">[ Close ]</button>
+</div>
+
+<script>
+    // Пути к файлам/ссылкам (обновлены до 4-х)
+    const routes = {
+        'club': 'https://t1prime.com/club.html', // или ссылка на whop
+        'estate-x': 'https://t1prime.com/estate-x',
+      //  'trading': 'https://t1prime.com/trading',
+       // 'ai': 'https://t1prime.com/ai'
+    };
+
+    let activeCard = null;
+    let originalStyles = {};
+
+    function openProject(cardElement, id) {
+        if (activeCard) return;
+        activeCard = cardElement;
+
+        // Сохраняем исходные координаты для обратной анимации
+        const rect = cardElement.getBoundingClientRect();
+        originalStyles = {
+            top: rect.top + 'px', left: rect.left + 'px',
+            width: rect.width + 'px', height: rect.height + 'px'
+        };
+
+        // Подготавливаем карточку к расширению
+        cardElement.style.top = originalStyles.top;
+        cardElement.style.left = originalStyles.left;
+        cardElement.style.width = originalStyles.width;
+        cardElement.style.height = originalStyles.height;
+        cardElement.style.margin = '0';
+        
+        cardElement.classList.add('expanding-card');
+
+        // Запускаем расширение
+        requestAnimationFrame(() => {
+            cardElement.style.top = '0';
+            cardElement.style.left = '0';
+            cardElement.style.width = '100vw';
+            cardElement.style.height = '100dvh';
+        });
+
+        // Показываем iframe поверх расширенной карточки
+        setTimeout(() => {
+           document.getElementById('project-frame').src = routes[id];
+    document.getElementById('viewer-container').classList.add('active');
+    window.history.pushState({page: id}, null, '/' + id);
+    
+    // Отправка данных в GA4 при открытии проекта
+    if (typeof gtag === 'function') {
+        gtag('event', 'project_open', { 'project_name': id });
+        gtag('config', 'G-C8KYSGXYNJ', { 'page_path': '/' + id });
+    }
+}, 500); // Синхронизировано со временем CSS transition
+    }
+
+    function closeProject() {
+        const viewer = document.getElementById('viewer-container');
+        viewer.classList.remove('active');
+        document.getElementById('project-frame').src = '';
+
+        setTimeout(() => {
+            if (activeCard) {
+                // Возвращаем карточку к исходным размерам
+                activeCard.style.top = originalStyles.top;
+                activeCard.style.left = originalStyles.left;
+                activeCard.style.width = originalStyles.width;
+                activeCard.style.height = originalStyles.height;
+
+                setTimeout(() => {
+                    activeCard.classList.remove('expanding-card');
+                    activeCard.style = ''; // Очищаем инлайн-стили
+                    activeCard = null;
+                }, 500);
+            }
+            window.history.pushState({page: 'hub'}, null, '/');
+        }, 300); // Ждем пока iframe исчезнет
+    }
+
+    // Логика Waitlist
+function openWaitlist(projectName) {
+    const container = document.getElementById('waitlist-container');
+    document.getElementById('wl-project-name').innerText = projectName;
+    
+    container.style.display = 'block';
+    setTimeout(() => {
+        container.style.opacity = '1';
+        // Плавный скролл вниз к форме
+        container.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 10);
+}
+
+function hideWaitlist() {
+    const container = document.getElementById('waitlist-container');
+    container.style.opacity = '0';
+    setTimeout(() => {
+        container.style.display = 'none';
+        document.querySelector('.waitlist-form').reset();
+    }, 500);
+}
+
+function submitWaitlist(e) {
+    e.preventDefault(); // Останавливает перезагрузку страницы
+    const btn = e.target.querySelector('button');
+    const originalText = btn.innerText;
+    
+    // Визуальная симуляция успешной отправки
+    btn.innerText = 'ADDED TO QUEUE //';
+    btn.style.background = '#fff';
+    btn.style.boxShadow = '0 0 20px #fff';
+    
+    /* ЗДЕСЬ КОД ОТПРАВКИ (например, fetch запрос к Google Sheets или Telegram Bot)
+    */
+
+    // Закрываем форму через 2 секунды после успеха
+    setTimeout(() => {
+        hideWaitlist();
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = 'var(--neon)';
+            btn.style.boxShadow = 'none';
+        }, 500);
+    }, 2000);
+}
+
+    // Обработка кнопки "Назад" в браузере
+    window.addEventListener('popstate', (event) => {
+        if (!event.state || event.state.page === 'hub') {
+            closeProject();
+        }
+    });
+
+    const TELEGRAM_BOT_TOKEN = '7672223015:AAFKcBctFgqS7NGUq1_lbnHNCEo6Fionbqs';
+const TELEGRAM_CHAT_ID = '591775682';
+
+function submitWaitlist(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    const name = document.getElementById('wl-name').value;
+    const email = document.getElementById('wl-email').value;
+    const project = document.getElementById('wl-project-name').innerText;
+    
+    btn.innerText = 'WAIT...';
+    btn.disabled = true;
+
+    const message = `🚀 *New Waitlist Entry*\n\n👤 *Name:* ${name}\n📧 *Email:* ${email}\n🎯 *Project:* ${project}`;
+
+    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'Markdown' })
+    })
+    .then(() => {
+        btn.innerText = 'SUCCESS //';
+        setTimeout(() => {
+            hideWaitlist();
+            btn.innerText = 'JOIN';
+            btn.disabled = false;
+            e.target.reset();
+        }, 2000);
+    })
+    .catch(() => {
+        btn.innerText = 'RETRY';
+        btn.disabled = false;
+    });
+}
+</script>
+
+</body>
+</html>
