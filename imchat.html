@@ -746,6 +746,9 @@ const App = {
     availableProviders: {}, 
     activeProvider: null,
 
+    //хранилище для ключей ожидания:
+    pendingKeys: {},
+
     /* --- WALLET & AUTH MODULE --- */
     
     showWalletSelector() {
@@ -927,39 +930,68 @@ const App = {
     },
 
     async setupDataChannel(conn) {
-        const ecdh = await CryptoEngine.generateECDH();
-        const myPub = await crypto.subtle.exportKey("raw", ecdh.publicKey);
+    const ecdh = await CryptoEngine.generateECDH();
+    const myPub = await crypto.subtle.exportKey("raw", ecdh.publicKey);
 
-        conn.on('open', () => {
-            // Send initial handshake request
-            conn.send({ 
-                type: 'handshake_req', 
-                address: this.myAddress, 
-                pub: Array.from(new Uint8Array(myPub)) 
-            });
+    conn.on('open', () => {
+        // Сохраняем ключ для этого конкретного соединения
+        this.pendingKeys[conn.peer] = ecdh;
+        conn.send({ 
+            type: 'handshake_req', 
+            address: this.myAddress, 
+            pub: Array.from(new Uint8Array(myPub)) 
         });
+    });
 
-        conn.on('data', async data => {
-            // Attach peer address to connection object for easy tracking
-            if (data.address) conn.peerAddress = data.address.toLowerCase();
-            const peerAddr = conn.peerAddress;
+    conn.on('data', async data => {
+        if (data.address) conn.peerAddress = data.address.toLowerCase();
+        const addr = conn.peerAddress;
+        if (!addr) return;
 
-            // Heartbeat Logic
-            if (data.type === 'ping') {
-                conn.send({ type: 'pong', address: this.myAddress });
-                return;
+        if (data.type === 'ping') { 
+            conn.send({ type: 'pong', address: this.myAddress }); 
+            return; 
+        }
+        if (data.type === 'pong') {
+            this.lastSeen[addr] = Date.now();
+            this.connections[addr] = conn;
+            this.renderSidebar(); 
+            this.updateChatHeader();
+            return;
+        }
+
+        if (data.type === 'handshake_req') {
+            this.connections[addr] = conn;
+            if (this.getContacts().includes(addr)) {
+                this.activeSessions[addr] = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
+                conn.send({ 
+                    type: 'handshake_ack', 
+                    address: this.myAddress, 
+                    pub: Array.from(new Uint8Array(myPub)) 
+                });
+                this.renderSidebar();
+                this.updateChatHeader();
+            } else {
+                this.incomingRequests[addr] = { conn, pub: data.pub, ecdh };
+                this.renderSidebar();
             }
-            if (data.type === 'pong') {
-                this.lastSeen[peerAddr] = Date.now();
-                
-                // If we receive a pong but haven't marked them online in UI, do it
-                if (!this.connections[peerAddr]) {
-                    this.connections[peerAddr] = conn;
-                    this.renderSidebar();
-                    if(this.activePeer === peerAddr) this.updateChatHeader();
-                }
-                return;
+        } 
+        else if (data.type === 'handshake_ack') {
+            const storedECDH = this.pendingKeys[conn.peer] || ecdh;
+            this.activeSessions[addr] = await CryptoEngine.deriveAES(storedECDH.privateKey, data.pub);
+            this.connections[addr] = conn;
+            this.renderSidebar();
+            this.updateChatHeader();
+            delete this.pendingKeys[conn.peer];
+        }
+        else if (data.type === 'enc' && this.activeSessions[addr]) {
+            const decrypted = await CryptoEngine.decryptData(this.activeSessions[addr], data.payload);
+            if (decrypted !== "[CORRUPTED_PAYLOAD]" && this.activePeer === addr) {
+                try { this.renderMessage(JSON.parse(decrypted), 'received'); } catch(e){}
             }
+        }
+    
+
 
             // Handshake Logic
             if (data.type === 'handshake_req') {
@@ -1082,32 +1114,30 @@ const App = {
 
     // --- Request Handling ---
 
-    async acceptHandshake() {
-        const addr = this.activePeer;
-        const req = this.incomingRequests[addr];
+    // 3. Полностью замени функцию acceptHandshake:
+async acceptHandshake() {
+    const addr = this.activePeer;
+    const req = this.incomingRequests[addr];
+    if (req && req.conn.open) {
+        let contacts = this.getContacts();
+        contacts.push(addr);
+        this.setDB('contacts', contacts);
+
+        // Используем сохраненный ecdh из объекта запроса
+        this.activeSessions[addr] = await CryptoEngine.deriveAES(req.ecdh.privateKey, req.pub);
         
-        if (req && req.conn.open) {
-            this.addContactToDB(addr);
-            
-            // Derive Key
-            const aesKey = await CryptoEngine.deriveAES(req.ecdh.privateKey, req.pub);
-            this.activeSessions[addr] = aesKey;
-            
-            // Send ACK
-            const newKeys = await CryptoEngine.generateECDH();
-            const myPub = await crypto.subtle.exportKey("raw", newKeys.publicKey);
-            
-            req.conn.send({ 
-                type: 'handshake_ack', 
-                address: this.myAddress, 
-                pub: Array.from(new Uint8Array(myPub)) 
-            });
-            
-            delete this.incomingRequests[addr];
-            this.renderSidebar();
-            this.openChat(addr); // Refresh view
-        }
-    },
+        const myPub = await crypto.subtle.exportKey("raw", req.ecdh.publicKey);
+        req.conn.send({ 
+            type: 'handshake_ack', 
+            address: this.myAddress, 
+            pub: Array.from(new Uint8Array(myPub)) 
+        });
+        
+        delete this.incomingRequests[addr];
+        this.renderSidebar();
+        this.openChat(addr);
+    }
+},
 
     declineHandshake() {
         const addr = this.activePeer;
