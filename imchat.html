@@ -73,7 +73,7 @@
         /* Generative Avatar System */
         .avatar-box {
             width: 40px; height: 40px; border-radius: 8px;
-            background: #111; overflow: hidden; 
+            overflow: hidden; 
             display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr);
             flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);
         }
@@ -151,6 +151,8 @@
 
         .status-tag { width: 8px; height: 8px; border-radius: 50%; background: #333; margin-right: 8px; display: inline-block; }
         .online { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -160,14 +162,19 @@
             <h1 style="letter-spacing: 5px; font-weight: 300;">IMCHAT</h1>
             <p style="color: var(--accent); font-size: 11px; margin-bottom: 40px;">BUNKER_NODE</p>
             
-            <div style="display: grid; gap: 10px;">
-                <button class="btn-action" style="padding: 20px; font-size: 14px;" onclick="Engine.connectWallet('evm')">
-                    <i class="fa-solid fa-fox"></i> &nbsp; METAMASK
-                </button>
-                <button class="btn-action" style="padding: 20px; font-size: 14px;" onclick="Engine.connectWallet('solana')">
-                    <i class="fa-solid fa-ghost"></i> &nbsp; PHANTOM
+            <div id="initial-connect-box">
+                <button class="btn-action" style="padding: 20px; font-size: 14px; box-shadow: 0 0 20px var(--accent-dim);" onclick="Engine.showWalletSelector()">
+                    <i class="fa-solid fa-link"></i> &nbsp; ESTABLISH CONNECTION
                 </button>
             </div>
+
+            <div id="wallet-selector" style="display: none; animation: fadeIn 0.3s;">
+                <p style="font-size: 10px; color: var(--text-dim); margin-bottom: 15px; letter-spacing: 1px;">DETECTED SECURE PROVIDERS:</p>
+                <div style="display: grid; gap: 10px;" id="detected-wallets">
+                    </div>
+                <button class="icon-btn" style="margin: 20px auto 0;" onclick="Engine.hideWalletSelector()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
             <p id="auth-error" style="color: var(--danger); font-size: 12px; margin-top: 20px;"></p>
         </div>
     </div>
@@ -233,10 +240,9 @@
 
 <script>
 /**
- * IMCHAT ENGINE v3.1
- * - Stable Reconnection
- * - Symmetrical Generative Avatars
- * - Stealth Toggle
+ * IMCHAT ENGINE v3.2
+ * - Smart Wallet Discovery Protocol
+ * - Improved Generative Avatars (No Black Holes)
  */
 
 const Crypto = {
@@ -268,9 +274,12 @@ const Avatar = {
         container.innerHTML = '';
         container.className = 'avatar-box';
         
-        // Generate Hue from hash
+        // Generate Hue
         const hue = parseInt(hash.substring(0, 4), 16) % 360;
         const mainColor = `hsl(${hue}, 80%, 60%)`;
+        const baseDark = `hsl(${hue}, 40%, 10%)`; // Фикс "черных аватаров"
+        
+        container.style.backgroundColor = baseDark;
 
         // 5x5 Mirrored Grid
         for (let row = 0; row < 5; row++) {
@@ -278,11 +287,9 @@ const Avatar = {
                 const pixel = document.createElement('div');
                 pixel.className = 'pixel';
                 
-                // Mirror logic (col 3 mirrors 1, col 4 mirrors 0)
                 const mirrorCol = col > 2 ? 4 - col : col;
                 const index = row * 3 + mirrorCol;
                 
-                // Determine filled or empty
                 const charCode = hash.charCodeAt(index % hash.length);
                 if (charCode % 2 === 0) {
                     pixel.style.backgroundColor = mainColor;
@@ -297,7 +304,7 @@ const Avatar = {
 const Engine = {
     peer: null,
     myAddress: null,
-    connections: {}, // address -> {conn, aesKey, status}
+    connections: {}, 
     activePeer: null,
     isCyberMic: false,
     isStealth: false,
@@ -305,9 +312,48 @@ const Engine = {
     mediaRecorder: null,
     stream: null,
 
+    // --- Wallet Discovery ---
+    showWalletSelector() {
+        if (window.location.protocol === 'file:') {
+            document.getElementById('auth-error').innerText = "Requires HTTP Server (Live Server) for Web3 injection.";
+            return;
+        }
+
+        document.getElementById('initial-connect-box').style.display = 'none';
+        document.getElementById('wallet-selector').style.display = 'block';
+        document.getElementById('auth-error').innerText = '';
+
+        const list = document.getElementById('detected-wallets');
+        list.innerHTML = '';
+        let providersFound = 0;
+
+        // Smart Discovery
+        if (window.ethereum) {
+            providersFound++;
+            let name = "EVM Wallet";
+            let icon = "fa-wallet";
+            if (window.ethereum.isMetaMask) { name = "MetaMask"; icon = "fa-fox"; }
+            
+            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px;" onclick="Engine.connectWallet('evm')"><i class="fa-solid ${icon}"></i> &nbsp; ${name}</button>`;
+        }
+
+        if (window.solana && window.solana.isPhantom) {
+            providersFound++;
+            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px;" onclick="Engine.connectWallet('solana')"><i class="fa-solid fa-ghost"></i> &nbsp; Phantom</button>`;
+        }
+
+        if (providersFound === 0) {
+            list.innerHTML = `<div style="color: var(--danger); font-size: 11px; padding: 15px; border: 1px dashed var(--danger); border-radius: 8px;">No Web3 extensions detected in your browser.<br>Please install MetaMask or Phantom.</div>`;
+        }
+    },
+
+    hideWalletSelector() {
+        document.getElementById('initial-connect-box').style.display = 'block';
+        document.getElementById('wallet-selector').style.display = 'none';
+    },
+
     async connectWallet(type) {
         try {
-            if (window.location.protocol === 'file:') throw new Error("Requires HTTP Server (Live Server).");
             let address = "";
             if (type === 'evm' && window.ethereum) {
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -315,13 +361,16 @@ const Engine = {
             } else if (type === 'solana' && window.solana) {
                 const resp = await window.solana.connect();
                 address = resp.publicKey.toString();
-            } else throw new Error("Wallet not found.");
+            } else throw new Error("Connection failed or rejected.");
 
             this.myAddress = address;
             this.initP2P();
-        } catch (e) { document.getElementById('auth-error').innerText = e.message; }
+        } catch (e) { 
+            document.getElementById('auth-error').innerText = "Connection rejected by user."; 
+        }
     },
 
+    // --- Core P2P ---
     initP2P() {
         document.getElementById('auth-screen').style.display = 'none';
         const nodeId = "im_" + btoa(this.myAddress).replace(/[^a-zA-Z0-9]/g, '').slice(0, 15);
@@ -332,7 +381,6 @@ const Engine = {
             document.getElementById('my-address-display').innerText = this.myAddress.slice(0, 8) + "..." + this.myAddress.slice(-4);
             this.loadContacts();
             
-            // Heartbeat: Авто-реконнект каждые 5 сек
             setInterval(() => this.reconnectRoutine(), 5000);
         });
 
@@ -343,7 +391,6 @@ const Engine = {
         const contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
         contacts.forEach(addr => {
             const session = this.connections[addr];
-            // Стучимся, если нет сессии или соединение закрыто
             if (!session || session.status === 'offline') {
                 const nodeId = "im_" + btoa(addr).replace(/[^a-zA-Z0-9]/g, '').slice(0, 15);
                 const conn = this.peer.connect(nodeId, { reliable: true });
@@ -363,7 +410,7 @@ const Engine = {
         }
         document.getElementById('add-peer-id').value = '';
         this.loadContacts();
-        this.reconnectRoutine(); // Сразу пробуем связаться
+        this.reconnectRoutine();
     },
 
     loadContacts() {
@@ -401,7 +448,7 @@ const Engine = {
                 const peerPub = await crypto.subtle.importKey("raw", new Uint8Array(data.pub), { name: "ECDH", namedCurve: "P-384" }, true, []);
                 const aesKey = await Crypto.deriveSecret(ecdh.privateKey, peerPub);
                 this.connections[data.address] = { conn, aesKey, status: 'online' };
-                this.loadContacts(); // Обновить точки в сайдбаре
+                this.loadContacts();
                 this.updateUI();
             } 
             if (data.type === 'enc') {
@@ -424,11 +471,10 @@ const Engine = {
             }
         });
 
-        conn.on('error', () => {
-            // Тихий отлов ошибок
-        });
+        conn.on('error', () => {});
     },
 
+    // --- Chat Logic ---
     toggleStealth() {
         this.isStealth = !this.isStealth;
         const btn = document.getElementById('stealth-toggle');
@@ -458,7 +504,7 @@ const Engine = {
     async sendToActive(msg) {
         const session = this.connections[this.activePeer];
         if (!session || session.status !== 'online') {
-            alert("Peer is offline.");
+            alert("Tunnel is offline.");
             return;
         }
         const enc = await Crypto.encrypt(session.aesKey, JSON.stringify(msg));
