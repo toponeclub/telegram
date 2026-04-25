@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IMCHAT | THE BUNKER NODE</title>
+    <title>IMCHAT | SECURE NODE</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -53,21 +53,31 @@
 
         .contacts-scroll { flex: 1; overflow-y: auto; padding: 10px; }
         .contact-card {
-            padding: 15px; border-radius: 12px; cursor: pointer;
+            padding: 12px; border-radius: 12px; cursor: pointer;
             display: flex; align-items: center; gap: 15px;
             margin-bottom: 5px; border: 1px solid transparent;
+            position: relative;
         }
         .contact-card:hover { background: rgba(255,255,255,0.03); }
         .contact-card.active { background: var(--accent-dim); border-color: var(--border); }
 
+        .sidebar-status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #333; position: absolute; right: 15px; top: 50%;
+            transform: translateY(-50%); transition: all 0.3s;
+        }
+        .sidebar-status-dot.online {
+            background: var(--accent); box-shadow: 0 0 10px var(--accent);
+        }
+
         /* Generative Avatar System */
         .avatar-box {
-            width: 42px; height: 42px; border-radius: 8px;
-            background: #111; overflow: hidden; position: relative;
-            display: flex; flex-wrap: wrap; flex-shrink: 0;
-            border: 1px solid var(--border);
+            width: 40px; height: 40px; border-radius: 8px;
+            background: #111; overflow: hidden; 
+            display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr);
+            flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);
         }
-        .pixel { width: 20%; height: 20%; }
+        .pixel { width: 100%; height: 100%; transition: all 0.2s; }
 
         /* Main Chat Area */
         .chat-view { flex: 1; display: flex; flex-direction: column; position: relative; }
@@ -81,18 +91,24 @@
             display: flex; flex-direction: column; gap: 20px;
         }
 
-        /* Hold-to-Reveal Logic */
         .msg-bubble {
             max-width: 70%; padding: 14px 18px; border-radius: 18px;
             font-size: 14px; line-height: 1.5; position: relative;
             transition: filter 0.3s ease, opacity 0.3s ease;
-            cursor: pointer; user-select: none;
-            filter: blur(8px); opacity: 0.4;
+            word-break: break-word;
         }
-        .msg-bubble.revealed { filter: blur(0); opacity: 1; }
         
         .msg-sent { align-self: flex-end; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); border-bottom-right-radius: 4px; }
-        .msg-received { align-self: flex-start; background: #1a1a1f; border-bottom-left-radius: 4px; }
+        .msg-received { align-self: flex-start; background: #1a1a1f; border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+
+        /* Stealth Mode Logic */
+        .stealth-active .msg-bubble {
+            filter: blur(8px); opacity: 0.4; cursor: pointer; user-select: none;
+        }
+        .stealth-active .msg-bubble:hover, 
+        .stealth-active .msg-bubble:active {
+            filter: blur(0); opacity: 1;
+        }
 
         /* Input Bar */
         .controls-bar { 
@@ -110,10 +126,18 @@
             background: none; border: none; color: var(--text-dim);
             font-size: 18px; cursor: pointer; width: 40px; height: 40px;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
+            border-radius: 50%; transition: all 0.2s;
         }
         .icon-btn:hover { color: var(--accent); background: rgba(255,255,255,0.05); }
         .icon-btn.active { color: var(--accent); background: var(--accent-dim); }
+        
+        .btn-action {
+            background: transparent; color: var(--accent); border: 1px solid var(--accent);
+            padding: 12px; border-radius: 10px; cursor: pointer; font-size: 12px;
+            font-weight: 600; width: 100%; transition: all 0.2s; text-align: center;
+        }
+        .btn-action:hover { background: var(--accent); color: var(--bg); }
+        
         .btn-send { background: var(--accent); color: #000; width: 45px; height: 45px; border-radius: 12px; }
 
         /* Login Screen */
@@ -123,15 +147,10 @@
             align-items: center; justify-content: center; padding: 20px;
         }
 
-        .auth-card {
-            width: 100%; max-width: 400px; text-align: center;
-        }
+        .auth-card { width: 100%; max-width: 400px; text-align: center; }
 
         .status-tag { width: 8px; height: 8px; border-radius: 50%; background: #333; margin-right: 8px; display: inline-block; }
         .online { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
-
-        /* Custom Audio Style */
-        audio { height: 30px; filter: invert(1); opacity: 0.7; }
     </style>
 </head>
 <body>
@@ -139,14 +158,14 @@
     <div id="auth-screen" class="auth-overlay">
         <div class="auth-card">
             <h1 style="letter-spacing: 5px; font-weight: 300;">IMCHAT</h1>
-            <p style="color: var(--accent); font-size: 11px; margin-bottom: 40px;">BUNKER_NODE_INITIALIZATION</p>
+            <p style="color: var(--accent); font-size: 11px; margin-bottom: 40px;">BUNKER_NODE</p>
             
             <div style="display: grid; gap: 10px;">
-                <button class="icon-btn" style="width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 25px;" onclick="Engine.connectWallet('evm')">
-                    <i class="fa-solid fa-fox"></i> &nbsp; METAMASK_AUTH
+                <button class="btn-action" style="padding: 20px; font-size: 14px;" onclick="Engine.connectWallet('evm')">
+                    <i class="fa-solid fa-fox"></i> &nbsp; METAMASK
                 </button>
-                <button class="icon-btn" style="width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 25px;" onclick="Engine.connectWallet('solana')">
-                    <i class="fa-solid fa-ghost"></i> &nbsp; PHANTOM_AUTH
+                <button class="btn-action" style="padding: 20px; font-size: 14px;" onclick="Engine.connectWallet('solana')">
+                    <i class="fa-solid fa-ghost"></i> &nbsp; PHANTOM
                 </button>
             </div>
             <p id="auth-error" style="color: var(--danger); font-size: 12px; margin-top: 20px;"></p>
@@ -164,7 +183,7 @@
 
             <div style="padding: 20px; border-top: 1px solid var(--border);">
                 <input type="text" id="add-peer-id" class="input-field" placeholder="Enter Wallet Address..." style="font-size: 12px; margin-bottom: 10px; width: 100%;">
-                <button class="icon-btn" style="width: 100%; border: 1px solid var(--accent); color: var(--accent);" onclick="Engine.addPeer()">ADD_PEER</button>
+                <button class="btn-action" onclick="Engine.addPeer()">ESTABLISH_LINK</button>
             </div>
         </aside>
 
@@ -183,6 +202,7 @@
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px;">
+                    <button class="icon-btn" id="stealth-toggle" onclick="Engine.toggleStealth()" title="Stealth Mode (Blur)"><i class="fa-solid fa-eye-slash"></i></button>
                     <button class="icon-btn" title="Send Crypto" onclick="Engine.sendTransaction()"><i class="fa-solid fa-wallet"></i></button>
                     <button class="icon-btn" title="Delete Peer" onclick="Engine.deleteActivePeer()"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
@@ -202,7 +222,7 @@
                     <i class="fa-solid fa-robot"></i>
                 </button>
 
-                <input type="text" id="chat-input" class="input-field" placeholder="Type encrypted message..." onkeypress="if(event.key === 'Enter') Engine.sendText()">
+                <input type="text" id="chat-input" class="input-field" placeholder="Secure comms..." onkeypress="if(event.key === 'Enter') Engine.sendText()">
                 
                 <button class="icon-btn btn-send" onclick="Engine.sendText()">
                     <i class="fa-solid fa-arrow-up"></i>
@@ -213,7 +233,10 @@
 
 <script>
 /**
- * IMCHAT ENGINE v3.0 (Production Build)
+ * IMCHAT ENGINE v3.1
+ * - Stable Reconnection
+ * - Symmetrical Generative Avatars
+ * - Stealth Toggle
  */
 
 const Crypto = {
@@ -241,18 +264,32 @@ const Avatar = {
     generate(address, targetId) {
         const hash = address.toLowerCase().replace('0x', '');
         const container = document.getElementById(targetId);
+        if (!container) return;
         container.innerHTML = '';
         container.className = 'avatar-box';
         
-        // 5x5 Grid Generation based on Address Hex
-        for (let i = 0; i < 25; i++) {
-            const pixel = document.createElement('div');
-            pixel.className = 'pixel';
-            const hexColor = hash.substring(i % hash.length, (i % hash.length) + 6);
-            // Symmetry logic
-            const color = (parseInt(hash[i % hash.length], 16) % 2 === 0) ? '#' + hexColor : 'transparent';
-            pixel.style.backgroundColor = color;
-            container.appendChild(pixel);
+        // Generate Hue from hash
+        const hue = parseInt(hash.substring(0, 4), 16) % 360;
+        const mainColor = `hsl(${hue}, 80%, 60%)`;
+
+        // 5x5 Mirrored Grid
+        for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < 5; col++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'pixel';
+                
+                // Mirror logic (col 3 mirrors 1, col 4 mirrors 0)
+                const mirrorCol = col > 2 ? 4 - col : col;
+                const index = row * 3 + mirrorCol;
+                
+                // Determine filled or empty
+                const charCode = hash.charCodeAt(index % hash.length);
+                if (charCode % 2 === 0) {
+                    pixel.style.backgroundColor = mainColor;
+                    pixel.style.boxShadow = `0 0 5px ${mainColor}`;
+                }
+                container.appendChild(pixel);
+            }
         }
     }
 };
@@ -260,17 +297,17 @@ const Avatar = {
 const Engine = {
     peer: null,
     myAddress: null,
-    connections: {}, // address -> {conn, aesKey}
+    connections: {}, // address -> {conn, aesKey, status}
     activePeer: null,
     isCyberMic: false,
+    isStealth: false,
     audioCtx: null,
     mediaRecorder: null,
     stream: null,
 
-    // --- Auth ---
     async connectWallet(type) {
         try {
-            if (window.location.protocol === 'file:') throw new Error("Please run via Local Server.");
+            if (window.location.protocol === 'file:') throw new Error("Requires HTTP Server (Live Server).");
             let address = "";
             if (type === 'evm' && window.ethereum) {
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -294,12 +331,27 @@ const Engine = {
             Avatar.generate(this.myAddress, 'my-avatar');
             document.getElementById('my-address-display').innerText = this.myAddress.slice(0, 8) + "..." + this.myAddress.slice(-4);
             this.loadContacts();
+            
+            // Heartbeat: Авто-реконнект каждые 5 сек
+            setInterval(() => this.reconnectRoutine(), 5000);
         });
 
         this.peer.on('connection', conn => this.setupConn(conn));
     },
 
-    // --- Contacts ---
+    reconnectRoutine() {
+        const contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
+        contacts.forEach(addr => {
+            const session = this.connections[addr];
+            // Стучимся, если нет сессии или соединение закрыто
+            if (!session || session.status === 'offline') {
+                const nodeId = "im_" + btoa(addr).replace(/[^a-zA-Z0-9]/g, '').slice(0, 15);
+                const conn = this.peer.connect(nodeId, { reliable: true });
+                this.setupConn(conn);
+            }
+        });
+    },
+
     async addPeer() {
         const addr = document.getElementById('add-peer-id').value.trim();
         if (!addr || addr === this.myAddress) return;
@@ -309,31 +361,31 @@ const Engine = {
             contacts.push(addr);
             localStorage.setItem('contacts', JSON.stringify(contacts));
         }
+        document.getElementById('add-peer-id').value = '';
         this.loadContacts();
-        this.connectToPeer(addr);
+        this.reconnectRoutine(); // Сразу пробуем связаться
     },
 
     loadContacts() {
         const list = document.getElementById('contacts-list');
         list.innerHTML = '';
         const contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
+        
         contacts.forEach(addr => {
+            const isOnline = this.connections[addr]?.status === 'online';
             const card = document.createElement('div');
             card.className = `contact-card ${this.activePeer === addr ? 'active' : ''}`;
             card.onclick = () => this.selectChat(addr);
             
             const avId = 'av-' + addr.slice(-4);
-            card.innerHTML = `<div id="${avId}"></div><div style="font-size:12px; font-family:'JetBrains Mono';">${addr.slice(0,6)}...${addr.slice(-4)}</div>`;
+            card.innerHTML = `
+                <div id="${avId}"></div>
+                <div style="font-size:12px; font-family:'JetBrains Mono';">${addr.slice(0,6)}...${addr.slice(-4)}</div>
+                <div class="sidebar-status-dot ${isOnline ? 'online' : ''}"></div>
+            `;
             list.appendChild(card);
             Avatar.generate(addr, avId);
         });
-    },
-
-    // --- Connection Logic ---
-    connectToPeer(address) {
-        const nodeId = "im_" + btoa(address).replace(/[^a-zA-Z0-9]/g, '').slice(0, 15);
-        const conn = this.peer.connect(nodeId);
-        this.setupConn(conn);
     },
 
     async setupConn(conn) {
@@ -349,19 +401,50 @@ const Engine = {
                 const peerPub = await crypto.subtle.importKey("raw", new Uint8Array(data.pub), { name: "ECDH", namedCurve: "P-384" }, true, []);
                 const aesKey = await Crypto.deriveSecret(ecdh.privateKey, peerPub);
                 this.connections[data.address] = { conn, aesKey, status: 'online' };
+                this.loadContacts(); // Обновить точки в сайдбаре
                 this.updateUI();
             } 
             if (data.type === 'enc') {
-                const session = this.connections[Object.keys(this.connections).find(k => this.connections[k].conn === conn)];
+                const senderAddr = Object.keys(this.connections).find(k => this.connections[k].conn === conn);
+                if (!senderAddr) return;
+                const session = this.connections[senderAddr];
                 const decrypted = await Crypto.decrypt(session.aesKey, data.payload);
-                this.pushMsg(JSON.parse(decrypted), 'received');
+                if (this.activePeer === senderAddr) {
+                    this.pushMsg(JSON.parse(decrypted), 'received');
+                }
             }
         });
 
-        conn.on('close', () => this.updateUI());
+        conn.on('close', () => {
+            const addr = Object.keys(this.connections).find(k => this.connections[k].conn === conn);
+            if (addr) {
+                this.connections[addr].status = 'offline';
+                this.loadContacts();
+                this.updateUI();
+            }
+        });
+
+        conn.on('error', () => {
+            // Тихий отлов ошибок
+        });
     },
 
-    // --- Messaging ---
+    toggleStealth() {
+        this.isStealth = !this.isStealth;
+        const btn = document.getElementById('stealth-toggle');
+        const flow = document.getElementById('messages-flow');
+        
+        if (this.isStealth) {
+            btn.classList.add('active');
+            btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+            flow.classList.add('stealth-active');
+        } else {
+            btn.classList.remove('active');
+            btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+            flow.classList.remove('stealth-active');
+        }
+    },
+
     async sendText() {
         const input = document.getElementById('chat-input');
         const text = input.value.trim();
@@ -374,7 +457,10 @@ const Engine = {
 
     async sendToActive(msg) {
         const session = this.connections[this.activePeer];
-        if (!session) return;
+        if (!session || session.status !== 'online') {
+            alert("Peer is offline.");
+            return;
+        }
         const enc = await Crypto.encrypt(session.aesKey, JSON.stringify(msg));
         session.conn.send({ type: 'enc', payload: enc });
         this.pushMsg(msg, 'sent');
@@ -385,10 +471,6 @@ const Engine = {
         const bubble = document.createElement('div');
         bubble.className = `msg-bubble msg-${dir}`;
         
-        // Anti-Screenshot Interaction
-        bubble.onmousedown = bubble.ontouchstart = () => bubble.classList.add('revealed');
-        bubble.onmouseup = bubble.onmouseleave = bubble.ontouchend = () => bubble.classList.remove('revealed');
-
         if (msg.type === 'text') bubble.innerText = msg.body;
         if (msg.type === 'voice') bubble.innerHTML = `<audio src="${msg.body}" controls></audio>`;
         if (msg.type === 'file') bubble.innerHTML = `<a href="${msg.body}" download="${msg.name}" style="color:var(--accent); text-decoration:none;"><i class="fa-solid fa-file-arrow-down"></i> ${msg.name}</a>`;
@@ -397,7 +479,6 @@ const Engine = {
         flow.scrollTop = flow.scrollHeight;
     },
 
-    // --- Cyber-Mic & Voice ---
     toggleCyberMic() {
         this.isCyberMic = !this.isCyberMic;
         document.getElementById('cyber-mic-btn').classList.toggle('active', this.isCyberMic);
@@ -411,7 +492,6 @@ const Engine = {
             let destination = this.audioCtx.createMediaStreamDestination();
 
             if (this.isCyberMic) {
-                // Vader / Robot Filter
                 let filter = this.audioCtx.createBiquadFilter();
                 filter.type = "lowshelf";
                 filter.frequency.value = 400;
@@ -433,7 +513,7 @@ const Engine = {
             };
             this.mediaRecorder.start();
             document.getElementById('voice-toggle').classList.add('active');
-        } catch (e) { alert("Microphone blocked."); }
+        } catch (e) { alert("Microphone access needed."); }
     },
 
     stopVoice() {
@@ -442,7 +522,6 @@ const Engine = {
         document.getElementById('voice-toggle').classList.remove('active');
     },
 
-    // --- File Drop ---
     async handleFileUpload(file) {
         if (file.size > 1024 * 1024 * 1024) return alert("Bunker limit: 1GB");
         const reader = new FileReader();
@@ -450,22 +529,14 @@ const Engine = {
         reader.readAsDataURL(file);
     },
 
-    // --- Finance ---
     async sendTransaction() {
         if (!this.activePeer) return;
         try {
-            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-            // Здесь можно добавить P2P запрос chainId у друга, если нужно строгое совпадение.
-            const tx = {
-                from: this.myAddress,
-                to: this.activePeer,
-                value: '0x0' // User fills in MetaMask
-            };
+            const tx = { from: this.myAddress, to: this.activePeer, value: '0x0' };
             await window.ethereum.request({ method: 'eth_sendTransaction', params: [tx] });
         } catch(e) { console.log("TX_CANCELLED"); }
     },
 
-    // --- UI State ---
     selectChat(addr) {
         this.activePeer = addr;
         document.getElementById('empty-state').style.display = 'none';
@@ -476,10 +547,12 @@ const Engine = {
     },
 
     updateUI() {
+        if (!this.activePeer) return;
         const session = this.connections[this.activePeer];
         const dot = document.getElementById('active-status-dot');
         const text = document.getElementById('active-status-text');
-        if (session && session.conn.open) {
+        
+        if (session && session.status === 'online') {
             dot.className = "status-tag online";
             text.innerText = "SECURE_TUNNEL_ACTIVE";
         } else {
@@ -489,6 +562,10 @@ const Engine = {
     },
 
     deleteActivePeer() {
+        if (!this.activePeer) return;
+        if (this.connections[this.activePeer]?.conn) {
+            this.connections[this.activePeer].conn.close();
+        }
         let contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
         contacts = contacts.filter(a => a !== this.activePeer);
         localStorage.setItem('contacts', JSON.stringify(contacts));
