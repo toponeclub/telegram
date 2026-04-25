@@ -489,6 +489,15 @@
         }
         
         .animate-fade { animation: fadeIn 0.4s ease forwards; }
+
+        /* Оверлей звонка */
+.call-screen { position: fixed; inset: 0; background: rgba(5,5,7,0.98); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.call-status { font-family: 'JetBrains Mono'; color: var(--accent); margin-bottom: 30px; letter-spacing: 2px; }
+
+/* Таймер записи */
+.rec-indicator { display: none; align-items: center; gap: 8px; color: var(--danger); font-family: 'JetBrains Mono'; font-size: 12px; margin-right: 10px; }
+.rec-dot { width: 8px; height: 8px; background: var(--danger); border-radius: 50%; animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
@@ -540,6 +549,18 @@
         </aside>
 
         <main class="chat-view">
+
+            <div id="call-screen" class="call-screen">
+    <div id="call-avatar-target"></div>
+    <div class="call-status" id="call-status-text">INCOMING CALL...</div>
+    <div style="display: flex; gap: 20px;">
+        <button class="icon-btn" style="width:60px; height:60px; background:var(--accent); color:#000;" onclick="App.answerCall()"><i class="fa-solid fa-phone"></i></button>
+        <button class="icon-btn" style="width:60px; height:60px; background:var(--danger); color:#fff;" onclick="App.endCall()"><i class="fa-solid fa-phone-slash"></i></button>
+    </div>
+    <audio id="remote-audio" autoplay></audio>
+</div>
+
+<div id="rec-ui" class="rec-indicator"><div class="rec-dot"></div><span id="rec-timer">00:00</span></div>
             
             <div id="empty-state" class="full-overlay">
                 <i class="fa-solid fa-shield-halved" style="font-size: 48px; color: var(--border-light); margin-bottom: 24px;"></i>
@@ -884,11 +905,13 @@ const App = {
         this.peer = new Peer(nodeId, { debug: 1 });
 
         // --- ВСТАВЛЯЙ СЮДА ---
-        this.peer.on('call', async call => {
-            const processedStream = await this.getProcessedStream();
-            call.answer(processedStream);
-            this.setupCallHandlers(call);
-        });
+       this.peer.on('call', async call => {
+    this.currentCall = call;
+    const peerAddr = this.activePeer || "Unknown Node"; // В P2P сложнее вытянуть сразу, но оверлей покажем
+    document.getElementById('call-screen').style.display = 'flex';
+    document.getElementById('call-status-text').innerText = "INCOMING CALL";
+    AvatarEngine.generate(peerAddr, 'call-avatar-target');
+});
 
         this.peer.on('call', async call => {
     const stream = await this.getProcessedStream();
@@ -1433,99 +1456,113 @@ async acceptHandshake() {
         });
     },
 
-    
-
-    async startVoice(e) {
-        if(e) e.preventDefault();
+    async toggleVoice() {
+    if (!this.isRecording) {
         try {
-            const stream = await this.getProcessedStream();
-            this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            // Единый поток (Робо-голос применяется здесь, если активен)
+            this.stream = await this.getProcessedStream(); 
+            this.mediaRecorder = new MediaRecorder(this.stream);
             let chunks = [];
+            let startTime = Date.now();
+
             this.mediaRecorder.ondataavailable = e => chunks.push(e.data);
             this.mediaRecorder.onstop = () => {
                 const blob = new Blob(chunks, { type: 'audio/webm' });
                 const reader = new FileReader();
                 reader.onload = () => this.transmitMessage({ type: 'voice', body: reader.result, time: Date.now() });
                 reader.readAsDataURL(blob);
+                this.stream.getTracks().forEach(t => t.stop());
             };
+
             this.mediaRecorder.start();
             this.isRecording = true;
-            document.getElementById('voice-toggle').style.color = "var(--danger)";
-        } catch (err) { console.error(err); }
-    },
+            document.getElementById('voice-toggle').classList.add('active');
+            document.getElementById('rec-ui').style.display = 'flex';
+            
+            this.voiceTimer = setInterval(() => {
+                let diff = Math.floor((Date.now() - startTime) / 1000);
+                let m = Math.floor(diff / 60).toString().padStart(2, '0');
+                let s = (diff % 60).toString().padStart(2, '0');
+                document.getElementById('rec-timer').innerText = `${m}:${s}`;
+            }, 1000);
+        } catch (e) { alert("Mic Access Denied"); }
+    } else {
+        this.mediaRecorder.stop();
+        this.isRecording = false;
+        clearInterval(this.voiceTimer);
+        document.getElementById('voice-toggle').classList.remove('active');
+        document.getElementById('rec-ui').style.display = 'none';
+    }
+},
 
-    stopVoice(e) {
-        if(e) e.preventDefault();
-        if (this.mediaRecorder && this.isRecording) {
-            this.mediaRecorder.stop();
-            this.isRecording = false;
-            document.getElementById('voice-toggle').style.color = "";
-        }
-    },
+// Универсальный процессор звука (Робо-голос для всего)
+async getProcessedStream() {
+    const raw = await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (!this.isCyberMic) return raw;
 
-    async toggleCall() {
-        if (this.currentCall) {
-            this.currentCall.close();
-            return;
-        }
-
-        const addr = this.activePeer;
-        if (!this.connections[addr]) return alert("Peer offline");
-
-        const processedStream = await this.getProcessedStream();
-        const targetId = `imnode_${btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16)}`;
-        
-        const call = this.peer.call(targetId, processedStream);
-        this.setupCallHandlers(call);
-        document.getElementById('call-btn').style.color = "var(--success)";
-    },
-
-    setupCallHandlers(call) {
-        this.currentCall = call;
-        call.on('stream', remoteStream => {
-            const audio = document.getElementById('remote-audio');
-            audio.srcObject = remoteStream;
-            audio.play();
-        });
-        call.on('close', () => {
-            this.currentCall = null;
-            document.getElementById('call-btn').style.color = "";
-            if(this.stream) this.stream.getTracks().forEach(t => t.stop());
-        });
-    },
-
+    if (!this.audioCtx) this.audioCtx = new AudioContext();
+    const source = this.audioCtx.createMediaStreamSource(raw);
+    const destination = this.audioCtx.createMediaStreamDestination();
     
+    const filter = this.audioCtx.createBiquadFilter();
+    filter.type = "lowpass"; filter.frequency.value = 800;
     
-    makeDistortionCurve(amount) {
-        let k = typeof amount === 'number' ? amount : 50,
-            n_samples = 44100,
-            curve = new Float32Array(n_samples),
-            deg = Math.PI / 180,
-            i = 0, x;
-        for ( ; i < n_samples; ++i ) {
-            x = i * 2 / n_samples - 1;
-            curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
-        }
-        return curve;
-    },
+    const distortion = this.audioCtx.createWaveShaper();
+    distortion.curve = this.makeDistortionCurve(100);
+
+    source.connect(filter);
+    filter.connect(distortion);
+    distortion.connect(destination);
+    return destination.stream;
+},
+
+    async startCall() {
+    if (!this.activePeer) return;
+    const stream = await this.getProcessedStream();
+    const targetId = "im_" + btoa(this.activePeer).replace(/[^a-zA-Z0-9]/g, '').slice(0, 15);
+    
+    this.currentCall = this.peer.call(targetId, stream);
+    document.getElementById('call-screen').style.display = 'flex';
+    document.getElementById('call-status-text').innerText = "CALLING...";
+    this.handleCall(this.currentCall);
+},
+
+answerCall() {
+    this.getProcessedStream().then(stream => {
+        this.currentCall.answer(stream);
+        this.handleCall(this.currentCall);
+        document.getElementById('call-status-text').innerText = "CONNECTED";
+    });
+},
+
+handleCall(call) {
+    call.on('stream', remoteStream => {
+        const audio = document.getElementById('remote-audio');
+        audio.srcObject = remoteStream;
+    });
+    call.on('close', () => this.endCall());
+},
+
+endCall() {
+    if (this.currentCall) this.currentCall.close();
+    document.getElementById('call-screen').style.display = 'none';
+    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+},
 
     // --- File Handling ---
     
-    handleFile(f) {
-        if (!f) return;
-        if (f.size > 100 * 1024 * 1024) return alert("Max 100MB");
-        
-        const reader = new FileReader();
-        reader.onload = () => {
-            this.transmit({ 
-                type: 'file', 
-                body: reader.result, 
-                name: f.name, 
-                time: Date.now() 
-            });
-        };
-        reader.readAsDataURL(f);
-    }
+    async handleFileUpload(file) {
+    if (!file || !this.activePeer) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        this.sendToActive({ 
+            type: 'file', 
+            body: reader.result, 
+            name: file.name 
+        });
+    };
+    reader.readAsDataURL(file);
+}
 };
 </script>
 </body>
