@@ -240,11 +240,17 @@
 
 <script>
 /**
- * IMCHAT ENGINE v3.2
- * - Smart Wallet Discovery Protocol
- * - Improved Generative Avatars (No Black Holes)
+ * ГЛОБАЛЬНЫЙ ПРОСЛУШИВАТЕЛЬ EIP-6963 (ДЛЯ ЛЮБЫХ КОШЕЛЬКОВ)
  */
+const EIPProviders = {};
+window.addEventListener("eip6963:announceProvider", (event) => {
+    EIPProviders[event.detail.info.uuid] = event.detail;
+});
+window.dispatchEvent(new Event("eip6963:requestProvider"));
 
+/**
+ * IMCHAT ENGINE v3.3
+ */
 const Crypto = {
     async generateKeys() {
         return await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-384" }, true, ["deriveKey"]);
@@ -274,14 +280,12 @@ const Avatar = {
         container.innerHTML = '';
         container.className = 'avatar-box';
         
-        // Generate Hue
         const hue = parseInt(hash.substring(0, 4), 16) % 360;
         const mainColor = `hsl(${hue}, 80%, 60%)`;
-        const baseDark = `hsl(${hue}, 40%, 10%)`; // Фикс "черных аватаров"
+        const baseDark = `hsl(${hue}, 40%, 10%)`; 
         
         container.style.backgroundColor = baseDark;
 
-        // 5x5 Mirrored Grid
         for (let row = 0; row < 5; row++) {
             for (let col = 0; col < 5; col++) {
                 const pixel = document.createElement('div');
@@ -311,8 +315,10 @@ const Engine = {
     audioCtx: null,
     mediaRecorder: null,
     stream: null,
+    availableProviders: {},
+    activeProvider: null,
 
-    // --- Wallet Discovery ---
+    // --- Умный сканер кошельков (EIP-6963 + Fallbacks) ---
     showWalletSelector() {
         if (window.location.protocol === 'file:') {
             document.getElementById('auth-error').innerText = "Requires HTTP Server (Live Server) for Web3 injection.";
@@ -325,25 +331,46 @@ const Engine = {
 
         const list = document.getElementById('detected-wallets');
         list.innerHTML = '';
-        let providersFound = 0;
+        this.availableProviders = {};
+        let count = 0;
 
-        // Smart Discovery
-        if (window.ethereum) {
-            providersFound++;
-            let name = "EVM Wallet";
-            let icon = "fa-wallet";
-            if (window.ethereum.isMetaMask) { name = "MetaMask"; icon = "fa-fox"; }
+        window.dispatchEvent(new Event("eip6963:requestProvider"));
+
+        // 1. Извлекаем все современные EIP-6963 кошельки
+        let hasTrust = false;
+        let hasMetaMask = false;
+
+        for (const [uuid, data] of Object.entries(EIPProviders)) {
+            this.availableProviders[uuid] = { provider: data.provider, type: 'evm' };
+            let iconHtml = data.info.icon ? `<img src="${data.info.icon}" style="width:18px; height:18px; border-radius:4px;">` : `<i class="fa-solid fa-wallet"></i>`;
+            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="Engine.connectSpecificWallet('${uuid}')">${iconHtml} <span>${data.info.name}</span></button>`;
             
-            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px;" onclick="Engine.connectWallet('evm')"><i class="fa-solid ${icon}"></i> &nbsp; ${name}</button>`;
+            if (data.info.name.toLowerCase().includes('trust')) hasTrust = true;
+            if (data.info.name.toLowerCase().includes('metamask')) hasMetaMask = true;
+            count++;
+        }
+
+        // 2. Фоллбэки для старых или нестандартных инъекций
+        if (window.trustwallet && !hasTrust) {
+            this.availableProviders['trust_legacy'] = { provider: window.trustwallet, type: 'evm' };
+            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="Engine.connectSpecificWallet('trust_legacy')"><i class="fa-solid fa-shield-halved"></i> <span>Trust Wallet</span></button>`;
+            count++;
+        }
+
+        if (window.ethereum && window.ethereum.isMetaMask && !hasMetaMask) {
+            this.availableProviders['mm_legacy'] = { provider: window.ethereum, type: 'evm' };
+            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="Engine.connectSpecificWallet('mm_legacy')"><i class="fa-solid fa-fox"></i> <span>MetaMask</span></button>`;
+            count++;
         }
 
         if (window.solana && window.solana.isPhantom) {
-            providersFound++;
-            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px;" onclick="Engine.connectWallet('solana')"><i class="fa-solid fa-ghost"></i> &nbsp; Phantom</button>`;
+            this.availableProviders['phantom'] = { provider: window.solana, type: 'solana' };
+            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="Engine.connectSpecificWallet('phantom')"><i class="fa-solid fa-ghost"></i> <span>Phantom</span></button>`;
+            count++;
         }
 
-        if (providersFound === 0) {
-            list.innerHTML = `<div style="color: var(--danger); font-size: 11px; padding: 15px; border: 1px dashed var(--danger); border-radius: 8px;">No Web3 extensions detected in your browser.<br>Please install MetaMask or Phantom.</div>`;
+        if (count === 0) {
+            list.innerHTML = `<div style="color: var(--danger); font-size: 11px; padding: 15px; border: 1px dashed var(--danger); border-radius: 8px;">No Web3 extensions detected in your browser.<br>Please install a compatible Wallet.</div>`;
         }
     },
 
@@ -352,21 +379,26 @@ const Engine = {
         document.getElementById('wallet-selector').style.display = 'none';
     },
 
-    async connectWallet(type) {
+    async connectSpecificWallet(id) {
         try {
+            const wallet = this.availableProviders[id];
+            if (!wallet) throw new Error("Wallet instance lost.");
+            
             let address = "";
-            if (type === 'evm' && window.ethereum) {
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            if (wallet.type === 'evm') {
+                const accounts = await wallet.provider.request({ method: 'eth_requestAccounts' });
                 address = accounts[0];
-            } else if (type === 'solana' && window.solana) {
-                const resp = await window.solana.connect();
+                this.activeProvider = wallet.provider; // Запоминаем для транзакций
+            } else if (wallet.type === 'solana') {
+                const resp = await wallet.provider.connect();
                 address = resp.publicKey.toString();
-            } else throw new Error("Connection failed or rejected.");
+                this.activeProvider = wallet.provider;
+            }
 
             this.myAddress = address;
             this.initP2P();
-        } catch (e) { 
-            document.getElementById('auth-error').innerText = "Connection rejected by user."; 
+        } catch (e) {
+            document.getElementById('auth-error').innerText = "Connection rejected by user.";
         }
     },
 
@@ -576,10 +608,10 @@ const Engine = {
     },
 
     async sendTransaction() {
-        if (!this.activePeer) return;
+        if (!this.activePeer || !this.activeProvider) return;
         try {
             const tx = { from: this.myAddress, to: this.activePeer, value: '0x0' };
-            await window.ethereum.request({ method: 'eth_sendTransaction', params: [tx] });
+            await this.activeProvider.request({ method: 'eth_sendTransaction', params: [tx] });
         } catch(e) { console.log("TX_CANCELLED"); }
     },
 
