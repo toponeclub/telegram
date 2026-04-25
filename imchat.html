@@ -397,14 +397,14 @@ const App = {
         
         await this.loadContacts();
 
-        // Инициализация PeerJS. Используем hash от адреса, чтобы избежать конфликтов символов
         const nodeId = "imchat_" + btoa(this.myAddress).replace(/=/g, '').substring(0,20);
         this.peer = new Peer(nodeId);
 
         this.peer.on('open', id => console.log('Node active:', id));
         
+        // Входящее соединение (Мы - Получатель)
         this.peer.on('connection', conn => {
-            this.handleIncomingConnection(conn);
+            this.setupDataListener(conn);
         });
     },
 
@@ -416,8 +416,7 @@ const App = {
     async loadContacts() {
         this.contacts = await DB.getAll('contacts') || [];
         this.renderContacts();
-        // Пытаемся подключиться ко всем известным контактам в фоне
-        this.contacts.forEach(c => this.connectToPeer(c.address, false));
+        this.contacts.forEach(c => this.connectToPeer(c.address));
     },
 
     async addContact() {
@@ -425,13 +424,22 @@ const App = {
         const name = document.getElementById('new-contact-name').value.trim();
         if(!addr || !name) return;
         
-        const newContact = { address: addr, name: name };
-        await DB.put('contacts', newContact);
-        this.contacts.push(newContact);
+        await this.updateOrAddContact(addr, name);
         document.getElementById('new-contact-id').value = '';
         document.getElementById('new-contact-name').value = '';
         this.renderContacts();
-        this.connectToPeer(addr, true);
+        this.connectToPeer(addr);
+    },
+
+    async updateOrAddContact(address, name) {
+        let c = this.contacts.find(x => x.address === address);
+        if(!c) {
+            c = { address, name };
+            this.contacts.push(c);
+        } else {
+            c.name = name; // Обновляем имя, если друг его сменил
+        }
+        await DB.put('contacts', c);
     },
 
     renderContacts() {
@@ -453,55 +461,71 @@ const App = {
         });
     },
 
-    // --- CONNECTION & E2EE PROTOCOL ---
-    async connectToPeer(address, isManual) {
+    // --- CONNECTION & E2EE PROTOCOL (STRICT HANDSHAKE) ---
+    async connectToPeer(address) {
         if(this.connections[address]?.status === 'open') return;
         
         const netId = this.getNetworkId(address);
         const conn = this.peer.connect(netId, { reliable: true });
-        this.setupConnEvents(conn, address);
-    },
-
-    handleIncomingConnection(conn) {
-        // Найти адрес по netId (обратный инжиниринг не нужен, мы спросим его в handshake)
-        // Для простоты MVP разрешаем любые входящие, адрес будет в первом пакете
-        this.setupConnEvents(conn, null);
-    },
-
-    async setupConnEvents(conn, targetAddress) {
+        
+        // Исходящее соединение (Мы - Инициатор)
         conn.on('open', async () => {
-            // 1. Генерируем ключи сессии
             const ecdhKeys = await CryptoUtils.generateECDH();
-            const pubKeyBase64 = await CryptoUtils.exportPubKey(ecdhKeys.publicKey);
-            
-            // 2. Отправляем Handshake (свой адрес + публичный ключ)
-            conn.send({ type: 'handshake', address: this.myAddress, pubKey: pubKeyBase64 });
-            
-            // Временное сохранение до получения ответа
+            const pubKey = await CryptoUtils.exportPubKey(ecdhKeys.publicKey);
             conn._tempEcdh = ecdhKeys;
+            
+            // Шаг 1: Инициатор шлет INIT
+            conn.send({ 
+                type: 'handshake_init', 
+                address: this.myAddress, 
+                name: this.profile.name,
+                pubKey: pubKey 
+            });
         });
 
+        this.setupDataListener(conn);
+    },
+
+    setupDataListener(conn) {
         conn.on('data', async (payload) => {
-            if(payload.type === 'handshake') {
-                const peerAddress = payload.address;
-                const ecdhKeys = conn._tempEcdh;
+            
+            // Шаг 2: Получатель принимает INIT, шлет ACK
+            if (payload.type === 'handshake_init') {
+                const ecdhKeys = await CryptoUtils.generateECDH();
+                const myPubKey = await CryptoUtils.exportPubKey(ecdhKeys.publicKey);
                 const peerPubKey = await CryptoUtils.importPubKey(payload.pubKey);
                 const aesKey = await CryptoUtils.deriveAES(ecdhKeys.privateKey, peerPubKey);
+
+                this.connections[payload.address] = { conn, aesKey, status: 'open' };
+                if(!this.msgHistory[payload.address]) this.msgHistory[payload.address] = [];
                 
-                this.connections[peerAddress] = { conn, aesKey, status: 'open' };
-                if(!this.msgHistory[peerAddress]) this.msgHistory[peerAddress] = [];
+                await this.updateOrAddContact(payload.address, payload.name);
                 
-                // Проверяем, есть ли в контактах, если нет - добавляем как Unknown
-                if(!this.contacts.find(c => c.address === peerAddress)) {
-                    await DB.put('contacts', {address: peerAddress, name: 'Unknown Node'});
-                    await this.loadContacts();
-                }
+                conn.send({ 
+                    type: 'handshake_ack', 
+                    address: this.myAddress, 
+                    name: this.profile.name,
+                    pubKey: myPubKey 
+                });
+
+                this.renderContacts();
+                if(this.activePeerId === payload.address) this.selectChat(payload.address);
+            }
+            // Шаг 3: Инициатор получает ACK, туннель готов
+            else if (payload.type === 'handshake_ack') {
+                const peerPubKey = await CryptoUtils.importPubKey(payload.pubKey);
+                const aesKey = await CryptoUtils.deriveAES(conn._tempEcdh.privateKey, peerPubKey);
+
+                this.connections[payload.address] = { conn, aesKey, status: 'open' };
+                if(!this.msgHistory[payload.address]) this.msgHistory[payload.address] = [];
+
+                await this.updateOrAddContact(payload.address, payload.name);
                 
                 this.renderContacts();
-                if(this.activePeerId === peerAddress) this.selectChat(peerAddress);
-            } 
+                if(this.activePeerId === payload.address) this.selectChat(payload.address);
+            }
+            // Шаг 4: Обычное зашифрованное сообщение
             else if (payload.type === 'enc') {
-                // Обработка зашифрованных данных
                 const senderAddr = Object.keys(this.connections).find(k => this.connections[k].conn === conn);
                 if(!senderAddr) return;
                 
@@ -521,6 +545,11 @@ const App = {
                 this.renderContacts();
                 if(this.activePeerId === addr) this.selectChat(addr);
             }
+        });
+        
+        conn.on('error', (err) => {
+            // Игнорируем мелкие ошибки сети, чтобы не крашить UI
+            console.warn("PeerJS Conn warning:", err); 
         });
     },
 
