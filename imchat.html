@@ -30,60 +30,85 @@
             font-family: 'Inter', sans-serif; overflow: hidden;
         }
 
-        /* --- UI Framework --- */
         .app-shell {
             display: flex; height: 100vh; width: 100vw;
             background: radial-gradient(circle at 50% 50%, #0d1211 0%, #050506 100%);
-            position: relative;
+            position: relative; overflow: hidden;
         }
 
-        /* Sidebar: Contacts */
+        /* --- Sidebar --- */
         .sidebar {
             width: 320px; border-right: 1px solid var(--border);
             display: flex; flex-direction: column; background: rgba(0,0,0,0.2);
-            backdrop-filter: var(--glass); z-index: 10;
+            backdrop-filter: var(--glass); z-index: 10; flex-shrink: 0;
+            transition: transform 0.3s ease;
         }
 
-        .node-header { padding: 25px; border-bottom: 1px solid var(--border); }
+        .node-header { 
+            padding: 25px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: flex-start;
+        }
+        
         .node-id-tag { 
             font-family: 'JetBrains Mono', monospace; font-size: 10px; 
             color: var(--accent); background: var(--accent-dim);
             padding: 4px 8px; border-radius: 4px; display: inline-block;
         }
 
+        .list-section-title {
+            font-size: 10px; color: var(--text-dim); letter-spacing: 2px;
+            padding: 15px 15px 5px 15px; text-transform: uppercase;
+        }
+
         .contacts-scroll { flex: 1; overflow-y: auto; padding: 10px; }
+        
         .contact-card {
             padding: 12px; border-radius: 12px; cursor: pointer;
             display: flex; align-items: center; gap: 15px;
             margin-bottom: 5px; border: 1px solid transparent;
-            position: relative;
+            position: relative; transition: background 0.2s;
         }
         .contact-card:hover { background: rgba(255,255,255,0.03); }
         .contact-card.active { background: var(--accent-dim); border-color: var(--border); }
+        .contact-card.request { border: 1px dashed var(--accent); }
+
+        .contact-actions {
+            position: absolute; right: 15px; display: flex; align-items: center; gap: 10px;
+        }
 
         .sidebar-status-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: #333; position: absolute; right: 15px; top: 50%;
-            transform: translateY(-50%); transition: all 0.3s;
+            width: 8px; height: 8px; border-radius: 50%; background: #333;
+            transition: all 0.3s;
         }
-        .sidebar-status-dot.online {
-            background: var(--accent); box-shadow: 0 0 10px var(--accent);
-        }
+        .sidebar-status-dot.online { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+        .sidebar-status-dot.pending { background: #ffaa00; box-shadow: 0 0 10px #ffaa00; }
 
-        /* Generative Avatar System */
+        .delete-btn-small {
+            color: var(--text-dim); background: none; border: none; font-size: 12px;
+            cursor: pointer; transition: color 0.2s; padding: 5px;
+        }
+        .delete-btn-small:hover { color: var(--danger); }
+
+        /* --- Avatars --- */
         .avatar-box {
             width: 40px; height: 40px; border-radius: 8px;
-            overflow: hidden; 
-            display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr);
+            overflow: hidden; display: grid; 
+            grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr);
             flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);
         }
         .pixel { width: 100%; height: 100%; transition: all 0.2s; }
 
-        /* Main Chat Area */
-        .chat-view { flex: 1; display: flex; flex-direction: column; position: relative; }
+        /* --- Chat View --- */
+        .chat-view { flex: 1; display: flex; flex-direction: column; position: relative; min-width: 0; }
+        
         .chat-header { 
-            padding: 20px 30px; border-bottom: 1px solid var(--border);
+            padding: 15px 25px; border-bottom: 1px solid var(--border);
             display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .back-btn {
+            display: none; color: var(--accent); background: none; border: none;
+            font-size: 20px; cursor: pointer; margin-right: 15px; padding: 5px 10px 5px 0;
         }
 
         .messages-flow { 
@@ -92,7 +117,7 @@
         }
 
         .msg-bubble {
-            max-width: 70%; padding: 14px 18px; border-radius: 18px;
+            max-width: 85%; padding: 14px 18px; border-radius: 18px;
             font-size: 14px; line-height: 1.5; position: relative;
             transition: filter 0.3s ease, opacity 0.3s ease;
             word-break: break-word;
@@ -101,30 +126,25 @@
         .msg-sent { align-self: flex-end; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); border-bottom-right-radius: 4px; }
         .msg-received { align-self: flex-start; background: #1a1a1f; border-bottom-left-radius: 4px; border: 1px solid var(--border); }
 
-        /* Stealth Mode Logic */
-        .stealth-active .msg-bubble {
-            filter: blur(8px); opacity: 0.4; cursor: pointer; user-select: none;
-        }
-        .stealth-active .msg-bubble:hover, 
-        .stealth-active .msg-bubble:active {
-            filter: blur(0); opacity: 1;
-        }
+        /* Stealth Mode */
+        .stealth-active .msg-bubble { filter: blur(8px); opacity: 0.4; cursor: pointer; user-select: none; }
+        .stealth-active .msg-bubble:hover, .stealth-active .msg-bubble:active { filter: blur(0); opacity: 1; }
 
-        /* Input Bar */
+        /* --- Controls --- */
         .controls-bar { 
-            padding: 20px 30px; border-top: 1px solid var(--border);
-            display: flex; gap: 15px; align-items: center; background: rgba(0,0,0,0.2);
+            padding: 15px 25px; border-top: 1px solid var(--border);
+            display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.2);
         }
 
         .input-field {
             flex: 1; background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-            border-radius: 12px; padding: 12px 20px; color: #fff; outline: none;
+            border-radius: 12px; padding: 12px 15px; color: #fff; outline: none; min-width: 0;
         }
         .input-field:focus { border-color: var(--accent); }
 
         .icon-btn {
             background: none; border: none; color: var(--text-dim);
-            font-size: 18px; cursor: pointer; width: 40px; height: 40px;
+            font-size: 18px; cursor: pointer; width: 40px; height: 40px; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
             border-radius: 50%; transition: all 0.2s;
         }
@@ -137,20 +157,34 @@
             font-weight: 600; width: 100%; transition: all 0.2s; text-align: center;
         }
         .btn-action:hover { background: var(--accent); color: var(--bg); }
-        
-        .btn-send { background: var(--accent); color: #000; width: 45px; height: 45px; border-radius: 12px; }
+        .btn-send { background: var(--accent); color: #000; width: 45px; height: 45px; border-radius: 12px; flex-shrink: 0; }
 
-        /* Login Screen */
+        /* --- Overlays --- */
         .auth-overlay {
             position: fixed; inset: 0; background: var(--bg);
             z-index: 100; display: flex; flex-direction: column;
             align-items: center; justify-content: center; padding: 20px;
         }
-
         .auth-card { width: 100%; max-width: 400px; text-align: center; }
 
-        .status-tag { width: 8px; height: 8px; border-radius: 50%; background: #333; margin-right: 8px; display: inline-block; }
-        .online { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+        .full-overlay {
+            position: absolute; inset: 0; background: var(--bg);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 5; text-align: center; padding: 20px;
+        }
+
+        /* --- Mobile Adaptation --- */
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; position: absolute; height: 100%; }
+            .chat-view { width: 100%; position: absolute; height: 100%; transform: translateX(100%); transition: transform 0.3s ease; }
+            .app-shell.in-chat .sidebar { transform: translateX(-30%); opacity: 0; pointer-events: none; }
+            .app-shell.in-chat .chat-view { transform: translateX(0); }
+            .back-btn { display: flex; }
+            
+            .msg-bubble { max-width: 90%; }
+            .controls-bar { padding: 10px 15px; }
+            .chat-header { padding: 15px; }
+        }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -164,14 +198,13 @@
             
             <div id="initial-connect-box">
                 <button class="btn-action" style="padding: 20px; font-size: 14px; box-shadow: 0 0 20px var(--accent-dim);" onclick="Engine.showWalletSelector()">
-                    <i class="fa-solid fa-link"></i> &nbsp; ESTABLISH CONNECTION
+                    <i class="fa-solid fa-wallet"></i> &nbsp; CONNECT
                 </button>
             </div>
 
             <div id="wallet-selector" style="display: none; animation: fadeIn 0.3s;">
-                <p style="font-size: 10px; color: var(--text-dim); margin-bottom: 15px; letter-spacing: 1px;">DETECTED SECURE PROVIDERS:</p>
-                <div style="display: grid; gap: 10px;" id="detected-wallets">
-                    </div>
+                <p style="font-size: 10px; color: var(--text-dim); margin-bottom: 15px; letter-spacing: 1px;">SELECT SECURE PROVIDER:</p>
+                <div style="display: grid; gap: 10px;" id="detected-wallets"></div>
                 <button class="icon-btn" style="margin: 20px auto 0;" onclick="Engine.hideWalletSelector()"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
@@ -179,45 +212,59 @@
         </div>
     </div>
 
-    <div class="app-shell">
+    <div class="app-shell" id="app-shell">
+        
         <aside class="sidebar">
             <div class="node-header">
-                <div id="my-avatar" style="margin-bottom: 15px;"></div>
-                <div class="node-id-tag" id="my-address-display">0x...</div>
+                <div>
+                    <div id="my-avatar" style="margin-bottom: 10px;"></div>
+                    <div class="node-id-tag" id="my-address-display">0x...</div>
+                </div>
+                <button class="icon-btn" title="Logout" onclick="Engine.logout()"><i class="fa-solid fa-power-off"></i></button>
             </div>
             
             <div class="contacts-scroll" id="contacts-list"></div>
 
             <div style="padding: 20px; border-top: 1px solid var(--border);">
                 <input type="text" id="add-peer-id" class="input-field" placeholder="Enter Wallet Address..." style="font-size: 12px; margin-bottom: 10px; width: 100%;">
-                <button class="btn-action" onclick="Engine.addPeer()">ESTABLISH_LINK</button>
+                <button class="btn-action" onclick="Engine.addPeer()">ADD_CONTACT</button>
             </div>
         </aside>
 
         <main class="chat-view">
-            <div id="empty-state" style="position: absolute; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 5;">
+            <div id="empty-state" class="full-overlay">
                 <i class="fa-solid fa-radiation" style="font-size: 40px; color: var(--border); margin-bottom: 20px;"></i>
                 <p style="color: var(--text-dim); font-size: 13px; letter-spacing: 2px;">SECURE_TUNNEL_IDLE</p>
             </div>
 
+            <div id="request-state" class="full-overlay" style="display: none; z-index: 6; background: rgba(5,5,6,0.95); backdrop-filter: blur(10px);">
+                <div id="req-avatar" style="margin-bottom: 20px;"></div>
+                <p style="color: var(--text); font-size: 14px; margin-bottom: 30px; font-family: 'JetBrains Mono';">Node <span id="req-id" style="color:var(--accent);"></span><br><br>Requests a secure tunnel.</p>
+                <div style="display: flex; gap: 15px; width: 100%; max-width: 250px;">
+                    <button class="btn-action" style="flex:1;" onclick="Engine.acceptRequest()">ACCEPT</button>
+                    <button class="btn-action" style="flex:1; border-color: var(--danger); color: var(--danger);" onclick="Engine.declineRequest()">DECLINE</button>
+                </div>
+            </div>
+
             <header class="chat-header">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div id="active-avatar"></div>
+                <div style="display: flex; align-items: center;">
+                    <button class="back-btn" onclick="Engine.closeChatMobile()"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div id="active-avatar" style="margin-right: 15px;"></div>
                     <div>
                         <div id="active-peer-name" style="font-weight: 700; font-size: 14px; font-family: 'JetBrains Mono';">Unknown_Node</div>
-                        <div style="font-size: 11px; color: var(--text-dim);"><span class="status-tag" id="active-status-dot"></span><span id="active-status-text">DISCONNECTED</span></div>
+                        <div style="font-size: 11px; color: var(--text-dim);"><span class="sidebar-status-dot" style="position:static; display:inline-block; margin-right:5px;" id="active-status-dot"></span><span id="active-status-text">DISCONNECTED</span></div>
                     </div>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="icon-btn" id="stealth-toggle" onclick="Engine.toggleStealth()" title="Stealth Mode (Blur)"><i class="fa-solid fa-eye-slash"></i></button>
+                <div style="display: flex; gap: 5px;">
+                    <button class="icon-btn" id="stealth-toggle" onclick="Engine.toggleStealth()" title="Stealth Mode"><i class="fa-solid fa-eye-slash"></i></button>
                     <button class="icon-btn" title="Send Crypto" onclick="Engine.sendTransaction()"><i class="fa-solid fa-wallet"></i></button>
-                    <button class="icon-btn" title="Delete Peer" onclick="Engine.deleteActivePeer()"><i class="fa-solid fa-trash-can"></i></button>
+                    <button class="icon-btn" title="Clear Chat History" onclick="Engine.clearChatHistory()"><i class="fa-solid fa-broom"></i></button>
                 </div>
             </header>
 
             <div class="messages-flow" id="messages-flow"></div>
 
-            <footer class="controls-bar">
+            <footer class="controls-bar" id="controls-bar">
                 <input type="file" id="file-input" hidden onchange="Engine.handleFileUpload(this.files[0])">
                 <button class="icon-btn" onclick="document.getElementById('file-input').click()"><i class="fa-solid fa-paperclip"></i></button>
                 
@@ -225,7 +272,7 @@
                     <i class="fa-solid fa-microphone"></i>
                 </button>
                 
-                <button class="icon-btn" id="cyber-mic-btn" onclick="Engine.toggleCyberMic()" title="Cyber-Mic Distortion">
+                <button class="icon-btn" id="cyber-mic-btn" onclick="Engine.toggleCyberMic()" title="Cyber-Mic">
                     <i class="fa-solid fa-robot"></i>
                 </button>
 
@@ -240,7 +287,7 @@
 
 <script>
 /**
- * ГЛОБАЛЬНЫЙ ПРОСЛУШИВАТЕЛЬ EIP-6963 (ДЛЯ ЛЮБЫХ КОШЕЛЬКОВ)
+ * ГЛОБАЛЬНЫЙ ПРОСЛУШИВАТЕЛЬ EIP-6963
  */
 const EIPProviders = {};
 window.addEventListener("eip6963:announceProvider", (event) => {
@@ -249,7 +296,7 @@ window.addEventListener("eip6963:announceProvider", (event) => {
 window.dispatchEvent(new Event("eip6963:requestProvider"));
 
 /**
- * IMCHAT ENGINE v3.3
+ * IMCHAT ENGINE v4.0 (Sync & Mobile)
  */
 const Crypto = {
     async generateKeys() {
@@ -282,20 +329,15 @@ const Avatar = {
         
         const hue = parseInt(hash.substring(0, 4), 16) % 360;
         const mainColor = `hsl(${hue}, 80%, 60%)`;
-        const baseDark = `hsl(${hue}, 40%, 10%)`; 
-        
-        container.style.backgroundColor = baseDark;
+        container.style.backgroundColor = `hsl(${hue}, 40%, 10%)`; 
 
         for (let row = 0; row < 5; row++) {
             for (let col = 0; col < 5; col++) {
                 const pixel = document.createElement('div');
                 pixel.className = 'pixel';
-                
                 const mirrorCol = col > 2 ? 4 - col : col;
                 const index = row * 3 + mirrorCol;
-                
-                const charCode = hash.charCodeAt(index % hash.length);
-                if (charCode % 2 === 0) {
+                if (hash.charCodeAt(index % hash.length) % 2 === 0) {
                     pixel.style.backgroundColor = mainColor;
                     pixel.style.boxShadow = `0 0 5px ${mainColor}`;
                 }
@@ -308,70 +350,70 @@ const Avatar = {
 const Engine = {
     peer: null,
     myAddress: null,
-    connections: {}, 
+    connections: {}, // Holds open WebRTC connections
+    activeSessions: {}, // Holds {aesKey} for verified contacts
+    tempRequests: {}, // Holds {pubKey, conn} for unverified requests
     activePeer: null,
+    
+    // UI State
     isCyberMic: false,
     isStealth: false,
-    audioCtx: null,
-    mediaRecorder: null,
-    stream: null,
-    availableProviders: {},
-    activeProvider: null,
+    audioCtx: null, mediaRecorder: null, stream: null,
+    availableProviders: {}, activeProvider: null,
 
-    // --- Умный сканер кошельков (EIP-6963 + Fallbacks) ---
+    // --- Data Management ---
+    getContacts() { return JSON.parse(localStorage.getItem('contacts') || '[]'); },
+    setContacts(arr) { localStorage.setItem('contacts', JSON.stringify([...new Set(arr)])); },
+    getRequests() { return JSON.parse(localStorage.getItem('requests') || '[]'); },
+    setRequests(arr) { localStorage.setItem('requests', JSON.stringify([...new Set(arr)])); },
+
+    // --- Wallet Discovery ---
     showWalletSelector() {
         if (window.location.protocol === 'file:') {
-            document.getElementById('auth-error').innerText = "Requires HTTP Server (Live Server) for Web3 injection.";
-            return;
+            document.getElementById('auth-error').innerText = "Requires HTTP Server (Live Server)."; return;
         }
 
         document.getElementById('initial-connect-box').style.display = 'none';
         document.getElementById('wallet-selector').style.display = 'block';
-        document.getElementById('auth-error').innerText = '';
-
+        
         const list = document.getElementById('detected-wallets');
         list.innerHTML = '';
         this.availableProviders = {};
+        const detectedNames = new Set();
         let count = 0;
 
         window.dispatchEvent(new Event("eip6963:requestProvider"));
 
-        // 1. Извлекаем все современные EIP-6963 кошельки
-        let hasTrust = false;
-        let hasMetaMask = false;
-
+        // EIP-6963 Wallets
         for (const [uuid, data] of Object.entries(EIPProviders)) {
+            const name = data.info.name.toLowerCase();
+            if (detectedNames.has(name)) continue; 
+            detectedNames.add(name);
+
             this.availableProviders[uuid] = { provider: data.provider, type: 'evm' };
             let iconHtml = data.info.icon ? `<img src="${data.info.icon}" style="width:18px; height:18px; border-radius:4px;">` : `<i class="fa-solid fa-wallet"></i>`;
             list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="Engine.connectSpecificWallet('${uuid}')">${iconHtml} <span>${data.info.name}</span></button>`;
-            
-            if (data.info.name.toLowerCase().includes('trust')) hasTrust = true;
-            if (data.info.name.toLowerCase().includes('metamask')) hasMetaMask = true;
             count++;
         }
 
-        // 2. Фоллбэки для старых или нестандартных инъекций
-        if (window.trustwallet && !hasTrust) {
-            this.availableProviders['trust_legacy'] = { provider: window.trustwallet, type: 'evm' };
-            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="Engine.connectSpecificWallet('trust_legacy')"><i class="fa-solid fa-shield-halved"></i> <span>Trust Wallet</span></button>`;
+        // Legacy Fallbacks (only if not found via EIP)
+        if (window.trustwallet && !Array.from(detectedNames).some(n => n.includes('trust'))) {
+            this.availableProviders['trust'] = { provider: window.trustwallet, type: 'evm' };
+            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="Engine.connectSpecificWallet('trust')"><i class="fa-solid fa-shield-halved"></i> <span>Trust Wallet</span></button>`;
             count++;
         }
-
-        if (window.ethereum && window.ethereum.isMetaMask && !hasMetaMask) {
-            this.availableProviders['mm_legacy'] = { provider: window.ethereum, type: 'evm' };
-            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="Engine.connectSpecificWallet('mm_legacy')"><i class="fa-solid fa-fox"></i> <span>MetaMask</span></button>`;
+        if (window.ethereum && window.ethereum.isMetaMask && !Array.from(detectedNames).some(n => n.includes('meta'))) {
+            this.availableProviders['mm'] = { provider: window.ethereum, type: 'evm' };
+            list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="Engine.connectSpecificWallet('mm')"><i class="fa-solid fa-fox"></i> <span>MetaMask</span></button>`;
             count++;
         }
-
-        if (window.solana && window.solana.isPhantom) {
+        if (window.solana && window.solana.isPhantom && !Array.from(detectedNames).some(n => n.includes('phantom'))) {
             this.availableProviders['phantom'] = { provider: window.solana, type: 'solana' };
             list.innerHTML += `<button class="btn-action" style="padding: 15px; font-size: 13px; display:flex; align-items:center; justify-content:center; gap:10px;" onclick="Engine.connectSpecificWallet('phantom')"><i class="fa-solid fa-ghost"></i> <span>Phantom</span></button>`;
             count++;
         }
 
-        if (count === 0) {
-            list.innerHTML = `<div style="color: var(--danger); font-size: 11px; padding: 15px; border: 1px dashed var(--danger); border-radius: 8px;">No Web3 extensions detected in your browser.<br>Please install a compatible Wallet.</div>`;
-        }
+        if (count === 0) list.innerHTML = `<div style="color: var(--danger); font-size: 11px; padding: 15px; border: 1px dashed var(--danger); border-radius: 8px;">No Wallets Detected.</div>`;
     },
 
     hideWalletSelector() {
@@ -382,27 +424,23 @@ const Engine = {
     async connectSpecificWallet(id) {
         try {
             const wallet = this.availableProviders[id];
-            if (!wallet) throw new Error("Wallet instance lost.");
-            
             let address = "";
             if (wallet.type === 'evm') {
                 const accounts = await wallet.provider.request({ method: 'eth_requestAccounts' });
                 address = accounts[0];
-                this.activeProvider = wallet.provider; // Запоминаем для транзакций
-            } else if (wallet.type === 'solana') {
+            } else {
                 const resp = await wallet.provider.connect();
                 address = resp.publicKey.toString();
-                this.activeProvider = wallet.provider;
             }
-
+            this.activeProvider = wallet.provider;
             this.myAddress = address;
             this.initP2P();
-        } catch (e) {
-            document.getElementById('auth-error').innerText = "Connection rejected by user.";
-        }
+        } catch (e) { document.getElementById('auth-error').innerText = "Connection rejected."; }
     },
 
-    // --- Core P2P ---
+    logout() { location.reload(); },
+
+    // --- Core P2P & Handshake ---
     initP2P() {
         document.getElementById('auth-screen').style.display = 'none';
         const nodeId = "im_" + btoa(this.myAddress).replace(/[^a-zA-Z0-9]/g, '').slice(0, 15);
@@ -411,63 +449,55 @@ const Engine = {
         this.peer.on('open', () => {
             Avatar.generate(this.myAddress, 'my-avatar');
             document.getElementById('my-address-display').innerText = this.myAddress.slice(0, 8) + "..." + this.myAddress.slice(-4);
-            this.loadContacts();
-            
-            setInterval(() => this.reconnectRoutine(), 5000);
+            this.renderSidebar();
+            setInterval(() => this.heartbeat(), 5000);
         });
 
-        this.peer.on('connection', conn => this.setupConn(conn));
+        this.peer.on('connection', conn => this.handleConnection(conn));
     },
 
-    reconnectRoutine() {
-        const contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
-        contacts.forEach(addr => {
-            const session = this.connections[addr];
-            if (!session || session.status === 'offline') {
+    heartbeat() {
+        this.getContacts().forEach(addr => {
+            if (!this.connections[addr] || !this.connections[addr].open) {
                 const nodeId = "im_" + btoa(addr).replace(/[^a-zA-Z0-9]/g, '').slice(0, 15);
                 const conn = this.peer.connect(nodeId, { reliable: true });
-                this.setupConn(conn);
+                this.handleConnection(conn);
             }
         });
     },
 
-    async addPeer() {
+    addPeer() {
         const addr = document.getElementById('add-peer-id').value.trim();
         if (!addr || addr === this.myAddress) return;
         
-        let contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
-        if (!contacts.includes(addr)) {
-            contacts.push(addr);
-            localStorage.setItem('contacts', JSON.stringify(contacts));
-        }
-        document.getElementById('add-peer-id').value = '';
-        this.loadContacts();
-        this.reconnectRoutine();
-    },
-
-    loadContacts() {
-        const list = document.getElementById('contacts-list');
-        list.innerHTML = '';
-        const contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
+        let contacts = this.getContacts();
+        contacts.push(addr);
+        this.setContacts(contacts);
         
-        contacts.forEach(addr => {
-            const isOnline = this.connections[addr]?.status === 'online';
-            const card = document.createElement('div');
-            card.className = `contact-card ${this.activePeer === addr ? 'active' : ''}`;
-            card.onclick = () => this.selectChat(addr);
-            
-            const avId = 'av-' + addr.slice(-4);
-            card.innerHTML = `
-                <div id="${avId}"></div>
-                <div style="font-size:12px; font-family:'JetBrains Mono';">${addr.slice(0,6)}...${addr.slice(-4)}</div>
-                <div class="sidebar-status-dot ${isOnline ? 'online' : ''}"></div>
-            `;
-            list.appendChild(card);
-            Avatar.generate(addr, avId);
-        });
+        document.getElementById('add-peer-id').value = '';
+        this.renderSidebar();
+        this.heartbeat(); 
     },
 
-    async setupConn(conn) {
+    deleteContact(addr) {
+        if(this.connections[addr]) this.connections[addr].close();
+        let contacts = this.getContacts().filter(a => a !== addr);
+        this.setContacts(contacts);
+        
+        if(this.activePeer === addr) {
+            this.activePeer = null;
+            document.getElementById('empty-state').style.display = 'flex';
+            document.getElementById('request-state').style.display = 'none';
+            document.getElementById('messages-flow').innerHTML = '';
+        }
+        this.renderSidebar();
+    },
+
+    clearChatHistory() {
+        document.getElementById('messages-flow').innerHTML = '';
+    },
+
+    async handleConnection(conn) {
         const ecdh = await Crypto.generateKeys();
         const myPub = await crypto.subtle.exportKey("raw", ecdh.publicKey);
 
@@ -477,33 +507,171 @@ const Engine = {
 
         conn.on('data', async data => {
             if (data.type === 'handshake') {
-                const peerPub = await crypto.subtle.importKey("raw", new Uint8Array(data.pub), { name: "ECDH", namedCurve: "P-384" }, true, []);
-                const aesKey = await Crypto.deriveSecret(ecdh.privateKey, peerPub);
-                this.connections[data.address] = { conn, aesKey, status: 'online' };
-                this.loadContacts();
-                this.updateUI();
-            } 
-            if (data.type === 'enc') {
-                const senderAddr = Object.keys(this.connections).find(k => this.connections[k].conn === conn);
-                if (!senderAddr) return;
-                const session = this.connections[senderAddr];
-                const decrypted = await Crypto.decrypt(session.aesKey, data.payload);
-                if (this.activePeer === senderAddr) {
-                    this.pushMsg(JSON.parse(decrypted), 'received');
+                this.connections[data.address] = conn;
+                const isContact = this.getContacts().includes(data.address);
+                
+                if (isContact) {
+                    // Know them -> Accept and send ACK
+                    const peerPub = await crypto.subtle.importKey("raw", new Uint8Array(data.pub), { name: "ECDH", namedCurve: "P-384" }, true, []);
+                    this.activeSessions[data.address] = await Crypto.deriveSecret(ecdh.privateKey, peerPub);
+                    conn.send({ type: 'handshake_ack', address: this.myAddress, pub: Array.from(new Uint8Array(myPub)) });
+                    this.renderSidebar();
+                    if(this.activePeer === data.address) this.updateChatHeader();
+                } else {
+                    // Unknown -> Put in requests
+                    let reqs = this.getRequests();
+                    if(!reqs.includes(data.address)) { reqs.push(data.address); this.setRequests(reqs); }
+                    this.tempRequests[data.address] = { conn, pub: data.pub, ecdh };
+                    conn.send({ type: 'handshake_pending', address: this.myAddress });
+                    this.renderSidebar();
                 }
+            } 
+            else if (data.type === 'handshake_ack') {
+                const peerPub = await crypto.subtle.importKey("raw", new Uint8Array(data.pub), { name: "ECDH", namedCurve: "P-384" }, true, []);
+                this.activeSessions[data.address] = await Crypto.deriveSecret(ecdh.privateKey, peerPub);
+                this.renderSidebar();
+                if(this.activePeer === data.address) this.updateChatHeader();
+            }
+            else if (data.type === 'handshake_pending') {
+                // They received our connection but haven't accepted yet
+                this.renderSidebar();
+                if(this.activePeer === data.address) this.updateChatHeader();
+            }
+            else if (data.type === 'enc' && this.activeSessions[conn.peerAddress]) {
+                const decrypted = await Crypto.decrypt(this.activeSessions[conn.peerAddress], data.payload);
+                if (this.activePeer === conn.peerAddress) this.pushMsg(JSON.parse(decrypted), 'received');
             }
         });
 
-        conn.on('close', () => {
-            const addr = Object.keys(this.connections).find(k => this.connections[k].conn === conn);
-            if (addr) {
-                this.connections[addr].status = 'offline';
-                this.loadContacts();
-                this.updateUI();
-            }
-        });
-
+        // Store address on conn for reverse lookup
+        conn.on('data', d => { if(d.address) conn.peerAddress = d.address; });
+        conn.on('close', () => { this.renderSidebar(); this.updateChatHeader(); });
         conn.on('error', () => {});
+    },
+
+    // --- Request UI Logic ---
+    async acceptRequest() {
+        const addr = this.activePeer;
+        let reqs = this.getRequests().filter(a => a !== addr);
+        this.setRequests(reqs);
+        
+        let contacts = this.getContacts();
+        contacts.push(addr);
+        this.setContacts(contacts);
+
+        const temp = this.tempRequests[addr];
+        if (temp && temp.conn.open) {
+            const peerPub = await crypto.subtle.importKey("raw", new Uint8Array(temp.pub), { name: "ECDH", namedCurve: "P-384" }, true, []);
+            this.activeSessions[addr] = await Crypto.deriveSecret(temp.ecdh.privateKey, peerPub);
+            
+            const ecdhNew = await Crypto.generateKeys();
+            const myPub = await crypto.subtle.exportKey("raw", ecdhNew.publicKey);
+            temp.conn.send({ type: 'handshake_ack', address: this.myAddress, pub: Array.from(new Uint8Array(myPub)) });
+        }
+        
+        this.renderSidebar();
+        this.selectChat(addr); // Re-render chat view
+    },
+
+    declineRequest() {
+        const addr = this.activePeer;
+        let reqs = this.getRequests().filter(a => a !== addr);
+        this.setRequests(reqs);
+        if(this.tempRequests[addr]) this.tempRequests[addr].conn.close();
+        
+        this.activePeer = null;
+        document.getElementById('request-state').style.display = 'none';
+        document.getElementById('empty-state').style.display = 'flex';
+        this.renderSidebar();
+    },
+
+    // --- UI Rendering ---
+    renderSidebar() {
+        const list = document.getElementById('contacts-list');
+        list.innerHTML = '';
+        const contacts = this.getContacts();
+        const requests = this.getRequests();
+
+        if (requests.length > 0) {
+            list.innerHTML += `<div class="list-section-title">REQUESTS</div>`;
+            requests.forEach(addr => list.appendChild(this.buildCard(addr, true)));
+        }
+        
+        if (contacts.length > 0) {
+            list.innerHTML += `<div class="list-section-title">SECURE NODES</div>`;
+            contacts.forEach(addr => list.appendChild(this.buildCard(addr, false)));
+        }
+    },
+
+    buildCard(addr, isRequest) {
+        const isActive = this.connections[addr] && this.connections[addr].open;
+        const isReady = this.activeSessions[addr] !== undefined;
+        let statusClass = '';
+        if (isActive && isReady) statusClass = 'online';
+        else if (isActive && !isReady) statusClass = 'pending';
+
+        const card = document.createElement('div');
+        card.className = `contact-card ${this.activePeer === addr ? 'active' : ''} ${isRequest ? 'request' : ''}`;
+        card.onclick = () => this.selectChat(addr, isRequest);
+        
+        const avId = 'av-s-' + addr.slice(-5);
+        card.innerHTML = `
+            <div id="${avId}"></div>
+            <div style="font-size:12px; font-family:'JetBrains Mono';">${addr.slice(0,6)}...${addr.slice(-4)}</div>
+            <div class="contact-actions">
+                ${!isRequest ? `<button class="delete-btn-small" onclick="event.stopPropagation(); Engine.deleteContact('${addr}')"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+                <div class="sidebar-status-dot ${statusClass}"></div>
+            </div>
+        `;
+        // Delay avatar generation slightly to ensure DOM insertion
+        setTimeout(() => Avatar.generate(addr, avId), 0);
+        return card;
+    },
+
+    selectChat(addr, isRequest = false) {
+        this.activePeer = addr;
+        document.querySelector('.app-shell').classList.add('in-chat');
+        document.getElementById('empty-state').style.display = 'none';
+        
+        if (isRequest || this.getRequests().includes(addr)) {
+            document.getElementById('request-state').style.display = 'flex';
+            document.getElementById('req-id').innerText = addr.slice(0,10) + "...";
+            Avatar.generate(addr, 'req-avatar');
+            document.getElementById('controls-bar').style.opacity = '0.2';
+            document.getElementById('controls-bar').style.pointerEvents = 'none';
+        } else {
+            document.getElementById('request-state').style.display = 'none';
+            document.getElementById('controls-bar').style.opacity = '1';
+            document.getElementById('controls-bar').style.pointerEvents = 'auto';
+            document.getElementById('active-peer-name').innerText = addr.slice(0, 10) + "...";
+            Avatar.generate(addr, 'active-avatar');
+            this.updateChatHeader();
+        }
+        this.renderSidebar();
+    },
+
+    closeChatMobile() {
+        document.querySelector('.app-shell').classList.remove('in-chat');
+    },
+
+    updateChatHeader() {
+        if (!this.activePeer) return;
+        const isActive = this.connections[this.activePeer] && this.connections[this.activePeer].open;
+        const isReady = this.activeSessions[this.activePeer] !== undefined;
+        
+        const dot = document.getElementById('active-status-dot');
+        const text = document.getElementById('active-status-text');
+        
+        if (isActive && isReady) {
+            dot.className = "sidebar-status-dot online";
+            text.innerText = "TUNNEL_ACTIVE";
+        } else if (isActive && !isReady) {
+            dot.className = "sidebar-status-dot pending";
+            text.innerText = "AWAITING_ACCEPTANCE";
+        } else {
+            dot.className = "sidebar-status-dot";
+            text.innerText = "OFFLINE";
+        }
     },
 
     // --- Chat Logic ---
@@ -513,12 +681,10 @@ const Engine = {
         const flow = document.getElementById('messages-flow');
         
         if (this.isStealth) {
-            btn.classList.add('active');
-            btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+            btn.classList.add('active'); btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
             flow.classList.add('stealth-active');
         } else {
-            btn.classList.remove('active');
-            btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+            btn.classList.remove('active'); btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
             flow.classList.remove('stealth-active');
         }
     },
@@ -534,13 +700,9 @@ const Engine = {
     },
 
     async sendToActive(msg) {
-        const session = this.connections[this.activePeer];
-        if (!session || session.status !== 'online') {
-            alert("Tunnel is offline.");
-            return;
-        }
-        const enc = await Crypto.encrypt(session.aesKey, JSON.stringify(msg));
-        session.conn.send({ type: 'enc', payload: enc });
+        if (!this.activeSessions[this.activePeer]) { alert("Tunnel is not ready."); return; }
+        const enc = await Crypto.encrypt(this.activeSessions[this.activePeer], JSON.stringify(msg));
+        this.connections[this.activePeer].send({ type: 'enc', payload: enc });
         this.pushMsg(msg, 'sent');
     },
 
@@ -557,6 +719,7 @@ const Engine = {
         flow.scrollTop = flow.scrollHeight;
     },
 
+    // --- Cyber-Mic & Media ---
     toggleCyberMic() {
         this.isCyberMic = !this.isCyberMic;
         document.getElementById('cyber-mic-btn').classList.toggle('active', this.isCyberMic);
@@ -571,14 +734,9 @@ const Engine = {
 
             if (this.isCyberMic) {
                 let filter = this.audioCtx.createBiquadFilter();
-                filter.type = "lowshelf";
-                filter.frequency.value = 400;
-                filter.gain.value = 25;
-                source.connect(filter);
-                filter.connect(destination);
-            } else {
-                source.connect(destination);
-            }
+                filter.type = "lowshelf"; filter.frequency.value = 400; filter.gain.value = 25;
+                source.connect(filter); filter.connect(destination);
+            } else { source.connect(destination); }
 
             this.mediaRecorder = new MediaRecorder(destination.stream);
             let chunks = [];
@@ -591,63 +749,24 @@ const Engine = {
             };
             this.mediaRecorder.start();
             document.getElementById('voice-toggle').classList.add('active');
-        } catch (e) { alert("Microphone access needed."); }
+        } catch (e) { alert("Mic blocked."); }
     },
-
     stopVoice() {
         if (this.mediaRecorder) this.mediaRecorder.stop();
         if (this.stream) this.stream.getTracks().forEach(t => t.stop());
         document.getElementById('voice-toggle').classList.remove('active');
     },
-
     async handleFileUpload(file) {
-        if (file.size > 1024 * 1024 * 1024) return alert("Bunker limit: 1GB");
+        if (file.size > 1024 * 1024 * 1024) return alert("Limit: 1GB");
         const reader = new FileReader();
         reader.onload = () => this.sendToActive({ type: 'file', body: reader.result, name: file.name });
         reader.readAsDataURL(file);
     },
-
     async sendTransaction() {
         if (!this.activePeer || !this.activeProvider) return;
         try {
-            const tx = { from: this.myAddress, to: this.activePeer, value: '0x0' };
-            await this.activeProvider.request({ method: 'eth_sendTransaction', params: [tx] });
-        } catch(e) { console.log("TX_CANCELLED"); }
-    },
-
-    selectChat(addr) {
-        this.activePeer = addr;
-        document.getElementById('empty-state').style.display = 'none';
-        document.getElementById('active-peer-name').innerText = addr.slice(0, 10) + "...";
-        Avatar.generate(addr, 'active-avatar');
-        this.updateUI();
-        this.loadContacts();
-    },
-
-    updateUI() {
-        if (!this.activePeer) return;
-        const session = this.connections[this.activePeer];
-        const dot = document.getElementById('active-status-dot');
-        const text = document.getElementById('active-status-text');
-        
-        if (session && session.status === 'online') {
-            dot.className = "status-tag online";
-            text.innerText = "SECURE_TUNNEL_ACTIVE";
-        } else {
-            dot.className = "status-tag";
-            text.innerText = "OFFLINE";
-        }
-    },
-
-    deleteActivePeer() {
-        if (!this.activePeer) return;
-        if (this.connections[this.activePeer]?.conn) {
-            this.connections[this.activePeer].conn.close();
-        }
-        let contacts = JSON.parse(localStorage.getItem('contacts') || '[]');
-        contacts = contacts.filter(a => a !== this.activePeer);
-        localStorage.setItem('contacts', JSON.stringify(contacts));
-        location.reload();
+            await this.activeProvider.request({ method: 'eth_sendTransaction', params: [{ from: this.myAddress, to: this.activePeer, value: '0x0' }] });
+        } catch(e) {}
     }
 };
 </script>
