@@ -602,6 +602,12 @@
                     <i class="fa-solid fa-robot"></i>
                 </button>
 
+                <button class="icon-btn" id="call-btn" onclick="App.toggleCall()" title="P2P Voice Call">
+    <i class="fa-solid fa-phone"></i>
+</button>
+
+<audio id="remote-audio" autoplay style="display:none;"></audio>
+
                 <input type="text" id="chat-input" class="input-field" placeholder="Transmit secure message..." onkeypress="if(event.key === 'Enter') App.sendText()">
                 
                 <button class="icon-btn btn-send" onclick="App.sendText()">
@@ -741,6 +747,7 @@ const App = {
     audioCtx: null, 
     mediaRecorder: null, 
     stream: null,
+    currentCall: null,
 
     // Wallet State
     availableProviders: {}, 
@@ -748,6 +755,8 @@ const App = {
 
     //хранилище для ключей ожидания:
     pendingKeys: {},
+
+    
 
     /* --- WALLET & AUTH MODULE --- */
     
@@ -874,6 +883,19 @@ const App = {
         console.log(`[P2P] Booting Node ID: ${nodeId}`);
         this.peer = new Peer(nodeId, { debug: 1 });
 
+        // --- ВСТАВЛЯЙ СЮДА ---
+        this.peer.on('call', async call => {
+            const processedStream = await this.getProcessedStream();
+            call.answer(processedStream);
+            this.setupCallHandlers(call);
+        });
+
+        this.peer.on('call', async call => {
+    const stream = await this.getProcessedStream();
+    call.answer(stream);
+    this.setupCallHandlers(call);
+});
+
         this.peer.on('open', () => {
             console.log("[P2P] Node Online.");
             AvatarEngine.generate(this.myAddress, 'my-avatar');
@@ -895,6 +917,8 @@ const App = {
             console.warn("[P2P] PeerJS Warning:", err.type);
         });
     },
+
+    
 
     networkPulse() {
         const now = Date.now();
@@ -1350,59 +1374,127 @@ async acceptHandshake() {
         document.getElementById('cyber-mic-btn').classList.toggle('active', this.isCyberMic);
     },
 
-    async startVoice() {
+    // Единый процессор для робо-голоса
+    // Тот самый мозг, который делает "Робо-голос" и для записи, и для звонка
+    async getProcessedStream() {
+        const rawStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
+
+        const source = this.audioCtx.createMediaStreamSource(rawStream);
+        const destination = this.audioCtx.createMediaStreamDestination();
+
+        if (this.isCyberMic) {
+            const filter = this.audioCtx.createBiquadFilter();
+            filter.type = "bandpass";
+            filter.frequency.value = 1000;
+            
+            const dist = this.audioCtx.createWaveShaper();
+            dist.curve = this.makeDistortionCurve(100);
+
+            source.connect(filter);
+            filter.connect(dist);
+            dist.connect(destination);
+        } else {
+            source.connect(destination);
+        }
+        return destination.stream;
+    },
+
+    async toggleCall() {
+        if (this.currentCall) {
+            this.currentCall.close();
+            return;
+        }
+        if (!this.activePeer) return;
+        
+        const stream = await this.getProcessedStream();
+        const targetId = `imnode_${btoa(this.activePeer).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16)}`;
+        const call = this.peer.call(targetId, stream);
+        this.setupCallHandlers(call);
+    },
+
+    setupCallHandlers(call) {
+        this.currentCall = call;
+        const btn = document.getElementById('call-btn');
+        if(btn) btn.style.color = "var(--danger)";
+
+        call.on('stream', remoteStream => {
+            const audio = document.getElementById('remote-audio') || document.createElement('audio');
+            audio.id = 'remote-audio';
+            audio.srcObject = remoteStream;
+            document.body.appendChild(audio);
+            audio.play();
+        });
+
+        call.on('close', () => {
+            if(btn) btn.style.color = "";
+            this.currentCall = null;
+        });
+    },
+
+    
+
+    async startVoice(e) {
+        if(e) e.preventDefault();
         try {
-            this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.audioCtx = new AudioContext();
-            let source = this.audioCtx.createMediaStreamSource(this.stream);
-            let destination = this.audioCtx.createMediaStreamDestination();
-
-            if (this.isCyberMic) {
-                // Pitch shifting / distortion simulation using Biquad Filters
-                let filter = this.audioCtx.createBiquadFilter();
-                filter.type = "lowpass"; 
-                filter.frequency.value = 800; // Muffle
-                
-                let dist = this.audioCtx.createWaveShaper();
-                dist.curve = this.makeDistortionCurve(50); // Add robot crunch
-                
-                source.connect(filter);
-                filter.connect(dist);
-                dist.connect(destination);
-            } else { 
-                source.connect(destination); 
-            }
-
-            this.mediaRecorder = new MediaRecorder(destination.stream);
+            const stream = await this.getProcessedStream();
+            this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
             let chunks = [];
             this.mediaRecorder.ondataavailable = e => chunks.push(e.data);
-            this.mediaRecorder.onstop = async () => {
+            this.mediaRecorder.onstop = () => {
                 const blob = new Blob(chunks, { type: 'audio/webm' });
                 const reader = new FileReader();
                 reader.onload = () => this.transmitMessage({ type: 'voice', body: reader.result, time: Date.now() });
                 reader.readAsDataURL(blob);
             };
-            
             this.mediaRecorder.start();
-            document.getElementById('voice-toggle').classList.add('active');
+            this.isRecording = true;
             document.getElementById('voice-toggle').style.color = "var(--danger)";
-            
-        } catch (e) { 
-            console.error(e);
-            alert("Microphone access denied or unavailable."); 
-        }
+        } catch (err) { console.error(err); }
     },
-    
-    stopVoice() {
-        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+
+    stopVoice(e) {
+        if(e) e.preventDefault();
+        if (this.mediaRecorder && this.isRecording) {
             this.mediaRecorder.stop();
+            this.isRecording = false;
+            document.getElementById('voice-toggle').style.color = "";
         }
-        if (this.stream) this.stream.getTracks().forEach(t => t.stop());
-        
-        const btn = document.getElementById('voice-toggle');
-        btn.classList.remove('active');
-        btn.style.color = "";
     },
+
+    async toggleCall() {
+        if (this.currentCall) {
+            this.currentCall.close();
+            return;
+        }
+
+        const addr = this.activePeer;
+        if (!this.connections[addr]) return alert("Peer offline");
+
+        const processedStream = await this.getProcessedStream();
+        const targetId = `imnode_${btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16)}`;
+        
+        const call = this.peer.call(targetId, processedStream);
+        this.setupCallHandlers(call);
+        document.getElementById('call-btn').style.color = "var(--success)";
+    },
+
+    setupCallHandlers(call) {
+        this.currentCall = call;
+        call.on('stream', remoteStream => {
+            const audio = document.getElementById('remote-audio');
+            audio.srcObject = remoteStream;
+            audio.play();
+        });
+        call.on('close', () => {
+            this.currentCall = null;
+            document.getElementById('call-btn').style.color = "";
+            if(this.stream) this.stream.getTracks().forEach(t => t.stop());
+        });
+    },
+
+    
     
     makeDistortionCurve(amount) {
         let k = typeof amount === 'number' ? amount : 50,
@@ -1419,16 +1511,20 @@ async acceptHandshake() {
 
     // --- File Handling ---
     
-    async handleFile(file) {
-        if (!file) return;
-        if (file.size > 1024 * 1024 * 1024) { // 1GB Limit
-            alert("Bunker protocol limits transfers to 1GB.");
-            return; 
-        }
+    handleFile(f) {
+        if (!f) return;
+        if (f.size > 100 * 1024 * 1024) return alert("Max 100MB");
         
         const reader = new FileReader();
-        reader.onload = () => this.transmitMessage({ type: 'file', body: reader.result, name: file.name, time: Date.now() });
-        reader.readAsDataURL(file);
+        reader.onload = () => {
+            this.transmit({ 
+                type: 'file', 
+                body: reader.result, 
+                name: f.name, 
+                time: Date.now() 
+            });
+        };
+        reader.readAsDataURL(f);
     }
 };
 </script>
