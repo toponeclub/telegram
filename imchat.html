@@ -944,14 +944,21 @@ const App = {
     
 
     networkPulse() {
-        const now = Date.now();
-        this.getContacts().forEach(addr => {
-            const nodeId = `imnode_${btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 15)}`;
-            // ФИКС: Не стучимся, если соединение уже активно и открыто
-            if (!this.connections[addr] || this.connections[addr].readyState !== 'open') {
-                this.setupDataChannel(this.peer.connect(nodeId, { reliable: true }));
+        // ФИКС: Используем метод получения контактов, а не несуществующую переменную
+        const activeContacts = this.getContacts();
+        
+        activeContacts.forEach(addr => {
+            const nodeId = "imnode_" + btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 15);
+            const conn = this.connections[addr];
+
+            // Подключаемся только если соединения нет ИЛИ оно полностью закрыто
+            if (!conn || (conn.open === false && conn.peerConnection?.connectionState !== 'connecting')) {
+                console.log("[P2P] Attempting recovery with:", addr);
+                const newConn = this.peer.connect(nodeId, { reliable: true });
+                this.setupDataChannel(newConn);
             }
         });
+    
     
         
         // 1. Try to connect to offline contacts
@@ -984,80 +991,48 @@ const App = {
     },
 
     async setupDataChannel(conn) {
-    const ecdh = await CryptoEngine.generateECDH();
-    const myPub = await crypto.subtle.exportKey("raw", ecdh.publicKey);
+        // Генерируем временную пару ключей для этого канала
+        const ecdh = await CryptoEngine.generateECDH();
+        const myPub = await crypto.subtle.exportKey("raw", ecdh.publicKey);
 
-    conn.on('open', () => {
-        // Сохраняем ключ для этого конкретного соединения
-        this.pendingKeys[conn.peer] = ecdh;
-        conn.send({ 
-            type: 'handshake_req', 
-            address: this.myAddress, 
-            pub: Array.from(new Uint8Array(myPub)) 
+        conn.on('open', () => {
+            // Сохраняем ecdh именно для этого peerID, чтобы использовать при ответе (ack)
+            this.pendingKeys[conn.peer] = ecdh;
+            conn.send({ 
+                type: 'handshake_req', 
+                address: this.myAddress, 
+                pub: Array.from(new Uint8Array(myPub)) 
+            });
         });
-    });
 
-    conn.on('data', async data => {
-        if (data.address) conn.peerAddress = data.address.toLowerCase();
-        const addr = conn.peerAddress;
-        if (!addr) return;
+        conn.on('data', async data => {
+            // Определяем адрес собеседника
+            if (data.address) conn.peerAddress = data.address.toLowerCase();
+            const addr = conn.peerAddress;
+            if (!addr) return;
 
-        if (data.type === 'ping') { 
-            conn.send({ type: 'pong', address: this.myAddress }); 
-            return; 
-        }
-        if (data.type === 'pong') {
-            this.lastSeen[addr] = Date.now();
-            this.connections[addr] = conn;
-            this.renderSidebar(); 
-            this.updateChatHeader();
-            return;
-        }
-
-        if (data.type === 'handshake_req') {
-            this.connections[addr] = conn;
-            if (this.getContacts().includes(addr)) {
-                this.activeSessions[addr] = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
-                conn.send({ 
-                    type: 'handshake_ack', 
-                    address: this.myAddress, 
-                    pub: Array.from(new Uint8Array(myPub)) 
-                });
-                this.renderSidebar();
+            // 1. Системные сигналы (Ping/Pong)
+            if (data.type === 'ping') { 
+                conn.send({ type: 'pong', address: this.myAddress }); 
+                return; 
+            }
+            if (data.type === 'pong') {
+                this.lastSeen[addr] = Date.now();
+                this.connections[addr] = conn;
+                this.renderSidebar(); 
                 this.updateChatHeader();
-            } else {
-                this.incomingRequests[addr] = { conn, pub: data.pub, ecdh };
-                this.renderSidebar();
+                return;
             }
-        } 
-        else if (data.type === 'handshake_ack') {
-            const storedECDH = this.pendingKeys[conn.peer] || ecdh;
-            this.activeSessions[addr] = await CryptoEngine.deriveAES(storedECDH.privateKey, data.pub);
-            this.connections[addr] = conn;
-            this.renderSidebar();
-            this.updateChatHeader();
-            delete this.pendingKeys[conn.peer];
-        }
-        else if (data.type === 'enc' && this.activeSessions[addr]) {
-            const decrypted = await CryptoEngine.decryptData(this.activeSessions[addr], data.payload);
-            if (decrypted !== "[CORRUPTED_PAYLOAD]" && this.activePeer === addr) {
-                try { this.renderMessage(JSON.parse(decrypted), 'received'); } catch(e){}
-            }
-        }
-    
 
-
-            // Handshake Logic
+            // 2. Логика рукопожатия (Handshake)
             if (data.type === 'handshake_req') {
-                this.connections[peerAddr] = conn;
-                this.lastSeen[peerAddr] = Date.now();
+                this.connections[addr] = conn;
+                this.lastSeen[addr] = Date.now();
                 
-                const isKnown = this.getContacts().includes(peerAddr);
-                
-                if (isKnown) {
-                    // Auto-accept if already in contacts
+                if (this.getContacts().includes(addr)) {
+                    // Если контакт известен — сразу создаем защищенный туннель
                     const aesKey = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
-                    this.activeSessions[peerAddr] = aesKey;
+                    this.activeSessions[addr] = aesKey;
                     
                     conn.send({ 
                         type: 'handshake_ack', 
@@ -1065,67 +1040,69 @@ const App = {
                         pub: Array.from(new Uint8Array(myPub)) 
                     });
                     
-                    console.log(`[SECURE] Tunnel established with ${peerAddr}`);
+                    console.log(`[SECURE] Tunnel established with ${addr}`);
                     this.renderSidebar();
-                    if(this.activePeer === peerAddr) this.updateChatHeader();
+                    if(this.activePeer === addr) this.updateChatHeader();
                 } else {
-                    // Hold in pending requests
-                    this.incomingRequests[peerAddr] = { conn, pub: data.pub, ecdh };
+                    // Если новый — кидаем в список запросов
+                    this.incomingRequests[addr] = { conn, pub: data.pub, ecdh };
                     conn.send({ type: 'handshake_pending', address: this.myAddress });
                     
-                    console.log(`[P2P] Incoming request from ${peerAddr}`);
+                    console.log(`[P2P] Incoming request from ${addr}`);
                     this.renderSidebar();
                 }
             } 
             else if (data.type === 'handshake_ack') {
-                // They accepted our request
-                this.lastSeen[peerAddr] = Date.now();
-                const aesKey = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
-                this.activeSessions[peerAddr] = aesKey;
+                // Нам подтвердили запрос. Берем ecdh, который мы создали при 'open'
+                this.lastSeen[addr] = Date.now();
+                const storedECDH = this.pendingKeys[conn.peer] || ecdh;
                 
-                console.log(`[SECURE] Tunnel established with ${peerAddr}`);
+                const aesKey = await CryptoEngine.deriveAES(storedECDH.privateKey, data.pub);
+                this.activeSessions[addr] = aesKey;
+                this.connections[addr] = conn;
+                
+                console.log(`[SECURE] Tunnel established with ${addr}`);
+                delete this.pendingKeys[conn.peer]; // Чистим память
                 this.renderSidebar();
-                if(this.activePeer === peerAddr) this.updateChatHeader();
+                if(this.activePeer === addr) this.updateChatHeader();
             }
             else if (data.type === 'handshake_pending') {
-                // They received it, waiting for user action
-                this.lastSeen[peerAddr] = Date.now();
-                this.connections[peerAddr] = conn;
+                this.lastSeen[addr] = Date.now();
+                this.connections[addr] = conn;
                 this.renderSidebar();
-                if(this.activePeer === peerAddr) this.updateChatHeader();
+                if(this.activePeer === addr) this.updateChatHeader();
             }
             else if (data.type === 'handshake_decline') {
-                // They rejected us
                 conn.close();
-                delete this.connections[peerAddr];
-                delete this.activeSessions[peerAddr];
+                delete this.connections[addr];
+                delete this.activeSessions[addr];
                 this.renderSidebar();
             }
+
+            // 3. Обработка зашифрованных данных
             else if (data.type === 'enc') {
-                // Encrypted Message Received
-                this.lastSeen[peerAddr] = Date.now();
-                const aesKey = this.activeSessions[peerAddr];
+                this.lastSeen[addr] = Date.now();
+                const aesKey = this.activeSessions[addr];
                 
                 if (aesKey) {
                     const decrypted = await CryptoEngine.decryptData(aesKey, data.payload);
-                    if (this.activePeer === peerAddr) {
-                        this.renderMessage(JSON.parse(decrypted), 'received');
-                    } else {
-                        // TODO: Add unread counter badge here
-                        console.log(`[MSG] New message from ${peerAddr}`);
+                    if (decrypted !== "[CORRUPTED_PAYLOAD]") {
+                        if (this.activePeer === addr) {
+                            try { this.renderMessage(JSON.parse(decrypted), 'received'); } catch(e){}
+                        } else {
+                            console.log(`[MSG] New message from ${addr}`);
+                        }
                     }
                 }
             }
         });
 
         conn.on('close', () => {
-            const addr = conn.peerAddress;
-            if (addr) {
-                console.log(`[P2P] Connection closed: ${addr}`);
-                delete this.connections[addr];
-                delete this.activeSessions[addr];
+            if (conn.peerAddress) {
+                delete this.connections[conn.peerAddress];
+                delete this.activeSessions[conn.peerAddress];
                 this.renderSidebar();
-                if (this.activePeer === addr) this.updateChatHeader();
+                this.updateChatHeader();
             }
         });
     },
@@ -1359,21 +1336,27 @@ async acceptHandshake() {
     },
 
     async transmitMessage(msg) {
-        const session = this.activeSessions[this.activePeer];
+        if (!this.activePeer) return;
         const conn = this.connections[this.activePeer];
-        
-        if(!session || !conn || conn.readyState !== 'open') {
-            console.error("Channel not ready");
+        const session = this.activeSessions[this.activePeer];
+
+        // Проверяем, что канал реально открыт
+        if (!conn || !conn.open) {
+            console.warn("[P2P] Channel not ready. Status:", conn ? 'Connecting/Closed' : 'Null');
+            return;
+        }
+
+        if (!session) {
+            console.warn("[P2P] Encryption session not established.");
             return;
         }
 
         try {
             const encrypted = await CryptoEngine.encryptData(session, JSON.stringify(msg));
-            // PeerJS сам дробит данные, если передавать их как объект, а не строку
             conn.send({ type: 'enc', payload: encrypted });
             this.renderMessage(msg, 'sent');
         } catch (e) {
-            console.error("Transmit error:", e);
+            console.error("[P2P] Send failed:", e);
         }
     },
 
