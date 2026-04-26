@@ -18,21 +18,20 @@
         "thirdweb": "https://esm.sh/thirdweb@5.50.0",
         "thirdweb/wallets": "https://esm.sh/thirdweb@5.50.0/wallets",
         "thirdweb/storage": "https://esm.sh/thirdweb@5.50.0/storage",
-        "@xmtp/xmtp-js": "https://esm.sh/@xmtp/xmtp-js@1.1.3?bundle",
-        "buffer/": "https://esm.sh/buffer/"
+        "@xmtp/xmtp-js": "https://esm.sh/@xmtp/xmtp-js@12"
       }
     }
     </script>
     <script type="module">
-        import { Buffer } from "buffer/";
-        window.Buffer = window.Buffer || Buffer;
-        window.global = window;
-        
+        import { Buffer } from "https://esm.sh/buffer@6.0.3";
         import { createThirdwebClient } from "thirdweb";
         import { inAppWallet, createWallet } from "thirdweb/wallets";
         import { upload, download } from "thirdweb/storage";
         import { Client as XMTPClient } from "@xmtp/xmtp-js";
-
+        
+        window.global = window;
+        window.Buffer = window.Buffer || Buffer;
+        
         window.Thirdweb = { createThirdwebClient, inAppWallet, createWallet, upload, download };
         window.XMTPClient = XMTPClient;
 
