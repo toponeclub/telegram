@@ -11,29 +11,23 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- ES Modules for Web3 (Thirdweb + XMTP) -->
+
+    <!-- ES Modules for Web3 (Thirdweb only) -->
     <script type="importmap">
     {
       "imports": {
         "thirdweb": "https://esm.sh/thirdweb@5.50.0",
         "thirdweb/wallets": "https://esm.sh/thirdweb@5.50.0/wallets",
-        "thirdweb/storage": "https://esm.sh/thirdweb@5.50.0/storage",
-        "@xmtp/xmtp-js": "https://esm.sh/@xmtp/xmtp-js@12"
+        "thirdweb/storage": "https://esm.sh/thirdweb@5.50.0/storage"
       }
     }
     </script>
     <script type="module">
-        import { Buffer } from "https://esm.sh/buffer@6.0.3";
         import { createThirdwebClient } from "thirdweb";
         import { inAppWallet, createWallet } from "thirdweb/wallets";
         import { upload, download } from "thirdweb/storage";
-        import { Client as XMTPClient } from "@xmtp/xmtp-js";
-        
-        window.global = window;
-        window.Buffer = window.Buffer || Buffer;
         
         window.Thirdweb = { createThirdwebClient, inAppWallet, createWallet, upload, download };
-        window.XMTPClient = XMTPClient;
 
         window.dispatchEvent(new Event('web3-modules-loaded'));
     </script>
@@ -835,14 +829,14 @@
         // 3. MAIN APPLICATION CONTROLLER
         // ----------------------------------------------------------------------------
         const App = {
-            // ВАЖНО: Вставьте сюда свой Client ID из панели thirdweb (thirdweb.com)
-            THIRDWEB_CLIENT_ID: "5b120dbb1364a18a27bddd1f7d78c473", // Замените на свой
+            THIRDWEB_CLIENT_ID: "5b120dbb1364a18a27bddd1f7d78c473",
 
             // State
             client: null,
             myAddress: null,
             dbPrefix: null,
-            xmtp: null,
+            nostrSockets: [],    // active WebSocket connections to relays
+            nostrPubKey: null,   // hex pubkey derived from wallet address
             activeProvider: null,
 
             // WebRTC / Call State
@@ -998,7 +992,7 @@
                 this.myAddress = account.address.toLowerCase();
                 this.dbPrefix = `imchat_db_${this.myAddress}_`;
 
-                // --- Open the UI immediately, don't wait for XMTP ---
+                // --- Open the UI immediately ---
                 document.getElementById('auth-screen').style.display = 'none';
                 AvatarEngine.generate(this.myAddress, 'my-avatar');
                 document.getElementById('my-address-display').innerText = this.myAddress.slice(0, 6) + '...' + this.myAddress.slice(-4);
@@ -1006,29 +1000,148 @@
                 this.renderSidebar();
                 this.updateTheme();
 
-                // --- Connect XMTP silently in background ---
-                this._connectXMTP(account);
+                // --- Connect Nostr for real-time sync ---
+                this._connectNostr();
             },
 
-            async _connectXMTP(account) {
+            /* -------------------------------------------------------
+             *  NOSTR RELAY LAYER
+             *  Uses multiple public Nostr relays for reliability.
+             *  Identity = sha256(walletAddress) as a simple pubkey.
+             * ----------------------------------------------------- */
+
+            _addrToHex(addr) {
+                // Convert 0x ethereum address to 32-byte hex (pad with zeros)
+                return addr.replace('0x','').toLowerCase().padStart(64, '0');
+            },
+
+            _connectNostr() {
                 const statusEl = document.getElementById('xmtp-status');
-                if (statusEl) statusEl.innerText = '⏳ Connecting to messaging network...';
+                if (statusEl) statusEl.innerText = '⏳ Connecting to relay network...';
 
-                const xmtpSigner = {
-                    getAddress: async () => account.address,
-                    signMessage: async (message) => {
-                        return await account.signMessage({ message: message });
-                    }
+                this.nostrPubKey = this._addrToHex(this.myAddress);
+                this._seen = new Set();
+                this.nostrSockets = [];
+
+                const RELAYS = [
+                    'wss://relay.damus.io',
+                    'wss://nos.lol',
+                    'wss://relay.nostr.band',
+                    'wss://nostr.wine',
+                    'wss://relay.snort.social'
+                ];
+
+                let connected = 0;
+                RELAYS.forEach(url => {
+                    const ws = new WebSocket(url);
+                    ws._url = url;
+                    ws._ready = false;
+
+                    ws.onopen = () => {
+                        ws._ready = true;
+                        connected++;
+                        if (connected === 1 && statusEl) {
+                            statusEl.innerText = '✅ Relay network active (' + connected + ' nodes)';
+                            setTimeout(() => { if (statusEl) statusEl.innerText = ''; }, 4000);
+                        }
+
+                        // Subscribe to events where the tag p = our pubkey (DM style)
+                        const sub = JSON.stringify(['REQ', 'sub_' + this.nostrPubKey, {
+                            'kinds': [4],         // kind 4 = encrypted DM (we send plain JSON)
+                            '#p': [this.nostrPubKey],
+                            'since': Math.floor(Date.now() / 1000) - 30
+                        }]);
+                        ws.send(sub);
+                        console.log('[NOSTR] Subscribed on', url);
+                    };
+
+                    ws.onmessage = (evt) => {
+                        try {
+                            const msg = JSON.parse(evt.data);
+                            if (msg[0] !== 'EVENT') return;
+                            const event = msg[2];
+                            if (!event || event.kind !== 4) return;
+                            // Dedupe by event id
+                            if (this._seen.has(event.id)) return;
+                            this._seen.add(event.id);
+
+                            const sender = '0x' + event.pubkey.replace(/^0+/, '').padStart(40,'0');
+                            if (sender.toLowerCase() === this.myAddress) return;
+
+                            let data;
+                            try { data = JSON.parse(event.content); } catch(e) { return; }
+                            this._handleIncoming(sender.toLowerCase(), data);
+                        } catch(e) { /* ignore parse errors */ }
+                    };
+
+                    ws.onerror = () => console.warn('[NOSTR] Relay error:', url);
+                    ws.onclose = () => {
+                        ws._ready = false;
+                        // Attempt reconnect after 5s
+                        setTimeout(() => {
+                            if (this.myAddress) this._reconnectRelay(url);
+                        }, 5000);
+                    };
+
+                    this.nostrSockets.push(ws);
+                });
+            },
+
+            _reconnectRelay(url) {
+                const idx = this.nostrSockets.findIndex(s => s._url === url);
+                const ws = new WebSocket(url);
+                ws._url = url;
+                ws._ready = false;
+                ws.onopen = () => {
+                    ws._ready = true;
+                    ws.send(JSON.stringify(['REQ', 'sub_' + this.nostrPubKey, {
+                        'kinds': [4], '#p': [this.nostrPubKey],
+                        'since': Math.floor(Date.now() / 1000) - 10
+                    }]));
                 };
+                ws.onmessage = this.nostrSockets[0] ? this.nostrSockets[0].onmessage : null;
+                ws.onclose = () => { ws._ready = false; setTimeout(() => this._reconnectRelay(url), 5000); };
+                if (idx >= 0) this.nostrSockets[idx] = ws;
+                else this.nostrSockets.push(ws);
+            },
 
-                try {
-                    this.xmtp = await window.XMTPClient.create(xmtpSigner, { env: "dev" });
-                    console.log(`[XMTP] Connected as ${this.myAddress}`);
-                    if (statusEl) { statusEl.innerText = '✅ Messaging network connected'; setTimeout(() => statusEl.innerText = '', 3000); }
-                    this.listenToXMTP();
-                } catch (e) {
-                    console.error("XMTP Error:", e);
-                    if (statusEl) statusEl.innerText = '⚠️ Messaging network offline (P2P signaling only)';
+            sendNostr(toAddr, payload) {
+                const toPubKey = this._addrToHex(toAddr);
+                const content = JSON.stringify(payload);
+                const event = {
+                    kind: 4,
+                    created_at: Math.floor(Date.now() / 1000),
+                    tags: [['p', toPubKey]],
+                    pubkey: this.nostrPubKey,
+                    content: content,
+                    id: this._nostrId(toPubKey, content)
+                };
+                const envelope = JSON.stringify(['EVENT', event]);
+                let sent = 0;
+                this.nostrSockets.forEach(ws => {
+                    if (ws._ready && ws.readyState === WebSocket.OPEN) {
+                        ws.send(envelope);
+                        sent++;
+                    }
+                });
+                if (sent === 0) console.warn('[NOSTR] No ready sockets to send through');
+            },
+
+            _nostrId(toPubKey, content) {
+                // Simple unique ID: timestamp + random
+                return Date.now().toString(16) + Math.random().toString(16).slice(2) + toPubKey.slice(0,8);
+            },
+
+            _handleIncoming(sender, data) {
+                const isKnown = this.getContacts().includes(sender);
+
+                if (!isKnown) {
+                    // Treat as contact request — store first message for later
+                    if (!this.incomingRequests[sender]) this.incomingRequests[sender] = [];
+                    this.incomingRequests[sender].push(data);
+                    this.renderSidebar();
+                } else {
+                    this.processMessage(sender, data, data.time);
                 }
             },
 
@@ -1088,86 +1201,76 @@
                 } catch (e) { console.error("Failed to load contacts from IPFS", e); }
             },
 
-            /* --- XMTP DECENTRALIZED MESSAGING --- */
+            /* --- GUN.JS REAL-TIME MESSAGING --- */
 
-            async listenToXMTP() {
-                const stream = await this.xmtp.conversations.streamAllMessages();
-                for await (const message of stream) {
-                    if (message.senderAddress.toLowerCase() === this.myAddress) continue;
-                    const sender = message.senderAddress.toLowerCase();
-                    const isKnown = this.getContacts().includes(sender);
-
-                    if (!isKnown) {
-                        if (!this.incomingRequests[sender]) this.incomingRequests[sender] = [];
-                        this.incomingRequests[sender].push(message);
+            processMessage(sender, data, time) {
+                // Handshake: auto-accept mutual contact ack
+                if (data.type === 'handshake_ack') {
+                    if (!this.getContacts().includes(sender)) {
+                        this.addContactToDB(sender);
                         this.renderSidebar();
-                    } else {
-                        this.processMessage(sender, message.content, message.sent);
                     }
+                    return;
                 }
-            },
+                // Contact request from unknown → show in _handleIncoming (handled there, not here)
+                if (data.type === 'contact_request') return;
 
-            async processMessage(sender, contentStr, time) {
-                let msg = contentStr;
-                if (typeof contentStr === 'string') {
-                    try { msg = JSON.parse(contentStr); }
-                    catch (e) { msg = { type: 'text', body: contentStr }; }
-                }
-
-                // WebRTC Signaling over XMTP
-                if (msg.type === 'rtc_offer') {
-                    this.incomingCallOffer = msg.offer;
+                // WebRTC Signaling
+                if (data.type === 'rtc_offer') {
+                    this.incomingCallOffer = data.offer;
                     this.incomingCallAddr = sender;
                     document.getElementById('call-panel').style.display = 'flex';
                     document.getElementById('answer-btn').style.display = 'inline-flex';
-                    document.getElementById('call-info').innerText = "INCOMING CALL...";
+                    document.getElementById('call-info').innerText = 'INCOMING CALL...';
                     return;
                 }
-                if (msg.type === 'rtc_answer') {
+                if (data.type === 'rtc_answer') {
                     const pc = this.rtcConnections[sender];
-                    if (pc) await pc.setRemoteDescription(new RTCSessionDescription(msg.answer));
+                    if (pc) pc.setRemoteDescription(new RTCSessionDescription(data.answer));
                     return;
                 }
-                if (msg.type === 'rtc_candidate') {
+                if (data.type === 'rtc_candidate') {
                     const pc = this.rtcConnections[sender];
-                    if (pc) await pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+                    if (pc) pc.addIceCandidate(new RTCIceCandidate(data.candidate));
                     return;
                 }
-                if (msg.type === 'rtc_hangup') {
+                if (data.type === 'rtc_hangup') {
                     this.endCall();
                     return;
                 }
 
-                // IPFS File Decryption
-                if (msg.type === 'file' || msg.type === 'voice') {
-                    try {
-                        const res = await window.Thirdweb.download({ client: this.client, uri: msg.uri });
-                        const blob = await res.blob();
-                        const buffer = await blob.arrayBuffer();
-
-                        const importedKey = await crypto.subtle.importKey("raw", new Uint8Array(msg.key), { name: "AES-GCM" }, false, ["decrypt"]);
-                        const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(msg.iv) }, importedKey, buffer);
-
-                        const decBlob = new Blob([decrypted]);
-                        msg.body = URL.createObjectURL(decBlob);
-                    } catch (e) {
-                        console.error("File decryption failed:", e);
-                        msg.body = "[Encrypted File - Decryption Failed]";
-                    }
+                // File/voice from IPFS
+                if (data.type === 'file' || data.type === 'voice') {
+                    this._decryptAndRender(sender, data, time);
+                    return;
                 }
 
+                // Plain text
                 if (this.activePeer === sender) {
-                    this.renderMessage(msg, 'received', time || Date.now());
+                    this.renderMessage(data, 'received', time || Date.now());
                 }
             },
 
-            async sendDirectXMTP(addr, payload) {
-                if (!this.xmtp) return;
+            async _decryptAndRender(sender, data, time) {
                 try {
-                    const conversation = await this.xmtp.conversations.newConversation(addr);
-                    const textStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
-                    await conversation.send(textStr);
-                } catch (e) { console.error("XMTP send error:", e); }
+                    const res = await window.Thirdweb.download({ client: this.client, uri: data.uri });
+                    const blob = await res.blob();
+                    const buffer = await blob.arrayBuffer();
+                    const importedKey = await crypto.subtle.importKey('raw', new Uint8Array(data.key), { name: 'AES-GCM' }, false, ['decrypt']);
+                    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(data.iv) }, importedKey, buffer);
+                    const decBlob = new Blob([decrypted]);
+                    const rendered = { ...data, body: URL.createObjectURL(decBlob) };
+                    if (this.activePeer === sender) this.renderMessage(rendered, 'received', time || Date.now());
+                } catch (e) {
+                    console.error('File decryption failed:', e);
+                }
+            },
+
+            sendGun(toAddr, payload) {
+                if (!this.gun) { console.warn('Gun not ready'); return; }
+                const key = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+                const data = { ...payload, from: this.myAddress, time: Date.now() };
+                this.gun.get('imchat').get(toAddr).get(key).put(data);
             },
 
             // --- User Actions ---
@@ -1180,6 +1283,9 @@
                 this.addContactToDB(addr);
                 input.value = '';
                 this.renderSidebar();
+
+                // Send a contact request ping via Nostr so the other side gets notified
+                this.sendNostr(addr, { type: 'contact_request', body: 'Requesting secure connection', from: this.myAddress });
             },
 
             deleteContact(addr) {
@@ -1197,16 +1303,19 @@
 
             async acceptHandshake() {
                 const addr = this.activePeer;
-                this.addContactToDB(addr); // saves to IPFS automatically
+                this.addContactToDB(addr);
 
                 const queue = this.incomingRequests[addr] || [];
-                for (const msg of queue) {
-                    await this.processMessage(addr, msg.content, msg.sent);
+                for (const data of queue) {
+                    this.processMessage(addr, data, data.time);
                 }
 
                 delete this.incomingRequests[addr];
                 this.renderSidebar();
                 this.openChat(addr);
+
+                // Notify the other side they were accepted
+                this.sendNostr(addr, { type: 'handshake_ack', body: 'Contact accepted', from: this.myAddress });
             },
 
             declineHandshake() {
@@ -1335,7 +1444,7 @@
                 if (!text || !this.activePeer) return;
 
                 const msg = { type: 'text', body: text, time: Date.now() };
-                await this.sendDirectXMTP(this.activePeer, msg);
+                this.sendNostr(this.activePeer, msg);
                 this.renderMessage(msg, 'sent', Date.now());
                 input.value = '';
             },
@@ -1383,7 +1492,7 @@
                     time: Date.now()
                 };
 
-                await this.sendDirectXMTP(this.activePeer, payload);
+                this.sendNostr(this.activePeer, payload);
                 const displayMsg = { ...payload, body: URL.createObjectURL(fileBlob) };
                 this.renderMessage(displayMsg, 'sent', Date.now());
             },
@@ -1494,7 +1603,7 @@
                     const offer = await pc.createOffer();
                     await pc.setLocalDescription(offer);
 
-                    await this.sendDirectXMTP(addr, { type: 'rtc_offer', offer });
+                    this.sendNostr(addr, { type: 'rtc_offer', offer });
 
                     document.getElementById('call-btn').style.color = "var(--success)";
                     document.getElementById('call-panel').style.display = 'flex';
@@ -1515,7 +1624,7 @@
                 };
                 pc.onicecandidate = e => {
                     if (e.candidate) {
-                        this.sendDirectXMTP(addr, { type: 'rtc_candidate', candidate: e.candidate });
+                        this.sendNostr(addr, { type: 'rtc_candidate', candidate: e.candidate });
                     }
                 };
                 pc.oniceconnectionstatechange = () => {
@@ -1540,7 +1649,7 @@
                     const answer = await pc.createAnswer();
                     await pc.setLocalDescription(answer);
 
-                    await this.sendDirectXMTP(addr, { type: 'rtc_answer', answer });
+                    this.sendNostr(addr, { type: 'rtc_answer', answer });
                     document.getElementById('call-btn').style.color = "var(--success)";
                     document.getElementById('call-info').innerText = "CONNECTING...";
                 } catch (e) {
@@ -1561,7 +1670,7 @@
                 document.getElementById('call-panel').style.display = 'none';
                 document.getElementById('call-btn').style.color = "";
 
-                if (this.activePeer) this.sendDirectXMTP(this.activePeer, { type: 'rtc_hangup' });
+                if (this.activePeer) this.sendNostr(this.activePeer, { type: 'rtc_hangup' });
             }
         };
 
