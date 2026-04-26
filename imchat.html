@@ -990,7 +990,7 @@
                 const btn = event.target.closest('button');
                 if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connecting...';
                 try {
-                    const wallet = window.Thirdweb.inAppWallet();
+                    const wallet = window.Thirdweb.inAppWallet({ client: this.client });
                     this.activeProvider = wallet;
                     const account = await wallet.connect({
                         client: this.client,
@@ -1030,8 +1030,8 @@
                 const statusEl = document.getElementById('xmtp-status');
                 if (statusEl) statusEl.innerText = '⏳ Connecting to relay network...';
 
-                // We use EMQX public broker for WebSockets
-                const brokerUrl = 'wss://broker.emqx.io:8083/mqtt';
+                // We use EMQX public broker for WebSockets. WSS uses port 8084.
+                const brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
                 const clientId = 'imchat_' + Math.random().toString(16).slice(2, 10);
                 
                 this.mqttClient = mqtt.connect(brokerUrl, {
