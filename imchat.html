@@ -639,24 +639,8 @@
             <div id="wallet-selector" style="display: none; animation: fadeIn 0.3s;">
                 <p style="font-size: 10px; color: var(--text-muted); margin-bottom: 20px; letter-spacing: 1px;">WEB3
                     AUTHENTICATION:</p>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <button class="btn-action"
-                        style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03);"
-                        onclick="App.loginWithGoogle()">
-                        <i class="fa-brands fa-google"></i> <span style="color: #fff;">Continue with Google</span>
-                    </button>
-                    <div style="display:flex; gap:8px;">
-                        <input type="email" id="email-input" class="input-field" placeholder="Enter Email"
-                            style="padding: 10px; font-size: 12px;">
-                        <button class="btn-action" style="width: auto; padding: 10px 15px;"
-                            onclick="App.loginWithEmail()">SEND</button>
-                    </div>
-                    <button class="btn-action"
-                        style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03); margin-top:10px;"
-                        onclick="App.loginWithMetaMask()">
-                        <i class="fa-solid fa-fox" style="color:#f6851b; font-size:18px;"></i> <span
-                            style="color:#fff;">MetaMask</span>
-                    </button>
+                <div style="display: grid; gap: 12px;" id="detected-wallets">
+                    <!-- Injected dynamically via JS -->
                 </div>
                 <button class="icon-btn" style="margin: 20px auto 0;" onclick="App.hideWalletSelector()">
                     <i class="fa-solid fa-arrow-left"></i>
