@@ -943,19 +943,54 @@ const App = {
 
     
 
-    networkPulse() {
-        const activeContacts = this.getContacts(); 
-        
-        activeContacts.forEach(addr => {
-            const nodeId = "imnode_" + btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 15);
-            const conn = this.connections[addr];
+   async setupDataChannel(conn) {
+        const ecdh = await CryptoEngine.generateECDH();
+        const myPub = await crypto.subtle.exportKey("raw", ecdh.publicKey);
 
-            if (!conn || (conn.open === false && conn.peerConnection?.connectionState !== 'connecting')) {
-                console.log("[P2P] Attempting recovery with:", addr);
-                const newConn = this.peer.connect(nodeId, { reliable: true });
-                this.setupDataChannel(newConn);
+        conn.on('open', () => {
+            this.pendingKeys[conn.peer] = ecdh;
+            conn.send({ 
+                type: 'handshake_req', 
+                address: this.myAddress, 
+                pub: Array.from(new Uint8Array(myPub)) 
+            });
+        });
+
+        conn.on('data', async data => {
+            if (data.address) conn.peerAddress = data.address.toLowerCase();
+            const addr = conn.peerAddress || this.getContacts().find(a => 
+                ("imnode_" + btoa(a).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 15)) === conn.peer
+            );
+
+            if (!addr) return;
+
+            if (data.type === 'handshake_req') {
+                this.connections[addr] = conn;
+                if (this.getContacts().includes(addr)) {
+                    const aesKey = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
+                    this.activeSessions[addr] = aesKey;
+                    conn.send({ type: 'handshake_ack', address: this.myAddress, pub: Array.from(new Uint8Array(myPub)) });
+                    this.renderSidebar(); this.updateChatHeader();
+                }
+            } 
+            else if (data.type === 'handshake_ack') {
+                const storedECDH = this.pendingKeys[conn.peer] || ecdh;
+                this.activeSessions[addr] = await CryptoEngine.deriveAES(storedECDH.privateKey, data.pub);
+                this.connections[addr] = conn;
+                delete this.pendingKeys[conn.peer];
+                this.renderSidebar(); this.updateChatHeader();
             }
-        })
+            else if (data.type === 'enc') {
+                const aesKey = this.activeSessions[addr];
+                if (aesKey) {
+                    const decrypted = await CryptoEngine.decryptData(aesKey, data.payload);
+                    if (decrypted !== "[CORRUPTED_PAYLOAD]" && this.activePeer === addr) {
+                        try { this.renderMessage(JSON.parse(decrypted), 'received'); } catch(e){}
+                    }
+                }
+            }
+        });
+    
     
     
     
@@ -1005,30 +1040,19 @@ const App = {
 
         conn.on('data', async data => {
             if (data.address) conn.peerAddress = data.address.toLowerCase();
-            
-            // Определяем адрес через пакет или через поиск по ID пира
             const addr = conn.peerAddress || this.getContacts().find(a => 
                 ("imnode_" + btoa(a).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 15)) === conn.peer
             );
 
             if (!addr) return;
 
-            // Handshake Logic
             if (data.type === 'handshake_req') {
                 this.connections[addr] = conn;
                 if (this.getContacts().includes(addr)) {
                     const aesKey = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
                     this.activeSessions[addr] = aesKey;
-                    conn.send({ 
-                        type: 'handshake_ack', 
-                        address: this.myAddress, 
-                        pub: Array.from(new Uint8Array(myPub)) 
-                    });
-                    this.renderSidebar();
-                    this.updateChatHeader();
-                } else {
-                    this.incomingRequests[addr] = { conn, pub: data.pub, ecdh };
-                    this.renderSidebar();
+                    conn.send({ type: 'handshake_ack', address: this.myAddress, pub: Array.from(new Uint8Array(myPub)) });
+                    this.renderSidebar(); this.updateChatHeader();
                 }
             } 
             else if (data.type === 'handshake_ack') {
@@ -1036,8 +1060,7 @@ const App = {
                 this.activeSessions[addr] = await CryptoEngine.deriveAES(storedECDH.privateKey, data.pub);
                 this.connections[addr] = conn;
                 delete this.pendingKeys[conn.peer];
-                this.renderSidebar();
-                this.updateChatHeader();
+                this.renderSidebar(); this.updateChatHeader();
             }
             else if (data.type === 'enc') {
                 const aesKey = this.activeSessions[addr];
@@ -1049,6 +1072,7 @@ const App = {
                 }
             }
         });
+    
 
         conn.on('close', () => {
             if (conn.peerAddress) {
