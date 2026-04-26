@@ -783,7 +783,16 @@
          */
 
         // ----------------------------------------------------------------------------
-        // 1. GENERATIVE AVATAR ENGINE
+        // 1. EIP-6963 WALLET DISCOVERY LISTENER
+        // ----------------------------------------------------------------------------
+        const EIPProviders = {};
+        window.addEventListener("eip6963:announceProvider", (event) => {
+            EIPProviders[event.detail.info.uuid] = event.detail;
+        });
+        window.dispatchEvent(new Event("eip6963:requestProvider"));
+
+        // ----------------------------------------------------------------------------
+        // 2. GENERATIVE AVATAR ENGINE
         // ----------------------------------------------------------------------------
         const AvatarEngine = {
             generate(address, targetId) {
@@ -818,7 +827,7 @@
         };
 
         // ----------------------------------------------------------------------------
-        // 2. MAIN APPLICATION CONTROLLER
+        // 3. MAIN APPLICATION CONTROLLER
         // ----------------------------------------------------------------------------
         const App = {
             // ВАЖНО: Вставьте сюда свой Client ID из панели thirdweb (thirdweb.com)
@@ -867,6 +876,42 @@
                 document.getElementById('initial-connect-box').style.display = 'none';
                 document.getElementById('wallet-selector').style.display = 'block';
                 this.showError("");
+
+                const list = document.getElementById('detected-wallets');
+                list.innerHTML = '';
+                this.availableProviders = {};
+                
+                const detectedNames = new Set();
+                let count = 0;
+
+                window.dispatchEvent(new Event("eip6963:requestProvider"));
+
+                for (const [uuid, data] of Object.entries(EIPProviders)) {
+                    const nameLower = data.info.name.toLowerCase();
+                    if (detectedNames.has(nameLower)) continue; 
+                    detectedNames.add(nameLower);
+
+                    this.availableProviders[uuid] = { provider: data.provider, type: 'evm' };
+                    const iconHtml = data.info.icon ? `<img src="${data.info.icon}" style="width:20px; height:20px; border-radius:4px;">` : `<i class="fa-solid fa-wallet"></i>`;
+                    
+                    list.innerHTML += `
+                        <button class="btn-action" style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03);" onclick="App.loginInjected('${uuid}')">
+                            ${iconHtml} <span style="color: #fff;">${data.info.name}</span>
+                        </button>`;
+                    count++;
+                }
+
+                if (window.ethereum && window.ethereum.isMetaMask && !Array.from(detectedNames).some(n => n.includes('meta'))) {
+                    this.availableProviders['mm_legacy'] = { provider: window.ethereum, type: 'evm' };
+                    list.innerHTML += `<button class="btn-action" style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03);" onclick="App.loginInjected('mm_legacy')"><i class="fa-solid fa-fox" style="color:#f6851b; font-size:18px;"></i> <span style="color:#fff;">MetaMask</span></button>`;
+                    count++;
+                }
+
+                // Add Google Logic
+                list.innerHTML += `
+                    <button class="btn-action" style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03); margin-top: 12px; border-color: #4285F4;" onclick="App.loginWithGoogle()">
+                        <i class="fa-brands fa-google" style="color: #4285F4;"></i> <span style="color: #fff;">Continue with Google</span>
+                    </button>`;
             },
 
             hideWalletSelector() {
@@ -878,20 +923,43 @@
                 document.getElementById('auth-error').innerText = msg;
             },
 
-            async loginWithEmail() {
-                const email = document.getElementById('email-input').value.trim();
-                if (!email) return this.showError("Please enter your email.");
+            async loginInjected(id) {
                 try {
-                    const wallet = window.Thirdweb.inAppWallet();
-                    this.activeProvider = wallet;
-                    const account = await wallet.connect({
-                        client: this.client,
-                        strategy: "email",
-                        email: email,
-                        verificationCode: async () => prompt(`Enter the verification code sent to ${email}`)
-                    });
+                    const wallet = this.availableProviders[id];
+                    let address = "";
+                    
+                    if (wallet.type === 'evm') {
+                        const accounts = await wallet.provider.request({ method: 'eth_requestAccounts' });
+                        address = accounts[0];
+                    } else {
+                        throw new Error("Only EVM wallets are currently supported for XMTP.");
+                    }
+                    
+                    this.activeProvider = wallet.provider;
+                    
+                    const account = {
+                        address: address,
+                        signMessage: async ({ message }) => {
+                            let msgHex = message;
+                            if (message instanceof Uint8Array) {
+                                msgHex = '0x' + Array.from(message).map(b => b.toString(16).padStart(2, '0')).join('');
+                            } else if (!message.startsWith('0x')) {
+                                msgHex = '0x' + Array.from(new TextEncoder().encode(message))
+                                    .map(b => b.toString(16).padStart(2, '0')).join('');
+                            }
+                            
+                            return await wallet.provider.request({
+                                method: 'personal_sign',
+                                params: [msgHex, address]
+                            });
+                        }
+                    };
+                    
                     await this.initSession(account);
-                } catch (e) { this.showError(e.message); }
+                } catch (e) { 
+                    console.error(e);
+                    this.showError(e.message || "Connection rejected by user."); 
+                }
             },
 
             async loginWithGoogle() {
@@ -904,15 +972,6 @@
                     });
                     await this.initSession(account);
                 } catch (e) { this.showError(e.message); }
-            },
-
-            async loginWithMetaMask() {
-                try {
-                    const wallet = window.Thirdweb.createWallet("io.metamask");
-                    this.activeProvider = wallet;
-                    const account = await wallet.connect({ client: this.client });
-                    await this.initSession(account);
-                } catch (e) { this.showError("MetaMask login failed."); }
             },
 
             async initSession(account) {
