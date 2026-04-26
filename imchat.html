@@ -876,12 +876,37 @@
                     this.client = window.Thirdweb.createThirdwebClient({
                         clientId: this.THIRDWEB_CLIENT_ID
                     });
-                    const btnInit = document.getElementById('btn-connect-init');
-                    btnInit.disabled = false;
-                    btnInit.innerHTML = '<i class="fa-solid fa-wallet"></i> &nbsp; CONNECT WALLET';
+
+                    // Configure wallet for REDIRECT mode to bypass popup blockers/COOP
+                    const wallet = window.Thirdweb.inAppWallet({
+                        client: this.client,
+                        auth: {
+                            mode: "redirect",
+                            redirectUrl: window.location.href.split('?')[0] // Return here cleanly
+                        }
+                    });
+                    
+                    // Attempt to auto-connect (this handles both saved sessions AND redirect callbacks)
+                    try {
+                        const account = await wallet.autoConnect({ client: this.client });
+                        if (account) {
+                            this.activeProvider = wallet;
+                            await this.initSession(account);
+                            return; // Skip showing login screen
+                        }
+                    } catch(autoErr) {
+                        console.log("Auto-connect not available yet or no session:", autoErr);
+                    }
+
                     console.log("[SYSTEM] Web3 Modules Initialized");
+                    document.getElementById('loading-overlay').style.display = 'none';
+
+                    // Check for injected wallets for the UI buttons
+                    this.checkInjectedProviders();
                 } catch (e) {
-                    console.error("Thirdweb init failed", e);
+                    console.error("Init Error:", e);
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    this.showError("Failed to initialize Web3. Check console.");
                 }
             },
 
@@ -988,19 +1013,28 @@
                     return;
                 }
                 const btn = event.target.closest('button');
-                if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connecting...';
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Redirecting...';
+                
                 try {
-                    const wallet = window.Thirdweb.inAppWallet({ client: this.client });
+                    // Force REDIRECT mode. This will leave the page and come back.
+                    const wallet = window.Thirdweb.inAppWallet({
+                        client: this.client,
+                        auth: {
+                            mode: "redirect",
+                            redirectUrl: window.location.href.split('?')[0]
+                        }
+                    });
                     this.activeProvider = wallet;
-                    const account = await wallet.connect({
+                    
+                    // This call will redirect the browser
+                    await wallet.connect({
                         client: this.client,
                         strategy: "google"
                     });
-                    await this.initSession(account);
                 } catch (e) {
-                    console.error('[Google Auth]', e);
-                    this.showError('Google login failed: ' + (e.message || 'Unknown error'));
-                    if (btn) btn.innerHTML = '<i class="fa-brands fa-google" style="color:#4285F4"></i> <span style="color:#fff">Continue with Google</span>';
+                    console.error(e);
+                    this.showError(e.message || "Login failed");
+                    if (btn) btn.innerHTML = '<img src="https://cdn4.iconfinder.com/data/icons/logos-brands-7/512/google_logo-google_icongoogle-512.png" alt="Google"> Continue with Google';
                 }
             },
 
