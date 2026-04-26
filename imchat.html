@@ -944,20 +944,19 @@ const App = {
     
 
     networkPulse() {
-        // Получаем список адресов через метод объекта
-        const activeContacts = this.getContacts();
+        const activeContacts = this.getContacts(); 
         
         activeContacts.forEach(addr => {
             const nodeId = "imnode_" + btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 15);
             const conn = this.connections[addr];
 
-            // Проверяем: если коннекта нет или он закрыт/ошибочен — переподключаемся
             if (!conn || (conn.open === false && conn.peerConnection?.connectionState !== 'connecting')) {
                 console.log("[P2P] Attempting recovery with:", addr);
                 const newConn = this.peer.connect(nodeId, { reliable: true });
                 this.setupDataChannel(newConn);
             }
-        });
+        })
+    
     
     
     
@@ -1005,33 +1004,18 @@ const App = {
         });
 
         conn.on('data', async data => {
-            // Присваиваем адрес из пакета или ищем по базе контактов
             if (data.address) conn.peerAddress = data.address.toLowerCase();
             
+            // Определяем адрес через пакет или через поиск по ID пира
             const addr = conn.peerAddress || this.getContacts().find(a => 
                 ("imnode_" + btoa(a).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 15)) === conn.peer
             );
 
             if (!addr) return;
 
-            // Системные сигналы
-            if (data.type === 'ping') { 
-                conn.send({ type: 'pong', address: this.myAddress }); 
-                return; 
-            }
-            if (data.type === 'pong') {
-                this.lastSeen[addr] = Date.now();
-                this.connections[addr] = conn;
-                this.renderSidebar(); 
-                this.updateChatHeader();
-                return;
-            }
-
-            // Логика Handshake
+            // Handshake Logic
             if (data.type === 'handshake_req') {
                 this.connections[addr] = conn;
-                this.lastSeen[addr] = Date.now();
-                
                 if (this.getContacts().includes(addr)) {
                     const aesKey = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
                     this.activeSessions[addr] = aesKey;
@@ -1044,7 +1028,6 @@ const App = {
                     this.updateChatHeader();
                 } else {
                     this.incomingRequests[addr] = { conn, pub: data.pub, ecdh };
-                    conn.send({ type: 'handshake_pending', address: this.myAddress });
                     this.renderSidebar();
                 }
             } 
@@ -1056,36 +1039,20 @@ const App = {
                 this.renderSidebar();
                 this.updateChatHeader();
             }
-            else if (data.type === 'handshake_pending') {
-                this.connections[addr] = conn;
-                this.renderSidebar();
-                this.updateChatHeader();
-            }
-            else if (data.type === 'handshake_decline') {
-                conn.close();
-                delete this.connections[addr];
-                delete this.activeSessions[addr];
-                this.renderSidebar();
-            }
-
-            // Обработка зашифрованных данных (Чат / Файлы / Войс)
             else if (data.type === 'enc') {
                 const aesKey = this.activeSessions[addr];
                 if (aesKey) {
                     const decrypted = await CryptoEngine.decryptData(aesKey, data.payload);
-                    if (decrypted !== "[CORRUPTED_PAYLOAD]") {
-                        if (this.activePeer === addr) {
-                            try { this.renderMessage(JSON.parse(decrypted), 'received'); } catch(e){}
-                        }
+                    if (decrypted !== "[CORRUPTED_PAYLOAD]" && this.activePeer === addr) {
+                        try { this.renderMessage(JSON.parse(decrypted), 'received'); } catch(e){}
                     }
                 }
             }
         });
 
         conn.on('close', () => {
-            const closingAddr = conn.peerAddress;
-            if (closingAddr) {
-                delete this.connections[closingAddr];
+            if (conn.peerAddress) {
+                delete this.connections[conn.peerAddress];
                 this.renderSidebar();
                 this.updateChatHeader();
             }
