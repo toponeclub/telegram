@@ -945,14 +945,7 @@ const App = {
 
     networkPulse() {
         const now = Date.now();
-        this.getContacts().forEach(addr => {
-            const nodeId = `imnode_${btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 15)}`;
-            // ФИКС: Не стучимся, если соединение уже активно и открыто
-            if (!this.connections[addr] || this.connections[addr].readyState !== 'open') {
-                this.setupDataChannel(this.peer.connect(nodeId, { reliable: true }));
-            }
-        });
-    
+        const contacts = this.getContacts();
         
         // 1. Try to connect to offline contacts
         contacts.forEach(addr => {
