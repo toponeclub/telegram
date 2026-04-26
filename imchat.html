@@ -905,10 +905,16 @@ const App = {
         
         // Generate a deterministic, lowercase Peer ID based on wallet address
         const safeHash = btoa(this.myAddress).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
-        const nodeId = "im_" + btoa(this.myAddress).replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 12);
+        const nodeId = `imnode_${safeHash}`;
+        
+        console.log(`[P2P] Booting Node ID: ${nodeId}`);
         this.peer = new Peer(nodeId, { debug: 1 });
 
-        this.peer.on('open', (id) => {
+        this.peer.on('open', () => {
+            console.log("[P2P] Node Online.");
+            AvatarEngine.generate(this.myAddress, 'my-avatar');
+
+            this.peer.on('open', (id) => {
             console.log("My Peer ID:", id);
             this.renderContacts();
         });
@@ -920,9 +926,24 @@ const App = {
             document.getElementById('call-info').innerText = "INCOMING CALL";
             document.getElementById('answer-btn').style.display = 'block';
             // Не отвечаем сразу, ждем нажатия кнопки acceptCall
+        });    
+            
+            // Format address for display (0x1234...abcd)
+            const displayAddr = this.myAddress.slice(0, 6) + "..." + this.myAddress.slice(-4);
+            document.getElementById('my-address-display').innerText = displayAddr;
+            
+            this.renderSidebar();
+            
+            // Start Heartbeat & Reconnection Engine
+            setInterval(() => this.networkPulse(), 3000);
         });
 
-        this.peer.on('connection', (conn) => this.setupConnection(conn));
+        // Handle Incoming Connections
+        this.peer.on('connection', conn => this.setupDataChannel(conn));
+        
+        this.peer.on('error', err => {
+            console.warn("[P2P] PeerJS Warning:", err.type);
+        });
     },
 
     
@@ -1335,7 +1356,19 @@ async acceptHandshake() {
         input.value = '';
     },
 
-   
+    async transmitMessage(msg) {
+        const sessionKey = this.activeSessions[this.activePeer];
+        const conn = this.connections[this.activePeer];
+        
+        if (!sessionKey || !conn || !conn.open) { 
+            console.warn("Cannot transmit: Tunnel not ready or offline.");
+            return; 
+        }
+        
+        const encrypted = await CryptoEngine.encryptData(sessionKey, JSON.stringify(msg));
+        conn.send({ type: 'enc', payload: encrypted });
+        this.renderMessage(msg, 'sent');
+    },
 
     renderMessage(msg, direction) {
         const flow = document.getElementById('messages-flow');
@@ -1369,7 +1402,8 @@ async acceptHandshake() {
         document.getElementById('cyber-mic-btn').classList.toggle('active', this.isCyberMic);
     },
 
-   async getMediaStream() {
+    // Единый процессор для робо-голоса
+    async getMediaStream() {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         if (!this.isCyberMic) return stream;
 
@@ -1398,7 +1432,35 @@ async acceptHandshake() {
         this.activeOsc = osc;
     },
 
-    
+   async startVoice() {
+        this.audioChunks = [];
+        this.recStream = await this.getMediaStream();
+        this.mediaRecorder = new MediaRecorder(this.recStream);
+        
+        this.mediaRecorder.ondataavailable = (e) => this.audioChunks.push(e.data);
+        this.mediaRecorder.onstop = () => {
+            const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+            const reader = new FileReader();
+            reader.onload = () => this.transmitMessage({ type: 'voice', body: reader.result });
+            reader.readAsDataURL(blob);
+        };
+
+        this.mediaRecorder.start();
+        this.updateRecUI(true);
+    },
+
+    stopVoice() {
+        if (this.mediaRecorder) {
+            this.mediaRecorder.stop();
+            this.updateRecUI(false);
+            this.recStream.getTracks().forEach(t => t.stop());
+        }
+    },
+
+    updateRecUI(working) {
+        const ui = document.getElementById('rec-ui');
+        ui.style.display = working ? 'flex' : 'none';
+    },
 
    async makeCall() {
         if (!this.activePeer) return;
@@ -1441,52 +1503,10 @@ async acceptHandshake() {
         document.getElementById('call-panel').style.display = 'none';
     },
 
-    
-    
-    makeDistortionCurve(amount) {
-        let k = typeof amount === 'number' ? amount : 50,
-            n_samples = 44100,
-            curve = new Float32Array(n_samples),
-            deg = Math.PI / 180,
-            i = 0, x;
-        for ( ; i < n_samples; ++i ) {
-            x = i * 2 / n_samples - 1;
-            curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
-        }
-        return curve;
-    },
 
 
-    async startVoice() {
-        this.audioChunks = [];
-        this.recStream = await this.getMediaStream();
-        this.mediaRecorder = new MediaRecorder(this.recStream);
-        
-        this.mediaRecorder.ondataavailable = (e) => this.audioChunks.push(e.data);
-        this.mediaRecorder.onstop = () => {
-            const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
-            const reader = new FileReader();
-            reader.onload = () => this.transmitMessage({ type: 'voice', body: reader.result });
-            reader.readAsDataURL(blob);
-        };
-
-        this.mediaRecorder.start();
-        this.updateRecUI(true);
-    },
-
-    stopVoice() {
-        if (this.mediaRecorder) {
-            this.mediaRecorder.stop();
-            this.updateRecUI(false);
-            this.recStream.getTracks().forEach(t => t.stop());
-        }
-    },
-
-    updateRecUI(working) {
-        const ui = document.getElementById('rec-ui');
-        ui.style.display = working ? 'flex' : 'none';
-    },
     // --- File Handling ---
+    
     handleFileSelect(file) {
         if (!file) return;
         this.pendingFile = file;
@@ -1524,7 +1544,6 @@ async acceptHandshake() {
             input.value = '';
         }
     }
-    
 };
 </script>
 </body>
