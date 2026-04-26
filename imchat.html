@@ -899,13 +899,21 @@
                     }
 
                     console.log("[SYSTEM] Web3 Modules Initialized");
-                    document.getElementById('loading-overlay').style.display = 'none';
+                    
+                    const btnInit = document.getElementById('btn-connect-init');
+                    if (btnInit) {
+                        btnInit.disabled = false;
+                        btnInit.innerHTML = '<i class="fa-solid fa-wallet"></i> &nbsp; CONNECT WALLET';
+                    }
 
                     // Check for injected wallets for the UI buttons
                     this.checkInjectedProviders();
                 } catch (e) {
                     console.error("Init Error:", e);
-                    document.getElementById('loading-overlay').style.display = 'none';
+                    const btnInit = document.getElementById('btn-connect-init');
+                    if (btnInit) {
+                        btnInit.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error Loading Web3';
+                    }
                     this.showError("Failed to initialize Web3. Check console.");
                 }
             },
