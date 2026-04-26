@@ -620,6 +620,23 @@
 </head>
 
 <body>
+    <!-- SECURE CONTEXT ENFORCER -->
+    <div id="insecure-context-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #900000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; font-family: 'Inter', sans-serif;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 64px; color: #fff; margin-bottom: 20px;"></i>
+        <h1 style="color: #fff; margin-bottom: 20px;">CRITICAL SECURITY ERROR</h1>
+        <p style="color: #fff; font-size: 16px; max-width: 600px; line-height: 1.6;">
+            Your browser has disabled Web3 Cryptography because this site is loaded over an insecure connection (HTTP).
+            <br><br>
+            <strong>Google Login (Thirdweb) and E2E Encryption will NOT work.</strong>
+            <br><br>
+            You MUST serve this site over <strong>HTTPS</strong> (SSL Certificate) or test on <strong>http://localhost</strong>.
+        </p>
+    </div>
+    <script>
+        if (!window.isSecureContext) {
+            document.getElementById('insecure-context-overlay').style.display = 'flex';
+        }
+    </script>
 
     <div id="auth-screen" class="auth-overlay">
         <div class="auth-card animate-fade">
