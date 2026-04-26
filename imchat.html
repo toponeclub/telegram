@@ -952,6 +952,35 @@ const App = {
                 this.setupDataChannel(this.peer.connect(nodeId, { reliable: true }));
             }
         });
+    
+        
+        // 1. Try to connect to offline contacts
+        contacts.forEach(addr => {
+            const conn = this.connections[addr];
+            if (!conn || !conn.open) {
+                const targetHash = btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
+                const targetId = `imnode_${targetHash}`;
+                const newConn = this.peer.connect(targetId, { reliable: true });
+                if(newConn) this.setupDataChannel(newConn);
+            }
+        });
+
+        // 2. Ping active connections & Check timeouts
+        for (const [addr, conn] of Object.entries(this.connections)) {
+            if (conn.open) {
+                conn.send({ type: 'ping' });
+                
+                // If no pong received in last 12 seconds, mark offline
+                if (this.lastSeen[addr] && (now - this.lastSeen[addr] > 12000)) {
+                    console.log(`[P2P] Connection to ${addr} timed out.`);
+                    conn.close();
+                    delete this.connections[addr];
+                    delete this.activeSessions[addr];
+                    this.renderSidebar();
+                    if (this.activePeer === addr) this.updateChatHeader();
+                }
+            }
+        }
     },
 
     async setupDataChannel(conn) {
