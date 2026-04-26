@@ -990,6 +990,7 @@ const App = {
     conn.on('data', async data => {
         if (data.address) conn.peerAddress = data.address.toLowerCase();
         const addr = conn.peerAddress;
+        const peerAddr = addr; // Добавь эту строку, чтобы убрать краш
         if (!addr) return;
 
         if (data.type === 'ping') {
@@ -1095,17 +1096,20 @@ const App = {
                 this.renderSidebar();
             }
             else if (data.type === 'enc') {
-                // Encrypted Message Received
-                this.lastSeen[peerAddr] = Date.now();
-                const aesKey = this.activeSessions[peerAddr];
-                
+                const aesKey = this.activeSessions[addr];
                 if (aesKey) {
                     const decrypted = await CryptoEngine.decryptData(aesKey, data.payload);
-                    if (this.activePeer === peerAddr) {
-                        this.renderMessage(JSON.parse(decrypted), 'received');
-                    } else {
-                        // TODO: Add unread counter badge here
-                        console.log(`[MSG] New message from ${peerAddr}`);
+                    if (decrypted !== "[CORRUPTED_PAYLOAD]") {
+                        const msg = JSON.parse(decrypted);
+                        
+                        // Если это кусок файла — отправляем в сборщик
+                        if (msg.type === 'file_chunk') {
+                            this.handleFileChunk(msg, addr);
+                        } 
+                        // Иначе это текст
+                        else if (this.activePeer === addr) {
+                            try { this.renderMessage(msg, 'received'); } catch(e){}
+                        }
                     }
                 }
             }
@@ -1434,29 +1438,42 @@ async acceptHandshake() {
             this.mediaRecorder.ondataavailable = (e) => this.chunks.push(e.data);
             this.mediaRecorder.onstop = async () => {
                 const blob = new Blob(this.chunks, { type: 'audio/webm' });
-                // Используем чанкер для отправки войса
-                this.sendFileChunked(new File([blob], "voice.webm"));
+                // Отправляем как файл через чанкер
+                this.sendFileChunked(new File([blob], "voice.webm", {type: 'audio/webm'}));
             };
 
             this.mediaRecorder.start();
             this.isRecording = true;
-            document.getElementById('voice-toggle').style.color = "var(--danger)";
             
-            // Жёсткий лимит 60 секунд
-            this.voiceLimitTimer = setTimeout(() => {
-                if(this.isRecording) this.stopVoice();
-            }, 60000);
+            // Включаем UI
+            document.getElementById('voice-toggle').style.color = "var(--danger)";
+            document.getElementById('rec-ui').style.display = 'flex';
 
-        } catch (err) { console.error(err); }
+            // Таймер
+            let sec = 0;
+            this.recTimer = setInterval(() => {
+                sec++;
+                const t = document.getElementById('rec-timer');
+                if(t) t.innerText = `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
+                
+                if (sec >= 60) this.stopVoice(); // Автостоп на 60 сек
+            }, 1000);
+
+        } catch (err) { console.error("Mic blocked", err); }
     },
 
-    stopVoice(e) {
-        if(e) e.preventDefault();
-        if (this.mediaRecorder && this.isRecording) {
-            this.mediaRecorder.stop();
-            this.isRecording = false;
-            document.getElementById('voice-toggle').style.color = "";
-        }
+    stopVoice() {
+        if (!this.isRecording) return;
+        this.mediaRecorder.stop();
+        if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+        this.isRecording = false;
+        
+        // Выключаем UI
+        clearInterval(this.recTimer);
+        document.getElementById('voice-toggle').style.color = "var(--text-muted)";
+        document.getElementById('rec-ui').style.display = 'none';
+        const t = document.getElementById('rec-timer');
+        if(t) t.innerText = "00:00";
     },
 
     async toggleCall() {
@@ -1490,8 +1507,72 @@ async acceptHandshake() {
         });
     },
 
+    handleFileChunk(msg, senderAddr) {
+        if (!this.incomingFiles) this.incomingFiles = {};
+        if (!this.incomingFiles[msg.fileId]) {
+            this.incomingFiles[msg.fileId] = {
+                chunks: new Array(msg.total),
+                received: 0,
+                name: msg.fileName,
+                mimeType: msg.mimeType
+            };
+        }
+
+        const fileObj = this.incomingFiles[msg.fileId];
+        fileObj.chunks[msg.index] = new Uint8Array(msg.data);
+        fileObj.received++;
+
+        // Когда все куски получены — склеиваем
+        if (fileObj.received === msg.total) {
+            const blob = new Blob(fileObj.chunks, { type: fileObj.mimeType || 'application/octet-stream' });
+            const reader = new FileReader();
+            reader.onload = () => {
+                const isVoice = fileObj.name === "voice.webm";
+                this.renderMessage({
+                    type: isVoice ? 'voice' : 'file',
+                    body: reader.result,
+                    name: fileObj.name,
+                    time: Date.now() // Ставим правильную дату
+                }, 'received');
+            };
+            reader.readAsDataURL(blob);
+            delete this.incomingFiles[msg.fileId]; // Очищаем память
+        }
+    },
+
+    
+handleFile(f) {
+        if (!f) return;
+        if (f.size > 25 * 1024 * 1024) return alert("Максимум 25 МБ");
+        
+        this.pendingFile = f; // Запоминаем файл
+        const preview = document.getElementById('file-pre-view');
+        if (preview) {
+            preview.style.display = 'block';
+            preview.innerText = "📎 " + f.name;
+        }
+    },
+
+    sendText() {
+        // Сначала шлем прикрепленный файл (если есть)
+        if (this.pendingFile) {
+            this.sendFileChunked(this.pendingFile);
+            this.pendingFile = null;
+            const preview = document.getElementById('file-pre-view');
+            if (preview) preview.style.display = 'none';
+        }
+
+        // Потом текст
+        const input = document.getElementById('chat-input');
+        const val = input.value.trim();
+        if (val && this.activePeer) {
+            this.transmitMessage({ type: 'text', body: val, time: Date.now() });
+            input.value = '';
+        }
+    },
+
     async sendFileChunked(file) {
-        const chunkSize = 16384; // 16KB — идеальный размер для WebRTC
+        const chunkSize = 16384; 
         const totalChunks = Math.ceil(file.size / chunkSize);
         const fileId = Math.random().toString(36).substring(7);
         
@@ -1501,25 +1582,39 @@ async acceptHandshake() {
             const chunk = file.slice(start, end);
             
             const buffer = await chunk.arrayBuffer();
-            // Шифруем каждый кусок отдельно для безопасности
             const session = this.activeSessions[this.activePeer];
+            if (!session) return;
+
             const encrypted = await CryptoEngine.encryptData(session, JSON.stringify({
                 type: 'file_chunk',
                 fileId: fileId,
                 fileName: file.name,
+                mimeType: file.type, // Добавили тип для сборщика
                 index: i,
                 total: totalChunks,
                 data: Array.from(new Uint8Array(buffer))
             }));
 
-            this.connections[this.activePeer].send({ type: 'enc', payload: encrypted });
-            
-            // Ждем 50мс между кусками, чтобы не забить буфер браузера
-            await new Promise(r => setTimeout(r, 50));
-            console.log(`Отправлено ${i+1}/${totalChunks}`);
+            const conn = this.connections[this.activePeer];
+            if (conn && conn.open) {
+                conn.send({ type: 'enc', payload: encrypted });
+                await new Promise(r => setTimeout(r, 10)); // Пауза 10мс чтобы не убить буфер
+            }
         }
-    },
 
+        // Рендерим файл у отправителя сразу после завершения цикла
+        const reader = new FileReader();
+        reader.onload = () => {
+            const isVoice = file.name === "voice.webm";
+            this.renderMessage({
+                type: isVoice ? 'voice' : 'file',
+                body: reader.result,
+                name: file.name,
+                time: Date.now()
+            }, 'sent');
+        };
+        reader.readAsDataURL(file);
+    },
     
     
     makeDistortionCurve(amount) {
@@ -1537,21 +1632,7 @@ async acceptHandshake() {
 
     // --- File Handling ---
     
-    handleFile(f) {
-        if (!f) return;
-        if (f.size > 100 * 1024 * 1024) return alert("Max 100MB");
-        
-        const reader = new FileReader();
-        reader.onload = () => {
-            this.transmit({ 
-                type: 'file', 
-                body: reader.result, 
-                name: f.name, 
-                time: Date.now() 
-            });
-        };
-        reader.readAsDataURL(f);
-    }
+   
 };
 </script>
 </body>
