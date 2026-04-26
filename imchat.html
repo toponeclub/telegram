@@ -670,6 +670,7 @@
             <div class="contacts-scroll" id="contacts-list"></div>
 
             <div class="sidebar-footer">
+                <div id="xmtp-status" style="font-size:10px; color: var(--text-muted); text-align:center; margin-bottom:8px; font-family:'JetBrains Mono'; letter-spacing:0.5px;"></div>
                 <input type="text" id="add-peer-id" class="input-field" placeholder="Enter Wallet 0x..."
                     style="font-size: 12px; margin-bottom: 12px; width: 100%; background: rgba(0,0,0,0.5);">
                 <button class="btn-action" onclick="App.addContact()">ADD CONTACT</button>
@@ -971,24 +972,48 @@
             },
 
             async loginWithGoogle() {
+                // Google login requires HTTPS - check first
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    this.showError('⚠️ Google login requires HTTPS. Your site must be served over https:// for this to work. Try a wallet instead.');
+                    return;
+                }
+                const btn = event.target.closest('button');
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Connecting...';
                 try {
-                    const wallet = window.Thirdweb.inAppWallet({ client: this.client });
+                    const wallet = window.Thirdweb.inAppWallet();
                     this.activeProvider = wallet;
                     const account = await wallet.connect({
                         client: this.client,
                         strategy: "google"
                     });
                     await this.initSession(account);
-                } catch (e) { this.showError(e.message); }
+                } catch (e) {
+                    console.error('[Google Auth]', e);
+                    this.showError('Google login failed: ' + (e.message || 'Unknown error'));
+                    if (btn) btn.innerHTML = '<i class="fa-brands fa-google" style="color:#4285F4"></i> <span style="color:#fff">Continue with Google</span>';
+                }
             },
 
             async initSession(account) {
                 this.myAddress = account.address.toLowerCase();
                 this.dbPrefix = `imchat_db_${this.myAddress}_`;
 
+                // --- Open the UI immediately, don't wait for XMTP ---
                 document.getElementById('auth-screen').style.display = 'none';
+                AvatarEngine.generate(this.myAddress, 'my-avatar');
+                document.getElementById('my-address-display').innerText = this.myAddress.slice(0, 6) + '...' + this.myAddress.slice(-4);
+                await this.loadContactsFromIPFS();
+                this.renderSidebar();
+                this.updateTheme();
 
-                // Setup XMTP Adapter for Thirdweb Account
+                // --- Connect XMTP silently in background ---
+                this._connectXMTP(account);
+            },
+
+            async _connectXMTP(account) {
+                const statusEl = document.getElementById('xmtp-status');
+                if (statusEl) statusEl.innerText = '⏳ Connecting to messaging network...';
+
                 const xmtpSigner = {
                     getAddress: async () => account.address,
                     signMessage: async (message) => {
@@ -999,19 +1024,12 @@
                 try {
                     this.xmtp = await window.XMTPClient.create(xmtpSigner, { env: "dev" });
                     console.log(`[XMTP] Connected as ${this.myAddress}`);
+                    if (statusEl) { statusEl.innerText = '✅ Messaging network connected'; setTimeout(() => statusEl.innerText = '', 3000); }
+                    this.listenToXMTP();
                 } catch (e) {
-                    console.error("XMTP Connection Error:", e);
-                    alert("Failed to connect to XMTP network: " + (e.message || e));
-                    return;
+                    console.error("XMTP Error:", e);
+                    if (statusEl) statusEl.innerText = '⚠️ Messaging network offline (P2P signaling only)';
                 }
-
-                AvatarEngine.generate(this.myAddress, 'my-avatar');
-                document.getElementById('my-address-display').innerText = this.myAddress.slice(0, 6) + "..." + this.myAddress.slice(-4);
-
-                await this.loadContactsFromIPFS();
-                this.renderSidebar();
-
-                this.listenToXMTP();
             },
 
             logout() { location.reload(); },
