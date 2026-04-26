@@ -490,19 +490,22 @@
         
         .animate-fade { animation: fadeIn 0.4s ease forwards; }
 
-        /* Панель звонка внутри чата */
-.call-interface { 
-    display: none; align-items: center; justify-content: space-between; 
-    background: var(--accent-dim); border: 1px solid var(--accent);
-    padding: 10px 20px; border-radius: 12px; margin: 10px; animation: slideIn 0.3s;
+        /* Индикатор записи и панель звонка */
+.rec-status { display: none; color: var(--danger); font-family: 'JetBrains Mono'; font-size: 12px; margin-right: 10px; align-items: center; gap: 5px; }
+.rec-dot { width: 8px; height: 8px; background: var(--danger); border-radius: 50%; animation: rec-pulse 1s infinite; }
+@keyframes rec-pulse { 50% { opacity: 0; } }
+
+.call-overlay { 
+    display: none; position: absolute; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--bg-panel); border-bottom: 1px solid var(--accent-dim);
+    padding: 15px; align-items: center; justify-content: space-between; animation: slideDown 0.3s ease;
 }
-.rec-active { color: var(--danger) !important; animation: pulse 1.5s infinite; }
-.attachment-preview { 
-    display: none; padding: 8px; background: rgba(255,255,255,0.05); 
-    border-radius: 8px; margin: 10px; font-size: 11px; border: 1px dashed var(--accent);
+@keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+
+.file-pre-view { 
+    display: none; padding: 10px; background: rgba(255,255,255,0.03); 
+    border-top: 1px solid var(--border-light); font-size: 12px; color: var(--accent);
 }
-@keyframes pulse { 50% { opacity: 0.5; } }
-@keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -555,19 +558,13 @@
 
         <main class="chat-view">
 
-            <main class="chat-view">
-    <div id="call-panel" class="call-interface">
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div class="status-dot online"></div>
-            <span id="call-timer" style="font-family:'JetBrains Mono'; font-size:12px;">CALLING...</span>
-        </div>
-        <div style="display:flex; gap:10px;">
-            <button class="icon-btn" onclick="App.acceptCall()" id="answer-btn" style="display:none;"><i class="fa-solid fa-phone"></i></button>
-            <button class="icon-btn danger" onclick="App.endCall()"><i class="fa-solid fa-phone-slash"></i></button>
-        </div>
+            <div id="call-panel" class="call-overlay">
+    <div id="call-info">CALLING...</div>
+    <div style="display: flex; gap: 10px;">
+        <button id="answer-btn" class="icon-btn" style="display:none; color:var(--accent);" onclick="App.acceptCall()"><i class="fa-solid fa-phone"></i></button>
+        <button class="icon-btn" style="color:var(--danger);" onclick="App.endCall()"><i class="fa-solid fa-phone-slash"></i></button>
     </div>
-
-<div id="rec-ui" class="rec-indicator"><div class="rec-dot"></div><span id="rec-timer">00:00</span></div>
+</div>
             
             <div id="empty-state" class="full-overlay">
                 <i class="fa-solid fa-shield-halved" style="font-size: 48px; color: var(--border-light); margin-bottom: 24px;"></i>
@@ -616,7 +613,10 @@
 
             <div class="messages-flow" id="messages-flow"></div>
 
+            <div id="file-pre-view" class="file-pre-view"></div>
+
             <footer class="controls-bar" id="controls-bar">
+                <div id="rec-ui" class="rec-status"><div class="rec-dot"></div><span id="rec-timer">00:00</span></div>
                 <input type="file" id="file-input" hidden onchange="App.handleFile(this.files[0])">
                 <button class="icon-btn" onclick="document.getElementById('file-input').click()" title="Send File">
                     <i class="fa-solid fa-paperclip"></i>
@@ -633,13 +633,6 @@
                 <button class="icon-btn" id="call-btn" onclick="App.toggleCall()" title="P2P Voice Call">
     <i class="fa-solid fa-phone"></i>
 </button>
-
-<div id="file-preview" class="attachment-preview"></div>
-
-    <div class="messages-flow" id="messages-flow"></div>
-
-    <footer class="controls-bar">
-        <div id="voice-rec-ui" style="display:none; color:var(--danger); font-family:'JetBrains Mono'; font-size:12px; margin-right:10px;">REC 00:00</div>
 
 <audio id="remote-audio" autoplay style="display:none;"></audio>
 
@@ -782,11 +775,6 @@ const App = {
     audioCtx: null, 
     mediaRecorder: null, 
     stream: null,
-    currentCall: null,
-    // В начало объекта App добавь:
-currentStream: null,
-isCalling: false,
-beeper: null,
 
     // Wallet State
     availableProviders: {}, 
@@ -917,46 +905,24 @@ beeper: null,
         
         // Generate a deterministic, lowercase Peer ID based on wallet address
         const safeHash = btoa(this.myAddress).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
-        const nodeId = `imnode_${safeHash}`;
-        
-        console.log(`[P2P] Booting Node ID: ${nodeId}`);
+        const nodeId = "im_" + btoa(this.myAddress).replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 12);
         this.peer = new Peer(nodeId, { debug: 1 });
 
-        // --- ВСТАВЛЯЙ СЮДА ---
-       this.peer.on('call', async call => {
-    this.currentCall = call;
-    const peerAddr = this.activePeer || "Unknown Node"; // В P2P сложнее вытянуть сразу, но оверлей покажем
-    document.getElementById('call-screen').style.display = 'flex';
-    document.getElementById('call-status-text').innerText = "INCOMING CALL";
-    AvatarEngine.generate(peerAddr, 'call-avatar-target');
-});
-
-        this.peer.on('call', async call => {
-    const stream = await this.getProcessedStream();
-    call.answer(stream);
-    this.setupCallHandlers(call);
-});
-
-        this.peer.on('open', () => {
-            console.log("[P2P] Node Online.");
-            AvatarEngine.generate(this.myAddress, 'my-avatar');
-            
-            // Format address for display (0x1234...abcd)
-            const displayAddr = this.myAddress.slice(0, 6) + "..." + this.myAddress.slice(-4);
-            document.getElementById('my-address-display').innerText = displayAddr;
-            
-            this.renderSidebar();
-            
-            // Start Heartbeat & Reconnection Engine
-            setInterval(() => this.networkPulse(), 3000);
+        this.peer.on('open', (id) => {
+            console.log("My Peer ID:", id);
+            this.renderContacts();
         });
 
-        // Handle Incoming Connections
-        this.peer.on('connection', conn => this.setupDataChannel(conn));
-        
-        this.peer.on('error', err => {
-            console.warn("[P2P] PeerJS Warning:", err.type);
+        // Слушатель входящих звонков
+        this.peer.on('call', async (call) => {
+            this.currentCall = call;
+            document.getElementById('call-panel').style.display = 'flex';
+            document.getElementById('call-info').innerText = "INCOMING CALL";
+            document.getElementById('answer-btn').style.display = 'block';
+            // Не отвечаем сразу, ждем нажатия кнопки acceptCall
         });
+
+        this.peer.on('connection', (conn) => this.setupConnection(conn));
     },
 
     
@@ -1369,19 +1335,7 @@ async acceptHandshake() {
         input.value = '';
     },
 
-    async transmitMessage(msg) {
-        const sessionKey = this.activeSessions[this.activePeer];
-        const conn = this.connections[this.activePeer];
-        
-        if (!sessionKey || !conn || !conn.open) { 
-            console.warn("Cannot transmit: Tunnel not ready or offline.");
-            return; 
-        }
-        
-        const encrypted = await CryptoEngine.encryptData(sessionKey, JSON.stringify(msg));
-        conn.send({ type: 'enc', payload: encrypted });
-        this.renderMessage(msg, 'sent');
-    },
+   
 
     renderMessage(msg, direction) {
         const flow = document.getElementById('messages-flow');
@@ -1408,130 +1362,6 @@ async acceptHandshake() {
         flow.scrollTop = flow.scrollHeight;
     },
 
-    // В начало объекта App добавь:
-currentStream: null,
-isCalling: false,
-beeper: null,
-
-// УНИВЕРСАЛЬНЫЙ МЕТОД ОБРАБОТКИ ЗВУКА
-async getAudioStream() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    if (!this.isCyberMic) return stream;
-
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = ctx.createMediaStreamSource(stream);
-    const destination = ctx.createMediaStreamDestination();
-    
-    // Робо-фильтр (Tinode Style)
-    const biquad = ctx.createBiquadFilter();
-    biquad.type = "bandpass";
-    biquad.frequency.value = 1100; // Тот самый диапазон
-    
-    const shaper = ctx.createWaveShaper();
-    shaper.curve = this.makeDistortionCurve(100);
-
-    source.connect(biquad);
-    biquad.connect(shaper);
-    shaper.connect(destination);
-    return destination.stream;
-},
-
-// ЛОГИКА ЗВОНКА С ГУДКАМИ
-async initiateCall() {
-    if (!this.activePeer) return;
-    this.isCalling = true;
-    document.getElementById('call-panel').style.display = 'flex';
-    this.startBeep(); // Запуск приятного гудка
-
-    const stream = await this.getAudioStream();
-    const targetId = "im_" + btoa(this.activePeer).replace(/[^a-zA-Z0-9]/g, '').slice(0, 15);
-    this.currentCall = this.peer.call(targetId, stream);
-    
-    this.currentCall.on('stream', remote => {
-        this.stopBeep();
-        this.playRemote(remote);
-    });
-},
-
-startBeep() {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = 900; // Твоя частота
-    gain.gain.value = 0.1;
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start();
-    this.beeper = { osc, ctx };
-    // Прерывистый гудок
-    this.beepInterval = setInterval(() => {
-        gain.gain.value = gain.gain.value === 0 ? 0.1 : 0;
-    }, 1000);
-},
-
-stopBeep() {
-    if(this.beeper) {
-        this.beeper.osc.stop();
-        clearInterval(this.beepInterval);
-    }
-},
-
-// VOICE RECORDER (CLICK-TO-SEND)
-async startVoiceRec() {
-    this.currentStream = await this.getAudioStream();
-    this.mediaRecorder = new MediaRecorder(this.currentStream);
-    let chunks = [];
-    
-    this.mediaRecorder.ondataavailable = e => chunks.push(e.data);
-    this.mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' });
-        const reader = new FileReader();
-        reader.onload = () => this.transmitMessage({ type: 'voice', body: reader.result });
-        reader.readAsDataURL(blob);
-    };
-
-    this.mediaRecorder.start();
-    this.updateRecUI(true);
-},
-
-updateRecUI(active) {
-    const ui = document.getElementById('voice-rec-ui');
-    const btn = document.getElementById('voice-toggle');
-    if(active) {
-        ui.style.display = 'block';
-        btn.classList.add('rec-active');
-        let sec = 0;
-        this.recTimer = setInterval(() => {
-            sec++;
-            ui.innerText = `REC ${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
-        }, 1000);
-    } else {
-        ui.style.display = 'none';
-        btn.classList.remove('rec-active');
-        clearInterval(this.recTimer);
-    }
-},
-
-// ФАЙЛЫ (ПРЕВЬЮ ПЕРЕД ОТПРАВКОЙ)
-handleFileSelect(file) {
-    if(!file) return;
-    const preview = document.getElementById('file-preview');
-    preview.style.display = 'block';
-    preview.innerHTML = `<i class="fa-solid fa-file"></i> ${file.name} (Ready to send)`;
-    this.pendingFile = file;
-},
-
-async sendPendingFile() {
-    if(!this.pendingFile) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-        this.transmitMessage({ type: 'file', body: reader.result, name: this.pendingFile.name });
-        document.getElementById('file-preview').style.display = 'none';
-        this.pendingFile = null;
-    };
-    reader.readAsDataURL(this.pendingFile);
-},
-
     // --- Cyber-Mic (Voice Audio Graph) ---
     
     toggleCyberMic() {
@@ -1539,172 +1369,162 @@ async sendPendingFile() {
         document.getElementById('cyber-mic-btn').classList.toggle('active', this.isCyberMic);
     },
 
-    // Единый процессор для робо-голоса
-    // Тот самый мозг, который делает "Робо-голос" и для записи, и для звонка
-    async getProcessedStream() {
-        const rawStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
+   async getMediaStream() {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!this.isCyberMic) return stream;
 
-        const source = this.audioCtx.createMediaStreamSource(rawStream);
-        const destination = this.audioCtx.createMediaStreamDestination();
+        const ctx = new AudioContext();
+        const source = ctx.createMediaStreamSource(stream);
+        const destination = ctx.createMediaStreamDestination();
+        
+        const filter = ctx.createBiquadFilter();
+        filter.type = "bandpass"; filter.frequency.value = 1000; // Робо-фильтр 1кГц
+        
+        const shaper = ctx.createWaveShaper();
+        shaper.curve = this.makeDistortionCurve(100);
 
-        if (this.isCyberMic) {
-            const filter = this.audioCtx.createBiquadFilter();
-            filter.type = "bandpass";
-            filter.frequency.value = 1000;
-            
-            const dist = this.audioCtx.createWaveShaper();
-            dist.curve = this.makeDistortionCurve(100);
-
-            source.connect(filter);
-            filter.connect(dist);
-            dist.connect(destination);
-        } else {
-            source.connect(destination);
-        }
+        source.connect(filter); filter.connect(shaper); shaper.connect(destination);
         return destination.stream;
     },
 
-    async toggleCall() {
-        if (this.currentCall) {
-            this.currentCall.close();
-            return;
-        }
+    startBeep() {
+        this.beepCtx = new AudioContext();
+        const osc = this.beepCtx.createOscillator();
+        const gain = this.beepCtx.createGain();
+        osc.frequency.value = 900; gain.gain.value = 0.05;
+        osc.connect(gain); gain.connect(this.beepCtx.destination);
+        osc.start();
+        this.beepInterval = setInterval(() => { gain.gain.value = gain.gain.value === 0 ? 0.05 : 0; }, 1000);
+        this.activeOsc = osc;
+    },
+
+    
+
+   async makeCall() {
         if (!this.activePeer) return;
+        document.getElementById('call-panel').style.display = 'flex';
+        document.getElementById('call-info').innerText = "CALLING...";
+        this.startBeep();
+
+        const stream = await this.getMediaStream();
+        const targetId = "im_" + btoa(this.activePeer).replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 12);
+        this.currentCall = this.peer.call(targetId, stream);
         
-        const stream = await this.getProcessedStream();
-        const targetId = `imnode_${btoa(this.activePeer).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16)}`;
-        const call = this.peer.call(targetId, stream);
-        this.setupCallHandlers(call);
-    },
-
-    setupCallHandlers(call) {
-        this.currentCall = call;
-        const btn = document.getElementById('call-btn');
-        if(btn) btn.style.color = "var(--danger)";
-
-        call.on('stream', remoteStream => {
-            const audio = document.getElementById('remote-audio') || document.createElement('audio');
-            audio.id = 'remote-audio';
-            audio.srcObject = remoteStream;
-            document.body.appendChild(audio);
-            audio.play();
-        });
-
-        call.on('close', () => {
-            if(btn) btn.style.color = "";
-            this.currentCall = null;
+        this.currentCall.on('stream', (remote) => {
+            this.stopBeep();
+            this.playRemote(remote);
         });
     },
 
-    async toggleVoice() {
-    if (!this.isRecording) {
-        try {
-            // Единый поток (Робо-голос применяется здесь, если активен)
-            this.stream = await this.getProcessedStream(); 
-            this.mediaRecorder = new MediaRecorder(this.stream);
-            let chunks = [];
-            let startTime = Date.now();
+    acceptCall() {
+        this.getMediaStream().then(stream => {
+            this.currentCall.answer(stream);
+            document.getElementById('answer-btn').style.display = 'none';
+            document.getElementById('call-info').innerText = "ON CALL";
+            this.currentCall.on('stream', (remote) => this.playRemote(remote));
+        });
+    },
 
-            this.mediaRecorder.ondataavailable = e => chunks.push(e.data);
-            this.mediaRecorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'audio/webm' });
-                const reader = new FileReader();
-                reader.onload = () => this.transmitMessage({ type: 'voice', body: reader.result, time: Date.now() });
-                reader.readAsDataURL(blob);
-                this.stream.getTracks().forEach(t => t.stop());
-            };
+    stopBeep() {
+        if(this.activeOsc) this.activeOsc.stop();
+        if(this.beepInterval) clearInterval(this.beepInterval);
+    },
 
-            this.mediaRecorder.start();
-            this.isRecording = true;
-            document.getElementById('voice-toggle').classList.add('active');
-            document.getElementById('rec-ui').style.display = 'flex';
-            
-            this.voiceTimer = setInterval(() => {
-                let diff = Math.floor((Date.now() - startTime) / 1000);
-                let m = Math.floor(diff / 60).toString().padStart(2, '0');
-                let s = (diff % 60).toString().padStart(2, '0');
-                document.getElementById('rec-timer').innerText = `${m}:${s}`;
-            }, 1000);
-        } catch (e) { alert("Mic Access Denied"); }
-    } else {
-        this.mediaRecorder.stop();
-        this.isRecording = false;
-        clearInterval(this.voiceTimer);
-        document.getElementById('voice-toggle').classList.remove('active');
-        document.getElementById('rec-ui').style.display = 'none';
-    }
-},
+    playRemote(stream) {
+        const audio = document.createElement('audio');
+        audio.srcObject = stream; audio.play();
+    },
 
-// Универсальный процессор звука (Робо-голос для всего)
-async getProcessedStream() {
-    const raw = await navigator.mediaDevices.getUserMedia({ audio: true });
-    if (!this.isCyberMic) return raw;
+    endCall() {
+        if (this.currentCall) this.currentCall.close();
+        this.stopBeep();
+        document.getElementById('call-panel').style.display = 'none';
+    },
 
-    if (!this.audioCtx) this.audioCtx = new AudioContext();
-    const source = this.audioCtx.createMediaStreamSource(raw);
-    const destination = this.audioCtx.createMediaStreamDestination();
     
-    const filter = this.audioCtx.createBiquadFilter();
-    filter.type = "lowpass"; filter.frequency.value = 800;
     
-    const distortion = this.audioCtx.createWaveShaper();
-    distortion.curve = this.makeDistortionCurve(100);
+    makeDistortionCurve(amount) {
+        let k = typeof amount === 'number' ? amount : 50,
+            n_samples = 44100,
+            curve = new Float32Array(n_samples),
+            deg = Math.PI / 180,
+            i = 0, x;
+        for ( ; i < n_samples; ++i ) {
+            x = i * 2 / n_samples - 1;
+            curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+        }
+        return curve;
+    },
 
-    source.connect(filter);
-    filter.connect(distortion);
-    distortion.connect(destination);
-    return destination.stream;
-},
 
-    async startCall() {
-    if (!this.activePeer) return;
-    const stream = await this.getProcessedStream();
-    const targetId = "im_" + btoa(this.activePeer).replace(/[^a-zA-Z0-9]/g, '').slice(0, 15);
-    
-    this.currentCall = this.peer.call(targetId, stream);
-    document.getElementById('call-screen').style.display = 'flex';
-    document.getElementById('call-status-text').innerText = "CALLING...";
-    this.handleCall(this.currentCall);
-},
+    async startVoice() {
+        this.audioChunks = [];
+        this.recStream = await this.getMediaStream();
+        this.mediaRecorder = new MediaRecorder(this.recStream);
+        
+        this.mediaRecorder.ondataavailable = (e) => this.audioChunks.push(e.data);
+        this.mediaRecorder.onstop = () => {
+            const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+            const reader = new FileReader();
+            reader.onload = () => this.transmitMessage({ type: 'voice', body: reader.result });
+            reader.readAsDataURL(blob);
+        };
 
-answerCall() {
-    this.getProcessedStream().then(stream => {
-        this.currentCall.answer(stream);
-        this.handleCall(this.currentCall);
-        document.getElementById('call-status-text').innerText = "CONNECTED";
-    });
-},
+        this.mediaRecorder.start();
+        this.updateRecUI(true);
+    },
 
-handleCall(call) {
-    call.on('stream', remoteStream => {
-        const audio = document.getElementById('remote-audio');
-        audio.srcObject = remoteStream;
-    });
-    call.on('close', () => this.endCall());
-},
+    stopVoice() {
+        if (this.mediaRecorder) {
+            this.mediaRecorder.stop();
+            this.updateRecUI(false);
+            this.recStream.getTracks().forEach(t => t.stop());
+        }
+    },
 
-endCall() {
-    if (this.currentCall) this.currentCall.close();
-    document.getElementById('call-screen').style.display = 'none';
-    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
-},
-
+    updateRecUI(working) {
+        const ui = document.getElementById('rec-ui');
+        ui.style.display = working ? 'flex' : 'none';
+    },
     // --- File Handling ---
+    handleFileSelect(file) {
+        if (!file) return;
+        this.pendingFile = file;
+        const preview = document.getElementById('file-pre-view');
+        preview.style.display = 'block';
+        preview.innerText = "Attachment: " + file.name;
+    },
+
+    async transmitMessage(msg) {
+        const conn = this.connections[this.activePeer];
+        if (!conn) return;
+        
+        // Шифрование (используем твой CryptoEngine)
+        const session = this.activeSessions[this.activePeer];
+        const encrypted = await CryptoEngine.encryptData(session, JSON.stringify(msg));
+        
+        conn.send({ type: 'enc', payload: encrypted });
+        this.renderMessage(msg, 'sent');
+    },
+
+    sendMessage() {
+        const input = document.getElementById('chat-input');
+        if (this.pendingFile) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                this.transmitMessage({ type: 'file', body: reader.result, name: this.pendingFile.name });
+                this.pendingFile = null;
+                document.getElementById('file-pre-view').style.display = 'none';
+            };
+            reader.readAsDataURL(this.pendingFile);
+        }
+        
+        if (input.value.trim()) {
+            this.transmitMessage({ type: 'text', body: input.value.trim() });
+            input.value = '';
+        }
+    }
     
-    async handleFileUpload(file) {
-    if (!file || !this.activePeer) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-        this.sendToActive({ 
-            type: 'file', 
-            body: reader.result, 
-            name: file.name 
-        });
-    };
-    reader.readAsDataURL(file);
-}
 };
 </script>
 </body>
