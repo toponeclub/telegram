@@ -899,79 +899,62 @@ const App = {
     },
 
     /* --- P2P NETWORK & HANDSHAKE MODULE --- */
-
+    
     bootNode() {
         document.getElementById('auth-screen').style.display = 'none';
         
-        // Генерация ID узла (16 символов)
-        const myHash = btoa(this.myAddress).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
-        const nodeId = `imnode_${myHash}`;
+        // Generate a deterministic, lowercase Peer ID based on wallet address
+        const safeHash = btoa(this.myAddress).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
+        const nodeId = `imnode_${safeHash}`;
         
-        console.log("[P2P] Booting Node ID:", nodeId);
-        this.peer = new Peer(nodeId, { 
-            debug: 1,
-            config: {
-                'iceServers': [
-                    { url: 'stun:stun.l.google.com:19302' },
-                    { url: 'stun:stun1.l.google.com:19302' }
-                ]
-            }
-        });
+        console.log(`[P2P] Booting Node ID: ${nodeId}`);
+        this.peer = new Peer(nodeId, { debug: 1 });
 
-        this.peer.on('open', (id) => {
-            console.log("[P2P] Node Online:", id);
+        this.peer.on('open', () => {
+            console.log("[P2P] Node Online.");
             AvatarEngine.generate(this.myAddress, 'my-avatar');
-            document.getElementById('my-address-display').innerText = 
-                this.myAddress.slice(0, 6) + "..." + this.myAddress.slice(-4);
+            
+            // Format address for display (0x1234...abcd)
+            const displayAddr = this.myAddress.slice(0, 6) + "..." + this.myAddress.slice(-4);
+            document.getElementById('my-address-display').innerText = displayAddr;
             
             this.renderSidebar();
-            // Запуск синхронизации каждые 3 секунды
+            
+            // Start Heartbeat & Reconnection Engine
             setInterval(() => this.networkPulse(), 3000);
         });
 
-        // Входящие звонки
-        this.peer.on('call', (call) => {
-            console.log("[P2P] Incoming call handshake...");
-            this.currentCall = call;
-            const panel = document.getElementById('call-panel');
-            if (panel) {
-                panel.style.display = 'flex';
-                document.getElementById('call-info').innerText = "ВХОДЯЩИЙ ВЫЗОВ";
-                document.getElementById('answer-btn').style.display = 'block';
-            }
-            call.on('close', () => this.endCall());
-            call.on('error', () => this.endCall());
-        });
-
+        // Handle Incoming Connections
         this.peer.on('connection', conn => this.setupDataChannel(conn));
-        this.peer.on('error', err => console.error("[P2P] Peer Error:", err));
+        
+        this.peer.on('error', err => {
+            console.warn("[P2P] PeerJS Warning:", err.type);
+        });
     },
+
+    
 
     networkPulse() {
         const now = Date.now();
-        const contactsList = this.getContacts();
+        const contacts = this.getContacts();
         
-        // 1. Попытка подключения к оффлайн контактам
-        contactsList.forEach(addr => {
+        // 1. Try to connect to offline contacts
+        contacts.forEach(addr => {
             const conn = this.connections[addr];
             if (!conn || !conn.open) {
                 const targetHash = btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
                 const targetId = `imnode_${targetHash}`;
-                
-                // Не спамим, если уже в процессе коннекта
-                if (conn && conn.peerConnection?.connectionState === 'connecting') return;
-
                 const newConn = this.peer.connect(targetId, { reliable: true });
                 if(newConn) this.setupDataChannel(newConn);
             }
         });
 
-        // 2. Пинг активных соединений и таймауты
+        // 2. Ping active connections & Check timeouts
         for (const [addr, conn] of Object.entries(this.connections)) {
             if (conn.open) {
-                conn.send({ type: 'ping', address: this.myAddress });
+                conn.send({ type: 'ping' });
                 
-                // Если нет ответа 12 секунд - оффлайн
+                // If no pong received in last 12 seconds, mark offline
                 if (this.lastSeen[addr] && (now - this.lastSeen[addr] > 12000)) {
                     console.log(`[P2P] Connection to ${addr} timed out.`);
                     conn.close();
@@ -985,307 +968,549 @@ const App = {
     },
 
     async setupDataChannel(conn) {
-        const ecdh = await CryptoEngine.generateECDH();
-        const myPub = await crypto.subtle.exportKey("raw", ecdh.publicKey);
+    const ecdh = await CryptoEngine.generateECDH();
+    const myPub = await crypto.subtle.exportKey("raw", ecdh.publicKey);
 
-        conn.on('open', () => {
-            this.pendingKeys[conn.peer] = ecdh;
-            conn.send({ 
-                type: 'handshake_req', 
-                address: this.myAddress, 
-                pub: Array.from(new Uint8Array(myPub)) 
-            });
+    conn.on('open', () => {
+        // Сохраняем ключ для этого конкретного соединения
+        this.pendingKeys[conn.peer] = ecdh;
+        conn.send({ 
+            type: 'handshake_req', 
+            address: this.myAddress, 
+            pub: Array.from(new Uint8Array(myPub)) 
         });
+    });
 
-        conn.on('data', async data => {
-            if (data.address) conn.peerAddress = data.address.toLowerCase();
-            
-            const addr = conn.peerAddress || this.getContacts().find(a => 
-                ("imnode_" + btoa(a).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16)) === conn.peer
-            );
-            if (!addr) return;
+    conn.on('data', async data => {
+        if (data.address) conn.peerAddress = data.address.toLowerCase();
+        const addr = conn.peerAddress;
+        if (!addr) return;
 
-            // Фикс краша: создаем алиас peerAddr для старых блоков
-            const peerAddr = addr;
+        if (data.type === 'ping') { 
+            conn.send({ type: 'pong', address: this.myAddress }); 
+            return; 
+        }
+        if (data.type === 'pong') {
+            this.lastSeen[addr] = Date.now();
+            this.connections[addr] = conn;
+            this.renderSidebar(); 
+            this.updateChatHeader();
+            return;
+        }
 
-            if (data.type === 'ping') { 
-                conn.send({ type: 'pong', address: this.myAddress }); 
-                return; 
+        if (data.type === 'handshake_req') {
+            this.connections[addr] = conn;
+            if (this.getContacts().includes(addr)) {
+                this.activeSessions[addr] = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
+                conn.send({ 
+                    type: 'handshake_ack', 
+                    address: this.myAddress, 
+                    pub: Array.from(new Uint8Array(myPub)) 
+                });
+                this.renderSidebar();
+                this.updateChatHeader();
+            } else {
+                this.incomingRequests[addr] = { conn, pub: data.pub, ecdh };
+                this.renderSidebar();
             }
-            if (data.type === 'pong') {
-                this.lastSeen[addr] = Date.now();
-                this.connections[addr] = conn;
-                this.renderSidebar(); 
-                if (this.activePeer === addr) this.updateChatHeader();
-                return;
+        } 
+        else if (data.type === 'handshake_ack') {
+            const storedECDH = this.pendingKeys[conn.peer] || ecdh;
+            this.activeSessions[addr] = await CryptoEngine.deriveAES(storedECDH.privateKey, data.pub);
+            this.connections[addr] = conn;
+            this.renderSidebar();
+            this.updateChatHeader();
+            delete this.pendingKeys[conn.peer];
+        }
+        else if (data.type === 'enc' && this.activeSessions[addr]) {
+            const decrypted = await CryptoEngine.decryptData(this.activeSessions[addr], data.payload);
+            if (decrypted !== "[CORRUPTED_PAYLOAD]" && this.activePeer === addr) {
+                try { this.renderMessage(JSON.parse(decrypted), 'received'); } catch(e){}
             }
+        }
+    
 
-            // --- Handshake Logic ---
+
+            // Handshake Logic
             if (data.type === 'handshake_req') {
-                this.connections[addr] = conn;
-                if (this.getContacts().includes(addr)) {
+                this.connections[peerAddr] = conn;
+                this.lastSeen[peerAddr] = Date.now();
+                
+                const isKnown = this.getContacts().includes(peerAddr);
+                
+                if (isKnown) {
+                    // Auto-accept if already in contacts
                     const aesKey = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
-                    this.activeSessions[addr] = aesKey;
+                    this.activeSessions[peerAddr] = aesKey;
+                    
                     conn.send({ 
                         type: 'handshake_ack', 
                         address: this.myAddress, 
                         pub: Array.from(new Uint8Array(myPub)) 
                     });
+                    
+                    console.log(`[SECURE] Tunnel established with ${peerAddr}`);
                     this.renderSidebar();
-                    this.updateChatHeader();
+                    if(this.activePeer === peerAddr) this.updateChatHeader();
                 } else {
-                    this.incomingRequests[addr] = { conn, pub: data.pub, ecdh };
+                    // Hold in pending requests
+                    this.incomingRequests[peerAddr] = { conn, pub: data.pub, ecdh };
+                    conn.send({ type: 'handshake_pending', address: this.myAddress });
+                    
+                    console.log(`[P2P] Incoming request from ${peerAddr}`);
                     this.renderSidebar();
                 }
             } 
             else if (data.type === 'handshake_ack') {
-                const storedECDH = this.pendingKeys[conn.peer] || ecdh;
-                this.activeSessions[addr] = await CryptoEngine.deriveAES(storedECDH.privateKey, data.pub);
-                this.connections[addr] = conn;
-                delete this.pendingKeys[conn.peer];
+                // They accepted our request
+                this.lastSeen[peerAddr] = Date.now();
+                const aesKey = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
+                this.activeSessions[peerAddr] = aesKey;
+                
+                console.log(`[SECURE] Tunnel established with ${peerAddr}`);
                 this.renderSidebar();
-                this.updateChatHeader();
+                if(this.activePeer === peerAddr) this.updateChatHeader();
             }
-            // --- Encrypted Data (Chat, Voice, File Chunks) ---
+            else if (data.type === 'handshake_pending') {
+                // They received it, waiting for user action
+                this.lastSeen[peerAddr] = Date.now();
+                this.connections[peerAddr] = conn;
+                this.renderSidebar();
+                if(this.activePeer === peerAddr) this.updateChatHeader();
+            }
+            else if (data.type === 'handshake_decline') {
+                // They rejected us
+                conn.close();
+                delete this.connections[peerAddr];
+                delete this.activeSessions[peerAddr];
+                this.renderSidebar();
+            }
             else if (data.type === 'enc') {
-                const aesKey = this.activeSessions[addr];
+                // Encrypted Message Received
+                this.lastSeen[peerAddr] = Date.now();
+                const aesKey = this.activeSessions[peerAddr];
+                
                 if (aesKey) {
                     const decrypted = await CryptoEngine.decryptData(aesKey, data.payload);
-                    if (decrypted !== "[CORRUPTED_PAYLOAD]") {
-                        const msg = JSON.parse(decrypted);
-                        
-                        // Если это кусок файла — в сборщик
-                        if (msg.type === 'file_chunk') {
-                            this.handleFileChunk(msg, addr);
-                        } 
-                        else if (this.activePeer === addr) {
-                            try { this.renderMessage(msg, 'received'); } catch(e){}
-                        }
+                    if (this.activePeer === peerAddr) {
+                        this.renderMessage(JSON.parse(decrypted), 'received');
+                    } else {
+                        // TODO: Add unread counter badge here
+                        console.log(`[MSG] New message from ${peerAddr}`);
                     }
                 }
             }
         });
 
         conn.on('close', () => {
-            if (conn.peerAddress) {
-                delete this.connections[conn.peerAddress];
+            const addr = conn.peerAddress;
+            if (addr) {
+                console.log(`[P2P] Connection closed: ${addr}`);
+                delete this.connections[addr];
+                delete this.activeSessions[addr];
                 this.renderSidebar();
-                this.updateChatHeader();
+                if (this.activePeer === addr) this.updateChatHeader();
             }
         });
     },
 
-    /* --- FILE & VOICE MODULE (BINARY CHUNKING) --- */
-
-    handleFile(f) {
-        if (!f) return;
-        if (f.size > 25 * 1024 * 1024) return alert("Максимум 25 МБ");
-        this.pendingFile = f;
-        const preview = document.getElementById('file-preview'); // Убедись, что ID совпадает
-        if (preview) {
-            preview.style.display = 'block';
-            preview.innerText = "📎 " + f.name;
-        }
-    },
-
-    async sendFileChunked(file) {
-        const chunkSize = 16384; // 16KB
-        const totalChunks = Math.ceil(file.size / chunkSize);
-        const fileId = Math.random().toString(36).substring(7);
+    // --- User Actions ---
+    
+    addContact() {
+        const input = document.getElementById('add-peer-id');
+        let addr = input.value.trim().toLowerCase(); // CRITICAL FIX
         
-        console.log(`[P2P] Sending file: ${file.name} (${totalChunks} chunks)`);
+        if (!addr || addr === this.myAddress) return;
+        
+        this.addContactToDB(addr);
+        input.value = '';
+        
+        console.log(`[UI] Added contact: ${addr}`);
+        this.renderSidebar();
+        this.networkPulse(); // Immediately try to connect
+    },
 
-        for (let i = 0; i < totalChunks; i++) {
-            const start = i * chunkSize;
-            const end = Math.min(file.size, start + chunkSize);
-            const chunk = file.slice(start, end);
-            
-            const buffer = await chunk.arrayBuffer();
-            const session = this.activeSessions[this.activePeer];
-            if (!session) break;
-
-            const encrypted = await CryptoEngine.encryptData(session, JSON.stringify({
-                type: 'file_chunk',
-                fileId: fileId,
-                fileName: file.name,
-                mimeType: file.type,
-                index: i,
-                total: totalChunks,
-                data: Array.from(new Uint8Array(buffer))
-            }));
-
-            const conn = this.connections[this.activePeer];
-            if (conn && conn.open) {
-                conn.send({ type: 'enc', payload: encrypted });
-                // Небольшая задержка, чтобы не забить стек WebRTC
-                await new Promise(r => setTimeout(r, 10));
-            }
+    deleteContact(addr) {
+        if(this.connections[addr]) this.connections[addr].close();
+        
+        delete this.connections[addr];
+        delete this.activeSessions[addr];
+        this.removeContactFromDB(addr);
+        
+        if (this.activePeer === addr) {
+            this.activePeer = null;
+            document.getElementById('empty-state').style.display = 'flex';
+            document.getElementById('request-state').style.display = 'none';
+            this.clearChat();
         }
-
-        // Отображаем у себя
-        const reader = new FileReader();
-        reader.onload = () => {
-            const isVoice = file.name === "voice.webm";
-            this.renderMessage({
-                type: isVoice ? 'voice' : 'file',
-                body: reader.result,
-                name: file.name,
-                time: Date.now()
-            }, 'sent');
-        };
-        reader.readAsDataURL(file);
+        this.renderSidebar();
     },
 
-    handleFileChunk(msg, senderAddr) {
-        if (!this.incomingFiles) this.incomingFiles = {};
-        if (!this.incomingFiles[msg.fileId]) {
-            this.incomingFiles[msg.fileId] = {
-                chunks: new Array(msg.total),
-                received: 0,
-                name: msg.fileName,
-                mimeType: msg.mimeType
-            };
+    clearChat() {
+        document.getElementById('messages-flow').innerHTML = '';
+    },
+
+    // --- Request Handling ---
+
+    // 3. Полностью замени функцию acceptHandshake:
+async acceptHandshake() {
+    const addr = this.activePeer;
+    const req = this.incomingRequests[addr];
+    if (req && req.conn.open) {
+        let contacts = this.getContacts();
+        contacts.push(addr);
+        this.setDB('contacts', contacts);
+
+        // Используем сохраненный ecdh из объекта запроса
+        this.activeSessions[addr] = await CryptoEngine.deriveAES(req.ecdh.privateKey, req.pub);
+        
+        const myPub = await crypto.subtle.exportKey("raw", req.ecdh.publicKey);
+        req.conn.send({ 
+            type: 'handshake_ack', 
+            address: this.myAddress, 
+            pub: Array.from(new Uint8Array(myPub)) 
+        });
+        
+        delete this.incomingRequests[addr];
+        this.renderSidebar();
+        this.openChat(addr);
+    }
+},
+
+    declineHandshake() {
+        const addr = this.activePeer;
+        const req = this.incomingRequests[addr];
+        
+        if (req && req.conn.open) {
+            req.conn.send({ type: 'handshake_decline' });
+            req.conn.close();
         }
+        
+        delete this.incomingRequests[addr];
+        this.activePeer = null;
+        
+        document.getElementById('request-state').style.display = 'none';
+        document.getElementById('empty-state').style.display = 'flex';
+        this.renderSidebar();
+    },
 
-        const fileObj = this.incomingFiles[msg.fileId];
-        fileObj.chunks[msg.index] = new Uint8Array(msg.data);
-        fileObj.received++;
+    // --- UI Rendering ---
 
-        if (fileObj.received === msg.total) {
-            const blob = new Blob(fileObj.chunks, { type: fileObj.mimeType || 'application/octet-stream' });
-            const reader = new FileReader();
-            reader.onload = () => {
-                const isVoice = fileObj.name === "voice.webm";
-                this.renderMessage({
-                    type: isVoice ? 'voice' : 'file',
-                    body: reader.result,
-                    name: fileObj.name,
-                    time: Date.now()
-                }, 'received');
-            };
-            reader.readAsDataURL(blob);
-            delete this.incomingFiles[msg.fileId];
+    renderSidebar() {
+        const list = document.getElementById('contacts-list');
+        list.innerHTML = '';
+        
+        const contacts = this.getContacts();
+        const requests = Object.keys(this.incomingRequests);
+
+        // Render Requests
+        if (requests.length > 0) {
+            const reqHeader = document.createElement('div');
+            reqHeader.className = 'list-section-title';
+            reqHeader.innerText = 'REQUESTS';
+            list.appendChild(reqHeader);
+            
+            requests.forEach(addr => list.appendChild(this.createContactCard(addr, true)));
+        }
+        
+        // Render Contacts
+        if (contacts.length > 0) {
+            const conHeader = document.createElement('div');
+            conHeader.className = 'list-section-title';
+            conHeader.innerText = 'SECURE NODES';
+            list.appendChild(conHeader);
+            
+            contacts.forEach(addr => list.appendChild(this.createContactCard(addr, false)));
         }
     },
 
-    async startVoice() {
-        try {
-            this.chunks = [];
-            this.stream = await this.getProcessedStream();
-            this.mediaRecorder = new MediaRecorder(this.stream);
-            
-            this.mediaRecorder.ondataavailable = (e) => { if(e.data.size > 0) this.chunks.push(e.data); };
-            this.mediaRecorder.onstop = async () => {
-                const blob = new Blob(this.chunks, { type: 'audio/webm' });
-                if (blob.size > 1000) {
-                    this.sendFileChunked(new File([blob], "voice.webm", { type: 'audio/webm' }));
-                }
-            };
+    createContactCard(addr, isRequest) {
+        // Determine Status
+        const hasConn = this.connections[addr] && this.connections[addr].open;
+        const isSecure = this.activeSessions[addr] !== undefined;
+        
+        let statusClass = '';
+        if (hasConn && isSecure) statusClass = 'online';
+        else if (hasConn && !isSecure) statusClass = 'pending';
 
-            this.mediaRecorder.start();
-            this.isRecording = true;
-            document.getElementById('voice-toggle').style.color = "var(--danger)";
-            
-            // Таймер и автостоп
-            const timerEl = document.getElementById('rec-timer');
-            if (timerEl) timerEl.parentElement.style.display = 'flex';
-            
-            let sec = 0;
-            this.recTimer = setInterval(() => {
-                sec++;
-                if (timerEl) timerEl.innerText = `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
-                if (sec >= 60) this.stopVoice();
-            }, 1000);
-
-        } catch (err) { console.error("Mic error:", err); }
+        const card = document.createElement('div');
+        card.className = `contact-card ${this.activePeer === addr ? 'active' : ''} ${isRequest ? 'request' : ''}`;
+        card.onclick = () => this.openChat(addr, isRequest);
+        
+        const avId = `av_card_${addr.slice(-6)}`;
+        
+        card.innerHTML = `
+            <div id="${avId}"></div>
+            <div class="contact-info">
+                <span class="contact-address">${addr.slice(0,6)}...${addr.slice(-4)}</span>
+                <span class="contact-status-text">${statusClass === 'online' ? 'SECURE' : (statusClass === 'pending' ? 'LINKING...' : 'OFFLINE')}</span>
+            </div>
+            <div class="contact-actions">
+                ${!isRequest ? `<button class="delete-btn-small" onclick="event.stopPropagation(); App.deleteContact('${addr}')"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+                <div class="status-dot ${statusClass}"></div>
+            </div>
+        `;
+        
+        // Render avatar asynchronously to not block DOM insertion
+        setTimeout(() => AvatarEngine.generate(addr, avId), 0);
+        return card;
     },
 
-    stopVoice() {
-        if (!this.isRecording) return;
-        this.mediaRecorder.stop();
-        if (this.stream) this.stream.getTracks().forEach(t => t.stop());
-        this.isRecording = false;
-        clearInterval(this.recTimer);
-        document.getElementById('voice-toggle').style.color = "var(--text-muted)";
-        const recUI = document.getElementById('rec-timer')?.parentElement;
-        if (recUI) recUI.style.display = 'none';
+    openChat(addr, isRequest = false) {
+        this.activePeer = addr;
+        
+        // Mobile UI behavior
+        document.getElementById('app-shell').classList.add('in-chat');
+        document.getElementById('empty-state').style.display = 'none';
+        
+        const controls = document.getElementById('controls-bar');
+        
+        if (isRequest) {
+            document.getElementById('request-state').style.display = 'flex';
+            document.getElementById('req-id').innerText = addr.slice(0,10) + "...";
+            AvatarEngine.generate(addr, 'req-avatar');
+            
+            controls.style.opacity = '0.1';
+            controls.style.pointerEvents = 'none';
+        } else {
+            document.getElementById('request-state').style.display = 'none';
+            controls.style.opacity = '1';
+            controls.style.pointerEvents = 'auto';
+            
+            document.getElementById('active-peer-name').innerText = addr.slice(0, 10) + "...";
+            AvatarEngine.generate(addr, 'active-avatar');
+            
+            this.updateChatHeader();
+        }
+        
+        this.renderSidebar(); // Update active state
     },
 
-    /* --- CALLS & MEDIA --- */
+    closeChatMobile() {
+        document.getElementById('app-shell').classList.remove('in-chat');
+    },
 
-    async startCall() {
+    updateChatHeader() {
         if (!this.activePeer) return;
-        document.getElementById('call-panel').style.display = 'flex';
-        document.getElementById('call-info').innerText = "ВЫЗОВ...";
         
-        // Гудок
-        const ac = new AudioContext();
-        const osc = ac.createOscillator();
-        const g = ac.createGain();
-        osc.frequency.value = 900; g.gain.value = 0.1;
-        osc.connect(g); g.connect(ac.destination);
-        osc.start(); this.osc = osc;
-
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const targetId = "imnode_" + btoa(this.activePeer).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
+        const hasConn = this.connections[this.activePeer] && this.connections[this.activePeer].open;
+        const isSecure = this.activeSessions[this.activePeer] !== undefined;
         
-        this.currentCall = this.peer.call(targetId, stream);
-        this.currentCall.on('stream', remote => {
-            if(this.osc) this.osc.stop();
-            document.getElementById('call-info').innerText = "В СЕТИ";
-            const a = new Audio(); a.srcObject = remote; a.play();
-        });
-    },
-
-    acceptCall() {
-        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-            this.currentCall.answer(stream);
-            document.getElementById('answer-btn').style.display = 'none';
-            document.getElementById('call-info').innerText = "В СЕТИ";
-            this.currentCall.on('stream', remote => {
-                const a = new Audio(); a.srcObject = remote; a.play();
-            });
-        });
-    },
-
-    endCall() {
-        if (this.currentCall) this.currentCall.close();
-        if (this.osc) try { this.osc.stop(); } catch(e){}
-        document.getElementById('call-panel').style.display = 'none';
-    },
-
-    sendText() {
-        if (this.pendingFile) {
-            this.sendFileChunked(this.pendingFile);
-            this.pendingFile = null;
-            const preview = document.getElementById('file-preview');
-            if (preview) preview.style.display = 'none';
+        const dot = document.getElementById('active-status-dot');
+        const text = document.getElementById('active-status-text');
+        
+        if (hasConn && isSecure) {
+            dot.className = "status-dot online";
+            text.innerText = "TUNNEL_ACTIVE";
+            text.style.color = "var(--accent)";
+        } else if (hasConn && !isSecure) {
+            dot.className = "status-dot pending";
+            text.innerText = "AWAITING_HANDSHAKE";
+            text.style.color = "var(--warning)";
+        } else {
+            dot.className = "status-dot";
+            text.innerText = "OFFLINE";
+            text.style.color = "var(--text-muted)";
         }
+    },
 
+    // --- Messaging ---
+
+    toggleStealth() {
+        this.isStealth = !this.isStealth;
+        const btn = document.getElementById('stealth-toggle');
+        const flow = document.getElementById('messages-flow');
+        
+        if (this.isStealth) {
+            btn.classList.add('active'); 
+            btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+            flow.classList.add('stealth-active');
+        } else {
+            btn.classList.remove('active'); 
+            btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+            flow.classList.remove('stealth-active');
+        }
+    },
+
+    async sendText() {
         const input = document.getElementById('chat-input');
-        const val = input.value.trim();
-        if (val && this.activePeer) {
-            this.transmitMessage({ type: 'text', body: val, time: Date.now() });
-            input.value = '';
-        }
+        const text = input.value.trim();
+        if (!text || !this.activePeer) return;
+
+        const msg = { type: 'text', body: text, time: Date.now() };
+        this.transmitMessage(msg);
+        input.value = '';
     },
 
     async transmitMessage(msg) {
-        if (!this.activePeer) return;
+        const sessionKey = this.activeSessions[this.activePeer];
         const conn = this.connections[this.activePeer];
-        const session = this.activeSessions[this.activePeer];
-        if (!conn || !conn.open || !session) return;
+        
+        if (!sessionKey || !conn || !conn.open) { 
+            console.warn("Cannot transmit: Tunnel not ready or offline.");
+            return; 
+        }
+        
+        const encrypted = await CryptoEngine.encryptData(sessionKey, JSON.stringify(msg));
+        conn.send({ type: 'enc', payload: encrypted });
+        this.renderMessage(msg, 'sent');
+    },
 
+    renderMessage(msg, direction) {
+        const flow = document.getElementById('messages-flow');
+        const wrapper = document.createElement('div');
+        wrapper.className = `msg-wrapper ${direction}`;
+        
+        let content = '';
+        if (msg.type === 'text') {
+            content = msg.body;
+        } else if (msg.type === 'voice') {
+            content = `<audio src="${msg.body}" controls style="height:35px; border-radius:10px;"></audio>`;
+        } else if (msg.type === 'file') {
+            content = `<a href="${msg.body}" download="${msg.name}" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-file-arrow-down" style="font-size:18px;"></i> ${msg.name}</a>`;
+        }
+
+        const timeStr = new Date(msg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        wrapper.innerHTML = `
+            <div class="msg-bubble">${content}</div>
+            <div class="msg-meta">${timeStr}</div>
+        `;
+        
+        flow.appendChild(wrapper);
+        flow.scrollTop = flow.scrollHeight;
+    },
+
+    // --- Cyber-Mic (Voice Audio Graph) ---
+    
+    toggleCyberMic() {
+        this.isCyberMic = !this.isCyberMic;
+        document.getElementById('cyber-mic-btn').classList.toggle('active', this.isCyberMic);
+    },
+
+    // Единый процессор для робо-голоса
+    async getProcessedStream() {
+        this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
+
+        const source = this.audioCtx.createMediaStreamSource(this.stream);
+        const destination = this.audioCtx.createMediaStreamDestination();
+
+        if (this.isCyberMic) {
+            // Эффект "Робот/Рация"
+            const filter = this.audioCtx.createBiquadFilter();
+            filter.type = "bandpass";
+            filter.frequency.value = 1000;
+            filter.Q.value = 1.0;
+
+            const dist = this.audioCtx.createWaveShaper();
+            dist.curve = this.makeDistCurve(100);
+
+            source.connect(filter);
+            filter.connect(dist);
+            dist.connect(destination);
+        } else {
+            source.connect(destination);
+        }
+        return destination.stream;
+    },
+
+    async startVoice(e) {
+        if(e) e.preventDefault();
         try {
-            const encrypted = await CryptoEngine.encryptData(session, JSON.stringify(msg));
-            conn.send({ type: 'enc', payload: encrypted });
-            this.renderMessage(msg, 'sent');
-        } catch (e) { console.error("[P2P] Send Error:", e); }
+            const processedStream = await this.getProcessedStream();
+            this.mediaRecorder = new MediaRecorder(processedStream, { mimeType: 'audio/webm' });
+            let chunks = [];
+            this.mediaRecorder.ondataavailable = e => chunks.push(e.data);
+            this.mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'audio/webm' });
+                if(blob.size > 500) {
+                    const reader = new FileReader();
+                    reader.onload = () => this.transmit({ type: 'voice', body: reader.result, time: Date.now() });
+                    reader.readAsDataURL(blob);
+                }
+                this.stream.getTracks().forEach(t => t.stop());
+            };
+            this.mediaRecorder.start();
+            this.isRecording = true;
+            document.getElementById('voice-toggle').style.color = "var(--danger)";
+        } catch (err) { alert("Mic error: " + err); }
+    },
+
+    stopVoice(e) {
+        if(e) e.preventDefault();
+        if (this.mediaRecorder && this.isRecording) {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+            document.getElementById('voice-toggle').style.color = "";
+        }
+    },
+
+    async toggleCall() {
+        if (this.currentCall) {
+            this.currentCall.close();
+            return;
+        }
+
+        const addr = this.activePeer;
+        if (!this.connections[addr]) return alert("Peer offline");
+
+        const processedStream = await this.getProcessedStream();
+        const targetId = `imnode_${btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16)}`;
+        
+        const call = this.peer.call(targetId, processedStream);
+        this.setupCallHandlers(call);
+        document.getElementById('call-btn').style.color = "var(--success)";
+    },
+
+    setupCallHandlers(call) {
+        this.currentCall = call;
+        call.on('stream', remoteStream => {
+            const audio = document.getElementById('remote-audio');
+            audio.srcObject = remoteStream;
+            audio.play();
+        });
+        call.on('close', () => {
+            this.currentCall = null;
+            document.getElementById('call-btn').style.color = "";
+            if(this.stream) this.stream.getTracks().forEach(t => t.stop());
+        });
+    },
+
+    
+    
+    makeDistortionCurve(amount) {
+        let k = typeof amount === 'number' ? amount : 50,
+            n_samples = 44100,
+            curve = new Float32Array(n_samples),
+            deg = Math.PI / 180,
+            i = 0, x;
+        for ( ; i < n_samples; ++i ) {
+            x = i * 2 / n_samples - 1;
+            curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+        }
+        return curve;
+    },
+
+    // --- File Handling ---
+    
+    handleFile(f) {
+        if (!f) return;
+        if (f.size > 100 * 1024 * 1024) return alert("Max 100MB");
+        
+        const reader = new FileReader();
+        reader.onload = () => {
+            this.transmit({ 
+                type: 'file', 
+                body: reader.result, 
+                name: f.name, 
+                time: Date.now() 
+            });
+        };
+        reader.readAsDataURL(f);
     }
 };
-
-// --- INITIALIZATION ---
-window.onload = () => { App.init(); };
 </script>
 </body>
 </html>
