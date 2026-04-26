@@ -945,7 +945,14 @@ const App = {
 
     networkPulse() {
         const now = Date.now();
-        const contacts = this.getContacts();
+        this.getContacts().forEach(addr => {
+            const nodeId = `imnode_${btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 15)}`;
+            // ФИКС: Не стучимся, если соединение уже активно и открыто
+            if (!this.connections[addr] || this.connections[addr].readyState !== 'open') {
+                this.setupDataChannel(this.peer.connect(nodeId, { reliable: true }));
+            }
+        });
+    
         
         // 1. Try to connect to offline contacts
         contacts.forEach(addr => {
@@ -1352,17 +1359,22 @@ async acceptHandshake() {
     },
 
     async transmitMessage(msg) {
-        const sessionKey = this.activeSessions[this.activePeer];
+        const session = this.activeSessions[this.activePeer];
         const conn = this.connections[this.activePeer];
         
-        if (!sessionKey || !conn || !conn.open) { 
-            console.warn("Cannot transmit: Tunnel not ready or offline.");
-            return; 
+        if(!session || !conn || conn.readyState !== 'open') {
+            console.error("Channel not ready");
+            return;
         }
-        
-        const encrypted = await CryptoEngine.encryptData(sessionKey, JSON.stringify(msg));
-        conn.send({ type: 'enc', payload: encrypted });
-        this.renderMessage(msg, 'sent');
+
+        try {
+            const encrypted = await CryptoEngine.encryptData(session, JSON.stringify(msg));
+            // PeerJS сам дробит данные, если передавать их как объект, а не строку
+            conn.send({ type: 'enc', payload: encrypted });
+            this.renderMessage(msg, 'sent');
+        } catch (e) {
+            console.error("Transmit error:", e);
+        }
     },
 
     renderMessage(msg, direction) {
@@ -1426,45 +1438,40 @@ async acceptHandshake() {
     },
 
     async startVoice() {
+        this.chunks = [];
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            let finalStream = stream;
-
-            if (this.isCyberMic) {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const source = ctx.createMediaStreamSource(stream);
-                const dest = ctx.createMediaStreamDestination();
-                const filter = ctx.createBiquadFilter();
-                filter.type = "bandpass"; filter.frequency.value = 1100;
-                const dist = ctx.createWaveShaper();
-                dist.curve = this.makeDistortionCurve(100);
-                source.connect(filter); filter.connect(dist); dist.connect(dest);
-                finalStream = dest.stream;
-                this.audioCtx = ctx; // Сохраняем контекст
-            }
-
-            this.stream = finalStream;
-            const chunks = [];
-            this.mediaRecorder = new MediaRecorder(this.stream);
-            this.mediaRecorder.ondataavailable = (e) => { if(e.data.size > 0) chunks.push(e.data); };
-            this.mediaRecorder.onstop = () => {
-                const reader = new FileReader();
-                reader.onload = () => this.transmitMessage({ type: 'voice', body: reader.result, time: Date.now() });
-                reader.readAsDataURL(new Blob(chunks, { type: 'audio/webm' }));
-            };
-            this.mediaRecorder.start();
-            this.isRecording = true;
-            document.getElementById('voice-toggle').style.color = "var(--danger)";
+            this.stream = await this.getProcessedStream();
+            // ФИКС: Указываем конкретный кодек для стабильности
+            this.mediaRecorder = new MediaRecorder(this.stream, { mimeType: 'audio/webm;codecs=opus' });
             
-            // Таймер записи
-            let s = 0;
-            this.recTimer = setInterval(() => {
-                s++;
-                const t = document.getElementById('rec-timer');
-                if(t) t.innerText = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
-            }, 1000);
+            this.mediaRecorder.ondataavailable = (e) => {
+                if (e.data && e.data.size > 0) this.chunks.push(e.data);
+            };
+
+            this.mediaRecorder.onstop = () => {
+                const blob = new Blob(this.chunks, { type: 'audio/webm' });
+                if (blob.size > 100) { // Проверка на пустой файл
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        this.transmitMessage({ type: 'voice', body: reader.result, time: Date.now() });
+                    };
+                    reader.readAsDataURL(blob);
+                }
+            };
+
+            this.mediaRecorder.start(200); // Собираем данные каждые 200мс
+            this.isRecording = true;
             document.getElementById('rec-ui').style.display = 'flex';
-        } catch (err) { console.error(err); }
+            
+            let sec = 0;
+            this.recTimer = setInterval(() => {
+                sec++;
+                document.getElementById('rec-timer').innerText = 
+                    `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
+            }, 1000);
+        } catch (err) {
+            console.error("Voice start error:", err);
+        }
     },
 
     stopVoice() {
@@ -1581,15 +1588,34 @@ async acceptHandshake() {
         });
     },
 
-    acceptCall() {
-        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    async acceptCall() {
+        if (!this.currentCall) return;
+        try {
+            const stream = await this.getProcessedStream();
             this.currentCall.answer(stream);
+            
             document.getElementById('answer-btn').style.display = 'none';
             document.getElementById('call-info').innerText = "В СЕТИ";
+
             this.currentCall.on('stream', remote => {
-                const a = new Audio(); a.srcObject = remote; a.play();
+                this.playRemote(remote);
             });
-        });
+        } catch (err) {
+            console.error("Call Accept Error:", err);
+        }
+    },
+
+    playRemote(stream) {
+        let audio = document.getElementById('remote-audio');
+        if (!audio) {
+            audio = document.createElement('audio');
+            audio.id = 'remote-audio';
+            audio.autoplay = true;
+            document.body.appendChild(audio);
+        }
+        audio.srcObject = stream;
+        // ФИКС: Явный запуск после жеста
+        audio.play().catch(e => console.log("Audio play blocked, need interaction"));
     },
 
     endCall() {
