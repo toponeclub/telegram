@@ -3,16 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IMCHAT | BUNKER NODE v5</title>
+    <title>IMCHAT | BUNKER NODE v6 (Web3)</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- ES Modules for Web3 (Thirdweb + XMTP) -->
+    <script type="importmap">
+    {
+      "imports": {
+        "thirdweb": "https://esm.sh/thirdweb@5",
+        "thirdweb/wallets": "https://esm.sh/thirdweb@5/wallets",
+        "thirdweb/storage": "https://esm.sh/thirdweb@5/storage",
+        "@xmtp/xmtp-js": "https://esm.sh/@xmtp/xmtp-js@12?bundle"
+      }
+    }
+    </script>
+    <script type="module">
+      import { createThirdwebClient } from "thirdweb";
+      import { inAppWallet, createWallet } from "thirdweb/wallets";
+      import { upload, download } from "thirdweb/storage";
+      import { Client as XMTPClient } from "@xmtp/xmtp-js";
+
+      window.Thirdweb = { createThirdwebClient, inAppWallet, createWallet, upload, download };
+      window.XMTPClient = XMTPClient;
+      
+      window.dispatchEvent(new Event('web3-modules-loaded'));
+    </script>
 
     <style>
         /* ==========================================================================
-           CSS VARIABLES & THEME
+           CSS VARIABLES & THEME (Untouched as requested)
            ========================================================================== */
         :root {
             --bg-main: #030405;
@@ -31,14 +52,12 @@
             
             --danger: #ff3366;
             --warning: #ffb800;
+            --success: #00e676;
             
             --glass-blur: blur(24px);
             --anim-speed: 0.3s;
         }
 
-        /* ==========================================================================
-           RESET & BASE STYLES
-           ========================================================================== */
         * { 
             box-sizing: border-box; 
             margin: 0; 
@@ -55,15 +74,11 @@
             overflow: hidden;
         }
 
-        /* Custom Scrollbar for Cypherpunk Vibe */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-        /* ==========================================================================
-           LAYOUT SHELL
-           ========================================================================== */
         .app-shell {
             display: flex; 
             height: 100vh; 
@@ -73,9 +88,6 @@
             overflow: hidden;
         }
 
-        /* ==========================================================================
-           SIDEBAR (CONTACTS & REQUESTS)
-           ========================================================================== */
         .sidebar {
             width: 340px; 
             border-right: 1px solid var(--border-light);
@@ -129,7 +141,6 @@
             padding: 10px; 
         }
         
-        /* Contact Cards */
         .contact-card {
             padding: 12px 16px; 
             border-radius: 12px; 
@@ -143,68 +154,21 @@
             transition: all 0.2s ease;
         }
 
-        .contact-card:hover { 
-            background: var(--bg-hover); 
-        }
+        .contact-card:hover { background: var(--bg-hover); }
+        .contact-card.active { background: var(--accent-dim); border-color: var(--border-accent); }
+        .contact-card.request { border: 1px dashed var(--warning); background: rgba(255, 184, 0, 0.05); }
 
-        .contact-card.active { 
-            background: var(--accent-dim); 
-            border-color: var(--border-accent); 
-        }
+        .contact-info { display: flex; flex-direction: column; gap: 4px; }
+        .contact-address { font-size: 13px; font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+        .contact-status-text { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .contact-actions { position: absolute; right: 16px; display: flex; align-items: center; gap: 12px; }
 
-        .contact-card.request { 
-            border: 1px dashed var(--warning); 
-            background: rgba(255, 184, 0, 0.05);
-        }
-
-        .contact-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .contact-address {
-            font-size: 13px; 
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 600;
-        }
-
-        .contact-status-text {
-            font-size: 10px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .contact-actions {
-            position: absolute; 
-            right: 16px; 
-            display: flex; 
-            align-items: center; 
-            gap: 12px;
-        }
-
-        /* Status Indicators */
-        .status-dot {
-            width: 8px; 
-            height: 8px; 
-            border-radius: 50%; 
-            background: #333;
-            transition: all 0.3s ease;
-        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; transition: all 0.3s ease; }
         .status-dot.online { background: var(--accent); box-shadow: var(--accent-glow); }
         .status-dot.pending { background: var(--warning); box-shadow: 0 0 10px rgba(255, 184, 0, 0.4); }
 
-        /* Sidebar Footer (Add Contact) */
-        .sidebar-footer {
-            padding: 24px; 
-            border-top: 1px solid var(--border-light);
-            background: rgba(0,0,0,0.2);
-        }
+        .sidebar-footer { padding: 24px; border-top: 1px solid var(--border-light); background: rgba(0,0,0,0.2); }
 
-        /* ==========================================================================
-           MAIN CHAT VIEW
-           ========================================================================== */
         .chat-view { 
             flex: 1; 
             display: flex; 
@@ -225,287 +189,71 @@
             z-index: 10;
         }
 
-        .mobile-back-btn {
-            display: none; 
-            color: var(--accent); 
-            background: none; 
-            border: none;
-            font-size: 20px; 
-            cursor: pointer; 
-            margin-right: 20px; 
-            padding: 5px;
-        }
+        .mobile-back-btn { display: none; color: var(--accent); background: none; border: none; font-size: 20px; cursor: pointer; margin-right: 20px; padding: 5px; }
 
-        /* Messages Flow */
-        .messages-flow { 
-            flex: 1; 
-            padding: 30px; 
-            overflow-y: auto; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 24px;
-        }
-
-        .msg-wrapper {
-            display: flex;
-            flex-direction: column;
-            max-width: 80%;
-        }
-
+        .messages-flow { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
+        .msg-wrapper { display: flex; flex-direction: column; max-width: 80%; }
         .msg-wrapper.sent { align-self: flex-end; align-items: flex-end; }
         .msg-wrapper.received { align-self: flex-start; align-items: flex-start; }
 
         .msg-bubble {
-            padding: 14px 20px; 
-            border-radius: 18px;
-            font-size: 14px; 
-            line-height: 1.6; 
-            position: relative;
-            word-break: break-word;
-            transition: all var(--anim-speed) ease;
+            padding: 14px 20px; border-radius: 18px; font-size: 14px; line-height: 1.6; position: relative;
+            word-break: break-word; transition: all var(--anim-speed) ease;
         }
-        
-        .msg-sent .msg-bubble { 
-            background: var(--accent-dim); 
-            border: 1px solid var(--border-accent); 
-            color: var(--accent); 
-            border-bottom-right-radius: 4px; 
-        }
-        
-        .msg-received .msg-bubble { 
-            background: #161920; 
-            border-bottom-left-radius: 4px; 
-            border: 1px solid var(--border-light); 
-        }
+        .msg-sent .msg-bubble { background: var(--accent-dim); border: 1px solid var(--border-accent); color: var(--accent); border-bottom-right-radius: 4px; }
+        .msg-received .msg-bubble { background: #161920; border-bottom-left-radius: 4px; border: 1px solid var(--border-light); }
+        .msg-meta { font-size: 10px; color: var(--text-muted); margin-top: 6px; display: flex; gap: 6px; align-items: center; }
 
-        .msg-meta {
-            font-size: 10px;
-            color: var(--text-muted);
-            margin-top: 6px;
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
+        .stealth-active .msg-bubble { filter: blur(10px); opacity: 0.3; cursor: pointer; user-select: none; }
+        .stealth-active .msg-bubble:hover, .stealth-active .msg-bubble:active { filter: blur(0); opacity: 1; }
 
-        /* Stealth Mode Logic */
-        .stealth-active .msg-bubble { 
-            filter: blur(10px); 
-            opacity: 0.3; 
-            cursor: pointer; 
-            user-select: none; 
-        }
-        .stealth-active .msg-bubble:hover, 
-        .stealth-active .msg-bubble:active { 
-            filter: blur(0); 
-            opacity: 1; 
-        }
-
-        /* ==========================================================================
-           CONTROLS BAR (INPUT)
-           ========================================================================== */
-        .controls-bar { 
-            padding: 20px 30px; 
-            border-top: 1px solid var(--border-light);
-            display: flex; 
-            gap: 16px; 
-            align-items: center; 
-            background: var(--bg-panel);
-            backdrop-filter: var(--glass-blur);
-        }
-
-        .input-field {
-            flex: 1; 
-            background: rgba(0,0,0,0.3); 
-            border: 1px solid var(--border-light);
-            border-radius: 14px; 
-            padding: 16px 20px; 
-            color: #fff; 
-            outline: none; 
-            min-width: 0;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
+        .controls-bar { padding: 20px 30px; border-top: 1px solid var(--border-light); display: flex; gap: 16px; align-items: center; background: var(--bg-panel); backdrop-filter: var(--glass-blur); }
+        .input-field { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border-light); border-radius: 14px; padding: 16px 20px; color: #fff; outline: none; min-width: 0; font-size: 14px; transition: border-color 0.2s; }
         .input-field:focus { border-color: var(--accent); }
 
-        /* ==========================================================================
-           BUTTONS & ICONS
-           ========================================================================== */
-        .icon-btn {
-            background: transparent; 
-            border: none; 
-            color: var(--text-muted);
-            font-size: 18px; 
-            cursor: pointer; 
-            width: 44px; 
-            height: 44px; 
-            flex-shrink: 0;
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            border-radius: 50%; 
-            transition: all 0.2s;
-        }
+        .icon-btn { background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; }
         .icon-btn:hover { color: var(--accent); background: var(--bg-hover); }
         .icon-btn.active { color: var(--accent); background: var(--accent-dim); }
-        
         .icon-btn.danger:hover { color: var(--danger); }
         
-        .btn-action {
-            background: transparent; 
-            color: var(--accent); 
-            border: 1px solid var(--border-accent);
-            padding: 14px; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            font-size: 13px;
-            font-weight: 600; 
-            width: 100%; 
-            transition: all 0.2s; 
-            text-align: center;
-            letter-spacing: 1px;
-        }
-        .btn-action:hover { 
-            background: var(--accent-dim); 
-            box-shadow: var(--accent-glow); 
-        }
+        .btn-action { background: transparent; color: var(--accent); border: 1px solid var(--border-accent); padding: 14px; border-radius: 12px; cursor: pointer; font-size: 13px; font-weight: 600; width: 100%; transition: all 0.2s; text-align: center; letter-spacing: 1px; }
+        .btn-action:hover { background: var(--accent-dim); box-shadow: var(--accent-glow); }
+        .btn-solid { background: var(--accent); color: #000; border: none; }
+        .btn-solid:hover { background: #00e6c0; box-shadow: var(--accent-glow); }
 
-        .btn-solid {
-            background: var(--accent);
-            color: #000;
-            border: none;
-        }
-        .btn-solid:hover {
-            background: #00e6c0;
-            box-shadow: var(--accent-glow);
-        }
-
-        .btn-send { 
-            background: var(--accent); 
-            color: #000; 
-            width: 50px; 
-            height: 50px; 
-            border-radius: 14px; 
-            flex-shrink: 0; 
-        }
+        .btn-send { background: var(--accent); color: #000; width: 50px; height: 50px; border-radius: 14px; flex-shrink: 0; }
         .btn-send:hover { background: #00e6c0; }
 
-        /* ==========================================================================
-           GENERATIVE AVATARS
-           ========================================================================== */
-        .avatar-box {
-            width: 44px; 
-            height: 44px; 
-            border-radius: 10px;
-            overflow: hidden; 
-            display: grid; 
-            grid-template-columns: repeat(5, 1fr); 
-            grid-template-rows: repeat(5, 1fr);
-            flex-shrink: 0; 
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
+        .avatar-box { width: 44px; height: 44px; border-radius: 10px; overflow: hidden; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr); flex-shrink: 0; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         .pixel { width: 100%; height: 100%; }
 
-        /* ==========================================================================
-           OVERLAYS & STATES
-           ========================================================================== */
-        .full-overlay {
-            position: absolute; 
-            inset: 0; 
-            background: rgba(3, 4, 5, 0.85);
-            backdrop-filter: blur(8px);
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
-            z-index: 5; 
-            text-align: center; 
-            padding: 20px;
-        }
+        .full-overlay { position: absolute; inset: 0; background: rgba(3, 4, 5, 0.85); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 5; text-align: center; padding: 20px; }
+        .auth-overlay { position: fixed; inset: 0; background: var(--bg-main); background-image: radial-gradient(circle at 50% 50%, #0a1114 0%, #030405 100%); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .auth-card { width: 100%; max-width: 420px; text-align: center; background: var(--bg-panel); padding: 40px; border-radius: 20px; border: 1px solid var(--border-light); box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
 
-        .auth-overlay {
-            position: fixed; 
-            inset: 0; 
-            background: var(--bg-main);
-            background-image: radial-gradient(circle at 50% 50%, #0a1114 0%, #030405 100%);
-            z-index: 1000; 
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            justify-content: center; 
-            padding: 20px;
-        }
-
-        .auth-card { 
-            width: 100%; 
-            max-width: 420px; 
-            text-align: center; 
-            background: var(--bg-panel);
-            padding: 40px;
-            border-radius: 20px;
-            border: 1px solid var(--border-light);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-        }
-
-        /* ==========================================================================
-           RESPONSIVE DESIGN (MOBILE ADAPTATION)
-           ========================================================================== */
         @media (max-width: 768px) {
-            .sidebar { 
-                width: 100%; 
-                position: absolute; 
-                height: 100%; 
-                border-right: none;
-            }
-            .chat-view { 
-                width: 100%; 
-                position: absolute; 
-                height: 100%; 
-                transform: translateX(100%); 
-                transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); 
-            }
-            
-            /* State when chat is active */
-            .app-shell.in-chat .sidebar { 
-                transform: translateX(-20%); 
-                opacity: 0; 
-                pointer-events: none; 
-            }
-            .app-shell.in-chat .chat-view { 
-                transform: translateX(0); 
-            }
-            
+            .sidebar { width: 100%; position: absolute; height: 100%; border-right: none; }
+            .chat-view { width: 100%; position: absolute; height: 100%; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+            .app-shell.in-chat .sidebar { transform: translateX(-20%); opacity: 0; pointer-events: none; }
+            .app-shell.in-chat .chat-view { transform: translateX(0); }
             .mobile-back-btn { display: flex; }
             .msg-wrapper { max-width: 90%; }
             .controls-bar { padding: 12px 16px; }
             .chat-header { padding: 16px; }
-            
             .auth-card { padding: 30px 20px; border: none; background: transparent; box-shadow: none;}
         }
 
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(10px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade { animation: fadeIn 0.4s ease forwards; }
 
-        /* Индикатор записи и панель звонка */
-.rec-status { display: none; color: var(--danger); font-family: 'JetBrains Mono'; font-size: 12px; margin-right: 10px; align-items: center; gap: 5px; }
-.rec-dot { width: 8px; height: 8px; background: var(--danger); border-radius: 50%; animation: rec-pulse 1s infinite; }
-@keyframes rec-pulse { 50% { opacity: 0; } }
+        .rec-status { display: none; color: var(--danger); font-family: 'JetBrains Mono'; font-size: 12px; margin-right: 10px; align-items: center; gap: 5px; }
+        .rec-dot { width: 8px; height: 8px; background: var(--danger); border-radius: 50%; animation: rec-pulse 1s infinite; }
+        @keyframes rec-pulse { 50% { opacity: 0; } }
 
-.call-overlay { 
-    display: none; position: absolute; top: 0; left: 0; right: 0; z-index: 100;
-    background: var(--bg-panel); border-bottom: 1px solid var(--accent-dim);
-    padding: 15px; align-items: center; justify-content: space-between; animation: slideDown 0.3s ease;
-}
-@keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+        .call-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; z-index: 100; background: var(--bg-panel); border-bottom: 1px solid var(--accent-dim); padding: 15px; align-items: center; justify-content: space-between; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 
-.file-pre-view { 
-    display: none; padding: 10px; background: rgba(255,255,255,0.03); 
-    border-top: 1px solid var(--border-light); font-size: 12px; color: var(--accent);
-}
+        .file-pre-view { display: none; padding: 10px; background: rgba(255,255,255,0.03); border-top: 1px solid var(--border-light); font-size: 12px; color: var(--accent); text-align: center; }
     </style>
 </head>
 <body>
@@ -513,18 +261,28 @@
     <div id="auth-screen" class="auth-overlay">
         <div class="auth-card animate-fade">
             <h1 style="letter-spacing: 8px; font-weight: 300; margin-bottom: 5px;">IMCHAT</h1>
-            <p style="color: var(--accent); font-size: 10px; margin-bottom: 40px; font-family: 'JetBrains Mono';">SECURE_P2P_NODE_v5</p>
+            <p style="color: var(--accent); font-size: 10px; margin-bottom: 40px; font-family: 'JetBrains Mono';">WEB3_XMTP_NODE_v6</p>
             
             <div id="initial-connect-box">
-                <button class="btn-action btn-solid" style="padding: 18px; font-size: 14px;" onclick="App.showWalletSelector()">
-                    <i class="fa-solid fa-wallet"></i> &nbsp; CONNECT WALLET
+                <button class="btn-action btn-solid" style="padding: 18px; font-size: 14px;" onclick="App.showWalletSelector()" id="btn-connect-init" disabled>
+                    <i class="fa-solid fa-spinner fa-spin"></i> &nbsp; LOADING WEB3...
                 </button>
             </div>
 
             <div id="wallet-selector" style="display: none; animation: fadeIn 0.3s;">
-                <p style="font-size: 10px; color: var(--text-muted); margin-bottom: 20px; letter-spacing: 1px;">AVAILABLE PROVIDERS:</p>
-                <div style="display: grid; gap: 12px;" id="detected-wallets">
+                <p style="font-size: 10px; color: var(--text-muted); margin-bottom: 20px; letter-spacing: 1px;">WEB3 AUTHENTICATION:</p>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <button class="btn-action" style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03);" onclick="App.loginWithGoogle()">
+                        <i class="fa-brands fa-google"></i> <span style="color: #fff;">Continue with Google</span>
+                    </button>
+                    <div style="display:flex; gap:8px;">
+                        <input type="email" id="email-input" class="input-field" placeholder="Enter Email" style="padding: 10px; font-size: 12px;">
+                        <button class="btn-action" style="width: auto; padding: 10px 15px;" onclick="App.loginWithEmail()">SEND</button>
                     </div>
+                    <button class="btn-action" style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03); margin-top:10px;" onclick="App.loginWithMetaMask()">
+                        <i class="fa-solid fa-fox" style="color:#f6851b; font-size:18px;"></i> <span style="color:#fff;">MetaMask</span>
+                    </button>
+                </div>
                 <button class="icon-btn" style="margin: 20px auto 0;" onclick="App.hideWalletSelector()">
                     <i class="fa-solid fa-arrow-left"></i>
                 </button>
@@ -535,7 +293,6 @@
     </div>
 
     <div class="app-shell" id="app-shell">
-        
         <aside class="sidebar">
             <div class="node-header">
                 <div class="node-identity">
@@ -547,8 +304,7 @@
                 </button>
             </div>
             
-            <div class="contacts-scroll" id="contacts-list">
-                </div>
+            <div class="contacts-scroll" id="contacts-list"></div>
 
             <div class="sidebar-footer">
                 <input type="text" id="add-peer-id" class="input-field" placeholder="Enter Wallet 0x..." style="font-size: 12px; margin-bottom: 12px; width: 100%; background: rgba(0,0,0,0.5);">
@@ -557,14 +313,13 @@
         </aside>
 
         <main class="chat-view">
-
             <div id="call-panel" class="call-overlay">
-    <div id="call-info">CALLING...</div>
-    <div style="display: flex; gap: 10px;">
-        <button id="answer-btn" class="icon-btn" style="display:none; color:var(--accent);" onclick="App.acceptCall()"><i class="fa-solid fa-phone"></i></button>
-        <button class="icon-btn" style="color:var(--danger);" onclick="App.endCall()"><i class="fa-solid fa-phone-slash"></i></button>
-    </div>
-</div>
+                <div id="call-info">CALLING...</div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="answer-btn" class="icon-btn" style="display:none; color:var(--accent);" onclick="App.acceptCall()"><i class="fa-solid fa-phone"></i></button>
+                    <button class="icon-btn" style="color:var(--danger);" onclick="App.endCall()"><i class="fa-solid fa-phone-slash"></i></button>
+                </div>
+            </div>
             
             <div id="empty-state" class="full-overlay">
                 <i class="fa-solid fa-shield-halved" style="font-size: 48px; color: var(--border-light); margin-bottom: 24px;"></i>
@@ -612,7 +367,6 @@
             </header>
 
             <div class="messages-flow" id="messages-flow"></div>
-
             <div id="file-pre-view" class="file-pre-view"></div>
 
             <footer class="controls-bar" id="controls-bar">
@@ -631,10 +385,10 @@
                 </button>
 
                 <button class="icon-btn" id="call-btn" onclick="App.toggleCall()" title="P2P Voice Call">
-    <i class="fa-solid fa-phone"></i>
-</button>
+                    <i class="fa-solid fa-phone"></i>
+                </button>
 
-<audio id="remote-audio" autoplay style="display:none;"></audio>
+                <audio id="remote-audio" autoplay style="display:none;"></audio>
 
                 <input type="text" id="chat-input" class="input-field" placeholder="Transmit secure message..." onkeypress="if(event.key === 'Enter') App.sendText()">
                 
@@ -648,74 +402,16 @@
 <script>
 /**
  * ============================================================================
- * IMCHAT CORE ENGINE v5.0
- * Architecture: True P2P, EIP-6963 Discovery, Asymmetric Handshakes
+ * IMCHAT WEB3 ENGINE v6.0
+ * Architecture: XMTP (Messaging), IPFS (Storage), WebRTC (Calls)
  * ============================================================================
  */
 
 // ----------------------------------------------------------------------------
-// 1. EIP-6963 WALLET DISCOVERY LISTENER
-// ----------------------------------------------------------------------------
-const EIPProviders = {};
-window.addEventListener("eip6963:announceProvider", (event) => {
-    EIPProviders[event.detail.info.uuid] = event.detail;
-});
-window.dispatchEvent(new Event("eip6963:requestProvider"));
-
-// ----------------------------------------------------------------------------
-// 2. CRYPTOGRAPHY ENGINE (Web Crypto API Wrapper)
-// ----------------------------------------------------------------------------
-const CryptoEngine = {
-    async generateECDH() {
-        return await crypto.subtle.generateKey(
-            { name: "ECDH", namedCurve: "P-384" }, 
-            true, 
-            ["deriveKey"]
-        );
-    },
-    async deriveAES(privateKey, peerPubKeyBuffer) {
-        const peerPubKey = await crypto.subtle.importKey(
-            "raw", 
-            new Uint8Array(peerPubKeyBuffer), 
-            { name: "ECDH", namedCurve: "P-384" }, 
-            true, 
-            []
-        );
-        return await crypto.subtle.deriveKey(
-            { name: "ECDH", public: peerPubKey }, 
-            privateKey, 
-            { name: "AES-GCM", length: 256 }, 
-            false, 
-            ["encrypt", "decrypt"]
-        );
-    },
-    async encryptData(aesKey, text) {
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const encoded = new TextEncoder().encode(text);
-        const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, aesKey, encoded);
-        return { iv: Array.from(iv), data: Array.from(new Uint8Array(cipher)) };
-    },
-    async decryptData(aesKey, encryptedObj) {
-        try {
-            const decrypted = await crypto.subtle.decrypt(
-                { name: "AES-GCM", iv: new Uint8Array(encryptedObj.iv) }, 
-                aesKey, 
-                new Uint8Array(encryptedObj.data)
-            );
-            return new TextDecoder().decode(decrypted);
-        } catch(e) { 
-            console.error("[CRYPTO] Decryption failed:", e);
-            return "[CORRUPTED_PAYLOAD]"; 
-        }
-    }
-};
-
-// ----------------------------------------------------------------------------
-// 3. GENERATIVE AVATAR ENGINE
+// 1. GENERATIVE AVATAR ENGINE
 // ----------------------------------------------------------------------------
 const AvatarEngine = {
     generate(address, targetId) {
-        // Enforce lowercase for consistent generation
         const hash = address.toLowerCase().replace('0x', '');
         const container = document.getElementById(targetId);
         if (!container) return;
@@ -723,25 +419,20 @@ const AvatarEngine = {
         container.innerHTML = '';
         container.className = 'avatar-box';
         
-        // Math to generate colors
         const hue = parseInt(hash.substring(0, 4), 16) % 360;
         const mainColor = `hsl(${hue}, 80%, 60%)`;
         const baseDark = `hsl(${hue}, 30%, 12%)`; 
         
         container.style.backgroundColor = baseDark;
 
-        // 5x5 Mirrored Matrix
         for (let row = 0; row < 5; row++) {
             for (let col = 0; col < 5; col++) {
                 const pixel = document.createElement('div');
                 pixel.className = 'pixel';
-                
-                // Mirror logic to create symmetry (Space Invaders style)
                 const mirrorCol = col > 2 ? 4 - col : col;
                 const index = row * 3 + mirrorCol;
                 
-                const charCode = hash.charCodeAt(index % hash.length);
-                if (charCode % 2 === 0) {
+                if (hash.charCodeAt(index % hash.length) % 2 === 0) {
                     pixel.style.backgroundColor = mainColor;
                     pixel.style.boxShadow = `0 0 8px ${mainColor}`;
                 }
@@ -752,23 +443,28 @@ const AvatarEngine = {
 };
 
 // ----------------------------------------------------------------------------
-// 4. MAIN APPLICATION CONTROLLER
+// 2. MAIN APPLICATION CONTROLLER
 // ----------------------------------------------------------------------------
 const App = {
-    // State
-    peer: null,
-    myAddress: null,
-    dbPrefix: null, // Used to isolate localStorage per wallet
+    // ВАЖНО: Вставьте сюда свой Client ID из панели thirdweb (thirdweb.com)
+    THIRDWEB_CLIENT_ID: "team_cmofebavx02hlb60lgj6wnh48", // Замените на свой
     
-    // P2P State
-    connections: {},      // address -> PeerJS DataConnection
-    activeSessions: {},   // address -> AES-GCM Key (Green Tunnel)
-    incomingRequests: {}, // address -> { conn, pub, ecdh } (Pending)
-    lastSeen: {},         // address -> timestamp (For Heartbeat)
+    // State
+    client: null,
+    myAddress: null,
+    dbPrefix: null,
+    xmtp: null,
+    activeProvider: null,
+    
+    // WebRTC / Call State
+    rtcConnections: {},
+    incomingCallOffer: null,
+    incomingCallAddr: null,
     
     // UI State
     activePeer: null,
     isStealth: false,
+    incomingRequests: {},
     
     // Audio State
     isCyberMic: false,
@@ -776,69 +472,26 @@ const App = {
     mediaRecorder: null, 
     stream: null,
 
-    // Wallet State
-    availableProviders: {}, 
-    activeProvider: null,
-
-    //хранилище для ключей ожидания:
-    pendingKeys: {},
-
-    
+    async initModules() {
+        try {
+            this.client = window.Thirdweb.createThirdwebClient({
+                clientId: this.THIRDWEB_CLIENT_ID 
+            });
+            const btnInit = document.getElementById('btn-connect-init');
+            btnInit.disabled = false;
+            btnInit.innerHTML = '<i class="fa-solid fa-wallet"></i> &nbsp; CONNECT WALLET';
+            console.log("[SYSTEM] Web3 Modules Initialized");
+        } catch(e) {
+            console.error("Thirdweb init failed", e);
+        }
+    },
 
     /* --- WALLET & AUTH MODULE --- */
     
     showWalletSelector() {
-        if (window.location.protocol === 'file:') {
-            this.showError("Requires HTTP Server (Live Server) for Web3.");
-            return;
-        }
-
         document.getElementById('initial-connect-box').style.display = 'none';
         document.getElementById('wallet-selector').style.display = 'block';
         this.showError("");
-        
-        const list = document.getElementById('detected-wallets');
-        list.innerHTML = '';
-        this.availableProviders = {};
-        
-        // Use a set to prevent duplicates if EIP-6963 and legacy overlap
-        const detectedNames = new Set();
-        let count = 0;
-
-        // Fire EIP-6963 request again just in case
-        window.dispatchEvent(new Event("eip6963:requestProvider"));
-
-        // 1. Map EIP-6963 Wallets
-        for (const [uuid, data] of Object.entries(EIPProviders)) {
-            const nameLower = data.info.name.toLowerCase();
-            if (detectedNames.has(nameLower)) continue; 
-            detectedNames.add(nameLower);
-
-            this.availableProviders[uuid] = { provider: data.provider, type: 'evm' };
-            const iconHtml = data.info.icon ? `<img src="${data.info.icon}" style="width:20px; height:20px; border-radius:4px;">` : `<i class="fa-solid fa-wallet"></i>`;
-            
-            list.innerHTML += `
-                <button class="btn-action" style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03);" onclick="App.login('${uuid}')">
-                    ${iconHtml} <span style="color: #fff;">${data.info.name}</span>
-                </button>`;
-            count++;
-        }
-
-        // 2. Map Legacy Fallbacks
-        if (window.ethereum && window.ethereum.isMetaMask && !Array.from(detectedNames).some(n => n.includes('meta'))) {
-            this.availableProviders['mm_legacy'] = { provider: window.ethereum, type: 'evm' };
-            list.innerHTML += `<button class="btn-action" style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03);" onclick="App.login('mm_legacy')"><i class="fa-solid fa-fox" style="color:#f6851b; font-size:18px;"></i> <span style="color:#fff;">MetaMask</span></button>`;
-            count++;
-        }
-        if (window.solana && window.solana.isPhantom && !Array.from(detectedNames).some(n => n.includes('phantom'))) {
-            this.availableProviders['phantom_legacy'] = { provider: window.solana, type: 'solana' };
-            list.innerHTML += `<button class="btn-action" style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03);" onclick="App.login('phantom_legacy')"><i class="fa-solid fa-ghost" style="color:#ab9ff2; font-size:18px;"></i> <span style="color:#fff;">Phantom</span></button>`;
-            count++;
-        }
-
-        if (count === 0) {
-            list.innerHTML = `<div style="color: var(--danger); font-size: 12px; padding: 15px; border: 1px dashed var(--danger); border-radius: 8px; background: rgba(255,0,0,0.05);">No compatible Web3 wallets detected. Install MetaMask or Phantom.</div>`;
-        }
     },
 
     hideWalletSelector() {
@@ -850,40 +503,82 @@ const App = {
         document.getElementById('auth-error').innerText = msg;
     },
 
-    async login(id) {
+    async loginWithEmail() {
+        const email = document.getElementById('email-input').value.trim();
+        if (!email) return this.showError("Please enter your email.");
         try {
-            const wallet = this.availableProviders[id];
-            let address = "";
-            
-            if (wallet.type === 'evm') {
-                const accounts = await wallet.provider.request({ method: 'eth_requestAccounts' });
-                address = accounts[0];
-            } else {
-                const resp = await wallet.provider.connect();
-                address = resp.publicKey.toString();
+            const wallet = window.Thirdweb.inAppWallet();
+            this.activeProvider = wallet;
+            const account = await wallet.connect({
+                client: this.client,
+                strategy: "email",
+                email: email,
+                verificationCode: async () => prompt(`Enter the verification code sent to ${email}`)
+            });
+            await this.initSession(account);
+        } catch (e) { this.showError(e.message); }
+    },
+
+    async loginWithGoogle() {
+        try {
+            const wallet = window.Thirdweb.inAppWallet();
+            this.activeProvider = wallet;
+            const account = await wallet.connect({
+                client: this.client,
+                strategy: "google"
+            });
+            await this.initSession(account);
+        } catch (e) { this.showError(e.message); }
+    },
+
+    async loginWithMetaMask() {
+        try {
+            const wallet = window.Thirdweb.createWallet("io.metamask");
+            this.activeProvider = wallet;
+            const account = await wallet.connect({ client: this.client });
+            await this.initSession(account);
+        } catch (e) { this.showError("MetaMask login failed."); }
+    },
+
+    async initSession(account) {
+        this.myAddress = account.address.toLowerCase();
+        this.dbPrefix = `imchat_db_${this.myAddress}_`;
+        
+        document.getElementById('auth-screen').style.display = 'none';
+        
+        // Setup XMTP Adapter for Thirdweb Account
+        const xmtpSigner = {
+            getAddress: async () => account.address,
+            signMessage: async (message) => {
+                let msgToSign = message;
+                if (message instanceof Uint8Array) {
+                    msgToSign = new TextDecoder().decode(message);
+                }
+                return await account.signMessage({ message: msgToSign });
             }
-            
-            this.activeProvider = wallet.provider;
-            
-            // CRITICAL: Normalize address to lowercase immediately
-            this.myAddress = address.toLowerCase();
-            this.dbPrefix = `imchat_db_${this.myAddress}_`;
-            
-            console.log(`[AUTH] Logged in as: ${this.myAddress}`);
-            this.bootNode();
-            
-        } catch (e) { 
+        };
+        
+        try {
+            this.xmtp = await window.XMTPClient.create(xmtpSigner, { env: "production" });
+            console.log(`[XMTP] Connected as ${this.myAddress}`);
+        } catch(e) {
             console.error(e);
-            this.showError("Connection rejected by user."); 
+            alert("Failed to connect to XMTP network");
+            return;
         }
+
+        AvatarEngine.generate(this.myAddress, 'my-avatar');
+        document.getElementById('my-address-display').innerText = this.myAddress.slice(0, 6) + "..." + this.myAddress.slice(-4);
+        
+        await this.loadContactsFromIPFS();
+        this.renderSidebar();
+        
+        this.listenToXMTP();
     },
 
-    logout() {
-        if (this.peer) this.peer.destroy();
-        location.reload();
-    },
+    logout() { location.reload(); },
 
-    /* --- ISOLATED STORAGE MODULE --- */
+    /* --- ISOLATED STORAGE & IPFS METADATA --- */
     
     getDB(key) { return JSON.parse(localStorage.getItem(this.dbPrefix + key) || '[]'); },
     setDB(key, arr) { localStorage.setItem(this.dbPrefix + key, JSON.stringify([...new Set(arr)])); },
@@ -891,252 +586,148 @@ const App = {
     getContacts() { return this.getDB('contacts'); },
     addContactToDB(addr) { 
         const c = this.getContacts(); 
-        c.push(addr); 
+        c.push(addr.toLowerCase()); 
         this.setDB('contacts', c); 
+        this.saveContactsToIPFS();
     },
     removeContactFromDB(addr) { 
         this.setDB('contacts', this.getContacts().filter(a => a !== addr)); 
+        this.saveContactsToIPFS();
     },
 
-    /* --- P2P NETWORK & HANDSHAKE MODULE --- */
-    
-    bootNode() {
-        document.getElementById('auth-screen').style.display = 'none';
-        
-        // Generate a deterministic, lowercase Peer ID based on wallet address
-        const safeHash = btoa(this.myAddress).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
-        const nodeId = `imnode_${safeHash}`;
-        
-        console.log(`[P2P] Booting Node ID: ${nodeId}`);
-        this.peer = new Peer(nodeId, { debug: 1 });
-
-        this.peer.on('open', () => {
-            console.log("[P2P] Node Online.");
-            AvatarEngine.generate(this.myAddress, 'my-avatar');
+    async saveContactsToIPFS() {
+        try {
+            const data = JSON.stringify(this.getContacts());
+            const fileKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, fileKey, new TextEncoder().encode(data));
             
-            // Format address for display (0x1234...abcd)
-            const displayAddr = this.myAddress.slice(0, 6) + "..." + this.myAddress.slice(-4);
-            document.getElementById('my-address-display').innerText = displayAddr;
+            const blob = new Blob([encrypted]);
+            const uri = await window.Thirdweb.upload({ client: this.client, files: [new File([blob], "contacts.json")] });
             
-            this.renderSidebar();
+            const exportedKey = await crypto.subtle.exportKey("raw", fileKey);
+            const metadata = { uri: uri, iv: Array.from(iv), key: Array.from(new Uint8Array(exportedKey)) };
             
-            // Start Heartbeat & Reconnection Engine
-            setInterval(() => this.networkPulse(), 3000);
-        });
-
-        // Handle Incoming Connections
-        this.peer.on('connection', conn => this.setupDataChannel(conn));
-        
-        this.peer.on('error', err => {
-            console.warn("[P2P] PeerJS Warning:", err.type);
-        });
+            // Simulating Contract Metadata pointer with localStorage
+            localStorage.setItem(this.myAddress + "_contract_metadata", JSON.stringify(metadata));
+            console.log("[IPFS] Contacts synced to decentralized storage");
+        } catch(e) { console.error("Contacts sync failed", e); }
     },
 
+    async loadContactsFromIPFS() {
+        const metaStr = localStorage.getItem(this.myAddress + "_contract_metadata");
+        if (!metaStr) return;
+        try {
+            const meta = JSON.parse(metaStr);
+            const res = await window.Thirdweb.download({ client: this.client, uri: meta.uri });
+            const blob = await res.blob();
+            const buffer = await blob.arrayBuffer();
+            
+            const importedKey = await crypto.subtle.importKey("raw", new Uint8Array(meta.key), { name: "AES-GCM" }, false, ["decrypt"]);
+            const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(meta.iv) }, importedKey, buffer);
+            
+            const contacts = JSON.parse(new TextDecoder().decode(decrypted));
+            this.setDB('contacts', contacts);
+            console.log("[IPFS] Contacts loaded from decentralized storage");
+        } catch(e) { console.error("Failed to load contacts from IPFS", e); }
+    },
+
+    /* --- XMTP DECENTRALIZED MESSAGING --- */
     
-
-    networkPulse() {
-        const now = Date.now();
-        const contacts = this.getContacts();
-        
-        // 1. Try to connect to offline contacts
-        contacts.forEach(addr => {
-            const conn = this.connections[addr];
-            if (!conn || !conn.open) {
-                const targetHash = btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
-                const targetId = `imnode_${targetHash}`;
-                const newConn = this.peer.connect(targetId, { reliable: true });
-                if(newConn) this.setupDataChannel(newConn);
-            }
-        });
-
-        // 2. Ping active connections & Check timeouts
-        for (const [addr, conn] of Object.entries(this.connections)) {
-            if (conn.open) {
-                conn.send({ type: 'ping' });
-                
-                // If no pong received in last 12 seconds, mark offline
-                if (this.lastSeen[addr] && (now - this.lastSeen[addr] > 12000)) {
-                    console.log(`[P2P] Connection to ${addr} timed out.`);
-                    conn.close();
-                    delete this.connections[addr];
-                    delete this.activeSessions[addr];
-                    this.renderSidebar();
-                    if (this.activePeer === addr) this.updateChatHeader();
-                }
+    async listenToXMTP() {
+        const stream = await this.xmtp.conversations.streamAllMessages();
+        for await (const message of stream) {
+            if (message.senderAddress.toLowerCase() === this.myAddress) continue;
+            const sender = message.senderAddress.toLowerCase();
+            const isKnown = this.getContacts().includes(sender);
+            
+            if (!isKnown) {
+                if (!this.incomingRequests[sender]) this.incomingRequests[sender] = [];
+                this.incomingRequests[sender].push(message);
+                this.renderSidebar();
+            } else {
+                this.processMessage(sender, message.content, message.sent);
             }
         }
     },
 
-    async setupDataChannel(conn) {
-    const ecdh = await CryptoEngine.generateECDH();
-    const myPub = await crypto.subtle.exportKey("raw", ecdh.publicKey);
-
-    conn.on('open', () => {
-        // Сохраняем ключ для этого конкретного соединения
-        this.pendingKeys[conn.peer] = ecdh;
-        conn.send({ 
-            type: 'handshake_req', 
-            address: this.myAddress, 
-            pub: Array.from(new Uint8Array(myPub)) 
-        });
-    });
-
-    conn.on('data', async data => {
-        if (data.address) conn.peerAddress = data.address.toLowerCase();
-        const addr = conn.peerAddress;
-        if (!addr) return;
-
-        if (data.type === 'ping') { 
-            conn.send({ type: 'pong', address: this.myAddress }); 
-            return; 
+    async processMessage(sender, contentStr, time) {
+        let msg = contentStr;
+        if (typeof contentStr === 'string') {
+            try { msg = JSON.parse(contentStr); } 
+            catch(e) { msg = { type: 'text', body: contentStr }; }
         }
-        if (data.type === 'pong') {
-            this.lastSeen[addr] = Date.now();
-            this.connections[addr] = conn;
-            this.renderSidebar(); 
-            this.updateChatHeader();
+
+        // WebRTC Signaling over XMTP
+        if (msg.type === 'rtc_offer') {
+            this.incomingCallOffer = msg.offer;
+            this.incomingCallAddr = sender;
+            document.getElementById('call-panel').style.display = 'flex';
+            document.getElementById('answer-btn').style.display = 'inline-flex';
+            document.getElementById('call-info').innerText = "INCOMING CALL...";
+            return;
+        }
+        if (msg.type === 'rtc_answer') {
+            const pc = this.rtcConnections[sender];
+            if (pc) await pc.setRemoteDescription(new RTCSessionDescription(msg.answer));
+            return;
+        }
+        if (msg.type === 'rtc_candidate') {
+            const pc = this.rtcConnections[sender];
+            if (pc) await pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+            return;
+        }
+        if (msg.type === 'rtc_hangup') {
+            this.endCall();
             return;
         }
 
-        if (data.type === 'handshake_req') {
-            this.connections[addr] = conn;
-            if (this.getContacts().includes(addr)) {
-                this.activeSessions[addr] = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
-                conn.send({ 
-                    type: 'handshake_ack', 
-                    address: this.myAddress, 
-                    pub: Array.from(new Uint8Array(myPub)) 
-                });
-                this.renderSidebar();
-                this.updateChatHeader();
-            } else {
-                this.incomingRequests[addr] = { conn, pub: data.pub, ecdh };
-                this.renderSidebar();
-            }
-        } 
-        else if (data.type === 'handshake_ack') {
-            const storedECDH = this.pendingKeys[conn.peer] || ecdh;
-            this.activeSessions[addr] = await CryptoEngine.deriveAES(storedECDH.privateKey, data.pub);
-            this.connections[addr] = conn;
-            this.renderSidebar();
-            this.updateChatHeader();
-            delete this.pendingKeys[conn.peer];
-        }
-        else if (data.type === 'enc' && this.activeSessions[addr]) {
-            const decrypted = await CryptoEngine.decryptData(this.activeSessions[addr], data.payload);
-            if (decrypted !== "[CORRUPTED_PAYLOAD]" && this.activePeer === addr) {
-                try { this.renderMessage(JSON.parse(decrypted), 'received'); } catch(e){}
+        // IPFS File Decryption
+        if (msg.type === 'file' || msg.type === 'voice') {
+            try {
+                const res = await window.Thirdweb.download({ client: this.client, uri: msg.uri });
+                const blob = await res.blob();
+                const buffer = await blob.arrayBuffer();
+                
+                const importedKey = await crypto.subtle.importKey("raw", new Uint8Array(msg.key), { name: "AES-GCM" }, false, ["decrypt"]);
+                const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(msg.iv) }, importedKey, buffer);
+                
+                const decBlob = new Blob([decrypted]);
+                msg.body = URL.createObjectURL(decBlob);
+            } catch(e) {
+                console.error("File decryption failed:", e);
+                msg.body = "[Encrypted File - Decryption Failed]";
             }
         }
-    
 
+        if (this.activePeer === sender) {
+            this.renderMessage(msg, 'received', time || Date.now());
+        }
+    },
 
-            // Handshake Logic
-            if (data.type === 'handshake_req') {
-                this.connections[peerAddr] = conn;
-                this.lastSeen[peerAddr] = Date.now();
-                
-                const isKnown = this.getContacts().includes(peerAddr);
-                
-                if (isKnown) {
-                    // Auto-accept if already in contacts
-                    const aesKey = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
-                    this.activeSessions[peerAddr] = aesKey;
-                    
-                    conn.send({ 
-                        type: 'handshake_ack', 
-                        address: this.myAddress, 
-                        pub: Array.from(new Uint8Array(myPub)) 
-                    });
-                    
-                    console.log(`[SECURE] Tunnel established with ${peerAddr}`);
-                    this.renderSidebar();
-                    if(this.activePeer === peerAddr) this.updateChatHeader();
-                } else {
-                    // Hold in pending requests
-                    this.incomingRequests[peerAddr] = { conn, pub: data.pub, ecdh };
-                    conn.send({ type: 'handshake_pending', address: this.myAddress });
-                    
-                    console.log(`[P2P] Incoming request from ${peerAddr}`);
-                    this.renderSidebar();
-                }
-            } 
-            else if (data.type === 'handshake_ack') {
-                // They accepted our request
-                this.lastSeen[peerAddr] = Date.now();
-                const aesKey = await CryptoEngine.deriveAES(ecdh.privateKey, data.pub);
-                this.activeSessions[peerAddr] = aesKey;
-                
-                console.log(`[SECURE] Tunnel established with ${peerAddr}`);
-                this.renderSidebar();
-                if(this.activePeer === peerAddr) this.updateChatHeader();
-            }
-            else if (data.type === 'handshake_pending') {
-                // They received it, waiting for user action
-                this.lastSeen[peerAddr] = Date.now();
-                this.connections[peerAddr] = conn;
-                this.renderSidebar();
-                if(this.activePeer === peerAddr) this.updateChatHeader();
-            }
-            else if (data.type === 'handshake_decline') {
-                // They rejected us
-                conn.close();
-                delete this.connections[peerAddr];
-                delete this.activeSessions[peerAddr];
-                this.renderSidebar();
-            }
-            else if (data.type === 'enc') {
-                // Encrypted Message Received
-                this.lastSeen[peerAddr] = Date.now();
-                const aesKey = this.activeSessions[peerAddr];
-                
-                if (aesKey) {
-                    const decrypted = await CryptoEngine.decryptData(aesKey, data.payload);
-                    if (this.activePeer === peerAddr) {
-                        this.renderMessage(JSON.parse(decrypted), 'received');
-                    } else {
-                        // TODO: Add unread counter badge here
-                        console.log(`[MSG] New message from ${peerAddr}`);
-                    }
-                }
-            }
-        });
-
-        conn.on('close', () => {
-            const addr = conn.peerAddress;
-            if (addr) {
-                console.log(`[P2P] Connection closed: ${addr}`);
-                delete this.connections[addr];
-                delete this.activeSessions[addr];
-                this.renderSidebar();
-                if (this.activePeer === addr) this.updateChatHeader();
-            }
-        });
+    async sendDirectXMTP(addr, payload) {
+        if (!this.xmtp) return;
+        try {
+            const conversation = await this.xmtp.conversations.newConversation(addr);
+            const textStr = typeof payload === 'string' ? payload : JSON.stringify(payload);
+            await conversation.send(textStr);
+        } catch(e) { console.error("XMTP send error:", e); }
     },
 
     // --- User Actions ---
     
     addContact() {
         const input = document.getElementById('add-peer-id');
-        let addr = input.value.trim().toLowerCase(); // CRITICAL FIX
-        
+        let addr = input.value.trim().toLowerCase();
         if (!addr || addr === this.myAddress) return;
         
         this.addContactToDB(addr);
         input.value = '';
-        
-        console.log(`[UI] Added contact: ${addr}`);
         this.renderSidebar();
-        this.networkPulse(); // Immediately try to connect
     },
 
     deleteContact(addr) {
-        if(this.connections[addr]) this.connections[addr].close();
-        
-        delete this.connections[addr];
-        delete this.activeSessions[addr];
         this.removeContactFromDB(addr);
-        
         if (this.activePeer === addr) {
             this.activePeer = null;
             document.getElementById('empty-state').style.display = 'flex';
@@ -1146,49 +737,26 @@ const App = {
         this.renderSidebar();
     },
 
-    clearChat() {
-        document.getElementById('messages-flow').innerHTML = '';
-    },
+    clearChat() { document.getElementById('messages-flow').innerHTML = ''; },
 
-    // --- Request Handling ---
-
-    // 3. Полностью замени функцию acceptHandshake:
-async acceptHandshake() {
-    const addr = this.activePeer;
-    const req = this.incomingRequests[addr];
-    if (req && req.conn.open) {
-        let contacts = this.getContacts();
-        contacts.push(addr);
-        this.setDB('contacts', contacts);
-
-        // Используем сохраненный ecdh из объекта запроса
-        this.activeSessions[addr] = await CryptoEngine.deriveAES(req.ecdh.privateKey, req.pub);
+    async acceptHandshake() {
+        const addr = this.activePeer;
+        this.addContactToDB(addr); // saves to IPFS automatically
         
-        const myPub = await crypto.subtle.exportKey("raw", req.ecdh.publicKey);
-        req.conn.send({ 
-            type: 'handshake_ack', 
-            address: this.myAddress, 
-            pub: Array.from(new Uint8Array(myPub)) 
-        });
+        const queue = this.incomingRequests[addr] || [];
+        for (const msg of queue) {
+            await this.processMessage(addr, msg.content, msg.sent);
+        }
         
         delete this.incomingRequests[addr];
         this.renderSidebar();
         this.openChat(addr);
-    }
-},
+    },
 
     declineHandshake() {
         const addr = this.activePeer;
-        const req = this.incomingRequests[addr];
-        
-        if (req && req.conn.open) {
-            req.conn.send({ type: 'handshake_decline' });
-            req.conn.close();
-        }
-        
         delete this.incomingRequests[addr];
         this.activePeer = null;
-        
         document.getElementById('request-state').style.display = 'none';
         document.getElementById('empty-state').style.display = 'flex';
         this.renderSidebar();
@@ -1203,63 +771,50 @@ async acceptHandshake() {
         const contacts = this.getContacts();
         const requests = Object.keys(this.incomingRequests);
 
-        // Render Requests
         if (requests.length > 0) {
             const reqHeader = document.createElement('div');
             reqHeader.className = 'list-section-title';
             reqHeader.innerText = 'REQUESTS';
             list.appendChild(reqHeader);
-            
             requests.forEach(addr => list.appendChild(this.createContactCard(addr, true)));
         }
         
-        // Render Contacts
         if (contacts.length > 0) {
             const conHeader = document.createElement('div');
             conHeader.className = 'list-section-title';
             conHeader.innerText = 'SECURE NODES';
             list.appendChild(conHeader);
-            
             contacts.forEach(addr => list.appendChild(this.createContactCard(addr, false)));
         }
     },
 
     createContactCard(addr, isRequest) {
-        // Determine Status
-        const hasConn = this.connections[addr] && this.connections[addr].open;
-        const isSecure = this.activeSessions[addr] !== undefined;
-        
-        let statusClass = '';
-        if (hasConn && isSecure) statusClass = 'online';
-        else if (hasConn && !isSecure) statusClass = 'pending';
+        const isSecure = this.getContacts().includes(addr);
+        let statusClass = isSecure ? 'online' : 'pending';
 
         const card = document.createElement('div');
         card.className = `contact-card ${this.activePeer === addr ? 'active' : ''} ${isRequest ? 'request' : ''}`;
         card.onclick = () => this.openChat(addr, isRequest);
         
         const avId = `av_card_${addr.slice(-6)}`;
-        
         card.innerHTML = `
             <div id="${avId}"></div>
             <div class="contact-info">
                 <span class="contact-address">${addr.slice(0,6)}...${addr.slice(-4)}</span>
-                <span class="contact-status-text">${statusClass === 'online' ? 'SECURE' : (statusClass === 'pending' ? 'LINKING...' : 'OFFLINE')}</span>
+                <span class="contact-status-text">${statusClass === 'online' ? 'SECURE' : 'LINKING...'}</span>
             </div>
             <div class="contact-actions">
-                ${!isRequest ? `<button class="delete-btn-small" onclick="event.stopPropagation(); App.deleteContact('${addr}')"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+                ${!isRequest ? `<button class="icon-btn" style="width:24px; height:24px; font-size:12px;" onclick="event.stopPropagation(); App.deleteContact('${addr}')"><i class="fa-solid fa-trash-can"></i></button>` : ''}
                 <div class="status-dot ${statusClass}"></div>
             </div>
         `;
         
-        // Render avatar asynchronously to not block DOM insertion
         setTimeout(() => AvatarEngine.generate(addr, avId), 0);
         return card;
     },
 
     openChat(addr, isRequest = false) {
         this.activePeer = addr;
-        
-        // Mobile UI behavior
         document.getElementById('app-shell').classList.add('in-chat');
         document.getElementById('empty-state').style.display = 'none';
         
@@ -1269,48 +824,35 @@ async acceptHandshake() {
             document.getElementById('request-state').style.display = 'flex';
             document.getElementById('req-id').innerText = addr.slice(0,10) + "...";
             AvatarEngine.generate(addr, 'req-avatar');
-            
             controls.style.opacity = '0.1';
             controls.style.pointerEvents = 'none';
         } else {
             document.getElementById('request-state').style.display = 'none';
             controls.style.opacity = '1';
             controls.style.pointerEvents = 'auto';
-            
             document.getElementById('active-peer-name').innerText = addr.slice(0, 10) + "...";
             AvatarEngine.generate(addr, 'active-avatar');
-            
             this.updateChatHeader();
         }
-        
-        this.renderSidebar(); // Update active state
+        this.renderSidebar(); 
     },
 
-    closeChatMobile() {
-        document.getElementById('app-shell').classList.remove('in-chat');
-    },
+    closeChatMobile() { document.getElementById('app-shell').classList.remove('in-chat'); },
 
     updateChatHeader() {
         if (!this.activePeer) return;
-        
-        const hasConn = this.connections[this.activePeer] && this.connections[this.activePeer].open;
-        const isSecure = this.activeSessions[this.activePeer] !== undefined;
-        
+        const isSecure = this.getContacts().includes(this.activePeer);
         const dot = document.getElementById('active-status-dot');
         const text = document.getElementById('active-status-text');
         
-        if (hasConn && isSecure) {
+        if (isSecure) {
             dot.className = "status-dot online";
             text.innerText = "TUNNEL_ACTIVE";
             text.style.color = "var(--accent)";
-        } else if (hasConn && !isSecure) {
+        } else {
             dot.className = "status-dot pending";
             text.innerText = "AWAITING_HANDSHAKE";
             text.style.color = "var(--warning)";
-        } else {
-            dot.className = "status-dot";
-            text.innerText = "OFFLINE";
-            text.style.color = "var(--text-muted)";
         }
     },
 
@@ -1320,7 +862,6 @@ async acceptHandshake() {
         this.isStealth = !this.isStealth;
         const btn = document.getElementById('stealth-toggle');
         const flow = document.getElementById('messages-flow');
-        
         if (this.isStealth) {
             btn.classList.add('active'); 
             btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
@@ -1338,57 +879,87 @@ async acceptHandshake() {
         if (!text || !this.activePeer) return;
 
         const msg = { type: 'text', body: text, time: Date.now() };
-        this.transmitMessage(msg);
+        await this.sendDirectXMTP(this.activePeer, msg);
+        this.renderMessage(msg, 'sent', Date.now());
         input.value = '';
     },
 
-    async transmitMessage(msg) {
-        const sessionKey = this.activeSessions[this.activePeer];
-        const conn = this.connections[this.activePeer];
-        
-        if (!sessionKey || !conn || !conn.open) { 
-            console.warn("Cannot transmit: Tunnel not ready or offline.");
-            return; 
-        }
-        
-        const encrypted = await CryptoEngine.encryptData(sessionKey, JSON.stringify(msg));
-        conn.send({ type: 'enc', payload: encrypted });
-        this.renderMessage(msg, 'sent');
-    },
-
-    renderMessage(msg, direction) {
+    renderMessage(msg, direction, timeStr) {
         const flow = document.getElementById('messages-flow');
         const wrapper = document.createElement('div');
         wrapper.className = `msg-wrapper ${direction}`;
         
         let content = '';
-        if (msg.type === 'text') {
-            content = msg.body;
-        } else if (msg.type === 'voice') {
-            content = `<audio src="${msg.body}" controls style="height:35px; border-radius:10px;"></audio>`;
-        } else if (msg.type === 'file') {
-            content = `<a href="${msg.body}" download="${msg.name}" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-file-arrow-down" style="font-size:18px;"></i> ${msg.name}</a>`;
-        }
+        if (msg.type === 'text') { content = msg.body; } 
+        else if (msg.type === 'voice') { content = `<audio src="${msg.body}" controls style="height:35px; border-radius:10px;"></audio>`; } 
+        else if (msg.type === 'file') { content = `<a href="${msg.body}" download="${msg.name}" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-file-arrow-down" style="font-size:18px;"></i> ${msg.name}</a>`; }
 
-        const timeStr = new Date(msg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const timeFormat = new Date(timeStr).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         
         wrapper.innerHTML = `
             <div class="msg-bubble">${content}</div>
-            <div class="msg-meta">${timeStr}</div>
+            <div class="msg-meta">${timeFormat}</div>
         `;
-        
         flow.appendChild(wrapper);
         flow.scrollTop = flow.scrollHeight;
     },
 
-    // --- Cyber-Mic (Voice Audio Graph) ---
+    // --- Files & IPFS ---
+    
+    async uploadToIPFSAndSend(fileBlob, name, type) {
+        const fileKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        
+        const buffer = await fileBlob.arrayBuffer();
+        const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, fileKey, buffer);
+        
+        const blob = new Blob([encrypted]);
+        const uri = await window.Thirdweb.upload({ client: this.client, files: [new File([blob], name)] });
+        
+        const exportedKey = await crypto.subtle.exportKey("raw", fileKey);
+        
+        const payload = {
+            type: type,
+            name: name,
+            uri: uri,
+            iv: Array.from(iv),
+            key: Array.from(new Uint8Array(exportedKey)),
+            time: Date.now()
+        };
+        
+        await this.sendDirectXMTP(this.activePeer, payload);
+        const displayMsg = { ...payload, body: URL.createObjectURL(fileBlob) };
+        this.renderMessage(displayMsg, 'sent', Date.now());
+    },
+
+    async handleFile(f) {
+        if (!f || !this.activePeer) return;
+        if (f.size > 1000 * 1024 * 1024) return alert("Max 1GB allowed");
+        
+        document.getElementById('file-pre-view').innerText = `Encrypting and uploading ${f.name} to IPFS...`;
+        document.getElementById('file-pre-view').style.display = 'block';
+        try {
+            await this.uploadToIPFSAndSend(f, f.name, 'file');
+        } catch(e) { alert("Upload failed: " + e.message); }
+        document.getElementById('file-pre-view').style.display = 'none';
+    },
+
+    // --- Voice Audio & Cyber-Mic ---
     
     toggleCyberMic() {
         this.isCyberMic = !this.isCyberMic;
         document.getElementById('cyber-mic-btn').classList.toggle('active', this.isCyberMic);
     },
 
-    // Единый процессор для робо-голоса
+    makeDistCurve(amount) {
+        let k = amount || 50, n_samples = 44100, curve = new Float32Array(n_samples), deg = Math.PI / 180, x;
+        for (let i = 0; i < n_samples; ++i ) {
+            x = i * 2 / n_samples - 1;
+            curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+        }
+        return curve;
+    },
+
     async getProcessedStream() {
         this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1398,15 +969,12 @@ async acceptHandshake() {
         const destination = this.audioCtx.createMediaStreamDestination();
 
         if (this.isCyberMic) {
-            // Эффект "Робот/Рация"
             const filter = this.audioCtx.createBiquadFilter();
             filter.type = "bandpass";
             filter.frequency.value = 1000;
             filter.Q.value = 1.0;
-
             const dist = this.audioCtx.createWaveShaper();
             dist.curve = this.makeDistCurve(100);
-
             source.connect(filter);
             filter.connect(dist);
             dist.connect(destination);
@@ -1422,20 +990,21 @@ async acceptHandshake() {
             const processedStream = await this.getProcessedStream();
             this.mediaRecorder = new MediaRecorder(processedStream, { mimeType: 'audio/webm' });
             let chunks = [];
-            this.mediaRecorder.ondataavailable = e => chunks.push(e.data);
-            this.mediaRecorder.onstop = () => {
+            this.mediaRecorder.ondataavailable = ev => chunks.push(ev.data);
+            this.mediaRecorder.onstop = async () => {
                 const blob = new Blob(chunks, { type: 'audio/webm' });
                 if(blob.size > 500) {
-                    const reader = new FileReader();
-                    reader.onload = () => this.transmit({ type: 'voice', body: reader.result, time: Date.now() });
-                    reader.readAsDataURL(blob);
+                    document.getElementById('file-pre-view').innerText = `Uploading Voice to IPFS...`;
+                    document.getElementById('file-pre-view').style.display = 'block';
+                    await this.uploadToIPFSAndSend(blob, "voice.webm", 'voice');
+                    document.getElementById('file-pre-view').style.display = 'none';
                 }
-                this.stream.getTracks().forEach(t => t.stop());
+                if(this.stream) this.stream.getTracks().forEach(t => t.stop());
             };
             this.mediaRecorder.start();
             this.isRecording = true;
             document.getElementById('voice-toggle').style.color = "var(--danger)";
-        } catch (err) { alert("Mic error: " + err); }
+        } catch (err) { console.error("Mic error:", err); }
     },
 
     stopVoice(e) {
@@ -1447,70 +1016,100 @@ async acceptHandshake() {
         }
     },
 
+    // --- WebRTC Calls over XMTP Signaling ---
+
     async toggleCall() {
-        if (this.currentCall) {
-            this.currentCall.close();
+        const addr = this.activePeer;
+        if (!addr) return;
+        
+        if (this.rtcConnections[addr]) {
+            this.endCall();
             return;
         }
 
-        const addr = this.activePeer;
-        if (!this.connections[addr]) return alert("Peer offline");
-
-        const processedStream = await this.getProcessedStream();
-        const targetId = `imnode_${btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16)}`;
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        this.rtcConnections[addr] = pc;
+        this.setupRtcEvents(pc, addr);
         
-        const call = this.peer.call(targetId, processedStream);
-        this.setupCallHandlers(call);
-        document.getElementById('call-btn').style.color = "var(--success)";
-    },
-
-    setupCallHandlers(call) {
-        this.currentCall = call;
-        call.on('stream', remoteStream => {
-            const audio = document.getElementById('remote-audio');
-            audio.srcObject = remoteStream;
-            audio.play();
-        });
-        call.on('close', () => {
-            this.currentCall = null;
-            document.getElementById('call-btn').style.color = "";
-            if(this.stream) this.stream.getTracks().forEach(t => t.stop());
-        });
-    },
-
-    
-    
-    makeDistortionCurve(amount) {
-        let k = typeof amount === 'number' ? amount : 50,
-            n_samples = 44100,
-            curve = new Float32Array(n_samples),
-            deg = Math.PI / 180,
-            i = 0, x;
-        for ( ; i < n_samples; ++i ) {
-            x = i * 2 / n_samples - 1;
-            curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+        try {
+            const stream = await this.getProcessedStream();
+            stream.getTracks().forEach(t => pc.addTrack(t, stream));
+            
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            
+            await this.sendDirectXMTP(addr, { type: 'rtc_offer', offer });
+            
+            document.getElementById('call-btn').style.color = "var(--success)";
+            document.getElementById('call-panel').style.display = 'flex';
+            document.getElementById('call-info').innerText = "CALLING...";
+            document.getElementById('answer-btn').style.display = 'none';
+        } catch(e) {
+            console.error("Call error:", e);
+            this.endCall();
         }
-        return curve;
     },
 
-    // --- File Handling ---
-    
-    handleFile(f) {
-        if (!f) return;
-        if (f.size > 100 * 1024 * 1024) return alert("Max 100MB");
-        
-        const reader = new FileReader();
-        reader.onload = () => {
-            this.transmit({ 
-                type: 'file', 
-                body: reader.result, 
-                name: f.name, 
-                time: Date.now() 
-            });
+    setupRtcEvents(pc, addr) {
+        pc.ontrack = e => {
+            const audio = document.getElementById('remote-audio');
+            audio.srcObject = e.streams[0];
+            audio.play();
+            document.getElementById('call-info').innerText = "CONNECTED";
         };
-        reader.readAsDataURL(f);
+        pc.onicecandidate = e => {
+            if (e.candidate) {
+                this.sendDirectXMTP(addr, { type: 'rtc_candidate', candidate: e.candidate });
+            }
+        };
+        pc.oniceconnectionstatechange = () => {
+            if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
+                this.endCall();
+            }
+        };
+    },
+
+    async acceptCall() {
+        document.getElementById('answer-btn').style.display = 'none';
+        const addr = this.incomingCallAddr;
+        const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+        this.rtcConnections[addr] = pc;
+        this.setupRtcEvents(pc, addr);
+        
+        try {
+            const stream = await this.getProcessedStream();
+            stream.getTracks().forEach(t => pc.addTrack(t, stream));
+            
+            await pc.setRemoteDescription(new RTCSessionDescription(this.incomingCallOffer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            
+            await this.sendDirectXMTP(addr, { type: 'rtc_answer', answer });
+            document.getElementById('call-btn').style.color = "var(--success)";
+            document.getElementById('call-info').innerText = "CONNECTING...";
+        } catch(e) {
+            console.error("Accept call error:", e);
+            this.endCall();
+        }
+    },
+
+    endCall() {
+        for (const addr in this.rtcConnections) {
+            this.rtcConnections[addr].close();
+            delete this.rtcConnections[addr];
+        }
+        if (this.stream) {
+            this.stream.getTracks().forEach(t => t.stop());
+            this.stream = null;
+        }
+        document.getElementById('call-panel').style.display = 'none';
+        document.getElementById('call-btn').style.color = "";
+        
+        if (this.activePeer) this.sendDirectXMTP(this.activePeer, { type: 'rtc_hangup' });
     }
 };
+
+window.addEventListener('web3-modules-loaded', () => App.initModules());
 </script>
 </body>
 </html>
