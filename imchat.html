@@ -972,7 +972,7 @@
 
             async loginWithGoogle() {
                 try {
-                    const wallet = window.Thirdweb.inAppWallet();
+                    const wallet = window.Thirdweb.inAppWallet({ client: this.client });
                     this.activeProvider = wallet;
                     const account = await wallet.connect({
                         client: this.client,
@@ -997,7 +997,7 @@
                 };
 
                 try {
-                    this.xmtp = await window.XMTPClient.create(xmtpSigner, { env: "production" });
+                    this.xmtp = await window.XMTPClient.create(xmtpSigner, { env: "dev" });
                     console.log(`[XMTP] Connected as ${this.myAddress}`);
                 } catch (e) {
                     console.error("XMTP Connection Error:", e);
