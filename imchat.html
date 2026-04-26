@@ -902,68 +902,65 @@ const App = {
     
     bootNode() {
         document.getElementById('auth-screen').style.display = 'none';
+        // Хэш 16 символов для соответствия networkPulse
+        const myHash = btoa(this.myAddress).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
+        const nodeId = `imnode_${myHash}`;
         
-        // Generate a deterministic, lowercase Peer ID based on wallet address
-        const safeHash = btoa(this.myAddress).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
-        const nodeId = `imnode_${safeHash}`;
-        
-        console.log(`[P2P] Booting Node ID: ${nodeId}`);
+        console.log("[P2P] Booting Node ID:", nodeId);
         this.peer = new Peer(nodeId, { debug: 1 });
 
         this.peer.on('open', () => {
-            console.log("[P2P] Node Online.");
             AvatarEngine.generate(this.myAddress, 'my-avatar');
-
-            // Добавь это ВНУТРЬ bootNode после создания Peer
-    this.peer.on('call', (call) => {
-        this.currentCall = call;
-        document.getElementById('call-panel').style.display = 'flex';
-        document.getElementById('call-info').innerText = "ВХОДЯЩИЙ ЗВОНОК";
-        document.getElementById('answer-btn').style.display = 'block';
-    });
-            
-            
-            // Format address for display (0x1234...abcd)
-            const displayAddr = this.myAddress.slice(0, 6) + "..." + this.myAddress.slice(-4);
-            document.getElementById('my-address-display').innerText = displayAddr;
-            
+            document.getElementById('my-address-display').innerText = 
+                this.myAddress.slice(0, 6) + "..." + this.myAddress.slice(-4);
             this.renderSidebar();
-            
-            // Start Heartbeat & Reconnection Engine
+            // Запуск пульса
             setInterval(() => this.networkPulse(), 3000);
         });
 
-        // Handle Incoming Connections
-        this.peer.on('connection', conn => this.setupDataChannel(conn));
-        
-        this.peer.on('error', err => {
-            console.warn("[P2P] PeerJS Warning:", err.type);
+        // Слушатель входящих звонков
+        this.peer.on('call', (call) => {
+            this.currentCall = call;
+            const panel = document.getElementById('call-panel');
+            if (panel) {
+                panel.style.display = 'flex';
+                document.getElementById('call-info').innerText = "ВХОДЯЩИЙ ЗВОНОК";
+                document.getElementById('answer-btn').style.display = 'block';
+            }
         });
+
+        this.peer.on('connection', conn => this.setupDataChannel(conn));
     },
 
     
 
     networkPulse() {
-        // Исправлено: берем контакты через метод, а не через мифическую переменную
-        const activeContacts = this.getContacts(); 
-        activeContacts.forEach(addr => {
-            const nodeId = "imnode_" + btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 15);
+        const now = Date.now();
+        const contactsList = this.getContacts(); // Получаем массив адресов
+        
+        // 1. Попытка подключения к оффлайн контактам
+        contactsList.forEach(addr => {
             const conn = this.connections[addr];
+            // Подключаемся только если нет активного или открытого соединения
+            if (!conn || !conn.open) {
+                // Хэш должен быть строго 16 символов, как в твоем bootNode
+                const targetHash = btoa(addr).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 16);
+                const targetId = `imnode_${targetHash}`;
+                
+                // Защита от дублирования запросов в процессе соединения
+                if (conn && conn.peerConnection && conn.peerConnection.connectionState === 'connecting') return;
 
-            if (!conn || (conn.open === false && conn.peerConnection?.connectionState !== 'connecting')) {
-                console.log("[P2P] Синхронизация с:", addr);
-                const newConn = this.peer.connect(nodeId, { reliable: true });
-                this.setupDataChannel(newConn);
+                const newConn = this.peer.connect(targetId, { reliable: true });
+                if (newConn) this.setupDataChannel(newConn);
             }
         });
-    
 
-        // 2. Ping active connections & Check timeouts
+        // 2. Пинг активных соединений и проверка таймаутов
         for (const [addr, conn] of Object.entries(this.connections)) {
-            if (conn.open) {
+            if (conn && conn.open) {
                 conn.send({ type: 'ping' });
                 
-                // If no pong received in last 12 seconds, mark offline
+                // Если ответа (pong) нет более 12 секунд — считаем оффлайном
                 if (this.lastSeen[addr] && (now - this.lastSeen[addr] > 12000)) {
                     console.log(`[P2P] Connection to ${addr} timed out.`);
                     conn.close();
@@ -995,17 +992,20 @@ const App = {
         const addr = conn.peerAddress;
         if (!addr) return;
 
-        if (data.type === 'ping') { 
-            conn.send({ type: 'pong', address: this.myAddress }); 
-            return; 
-        }
-        if (data.type === 'pong') {
-            this.lastSeen[addr] = Date.now();
-            this.connections[addr] = conn;
+        if (data.type === 'ping') {
+        conn.send({ type: 'pong', address: this.myAddress });
+        return;
+    }
+    if (data.type === 'pong') {
+        const senderAddr = data.address?.toLowerCase();
+        if (senderAddr) {
+            this.lastSeen[senderAddr] = Date.now();
+            this.connections[senderAddr] = conn;
             this.renderSidebar(); 
-            this.updateChatHeader();
-            return;
+            if (this.activePeer === senderAddr) this.updateChatHeader();
         }
+        return;
+    }
 
         if (data.type === 'handshake_req') {
             this.connections[addr] = conn;
@@ -1450,14 +1450,13 @@ async acceptHandshake() {
         } catch (err) { console.error(err); }
     },
 
-    stopVoice() {
-        if (!this.isRecording) return;
-        this.mediaRecorder.stop();
-        this.isRecording = false;
-        clearInterval(this.recTimer);
-        document.getElementById('voice-toggle').style.color = "var(--text-muted)";
-        document.getElementById('rec-ui').style.display = 'none';
-        if(this.stream) this.stream.getTracks().forEach(t => t.stop());
+    stopVoice(e) {
+        if(e) e.preventDefault();
+        if (this.mediaRecorder && this.isRecording) {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
+            document.getElementById('voice-toggle').style.color = "";
+        }
     },
 
     async toggleCall() {
@@ -1491,33 +1490,7 @@ async acceptHandshake() {
         });
     },
 
-    
-    
-    makeDistortionCurve(amount) {
-        let k = typeof amount === 'number' ? amount : 50,
-            n_samples = 44100,
-            curve = new Float32Array(n_samples),
-            deg = Math.PI / 180,
-            i = 0, x;
-        for ( ; i < n_samples; ++i ) {
-            x = i * 2 / n_samples - 1;
-            curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
-        }
-        return curve;
-    },
-
-    // --- File Handling ---
-    
-    async handleFile(file) {
-        if (!file) return;
-        this.pendingFile = file; // Просто запоминаем файл
-        const preview = document.getElementById('file-pre-view');
-        if (preview) {
-            preview.style.display = 'block';
-            preview.innerText = "📎 " + file.name;
-        }
-    },
-async sendFileChunked(file) {
+    async sendFileChunked(file) {
         const chunkSize = 16384; // 16KB — идеальный размер для WebRTC
         const totalChunks = Math.ceil(file.size / chunkSize);
         const fileId = Math.random().toString(36).substring(7);
@@ -1546,68 +1519,39 @@ async sendFileChunked(file) {
             console.log(`Отправлено ${i+1}/${totalChunks}`);
         }
     },
-    sendText() {
-        const input = document.getElementById('chat-input');
-        
-        // 1. Сначала проверяем, есть ли прикрепленный файл
-        if (this.pendingFile) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                this.transmitMessage({ type: 'file', body: reader.result, name: this.pendingFile.name });
-                this.pendingFile = null;
-                document.getElementById('file-pre-view').style.display = 'none';
-            };
-            reader.readAsDataURL(this.pendingFile);
-        }
 
-        // 2. Потом отправляем текст
-        const val = input.value.trim();
-        if (val && this.activePeer) {
-            this.transmitMessage({ type: 'text', body: val, time: Date.now() });
-            input.value = '';
+    
+    
+    makeDistortionCurve(amount) {
+        let k = typeof amount === 'number' ? amount : 50,
+            n_samples = 44100,
+            curve = new Float32Array(n_samples),
+            deg = Math.PI / 180,
+            i = 0, x;
+        for ( ; i < n_samples; ++i ) {
+            x = i * 2 / n_samples - 1;
+            curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
         }
-    },
-    async startCall() {
-        if (!this.activePeer) return;
-        document.getElementById('call-panel').style.display = 'flex';
-        document.getElementById('call-info').innerText = "ВЫЗОВ...";
-        
-        // Генерация гудка
-        const ac = new AudioContext();
-        const osc = ac.createOscillator();
-        const g = ac.createGain();
-        osc.frequency.value = 900; g.gain.value = 0.1;
-        osc.connect(g); g.connect(ac.destination);
-        osc.start(); this.osc = osc;
-
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // Используем твой текущий метод формирования ID (не меняя его)
-        const targetId = "imnode_" + btoa(this.activePeer).replace(/[^a-z0-9]/gi, '').toLowerCase().slice(0, 15);
-        
-        this.currentCall = this.peer.call(targetId, stream);
-        this.currentCall.on('stream', remote => {
-            this.osc.stop();
-            document.getElementById('call-info').innerText = "В СЕТИ";
-            const a = new Audio(); a.srcObject = remote; a.play();
-        });
+        return curve;
     },
 
-    acceptCall() {
-        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-            this.currentCall.answer(stream);
-            document.getElementById('answer-btn').style.display = 'none';
-            document.getElementById('call-info').innerText = "В СЕТИ";
-            this.currentCall.on('stream', remote => {
-                const a = new Audio(); a.srcObject = remote; a.play();
+    // --- File Handling ---
+    
+    handleFile(f) {
+        if (!f) return;
+        if (f.size > 100 * 1024 * 1024) return alert("Max 100MB");
+        
+        const reader = new FileReader();
+        reader.onload = () => {
+            this.transmit({ 
+                type: 'file', 
+                body: reader.result, 
+                name: f.name, 
+                time: Date.now() 
             });
-        });
-    },
-
-    endCall() {
-        if (this.currentCall) this.currentCall.close();
-        if (this.osc) try { this.osc.stop(); } catch(e){}
-        document.getElementById('call-panel').style.display = 'none';
-    },
+        };
+        reader.readAsDataURL(f);
+    }
 };
 </script>
 </body>
