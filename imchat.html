@@ -1316,23 +1316,15 @@ async acceptHandshake() {
         const conn = this.connections[this.activePeer];
         const session = this.activeSessions[this.activePeer];
 
-        // Проверяем, что канал реально открыт
-        if (!conn || !conn.open) {
-            console.warn("[P2P] Channel not ready. Status:", conn ? 'Connecting/Closed' : 'Null');
-            return;
-        }
-
-        if (!session) {
-            console.warn("[P2P] Encryption session not established.");
-            return;
-        }
+        if (!conn || !conn.open || !session) return;
 
         try {
             const encrypted = await CryptoEngine.encryptData(session, JSON.stringify(msg));
+            // Отправляем как объект — это заставляет PeerJS включить внутренний контроль потока
             conn.send({ type: 'enc', payload: encrypted });
             this.renderMessage(msg, 'sent');
         } catch (e) {
-            console.error("[P2P] Send failed:", e);
+            console.error("[P2P] Ошибка передачи:", e);
         }
     },
 
