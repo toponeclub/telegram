@@ -1,185 +1,159 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IMCHAT | BUNKER NODE v6 (Web3)</title>
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
-        rel="stylesheet">
+    <title>IMCHAT | BUNKER NODE v5</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-
-    <!-- ES Modules for Web3 (Thirdweb only) -->
-    <script type="importmap">
-    {
-      "imports": {
-        "thirdweb": "https://esm.sh/thirdweb@5.50.0",
-        "thirdweb/wallets": "https://esm.sh/thirdweb@5.50.0/wallets",
-        "thirdweb/storage": "https://esm.sh/thirdweb@5.50.0/storage"
-      }
-    }
-    </script>
-    <script type="module">
-        import { createThirdwebClient } from "thirdweb";
-        import { inAppWallet, createWallet } from "thirdweb/wallets";
-        import { upload, download } from "thirdweb/storage";
-        
-        window.Thirdweb = { createThirdwebClient, inAppWallet, createWallet, upload, download };
-
-        window.dispatchEvent(new Event('web3-modules-loaded'));
-    </script>
+    
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
     <style>
         /* ==========================================================================
-           CSS VARIABLES & THEME (Untouched as requested)
+           CSS VARIABLES & THEME
            ========================================================================== */
         :root {
             --bg-main: #030405;
             --bg-panel: rgba(12, 14, 18, 0.85);
             --bg-hover: rgba(255, 255, 255, 0.03);
-
+            
             --accent: #00ffd5;
             --accent-dim: rgba(0, 255, 213, 0.1);
             --accent-glow: 0 0 15px rgba(0, 255, 213, 0.4);
-
+            
             --border-light: rgba(255, 255, 255, 0.08);
             --border-accent: rgba(0, 255, 213, 0.3);
-
+            
             --text-main: #f0f0f0;
             --text-muted: #7a828e;
-
+            
             --danger: #ff3366;
             --warning: #ffb800;
-            --success: #00e676;
-
+            
             --glass-blur: blur(24px);
             --anim-speed: 0.3s;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
+        /* ==========================================================================
+           RESET & BASE STYLES
+           ========================================================================== */
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
             padding: 0;
-            -webkit-tap-highlight-color: transparent;
+            -webkit-tap-highlight-color: transparent; 
         }
 
-        body,
-        html {
-            height: 100%;
+        body, html { 
+            height: 100%; 
             width: 100%;
-            background-color: var(--bg-main);
+            background-color: var(--bg-main); 
             color: var(--text-main);
-            font-family: 'Inter', -apple-system, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif; 
             overflow: hidden;
         }
 
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
+        /* Custom Scrollbar for Cypherpunk Vibe */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent);
-        }
-
+        /* ==========================================================================
+           LAYOUT SHELL
+           ========================================================================== */
         .app-shell {
-            display: flex;
-            height: 100vh;
+            display: flex; 
+            height: 100vh; 
             width: 100vw;
             background: radial-gradient(circle at 50% 0%, #0d161a 0%, var(--bg-main) 80%);
-            position: relative;
+            position: relative; 
             overflow: hidden;
         }
 
+        /* ==========================================================================
+           SIDEBAR (CONTACTS & REQUESTS)
+           ========================================================================== */
         .sidebar {
-            width: 340px;
+            width: 340px; 
             border-right: 1px solid var(--border-light);
-            display: flex;
-            flex-direction: column;
+            display: flex; 
+            flex-direction: column; 
             background: var(--bg-panel);
-            backdrop-filter: var(--glass-blur);
-            z-index: 20;
+            backdrop-filter: var(--glass-blur); 
+            z-index: 20; 
             flex-shrink: 0;
             transition: transform var(--anim-speed) cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        .node-header {
-            padding: 24px;
+        .node-header { 
+            padding: 24px; 
             border-bottom: 1px solid var(--border-light);
-            display: flex;
-            justify-content: space-between;
+            display: flex; 
+            justify-content: space-between; 
             align-items: flex-start;
         }
-
+        
         .node-identity {
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
 
-        .node-id-tag {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
+        .node-id-tag { 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 11px; 
             font-weight: 600;
-            color: var(--accent);
+            color: var(--accent); 
             background: var(--accent-dim);
-            padding: 6px 10px;
-            border-radius: 6px;
+            padding: 6px 10px; 
+            border-radius: 6px; 
             display: inline-block;
             border: 1px solid var(--border-accent);
         }
 
         .list-section-title {
-            font-size: 11px;
+            font-size: 11px; 
             font-weight: 700;
-            color: var(--text-muted);
+            color: var(--text-muted); 
             letter-spacing: 2px;
-            padding: 20px 20px 10px 20px;
+            padding: 20px 20px 10px 20px; 
             text-transform: uppercase;
         }
 
-        .contacts-scroll {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
+        .contacts-scroll { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 10px; 
         }
-
+        
+        /* Contact Cards */
         .contact-card {
-            padding: 12px 16px;
-            border-radius: 12px;
+            padding: 12px 16px; 
+            border-radius: 12px; 
             cursor: pointer;
-            display: flex;
-            align-items: center;
+            display: flex; 
+            align-items: center; 
             gap: 16px;
-            margin-bottom: 6px;
+            margin-bottom: 6px; 
             border: 1px solid transparent;
-            position: relative;
+            position: relative; 
             transition: all 0.2s ease;
         }
 
-        .contact-card:hover {
-            background: var(--bg-hover);
+        .contact-card:hover { 
+            background: var(--bg-hover); 
         }
 
-        .contact-card.active {
-            background: var(--accent-dim);
-            border-color: var(--border-accent);
+        .contact-card.active { 
+            background: var(--accent-dim); 
+            border-color: var(--border-accent); 
         }
 
-        .contact-card.request {
-            border: 1px dashed var(--warning);
+        .contact-card.request { 
+            border: 1px dashed var(--warning); 
             background: rgba(255, 184, 0, 0.05);
         }
 
@@ -190,7 +164,7 @@
         }
 
         .contact-address {
-            font-size: 13px;
+            font-size: 13px; 
             font-family: 'JetBrains Mono', monospace;
             font-weight: 600;
         }
@@ -203,51 +177,48 @@
         }
 
         .contact-actions {
-            position: absolute;
-            right: 16px;
-            display: flex;
-            align-items: center;
+            position: absolute; 
+            right: 16px; 
+            display: flex; 
+            align-items: center; 
             gap: 12px;
         }
 
+        /* Status Indicators */
         .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
             background: #333;
             transition: all 0.3s ease;
         }
+        .status-dot.online { background: var(--accent); box-shadow: var(--accent-glow); }
+        .status-dot.pending { background: var(--warning); box-shadow: 0 0 10px rgba(255, 184, 0, 0.4); }
 
-        .status-dot.online {
-            background: var(--accent);
-            box-shadow: var(--accent-glow);
-        }
-
-        .status-dot.pending {
-            background: var(--warning);
-            box-shadow: 0 0 10px rgba(255, 184, 0, 0.4);
-        }
-
+        /* Sidebar Footer (Add Contact) */
         .sidebar-footer {
-            padding: 24px;
+            padding: 24px; 
             border-top: 1px solid var(--border-light);
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0,0,0,0.2);
         }
 
-        .chat-view {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            min-width: 0;
+        /* ==========================================================================
+           MAIN CHAT VIEW
+           ========================================================================== */
+        .chat-view { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            min-width: 0; 
             background: url('data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="2" cy="2" r="1" fill="rgba(255,255,255,0.03)"/></svg>');
         }
-
-        .chat-header {
-            padding: 20px 30px;
+        
+        .chat-header { 
+            padding: 20px 30px; 
             border-bottom: 1px solid var(--border-light);
-            display: flex;
-            align-items: center;
+            display: flex; 
+            align-items: center; 
             justify-content: space-between;
             background: var(--bg-panel);
             backdrop-filter: var(--glass-blur);
@@ -255,22 +226,23 @@
         }
 
         .mobile-back-btn {
-            display: none;
-            color: var(--accent);
-            background: none;
+            display: none; 
+            color: var(--accent); 
+            background: none; 
             border: none;
-            font-size: 20px;
-            cursor: pointer;
-            margin-right: 20px;
+            font-size: 20px; 
+            cursor: pointer; 
+            margin-right: 20px; 
             padding: 5px;
         }
 
-        .messages-flow {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
+        /* Messages Flow */
+        .messages-flow { 
+            flex: 1; 
+            padding: 30px; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
             gap: 24px;
         }
 
@@ -280,37 +252,30 @@
             max-width: 80%;
         }
 
-        .msg-wrapper.sent {
-            align-self: flex-end;
-            align-items: flex-end;
-        }
-
-        .msg-wrapper.received {
-            align-self: flex-start;
-            align-items: flex-start;
-        }
+        .msg-wrapper.sent { align-self: flex-end; align-items: flex-end; }
+        .msg-wrapper.received { align-self: flex-start; align-items: flex-start; }
 
         .msg-bubble {
-            padding: 14px 20px;
+            padding: 14px 20px; 
             border-radius: 18px;
-            font-size: 14px;
-            line-height: 1.6;
+            font-size: 14px; 
+            line-height: 1.6; 
             position: relative;
             word-break: break-word;
             transition: all var(--anim-speed) ease;
         }
-
-        .msg-sent .msg-bubble {
-            background: var(--accent-dim);
-            border: 1px solid var(--border-accent);
-            color: var(--accent);
-            border-bottom-right-radius: 4px;
+        
+        .msg-sent .msg-bubble { 
+            background: var(--accent-dim); 
+            border: 1px solid var(--border-accent); 
+            color: var(--accent); 
+            border-bottom-right-radius: 4px; 
         }
-
-        .msg-received .msg-bubble {
-            background: #161920;
-            border-bottom-left-radius: 4px;
-            border: 1px solid var(--border-light);
+        
+        .msg-received .msg-bubble { 
+            background: #161920; 
+            border-bottom-left-radius: 4px; 
+            border: 1px solid var(--border-light); 
         }
 
         .msg-meta {
@@ -322,94 +287,86 @@
             align-items: center;
         }
 
-        .stealth-active .msg-bubble {
-            filter: blur(10px);
-            opacity: 0.3;
-            cursor: pointer;
-            user-select: none;
+        /* Stealth Mode Logic */
+        .stealth-active .msg-bubble { 
+            filter: blur(10px); 
+            opacity: 0.3; 
+            cursor: pointer; 
+            user-select: none; 
+        }
+        .stealth-active .msg-bubble:hover, 
+        .stealth-active .msg-bubble:active { 
+            filter: blur(0); 
+            opacity: 1; 
         }
 
-        .stealth-active .msg-bubble:hover,
-        .stealth-active .msg-bubble:active {
-            filter: blur(0);
-            opacity: 1;
-        }
-
-        .controls-bar {
-            padding: 20px 30px;
+        /* ==========================================================================
+           CONTROLS BAR (INPUT)
+           ========================================================================== */
+        .controls-bar { 
+            padding: 20px 30px; 
             border-top: 1px solid var(--border-light);
-            display: flex;
-            gap: 16px;
-            align-items: center;
+            display: flex; 
+            gap: 16px; 
+            align-items: center; 
             background: var(--bg-panel);
             backdrop-filter: var(--glass-blur);
         }
 
         .input-field {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.3);
+            flex: 1; 
+            background: rgba(0,0,0,0.3); 
             border: 1px solid var(--border-light);
-            border-radius: 14px;
-            padding: 16px 20px;
-            color: #fff;
-            outline: none;
+            border-radius: 14px; 
+            padding: 16px 20px; 
+            color: #fff; 
+            outline: none; 
             min-width: 0;
             font-size: 14px;
             transition: border-color 0.2s;
         }
+        .input-field:focus { border-color: var(--accent); }
 
-        .input-field:focus {
-            border-color: var(--accent);
-        }
-
+        /* ==========================================================================
+           BUTTONS & ICONS
+           ========================================================================== */
         .icon-btn {
-            background: transparent;
-            border: none;
+            background: transparent; 
+            border: none; 
             color: var(--text-muted);
-            font-size: 18px;
-            cursor: pointer;
-            width: 44px;
-            height: 44px;
+            font-size: 18px; 
+            cursor: pointer; 
+            width: 44px; 
+            height: 44px; 
             flex-shrink: 0;
-            display: flex;
-            align-items: center;
+            display: flex; 
+            align-items: center; 
             justify-content: center;
-            border-radius: 50%;
+            border-radius: 50%; 
             transition: all 0.2s;
         }
-
-        .icon-btn:hover {
-            color: var(--accent);
-            background: var(--bg-hover);
-        }
-
-        .icon-btn.active {
-            color: var(--accent);
-            background: var(--accent-dim);
-        }
-
-        .icon-btn.danger:hover {
-            color: var(--danger);
-        }
-
+        .icon-btn:hover { color: var(--accent); background: var(--bg-hover); }
+        .icon-btn.active { color: var(--accent); background: var(--accent-dim); }
+        
+        .icon-btn.danger:hover { color: var(--danger); }
+        
         .btn-action {
-            background: transparent;
-            color: var(--accent);
+            background: transparent; 
+            color: var(--accent); 
             border: 1px solid var(--border-accent);
-            padding: 14px;
-            border-radius: 12px;
-            cursor: pointer;
+            padding: 14px; 
+            border-radius: 12px; 
+            cursor: pointer; 
             font-size: 13px;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.2s;
+            font-weight: 600; 
+            width: 100%; 
+            transition: all 0.2s; 
             text-align: center;
             letter-spacing: 1px;
         }
-
-        .btn-action:hover {
-            background: var(--accent-dim);
-            box-shadow: var(--accent-glow);
+        .btn-action:hover { 
+            background: var(--accent-dim); 
+            box-shadow: var(--accent-glow); 
         }
 
         .btn-solid {
@@ -417,246 +374,140 @@
             color: #000;
             border: none;
         }
-
         .btn-solid:hover {
             background: #00e6c0;
             box-shadow: var(--accent-glow);
         }
 
-        .btn-send {
-            background: var(--accent);
-            color: #000;
-            width: 50px;
-            height: 50px;
-            border-radius: 14px;
-            flex-shrink: 0;
+        .btn-send { 
+            background: var(--accent); 
+            color: #000; 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 14px; 
+            flex-shrink: 0; 
         }
+        .btn-send:hover { background: #00e6c0; }
 
-        .btn-send:hover {
-            background: #00e6c0;
-        }
-
+        /* ==========================================================================
+           GENERATIVE AVATARS
+           ========================================================================== */
         .avatar-box {
-            width: 44px;
-            height: 44px;
+            width: 44px; 
+            height: 44px; 
             border-radius: 10px;
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            overflow: hidden; 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
             grid-template-rows: repeat(5, 1fr);
-            flex-shrink: 0;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0; 
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
+        .pixel { width: 100%; height: 100%; }
 
-        .pixel {
-            width: 100%;
-            height: 100%;
-        }
-
+        /* ==========================================================================
+           OVERLAYS & STATES
+           ========================================================================== */
         .full-overlay {
-            position: absolute;
-            inset: 0;
+            position: absolute; 
+            inset: 0; 
             background: rgba(3, 4, 5, 0.85);
             backdrop-filter: blur(8px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
             justify-content: center;
-            z-index: 5;
-            text-align: center;
+            z-index: 5; 
+            text-align: center; 
             padding: 20px;
         }
 
         .auth-overlay {
-            position: fixed;
-            inset: 0;
+            position: fixed; 
+            inset: 0; 
             background: var(--bg-main);
             background-image: radial-gradient(circle at 50% 50%, #0a1114 0%, #030405 100%);
-            z-index: 1000;
-            display: flex;
+            z-index: 1000; 
+            display: flex; 
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            align-items: center; 
+            justify-content: center; 
             padding: 20px;
         }
 
-        .auth-card {
-            width: 100%;
-            max-width: 420px;
-            text-align: center;
+        .auth-card { 
+            width: 100%; 
+            max-width: 420px; 
+            text-align: center; 
             background: var(--bg-panel);
             padding: 40px;
             border-radius: 20px;
             border: 1px solid var(--border-light);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
         }
 
+        /* ==========================================================================
+           RESPONSIVE DESIGN (MOBILE ADAPTATION)
+           ========================================================================== */
         @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                position: absolute;
-                height: 100%;
+            .sidebar { 
+                width: 100%; 
+                position: absolute; 
+                height: 100%; 
                 border-right: none;
             }
-
-            .chat-view {
-                width: 100%;
-                position: absolute;
-                height: 100%;
-                transform: translateX(100%);
-                transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            .chat-view { 
+                width: 100%; 
+                position: absolute; 
+                height: 100%; 
+                transform: translateX(100%); 
+                transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); 
             }
-
-            .app-shell.in-chat .sidebar {
-                transform: translateX(-20%);
-                opacity: 0;
-                pointer-events: none;
+            
+            /* State when chat is active */
+            .app-shell.in-chat .sidebar { 
+                transform: translateX(-20%); 
+                opacity: 0; 
+                pointer-events: none; 
             }
-
-            .app-shell.in-chat .chat-view {
-                transform: translateX(0);
+            .app-shell.in-chat .chat-view { 
+                transform: translateX(0); 
             }
-
-            .mobile-back-btn {
-                display: flex;
-            }
-
-            .msg-wrapper {
-                max-width: 90%;
-            }
-
-            .controls-bar {
-                padding: 12px 16px;
-            }
-
-            .chat-header {
-                padding: 16px;
-            }
-
-            .auth-card {
-                padding: 30px 20px;
-                border: none;
-                background: transparent;
-                box-shadow: none;
-            }
+            
+            .mobile-back-btn { display: flex; }
+            .msg-wrapper { max-width: 90%; }
+            .controls-bar { padding: 12px 16px; }
+            .chat-header { padding: 16px; }
+            
+            .auth-card { padding: 30px 20px; border: none; background: transparent; box-shadow: none;}
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
         }
-
-        .animate-fade {
-            animation: fadeIn 0.4s ease forwards;
-        }
-
-        .rec-status {
-            display: none;
-            color: var(--danger);
-            font-family: 'JetBrains Mono';
-            font-size: 12px;
-            margin-right: 10px;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .rec-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--danger);
-            border-radius: 50%;
-            animation: rec-pulse 1s infinite;
-        }
-
-        @keyframes rec-pulse {
-            50% {
-                opacity: 0;
-            }
-        }
-
-        .call-overlay {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--accent-dim);
-            padding: 15px;
-            align-items: center;
-            justify-content: space-between;
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                transform: translateY(-100%);
-            }
-
-            to {
-                transform: translateY(0);
-            }
-        }
-
-        .file-pre-view {
-            display: none;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.03);
-            border-top: 1px solid var(--border-light);
-            font-size: 12px;
-            color: var(--accent);
-            text-align: center;
-        }
+        
+        .animate-fade { animation: fadeIn 0.4s ease forwards; }
     </style>
 </head>
-
 <body>
-    <!-- SECURE CONTEXT ENFORCER -->
-    <div id="insecure-context-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #900000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; font-family: 'Inter', sans-serif;">
-        <i class="fa-solid fa-triangle-exclamation" style="font-size: 64px; color: #fff; margin-bottom: 20px;"></i>
-        <h1 style="color: #fff; margin-bottom: 20px;">CRITICAL SECURITY ERROR</h1>
-        <p style="color: #fff; font-size: 16px; max-width: 600px; line-height: 1.6;">
-            Your browser has disabled Web3 Cryptography because this site is loaded over an insecure connection (HTTP).
-            <br><br>
-            <strong>Google Login (Thirdweb) and E2E Encryption will NOT work.</strong>
-            <br><br>
-            You MUST serve this site over <strong>HTTPS</strong> (SSL Certificate) or test on <strong>http://localhost</strong>.
-        </p>
-    </div>
-    <script>
-        if (!window.isSecureContext) {
-            document.getElementById('insecure-context-overlay').style.display = 'flex';
-        }
-    </script>
 
     <div id="auth-screen" class="auth-overlay">
         <div class="auth-card animate-fade">
             <h1 style="letter-spacing: 8px; font-weight: 300; margin-bottom: 5px;">IMCHAT</h1>
-            <p style="color: var(--accent); font-size: 10px; margin-bottom: 40px; font-family: 'JetBrains Mono';">
-                WEB3_XMTP_NODE_v6</p>
-
+            <p style="color: var(--accent); font-size: 10px; margin-bottom: 40px; font-family: 'JetBrains Mono';">SECURE_P2P_NODE_v5</p>
+            
             <div id="initial-connect-box">
-                <button class="btn-action btn-solid" style="padding: 18px; font-size: 14px;"
-                    onclick="App.showWalletSelector()" id="btn-connect-init" disabled>
-                    <i class="fa-solid fa-spinner fa-spin"></i> &nbsp; LOADING WEB3...
+                <button class="btn-action btn-solid" style="padding: 18px; font-size: 14px;" onclick="App.showWalletSelector()">
+                    <i class="fa-solid fa-wallet"></i> &nbsp; CONNECT WALLET
                 </button>
             </div>
 
             <div id="wallet-selector" style="display: none; animation: fadeIn 0.3s;">
-                <p style="font-size: 10px; color: var(--text-muted); margin-bottom: 20px; letter-spacing: 1px;">WEB3
-                    AUTHENTICATION:</p>
+                <p style="font-size: 10px; color: var(--text-muted); margin-bottom: 20px; letter-spacing: 1px;">AVAILABLE PROVIDERS:</p>
                 <div style="display: grid; gap: 12px;" id="detected-wallets">
-                    <!-- Injected dynamically via JS -->
-                </div>
+                    </div>
                 <button class="icon-btn" style="margin: 20px auto 0;" onclick="App.hideWalletSelector()">
                     <i class="fa-solid fa-arrow-left"></i>
                 </button>
@@ -667,6 +518,7 @@
     </div>
 
     <div class="app-shell" id="app-shell">
+        
         <aside class="sidebar">
             <div class="node-header">
                 <div class="node-identity">
@@ -677,48 +529,32 @@
                     <i class="fa-solid fa-power-off"></i>
                 </button>
             </div>
-
-            <div class="contacts-scroll" id="contacts-list"></div>
+            
+            <div class="contacts-scroll" id="contacts-list">
+                </div>
 
             <div class="sidebar-footer">
-                <div id="xmtp-status" style="font-size:10px; color: var(--text-muted); text-align:center; margin-bottom:8px; font-family:'JetBrains Mono'; letter-spacing:0.5px;"></div>
-                <input type="text" id="add-peer-id" class="input-field" placeholder="Enter Wallet 0x..."
-                    style="font-size: 12px; margin-bottom: 12px; width: 100%; background: rgba(0,0,0,0.5);">
+                <input type="text" id="add-peer-id" class="input-field" placeholder="Enter Wallet 0x..." style="font-size: 12px; margin-bottom: 12px; width: 100%; background: rgba(0,0,0,0.5);">
                 <button class="btn-action" onclick="App.addContact()">ADD CONTACT</button>
             </div>
         </aside>
 
         <main class="chat-view">
-            <div id="call-panel" class="call-overlay">
-                <div id="call-info">CALLING...</div>
-                <div style="display: flex; gap: 10px;">
-                    <button id="answer-btn" class="icon-btn" style="display:none; color:var(--accent);"
-                        onclick="App.acceptCall()"><i class="fa-solid fa-phone"></i></button>
-                    <button class="icon-btn" style="color:var(--danger);" onclick="App.endCall()"><i
-                            class="fa-solid fa-phone-slash"></i></button>
-                </div>
-            </div>
-
+            
             <div id="empty-state" class="full-overlay">
-                <i class="fa-solid fa-shield-halved"
-                    style="font-size: 48px; color: var(--border-light); margin-bottom: 24px;"></i>
-                <p style="color: var(--text-muted); font-size: 12px; letter-spacing: 3px; text-transform: uppercase;">
-                    Awaiting Secure Connection</p>
+                <i class="fa-solid fa-shield-halved" style="font-size: 48px; color: var(--border-light); margin-bottom: 24px;"></i>
+                <p style="color: var(--text-muted); font-size: 12px; letter-spacing: 3px; text-transform: uppercase;">Awaiting Secure Connection</p>
             </div>
 
-            <div id="request-state" class="full-overlay"
-                style="display: none; z-index: 6; background: rgba(3, 4, 5, 0.98);">
+            <div id="request-state" class="full-overlay" style="display: none; z-index: 6; background: rgba(3, 4, 5, 0.98);">
                 <div id="req-avatar" style="margin-bottom: 24px; transform: scale(1.5);"></div>
-                <p
-                    style="color: var(--text-main); font-size: 15px; margin-bottom: 40px; font-family: 'JetBrains Mono'; line-height: 1.6;">
+                <p style="color: var(--text-main); font-size: 15px; margin-bottom: 40px; font-family: 'JetBrains Mono'; line-height: 1.6;">
                     Node <span id="req-id" style="color:var(--accent);"></span><br>
-                    <span style="font-size: 12px; color: var(--text-muted); font-family: 'Inter';">Requests an encrypted
-                        E2E tunnel</span>
+                    <span style="font-size: 12px; color: var(--text-muted); font-family: 'Inter';">Requests an encrypted E2E tunnel</span>
                 </p>
                 <div style="display: flex; gap: 16px; width: 100%; max-width: 280px;">
                     <button class="btn-action btn-solid" style="flex:1;" onclick="App.acceptHandshake()">ACCEPT</button>
-                    <button class="btn-action" style="flex:1; border-color: var(--danger); color: var(--danger);"
-                        onclick="App.declineHandshake()">DECLINE</button>
+                    <button class="btn-action" style="flex:1; border-color: var(--danger); color: var(--danger);" onclick="App.declineHandshake()">DECLINE</button>
                 </div>
             </div>
 
@@ -729,19 +565,16 @@
                     </button>
                     <div id="active-avatar" style="margin-right: 16px;"></div>
                     <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <div id="active-peer-name"
-                            style="font-weight: 700; font-size: 15px; font-family: 'JetBrains Mono';">Unknown_Node</div>
-                        <div
-                            style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                        <div id="active-peer-name" style="font-weight: 700; font-size: 15px; font-family: 'JetBrains Mono';">Unknown_Node</div>
+                        <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
                             <span class="status-dot" id="active-status-dot"></span>
                             <span id="active-status-text">DISCONNECTED</span>
                         </div>
                     </div>
                 </div>
-
+                
                 <div style="display: flex; gap: 8px;">
-                    <button class="icon-btn" id="stealth-toggle" onclick="App.toggleStealth()"
-                        title="Toggle Stealth (Blur)">
+                    <button class="icon-btn" id="stealth-toggle" onclick="App.toggleStealth()" title="Toggle Stealth (Blur)">
                         <i class="fa-solid fa-eye-slash"></i>
                     </button>
                     <button class="icon-btn" title="Send Crypto (Soon)">
@@ -754,35 +587,29 @@
             </header>
 
             <div class="messages-flow" id="messages-flow"></div>
-            <div id="file-pre-view" class="file-pre-view"></div>
 
             <footer class="controls-bar" id="controls-bar">
-                <div id="rec-ui" class="rec-status">
-                    <div class="rec-dot"></div><span id="rec-timer">00:00</span>
-                </div>
                 <input type="file" id="file-input" hidden onchange="App.handleFile(this.files[0])">
                 <button class="icon-btn" onclick="document.getElementById('file-input').click()" title="Send File">
                     <i class="fa-solid fa-paperclip"></i>
                 </button>
-
-                <button class="icon-btn" id="voice-toggle" onmousedown="App.startVoice()" onmouseup="App.stopVoice()"
-                    title="Hold to Record">
+                
+                <button class="icon-btn" id="voice-toggle" onmousedown="App.startVoice()" onmouseup="App.stopVoice()" title="Hold to Record">
                     <i class="fa-solid fa-microphone"></i>
                 </button>
-
+                
                 <button class="icon-btn" id="cyber-mic-btn" onclick="App.toggleCyberMic()" title="Cyber-Mic Distortion">
                     <i class="fa-solid fa-robot"></i>
                 </button>
 
                 <button class="icon-btn" id="call-btn" onclick="App.toggleCall()" title="P2P Voice Call">
-                    <i class="fa-solid fa-phone"></i>
-                </button>
+    <i class="fa-solid fa-phone"></i>
+</button>
 
-                <audio id="remote-audio" autoplay style="display:none;"></audio>
+<audio id="remote-audio" autoplay style="display:none;"></audio>
 
-                <input type="text" id="chat-input" class="input-field" placeholder="Transmit secure message..."
-                    onkeypress="if(event.key === 'Enter') App.sendText()">
-
+                <input type="text" id="chat-input" class="input-field" placeholder="Transmit secure message..." onkeypress="if(event.key === 'Enter') App.sendText()">
+                
                 <button class="icon-btn btn-send" onclick="App.sendText()">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
@@ -790,896 +617,298 @@
         </main>
     </div>
 
-    <script>
-        /**
-         * ============================================================================
-         * IMCHAT WEB3 ENGINE v6.0
-         * Architecture: XMTP (Messaging), IPFS (Storage), WebRTC (Calls)
-         * ============================================================================
-         */
 
-        // ----------------------------------------------------------------------------
-        // 1. EIP-6963 WALLET DISCOVERY LISTENER
-        // ----------------------------------------------------------------------------
-        const EIPProviders = {};
-        window.addEventListener("eip6963:announceProvider", (event) => {
-            EIPProviders[event.detail.info.uuid] = event.detail;
+<script type="importmap">
+{
+  "imports": {
+    "ethers": "https://esm.sh/ethers@6",
+    "@xmtp/xmtp-js": "https://esm.sh/@xmtp/xmtp-js",
+    "@web3modal/ethers": "https://esm.sh/@web3modal/ethers"
+  }
+}
+</script>
+
+<script type="module">
+// 1. Прямой полифилл (решает ошибку "buffer is not defined" и пути)
+import { Buffer } from "https://esm.sh/buffer@6.0.3";
+window.Buffer = window.Buffer || Buffer;
+
+// 2. Импорты
+import { ethers } from "ethers";
+import { Client } from "@xmtp/xmtp-js";
+import { createWeb3Modal, defaultConfig } from "@web3modal/ethers";
+
+const PROJECT_ID = "9a4485f532467f3b0bb7584537697fd1";
+const PINATA_API = "3c0bb126433a445fd080";
+const PINATA_SEC = "7098d9bfdb290bdbf499cf222963d383638e9d44cc3b42402c7da6cbd2543c36";
+
+let signer, xmtp, currentConv, myAddress;
+let contacts = JSON.parse(localStorage.getItem('xmtp_contacts') || '[]');
+let peer, myPeerId, currentCall, localStream;
+
+// АВТОРИЗАЦИЯ
+const mainnet = { 
+    chainId: 1, 
+    name: 'Ethereum', 
+    currency: 'ETH', 
+    explorerUrl: 'https://etherscan.io', 
+    rpcUrl: 'https://cloudflare-eth.com' 
+};
+
+const modal = createWeb3Modal({
+    ethersConfig: defaultConfig({ 
+        metadata: { name: 'ImChat Node', description: 'Web3 P2P E2EE', url: window.location.origin, icons: [] } 
+    }),
+    chains: [mainnet],
+    projectId: PROJECT_ID
+});
+
+modal.subscribeProvider(async ({ provider, address }) => {
+    if (address && provider && !xmtp) {
+        myAddress = address;
+        signer = await new ethers.BrowserProvider(provider).getSigner();
+        
+        document.getElementById('my-address-display').innerText = `${address.slice(0,6)}...${address.slice(-4)}`;
+        AvatarEngine.generate(address, 'my-avatar');
+        document.getElementById('auth-screen').style.display = 'none';
+        
+        xmtp = await Client.create(signer, { env: "production" });
+        initPeer();
+        App.loadContacts();
+        listenGlobal();
+    }
+});
+
+// ЗВОНКИ
+function initPeer() {
+    peer = new Peer({ config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }});
+    peer.on('open', id => myPeerId = id);
+    peer.on('call', call => {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+            localStream = stream;
+            call.answer(stream);
+            call.on('stream', remoteStream => {
+                const audio = document.getElementById('remote-audio');
+                audio.srcObject = remoteStream;
+                audio.play();
+            });
+            currentCall = call;
+            document.getElementById('call-btn').style.color = "var(--danger)";
         });
-        window.dispatchEvent(new Event("eip6963:requestProvider"));
+    });
+}
 
-        // ----------------------------------------------------------------------------
-        // 2. GENERATIVE AVATAR ENGINE
-        // ----------------------------------------------------------------------------
-        const AvatarEngine = {
-            generate(address, targetId) {
-                const hash = address.toLowerCase().replace('0x', '');
-                const container = document.getElementById(targetId);
-                if (!container) return;
-
-                container.innerHTML = '';
-                container.className = 'avatar-box';
-
-                const hue = parseInt(hash.substring(0, 4), 16) % 360;
-                const mainColor = `hsl(${hue}, 80%, 60%)`;
-                const baseDark = `hsl(${hue}, 30%, 12%)`;
-
-                container.style.backgroundColor = baseDark;
-
-                for (let row = 0; row < 5; row++) {
-                    for (let col = 0; col < 5; col++) {
-                        const pixel = document.createElement('div');
-                        pixel.className = 'pixel';
-                        const mirrorCol = col > 2 ? 4 - col : col;
-                        const index = row * 3 + mirrorCol;
-
-                        if (hash.charCodeAt(index % hash.length) % 2 === 0) {
-                            pixel.style.backgroundColor = mainColor;
-                            pixel.style.boxShadow = `0 0 8px ${mainColor}`;
-                        }
-                        container.appendChild(pixel);
-                    }
-                }
+// ТРАНСПОРТ СООБЩЕНИЙ
+async function listenGlobal() {
+    const stream = await xmtp.conversations.streamAllMessages();
+    for await (const message of stream) {
+        if (message.senderAddress === myAddress) continue;
+        
+        try {
+            const data = JSON.parse(message.content);
+            if (data.type === 'call') {
+                App.answerCall(data.peerId);
+                continue;
             }
-        };
-
-        // ----------------------------------------------------------------------------
-        // 3. MAIN APPLICATION CONTROLLER
-        // ----------------------------------------------------------------------------
-        const App = {
-            THIRDWEB_CLIENT_ID: "5b120dbb1364a18a27bddd1f7d78c473",
-
-            // State
-            client: null,
-            myAddress: null,
-            dbPrefix: null,
-            mqttClient: null,
-            activeProvider: null,
-
-            // WebRTC / Call State
-            rtcConnections: {},
-            incomingCallOffer: null,
-            incomingCallAddr: null,
-
-            // UI State
-            activePeer: null,
-            isStealth: false,
-            incomingRequests: {},
-
-            // Audio State
-            isCyberMic: false,
-            audioCtx: null,
-            mediaRecorder: null,
-            stream: null,
-
-            async initModules() {
-                try {
-                    this.client = window.Thirdweb.createThirdwebClient({
-                        clientId: this.THIRDWEB_CLIENT_ID
-                    });
-
-                    // Configure wallet for REDIRECT mode to bypass popup blockers/COOP
-                    const wallet = window.Thirdweb.inAppWallet({
-                        client: this.client,
-                        auth: {
-                            mode: "redirect",
-                            redirectUrl: window.location.href.split('?')[0] // Return here cleanly
-                        }
-                    });
-                    
-                    // Attempt to auto-connect (this handles both saved sessions AND redirect callbacks)
-                    try {
-                        const account = await wallet.autoConnect({ client: this.client });
-                        if (account) {
-                            this.activeProvider = wallet;
-                            await this.initSession(account);
-                            return; // Skip showing login screen
-                        }
-                    } catch(autoErr) {
-                        console.log("Auto-connect not available yet or no session:", autoErr);
-                    }
-
-                    console.log("[SYSTEM] Web3 Modules Initialized");
-                    
-                    const btnInit = document.getElementById('btn-connect-init');
-                    if (btnInit) {
-                        btnInit.disabled = false;
-                        btnInit.innerHTML = '<i class="fa-solid fa-wallet"></i> &nbsp; CONNECT WALLET';
-                    }
-
-                    // Check for injected wallets for the UI buttons
-                    this.checkInjectedProviders();
-                } catch (e) {
-                    console.error("Init Error:", e);
-                    const btnInit = document.getElementById('btn-connect-init');
-                    if (btnInit) {
-                        btnInit.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error Loading Web3';
-                    }
-                    this.showError("Failed to initialize Web3. Check console.");
-                }
-            },
-
-            /* --- WALLET & AUTH MODULE --- */
-
-            showWalletSelector() {
-                document.getElementById('initial-connect-box').style.display = 'none';
-                document.getElementById('wallet-selector').style.display = 'block';
-                this.showError("");
-
-                const list = document.getElementById('detected-wallets');
-                list.innerHTML = '';
-                this.availableProviders = {};
-                
-                const detectedNames = new Set();
-                let count = 0;
-
-                window.dispatchEvent(new Event("eip6963:requestProvider"));
-
-                for (const [uuid, data] of Object.entries(EIPProviders)) {
-                    const nameLower = data.info.name.toLowerCase();
-                    if (detectedNames.has(nameLower)) continue; 
-                    detectedNames.add(nameLower);
-
-                    this.availableProviders[uuid] = { provider: data.provider, type: 'evm' };
-                    const iconHtml = data.info.icon ? `<img src="${data.info.icon}" style="width:20px; height:20px; border-radius:4px;">` : `<i class="fa-solid fa-wallet"></i>`;
-                    
-                    list.innerHTML += `
-                        <button class="btn-action" style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03);" onclick="App.loginInjected('${uuid}')">
-                            ${iconHtml} <span style="color: #fff;">${data.info.name}</span>
-                        </button>`;
-                    count++;
-                }
-
-                if (window.ethereum && window.ethereum.isMetaMask && !Array.from(detectedNames).some(n => n.includes('meta'))) {
-                    this.availableProviders['mm_legacy'] = { provider: window.ethereum, type: 'evm' };
-                    list.innerHTML += `<button class="btn-action" style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03);" onclick="App.loginInjected('mm_legacy')"><i class="fa-solid fa-fox" style="color:#f6851b; font-size:18px;"></i> <span style="color:#fff;">MetaMask</span></button>`;
-                    count++;
-                }
-
-                // Add Google Logic
-                list.innerHTML += `
-                    <button class="btn-action" style="display:flex; align-items:center; justify-content:center; gap:12px; background: rgba(255,255,255,0.03); margin-top: 12px; border-color: #4285F4;" onclick="App.loginWithGoogle()">
-                        <i class="fa-brands fa-google" style="color: #4285F4;"></i> <span style="color: #fff;">Continue with Google</span>
-                    </button>`;
-            },
-
-            hideWalletSelector() {
-                document.getElementById('initial-connect-box').style.display = 'block';
-                document.getElementById('wallet-selector').style.display = 'none';
-            },
-
-            showError(msg) {
-                document.getElementById('auth-error').innerText = msg;
-            },
-
-            async loginInjected(id) {
-                try {
-                    const wallet = this.availableProviders[id];
-                    let address = "";
-                    
-                    if (wallet.type === 'evm') {
-                        const accounts = await wallet.provider.request({ method: 'eth_requestAccounts' });
-                        address = accounts[0];
-                    } else {
-                        throw new Error("Only EVM wallets are currently supported for XMTP.");
-                    }
-                    
-                    this.activeProvider = wallet.provider;
-                    
-                    const account = {
-                        address: address,
-                        signMessage: async ({ message }) => {
-                            let msgHex;
-                            if (typeof message === 'string') {
-                                if (message.startsWith('0x')) {
-                                    msgHex = message;
-                                } else {
-                                    msgHex = '0x' + Array.from(new TextEncoder().encode(message))
-                                        .map(b => b.toString(16).padStart(2, '0')).join('');
-                                }
-                            } else {
-                                msgHex = '0x' + Array.from(message).map(b => b.toString(16).padStart(2, '0')).join('');
-                            }
-                            
-                            return await wallet.provider.request({
-                                method: 'personal_sign',
-                                params: [msgHex, address]
-                            });
-                        }
-                    };
-                    
-                    await this.initSession(account);
-                } catch (e) { 
-                    console.error(e);
-                    this.showError(e.message || "Connection rejected by user."); 
-                }
-            },
-
-            async loginWithGoogle() {
-                // Google login requires HTTPS - check first
-                if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                    this.showError('⚠️ Google login requires HTTPS. Your site must be served over https:// for this to work. Try a wallet instead.');
-                    return;
-                }
-                const btn = event.target.closest('button');
-                if (btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Redirecting...';
-                
-                try {
-                    // Force REDIRECT mode. This will leave the page and come back.
-                    const wallet = window.Thirdweb.inAppWallet({
-                        client: this.client,
-                        auth: {
-                            mode: "redirect",
-                            redirectUrl: window.location.href.split('?')[0]
-                        }
-                    });
-                    this.activeProvider = wallet;
-                    
-                    // This call will redirect the browser
-                    await wallet.connect({
-                        client: this.client,
-                        strategy: "google"
-                    });
-                } catch (e) {
-                    console.error(e);
-                    this.showError(e.message || "Login failed");
-                    if (btn) btn.innerHTML = '<img src="https://cdn4.iconfinder.com/data/icons/logos-brands-7/512/google_logo-google_icongoogle-512.png" alt="Google"> Continue with Google';
-                }
-            },
-
-            async initSession(account) {
-                this.myAddress = account.address.toLowerCase();
-                this.dbPrefix = `imchat_db_${this.myAddress}_`;
-
-                // --- Open the UI immediately ---
-                document.getElementById('auth-screen').style.display = 'none';
-                AvatarEngine.generate(this.myAddress, 'my-avatar');
-                document.getElementById('my-address-display').innerText = this.myAddress.slice(0, 6) + '...' + this.myAddress.slice(-4);
-                await this.loadContactsFromIPFS();
-                this.renderSidebar();
-                this.updateTheme();
-
-                // --- Connect MQTT for real-time sync ---
-                this._connectMQTT();
-            },
-
-            /* -------------------------------------------------------
-             *  MQTT RELAY LAYER
-             *  Uses public MQTT broker over WebSockets.
-             *  Topic = imchat/{walletAddress}
-             * ----------------------------------------------------- */
-
-            _connectMQTT() {
-                const statusEl = document.getElementById('xmtp-status');
-                if (statusEl) statusEl.innerText = '⏳ Connecting to relay network...';
-
-                // We use EMQX public broker for WebSockets. WSS uses port 8084.
-                const brokerUrl = 'wss://broker.emqx.io:8084/mqtt';
-                const clientId = 'imchat_' + Math.random().toString(16).slice(2, 10);
-                
-                this.mqttClient = mqtt.connect(brokerUrl, {
-                    clientId: clientId,
-                    clean: true,
-                    connectTimeout: 4000,
-                    reconnectPeriod: 1000,
-                });
-
-                this.mqttClient.on('connect', () => {
-                    if (statusEl) {
-                        statusEl.innerText = '✅ Relay network active';
-                        setTimeout(() => { if (statusEl) statusEl.innerText = ''; }, 4000);
-                    }
-                    // Subscribe to our own address
-                    this.mqttClient.subscribe(`imchat/${this.myAddress}`, (err) => {
-                        if (!err) console.log('[MQTT] Subscribed to', this.myAddress);
-                    });
-                });
-
-                this._seen = new Set();
-
-                this.mqttClient.on('message', (topic, message) => {
-                    try {
-                        const data = JSON.parse(message.toString());
-                        if (!data || !data.from || !data.id) return;
-                        
-                        // Dedupe
-                        if (this._seen.has(data.id)) return;
-                        this._seen.add(data.id);
-
-                        const sender = data.from.toLowerCase();
-                        if (sender === this.myAddress) return;
-
-                        this._handleIncoming(sender, data);
-                    } catch(e) { /* ignore */ }
-                });
-
-                this.mqttClient.on('error', (err) => {
-                    console.warn('[MQTT] Error:', err);
-                    if (statusEl) statusEl.innerText = '⚠️ Relay network error';
-                });
-                
-                this.mqttClient.on('offline', () => {
-                    if (statusEl) statusEl.innerText = '⏳ Relay network offline, reconnecting...';
-                });
-            },
-
-            sendMQTT(toAddr, payload) {
-                if (!this.mqttClient || !this.mqttClient.connected) {
-                    console.warn('[MQTT] Client not connected');
-                    return;
-                }
-                const data = {
-                    ...payload,
-                    from: this.myAddress,
-                    time: Date.now(),
-                    id: Math.random().toString(36).slice(2) + Date.now().toString(36)
-                };
-                this.mqttClient.publish(`imchat/${toAddr.toLowerCase()}`, JSON.stringify(data), { qos: 1 });
-            },
-
-            _handleIncoming(sender, data) {
-                const isKnown = this.getContacts().includes(sender);
-
-                if (!isKnown) {
-                    // Treat as contact request — store first message for later
-                    if (!this.incomingRequests[sender]) this.incomingRequests[sender] = [];
-                    this.incomingRequests[sender].push(data);
-                    this.renderSidebar();
-                } else {
-                    this.processMessage(sender, data, data.time);
-                }
-            },
-
-            logout() { location.reload(); },
-
-            /* --- ISOLATED STORAGE & IPFS METADATA --- */
-
-            getDB(key) { return JSON.parse(localStorage.getItem(this.dbPrefix + key) || '[]'); },
-            setDB(key, arr) { localStorage.setItem(this.dbPrefix + key, JSON.stringify([...new Set(arr)])); },
-
-            getContacts() { return this.getDB('contacts'); },
-            addContactToDB(addr) {
-                const c = this.getContacts();
-                c.push(addr.toLowerCase());
-                this.setDB('contacts', c);
-                this.saveContactsToIPFS();
-            },
-            removeContactFromDB(addr) {
-                this.setDB('contacts', this.getContacts().filter(a => a !== addr));
-                this.saveContactsToIPFS();
-            },
-
-            async saveContactsToIPFS() {
-                try {
-                    const data = JSON.stringify(this.getContacts());
-                    const fileKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
-                    const iv = crypto.getRandomValues(new Uint8Array(12));
-                    const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, fileKey, new TextEncoder().encode(data));
-
-                    const blob = new Blob([encrypted]);
-                    const uri = await window.Thirdweb.upload({ client: this.client, files: [new File([blob], "contacts.json")] });
-
-                    const exportedKey = await crypto.subtle.exportKey("raw", fileKey);
-                    const metadata = { uri: uri, iv: Array.from(iv), key: Array.from(new Uint8Array(exportedKey)) };
-
-                    // Simulating Contract Metadata pointer with localStorage
-                    localStorage.setItem(this.myAddress + "_contract_metadata", JSON.stringify(metadata));
-                    console.log("[IPFS] Contacts synced to decentralized storage");
-                } catch (e) { console.error("Contacts sync failed", e); }
-            },
-
-            async loadContactsFromIPFS() {
-                const metaStr = localStorage.getItem(this.myAddress + "_contract_metadata");
-                if (!metaStr) return;
-                try {
-                    const meta = JSON.parse(metaStr);
-                    const res = await window.Thirdweb.download({ client: this.client, uri: meta.uri });
-                    const blob = await res.blob();
-                    const buffer = await blob.arrayBuffer();
-
-                    const importedKey = await crypto.subtle.importKey("raw", new Uint8Array(meta.key), { name: "AES-GCM" }, false, ["decrypt"]);
-                    const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(meta.iv) }, importedKey, buffer);
-
-                    const contacts = JSON.parse(new TextDecoder().decode(decrypted));
-                    this.setDB('contacts', contacts);
-                    console.log("[IPFS] Contacts loaded from decentralized storage");
-                } catch (e) { console.error("Failed to load contacts from IPFS", e); }
-            },
-
-            /* --- GUN.JS REAL-TIME MESSAGING --- */
-
-            processMessage(sender, data, time) {
-                // Handshake: auto-accept mutual contact ack
-                if (data.type === 'handshake_ack') {
-                    if (!this.getContacts().includes(sender)) {
-                        this.addContactToDB(sender);
-                        this.renderSidebar();
-                    }
-                    return;
-                }
-                // Contact request from unknown → show in _handleIncoming (handled there, not here)
-                if (data.type === 'contact_request') return;
-
-                // WebRTC Signaling
-                if (data.type === 'rtc_offer') {
-                    this.incomingCallOffer = data.offer;
-                    this.incomingCallAddr = sender;
-                    document.getElementById('call-panel').style.display = 'flex';
-                    document.getElementById('answer-btn').style.display = 'inline-flex';
-                    document.getElementById('call-info').innerText = 'INCOMING CALL...';
-                    return;
-                }
-                if (data.type === 'rtc_answer') {
-                    const pc = this.rtcConnections[sender];
-                    if (pc) pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-                    return;
-                }
-                if (data.type === 'rtc_candidate') {
-                    const pc = this.rtcConnections[sender];
-                    if (pc) pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-                    return;
-                }
-                if (data.type === 'rtc_hangup') {
-                    this.endCall();
-                    return;
-                }
-
-                // File/voice from IPFS
-                if (data.type === 'file' || data.type === 'voice') {
-                    this._decryptAndRender(sender, data, time);
-                    return;
-                }
-
-                // Plain text
-                if (this.activePeer === sender) {
-                    this.renderMessage(data, 'received', time || Date.now());
-                }
-            },
-
-            async _decryptAndRender(sender, data, time) {
-                try {
-                    const res = await window.Thirdweb.download({ client: this.client, uri: data.uri });
-                    const blob = await res.blob();
-                    const buffer = await blob.arrayBuffer();
-                    const importedKey = await crypto.subtle.importKey('raw', new Uint8Array(data.key), { name: 'AES-GCM' }, false, ['decrypt']);
-                    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(data.iv) }, importedKey, buffer);
-                    const decBlob = new Blob([decrypted]);
-                    const rendered = { ...data, body: URL.createObjectURL(decBlob) };
-                    if (this.activePeer === sender) this.renderMessage(rendered, 'received', time || Date.now());
-                } catch (e) {
-                    console.error('File decryption failed:', e);
-                }
-            },
-
-            sendGun(toAddr, payload) {
-                if (!this.gun) { console.warn('Gun not ready'); return; }
-                const key = Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-                const data = { ...payload, from: this.myAddress, time: Date.now() };
-                this.gun.get('imchat').get(toAddr).get(key).put(data);
-            },
-
-            // --- User Actions ---
-
-            addContact() {
-                const input = document.getElementById('add-peer-id');
-                let addr = input.value.trim().toLowerCase();
-                if (!addr || addr === this.myAddress) return;
-
-                this.addContactToDB(addr);
-                input.value = '';
-                this.renderSidebar();
-
-                // Send a contact request ping via MQTT so the other side gets notified
-                this.sendMQTT(addr, { type: 'contact_request', body: 'Requesting secure connection' });
-            },
-
-            deleteContact(addr) {
-                this.removeContactFromDB(addr);
-                if (this.activePeer === addr) {
-                    this.activePeer = null;
-                    document.getElementById('empty-state').style.display = 'flex';
-                    document.getElementById('request-state').style.display = 'none';
-                    this.clearChat();
-                }
-                this.renderSidebar();
-            },
-
-            clearChat() { document.getElementById('messages-flow').innerHTML = ''; },
-
-            async acceptHandshake() {
-                const addr = this.activePeer;
-                this.addContactToDB(addr);
-
-                const queue = this.incomingRequests[addr] || [];
-                for (const data of queue) {
-                    this.processMessage(addr, data, data.time);
-                }
-
-                delete this.incomingRequests[addr];
-                this.renderSidebar();
-                this.openChat(addr);
-
-                // Notify the other side they were accepted
-                this.sendMQTT(addr, { type: 'handshake_ack', body: 'Contact accepted' });
-            },
-
-            declineHandshake() {
-                const addr = this.activePeer;
-                delete this.incomingRequests[addr];
-                this.activePeer = null;
-                document.getElementById('request-state').style.display = 'none';
-                document.getElementById('empty-state').style.display = 'flex';
-                this.renderSidebar();
-            },
-
-            // --- UI Rendering ---
-
-            renderSidebar() {
-                const list = document.getElementById('contacts-list');
-                list.innerHTML = '';
-
-                const contacts = this.getContacts();
-                const requests = Object.keys(this.incomingRequests);
-
-                if (requests.length > 0) {
-                    const reqHeader = document.createElement('div');
-                    reqHeader.className = 'list-section-title';
-                    reqHeader.innerText = 'REQUESTS';
-                    list.appendChild(reqHeader);
-                    requests.forEach(addr => list.appendChild(this.createContactCard(addr, true)));
-                }
-
-                if (contacts.length > 0) {
-                    const conHeader = document.createElement('div');
-                    conHeader.className = 'list-section-title';
-                    conHeader.innerText = 'SECURE NODES';
-                    list.appendChild(conHeader);
-                    contacts.forEach(addr => list.appendChild(this.createContactCard(addr, false)));
-                }
-            },
-
-            createContactCard(addr, isRequest) {
-                const isSecure = this.getContacts().includes(addr);
-                let statusClass = isSecure ? 'online' : 'pending';
-
-                const card = document.createElement('div');
-                card.className = `contact-card ${this.activePeer === addr ? 'active' : ''} ${isRequest ? 'request' : ''}`;
-                card.onclick = () => this.openChat(addr, isRequest);
-
-                const avId = `av_card_${addr.slice(-6)}`;
-                card.innerHTML = `
-            <div id="${avId}"></div>
-            <div class="contact-info">
-                <span class="contact-address">${addr.slice(0, 6)}...${addr.slice(-4)}</span>
-                <span class="contact-status-text">${statusClass === 'online' ? 'SECURE' : 'LINKING...'}</span>
+        } catch(e) {}
+
+        if (currentConv && message.conversation.peerAddress === currentConv.peerAddress) {
+            renderMessage(message);
+        }
+    }
+}
+
+// ГЛОБАЛЬНЫЙ КОНТРОЛЛЕР
+window.App = {
+    showWalletSelector: () => modal.open(),
+    logout: () => location.reload(),
+    
+    addContact: () => {
+        const addr = document.getElementById('add-peer-id').value.trim();
+        if (ethers.isAddress(addr) && !contacts.includes(addr)) {
+            contacts.push(addr);
+            localStorage.setItem('xmtp_contacts', JSON.stringify(contacts));
+            App.loadContacts();
+        }
+        document.getElementById('add-peer-id').value = '';
+    },
+    
+    loadContacts: () => {
+        const list = document.getElementById('contacts-list');
+        list.innerHTML = contacts.map(c => `
+            <div class="contact-card" onclick="App.selectContact('${c}')">
+                <div class="avatar-box" id="av-${c}"></div>
+                <div class="contact-info">
+                    <div class="contact-address">${c.slice(0,6)}...${c.slice(-4)}</div>
+                </div>
             </div>
-            <div class="contact-actions">
-                ${!isRequest ? `<button class="icon-btn" style="width:24px; height:24px; font-size:12px;" onclick="event.stopPropagation(); App.deleteContact('${addr}')"><i class="fa-solid fa-trash-can"></i></button>` : ''}
-                <div class="status-dot ${statusClass}"></div>
-            </div>
-        `;
+        `).join('');
+        contacts.forEach(c => AvatarEngine.generate(c, `av-${c}`));
+    },
 
-                setTimeout(() => AvatarEngine.generate(addr, avId), 0);
-                return card;
-            },
+    selectContact: async (addr) => {
+        if (!await xmtp.canMessage(addr)) {
+            alert("Адрес не активирован в сети XMTP");
+            return;
+        }
+        currentConv = await xmtp.conversations.newConversation(addr);
+        
+        document.getElementById('active-peer-name').innerText = `${addr.slice(0,6)}...${addr.slice(-4)}`;
+        AvatarEngine.generate(addr, 'active-avatar');
+        document.getElementById('empty-state').style.display = 'none';
+        
+        const flow = document.getElementById('messages-flow');
+        flow.innerHTML = '';
+        const msgs = await currentConv.messages();
+        msgs.forEach(renderMessage);
+    },
 
-            openChat(addr, isRequest = false) {
-                this.activePeer = addr;
-                document.getElementById('app-shell').classList.add('in-chat');
-                document.getElementById('empty-state').style.display = 'none';
+    sendText: async () => {
+        if (!currentConv) return;
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+        
+        input.value = '';
+        await currentConv.send(text);
+        renderMessage({ senderAddress: myAddress, content: text });
+    },
 
-                const controls = document.getElementById('controls-bar');
+    handleFile: async (file) => {
+        if (!file || !currentConv) return;
+        try {
+            const key = await crypto.subtle.generateKey({name: "AES-GCM", length: 256}, true, ["encrypt", "decrypt"]);
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const data = await file.arrayBuffer();
+            const encrypted = await crypto.subtle.encrypt({name: "AES-GCM", iv}, key, data);
+            const exportedKey = await crypto.subtle.exportKey("raw", key);
+            
+            const blob = new Blob([iv, new Uint8Array(encrypted)]);
+            const fd = new FormData();
+            fd.append('file', blob);
 
-                if (isRequest) {
-                    document.getElementById('request-state').style.display = 'flex';
-                    document.getElementById('req-id').innerText = addr.slice(0, 10) + "...";
-                    AvatarEngine.generate(addr, 'req-avatar');
-                    controls.style.opacity = '0.1';
-                    controls.style.pointerEvents = 'none';
-                } else {
-                    document.getElementById('request-state').style.display = 'none';
-                    controls.style.opacity = '1';
-                    controls.style.pointerEvents = 'auto';
-                    document.getElementById('active-peer-name').innerText = addr.slice(0, 10) + "...";
-                    AvatarEngine.generate(addr, 'active-avatar');
-                    this.updateChatHeader();
+            const res = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+                method: 'POST',
+                headers: { pinata_api_key: PINATA_API, pinata_secret_api_key: PINATA_SEC },
+                body: fd
+            });
+            const { IpfsHash } = await res.json();
+            
+            const payload = JSON.stringify({
+                type: 'file',
+                cid: IpfsHash,
+                keyBase64: btoa(String.fromCharCode(...new Uint8Array(exportedKey))),
+                name: file.name,
+                mime: file.type
+            });
+
+            await currentConv.send(payload);
+            renderMessage({ senderAddress: myAddress, content: payload });
+        } catch(e) { alert("Ошибка файла: " + e.message); }
+    },
+
+    downloadFile: async (cid, keyBase64, name, mime) => {
+        try {
+            const res = await fetch(`https://gateway.pinata.cloud/ipfs/${cid}`);
+            const buf = await res.arrayBuffer();
+            const iv = buf.slice(0, 12);
+            const data = buf.slice(12);
+            
+            const rawKey = Uint8Array.from(atob(keyBase64), c => c.charCodeAt(0));
+            const key = await crypto.subtle.importKey("raw", rawKey, {name: "AES-GCM"}, false, ["decrypt"]);
+            const decrypted = await crypto.subtle.decrypt({name: "AES-GCM", iv: new Uint8Array(iv)}, key, data);
+            
+            const url = URL.createObjectURL(new Blob([decrypted], {type: mime}));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = name;
+            a.click();
+        } catch(e) { alert("Ошибка расшифровки"); }
+    },
+
+    toggleCall: async () => {
+        if (!currentConv || !myPeerId) return;
+        if (currentCall) {
+            currentCall.close();
+            localStream?.getTracks().forEach(t => t.stop());
+            currentCall = null;
+            document.getElementById('call-btn').style.color = "";
+            return;
+        }
+        await currentConv.send(JSON.stringify({ type: 'call', peerId: myPeerId }));
+        document.getElementById('call-btn').style.color = "var(--warning)";
+    },
+
+    answerCall: async (targetPeerId) => {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+            localStream = stream;
+            currentCall = peer.call(targetPeerId, stream);
+            currentCall.on('stream', remoteStream => {
+                const audio = document.getElementById('remote-audio');
+                audio.srcObject = remoteStream;
+                audio.play();
+            });
+            document.getElementById('call-btn').style.color = "var(--danger)";
+        });
+    },
+
+    toggleStealth: () => document.body.classList.toggle('stealth-active'),
+    clearChat: () => { if(confirm("Очистить UI чата?")) document.getElementById('messages-flow').innerHTML = ''; }
+};
+
+// РЕНДЕР СООБЩЕНИЙ
+function renderMessage(msg) {
+    const flow = document.getElementById('messages-flow');
+    const isSent = msg.senderAddress === myAddress;
+    let contentHtml = msg.content;
+    
+    try {
+        const data = JSON.parse(msg.content);
+        if (data.type === 'file') {
+            contentHtml = `
+                <div style="cursor:pointer; color:var(--accent); text-decoration:underline;" 
+                     onclick="App.downloadFile('${data.cid}', '${data.keyBase64}', '${data.name}', '${data.mime}')">
+                    <i class="fa-solid fa-file-shield"></i> [СКАЧАТЬ] ${data.name}
+                </div>`;
+        } else if (data.type === 'call') {
+            return; 
+        }
+    } catch(e) {
+        contentHtml = contentHtml.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    flow.insertAdjacentHTML('beforeend', `
+        <div class="msg-wrapper ${isSent ? 'sent msg-sent' : 'received msg-received'}">
+            <div class="msg-bubble">${contentHtml}</div>
+        </div>
+    `);
+    flow.scrollTop = flow.scrollHeight;
+}
+
+// ГЕНЕРАТОР АВАТАРОВ
+const AvatarEngine = {
+    generate(address, targetId) {
+        const hash = address.toLowerCase().replace('0x', '');
+        const el = document.getElementById(targetId);
+        if (!el) return;
+        el.className = 'avatar-box';
+        el.innerHTML = '';
+        const hue = parseInt(hash.substring(0, 4), 16) % 360;
+        el.style.backgroundColor = `hsl(${hue}, 30%, 12%)`;
+        for (let r=0; r<5; r++) {
+            for (let c=0; c<5; c++) {
+                const p = document.createElement('div');
+                p.className = 'pixel';
+                const mc = c>2 ? 4-c : c;
+                if (hash.charCodeAt(r*3+mc) % 2 === 0) {
+                    p.style.backgroundColor = `hsl(${hue}, 80%, 60%)`;
+                    p.style.boxShadow = `0 0 8px hsl(${hue}, 80%, 60%)`;
                 }
-                this.renderSidebar();
-            },
-
-            closeChatMobile() { document.getElementById('app-shell').classList.remove('in-chat'); },
-
-            updateChatHeader() {
-                if (!this.activePeer) return;
-                const isSecure = this.getContacts().includes(this.activePeer);
-                const dot = document.getElementById('active-status-dot');
-                const text = document.getElementById('active-status-text');
-
-                if (isSecure) {
-                    dot.className = "status-dot online";
-                    text.innerText = "TUNNEL_ACTIVE";
-                    text.style.color = "var(--accent)";
-                } else {
-                    dot.className = "status-dot pending";
-                    text.innerText = "AWAITING_HANDSHAKE";
-                    text.style.color = "var(--warning)";
-                }
-            },
-
-            // --- Messaging ---
-
-            toggleStealth() {
-                this.isStealth = !this.isStealth;
-                const btn = document.getElementById('stealth-toggle');
-                const flow = document.getElementById('messages-flow');
-                if (this.isStealth) {
-                    btn.classList.add('active');
-                    btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
-                    flow.classList.add('stealth-active');
-                } else {
-                    btn.classList.remove('active');
-                    btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
-                    flow.classList.remove('stealth-active');
-                }
-            },
-
-            async sendText() {
-                const input = document.getElementById('chat-input');
-                const text = input.value.trim();
-                if (!text || !this.activePeer) return;
-
-                const msg = { type: 'text', body: text, time: Date.now() };
-                this.sendMQTT(this.activePeer, msg);
-                this.renderMessage(msg, 'sent', Date.now());
-                input.value = '';
-            },
-
-            renderMessage(msg, direction, timeStr) {
-                const flow = document.getElementById('messages-flow');
-                const wrapper = document.createElement('div');
-                wrapper.className = `msg-wrapper ${direction}`;
-
-                let content = '';
-                if (msg.type === 'text') { content = msg.body; }
-                else if (msg.type === 'voice') { content = `<audio src="${msg.body}" controls style="height:35px; border-radius:10px;"></audio>`; }
-                else if (msg.type === 'file') { content = `<a href="${msg.body}" download="${msg.name}" style="color:inherit; text-decoration:none; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-file-arrow-down" style="font-size:18px;"></i> ${msg.name}</a>`; }
-
-                const timeFormat = new Date(timeStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-                wrapper.innerHTML = `
-            <div class="msg-bubble">${content}</div>
-            <div class="msg-meta">${timeFormat}</div>
-        `;
-                flow.appendChild(wrapper);
-                flow.scrollTop = flow.scrollHeight;
-            },
-
-            // --- Files & IPFS ---
-
-            async uploadToIPFSAndSend(fileBlob, name, type) {
-                const fileKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
-                const iv = crypto.getRandomValues(new Uint8Array(12));
-
-                const buffer = await fileBlob.arrayBuffer();
-                const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, fileKey, buffer);
-
-                const blob = new Blob([encrypted]);
-                const uri = await window.Thirdweb.upload({ client: this.client, files: [new File([blob], name)] });
-
-                const exportedKey = await crypto.subtle.exportKey("raw", fileKey);
-
-                const payload = {
-                    type: type,
-                    name: name,
-                    uri: uri,
-                    iv: Array.from(iv),
-                    key: Array.from(new Uint8Array(exportedKey)),
-                    time: Date.now()
-                };
-
-                this.sendMQTT(this.activePeer, payload);
-                const displayMsg = { ...payload, body: URL.createObjectURL(fileBlob) };
-                this.renderMessage(displayMsg, 'sent', Date.now());
-            },
-
-            async handleFile(f) {
-                if (!f || !this.activePeer) return;
-                if (f.size > 1000 * 1024 * 1024) return alert("Max 1GB allowed");
-
-                document.getElementById('file-pre-view').innerText = `Encrypting and uploading ${f.name} to IPFS...`;
-                document.getElementById('file-pre-view').style.display = 'block';
-                try {
-                    await this.uploadToIPFSAndSend(f, f.name, 'file');
-                } catch (e) { alert("Upload failed: " + e.message); }
-                document.getElementById('file-pre-view').style.display = 'none';
-            },
-
-            // --- Voice Audio & Cyber-Mic ---
-
-            toggleCyberMic() {
-                this.isCyberMic = !this.isCyberMic;
-                document.getElementById('cyber-mic-btn').classList.toggle('active', this.isCyberMic);
-            },
-
-            makeDistCurve(amount) {
-                let k = amount || 50, n_samples = 44100, curve = new Float32Array(n_samples), deg = Math.PI / 180, x;
-                for (let i = 0; i < n_samples; ++i) {
-                    x = i * 2 / n_samples - 1;
-                    curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
-                }
-                return curve;
-            },
-
-            async getProcessedStream() {
-                this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                if (!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                if (this.audioCtx.state === 'suspended') await this.audioCtx.resume();
-
-                const source = this.audioCtx.createMediaStreamSource(this.stream);
-                const destination = this.audioCtx.createMediaStreamDestination();
-
-                if (this.isCyberMic) {
-                    const filter = this.audioCtx.createBiquadFilter();
-                    filter.type = "bandpass";
-                    filter.frequency.value = 1000;
-                    filter.Q.value = 1.0;
-                    const dist = this.audioCtx.createWaveShaper();
-                    dist.curve = this.makeDistCurve(100);
-                    source.connect(filter);
-                    filter.connect(dist);
-                    dist.connect(destination);
-                } else {
-                    source.connect(destination);
-                }
-                return destination.stream;
-            },
-
-            async startVoice(e) {
-                if (e) e.preventDefault();
-                try {
-                    const processedStream = await this.getProcessedStream();
-                    this.mediaRecorder = new MediaRecorder(processedStream, { mimeType: 'audio/webm' });
-                    let chunks = [];
-                    this.mediaRecorder.ondataavailable = ev => chunks.push(ev.data);
-                    this.mediaRecorder.onstop = async () => {
-                        const blob = new Blob(chunks, { type: 'audio/webm' });
-                        if (blob.size > 500) {
-                            document.getElementById('file-pre-view').innerText = `Uploading Voice to IPFS...`;
-                            document.getElementById('file-pre-view').style.display = 'block';
-                            await this.uploadToIPFSAndSend(blob, "voice.webm", 'voice');
-                            document.getElementById('file-pre-view').style.display = 'none';
-                        }
-                        if (this.stream) this.stream.getTracks().forEach(t => t.stop());
-                    };
-                    this.mediaRecorder.start();
-                    this.isRecording = true;
-                    document.getElementById('voice-toggle').style.color = "var(--danger)";
-                } catch (err) { console.error("Mic error:", err); }
-            },
-
-            stopVoice(e) {
-                if (e) e.preventDefault();
-                if (this.mediaRecorder && this.isRecording) {
-                    this.mediaRecorder.stop();
-                    this.isRecording = false;
-                    document.getElementById('voice-toggle').style.color = "";
-                }
-            },
-
-            // --- WebRTC Calls over XMTP Signaling ---
-
-            async toggleCall() {
-                const addr = this.activePeer;
-                if (!addr) return;
-
-                if (this.rtcConnections[addr]) {
-                    this.endCall();
-                    return;
-                }
-
-                const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-                this.rtcConnections[addr] = pc;
-                this.setupRtcEvents(pc, addr);
-
-                try {
-                    const stream = await this.getProcessedStream();
-                    stream.getTracks().forEach(t => pc.addTrack(t, stream));
-
-                    const offer = await pc.createOffer();
-                    await pc.setLocalDescription(offer);
-
-                    this.sendMQTT(addr, { type: 'rtc_offer', offer });
-
-                    document.getElementById('call-btn').style.color = "var(--success)";
-                    document.getElementById('call-panel').style.display = 'flex';
-                    document.getElementById('call-info').innerText = "CALLING...";
-                    document.getElementById('answer-btn').style.display = 'none';
-                } catch (e) {
-                    console.error("Call error:", e);
-                    this.endCall();
-                }
-            },
-
-            setupRtcEvents(pc, addr) {
-                pc.ontrack = e => {
-                    const audio = document.getElementById('remote-audio');
-                    audio.srcObject = e.streams[0];
-                    audio.play();
-                    document.getElementById('call-info').innerText = "CONNECTED";
-                };
-                pc.onicecandidate = e => {
-                    if (e.candidate) {
-                        this.sendMQTT(addr, { type: 'rtc_candidate', candidate: e.candidate });
-                    }
-                };
-                pc.oniceconnectionstatechange = () => {
-                    if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
-                        this.endCall();
-                    }
-                };
-            },
-
-            async acceptCall() {
-                document.getElementById('answer-btn').style.display = 'none';
-                const addr = this.incomingCallAddr;
-                const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
-                this.rtcConnections[addr] = pc;
-                this.setupRtcEvents(pc, addr);
-
-                try {
-                    const stream = await this.getProcessedStream();
-                    stream.getTracks().forEach(t => pc.addTrack(t, stream));
-
-                    await pc.setRemoteDescription(new RTCSessionDescription(this.incomingCallOffer));
-                    const answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-
-                    this.sendMQTT(addr, { type: 'rtc_answer', answer });
-                    document.getElementById('call-btn').style.color = "var(--success)";
-                    document.getElementById('call-info').innerText = "CONNECTING...";
-                } catch (e) {
-                    console.error("Accept call error:", e);
-                    this.endCall();
-                }
-            },
-
-            endCall() {
-                for (const addr in this.rtcConnections) {
-                    this.rtcConnections[addr].close();
-                    delete this.rtcConnections[addr];
-                }
-                if (this.stream) {
-                    this.stream.getTracks().forEach(t => t.stop());
-                    this.stream = null;
-                }
-                document.getElementById('call-panel').style.display = 'none';
-                document.getElementById('call-btn').style.color = "";
-
-                if (this.activePeer) this.sendMQTT(this.activePeer, { type: 'rtc_hangup' });
+                el.appendChild(p);
             }
-        };
-
-        window.addEventListener('web3-modules-loaded', () => App.initModules());
-    </script>
+        }
+    }
+};
+</script>
 </body>
-
 </html>
