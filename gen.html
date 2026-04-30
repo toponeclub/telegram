@@ -1195,7 +1195,7 @@ const APP = (function() {
     const CONFIG = {
         api: {
             rest: 'https://fapi.binance.com/fapi/v1',
-            ws: 'wss://fstream.binance.com/ws/'
+            ws: 'wss://fstream.binance.com/market/ws/'
         },
         limit: 1000,
         colors: {
@@ -2442,7 +2442,7 @@ if (k.x) {
     // --- REAL-TIME LIQUIDATIONS WEBSOCKET (без изменений) ---
    function initLiquidationWebSocket() {
     if (STATE.liqWs) STATE.liqWs.close();
-    STATE.liqWs = new WebSocket('wss://fstream.binance.com/ws/!forceOrder@arr');
+    STATE.liqWs = new WebSocket('wss://fstream.binance.com/market/ws/!forceOrder@arr');
 
     STATE.liqWs.onmessage = (event) => {
         const data = JSON.parse(event.data);
