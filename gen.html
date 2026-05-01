@@ -3303,8 +3303,18 @@ lastMenuPrice: 0,
         },
         copyPriceFromMenu: function() {
             if (!this.lastMenuPrice) return;
-            navigator.clipboard.writeText(this.lastMenuPrice.toFixed(8).replace(/\.?0+$/, ""));
-            log(`Price copied: ${this.lastMenuPrice.toFixed(4)}`);
+            
+            // toPrecision(6) оставляет ровно 6 цифр в числе, независимо от точки
+            // parseFloat удаляет "хвост" из нулей, если число получилось целым
+            let smartPrice = this.lastMenuPrice.toPrecision(6);
+            
+            // Если в числе есть точка, убираем лишние нули в конце
+            if (smartPrice.includes('.')) {
+                smartPrice = parseFloat(smartPrice).toString();
+            }
+            
+            navigator.clipboard.writeText(smartPrice);
+            log(`Price copied: ${smartPrice}`);
             this.hideMenu();
         },
         showContext: function(e, isMobile = false) {
@@ -5641,42 +5651,36 @@ window.addEventListener('touchstart', (e) => {
 
 
 function sendTelegramSignal(symbol, side, price, pnlPercent = null) {
-    const token = document.getElementById('tgToken').value.trim();
-    const chatId = document.getElementById('tgChat').value.trim();
-
-    if (!token || !chatId) {
-        log(`[Telegram] Skipped (no credentials)`, 'info');
-        return;
-    }
+    const token = document.getElementById('tgToken')?.value.trim();
+    const chatId = document.getElementById('tgChat')?.value.trim();
+    if (!token || !chatId) return;
 
     const baseCoin = symbol.replace('USDT', '');
     let message = "";
 
-    // Логика формирования сообщения
-    if (pnlPercent === 'LIQ') { 
-        // 1. Сообщение о ЛИКВИДАЦИИ
+    if (pnlPercent === 'LIQ') {
+        const emoji = '🩸';
+        const action = side === 'LONG' ? 'LONG' : 'SHORT';
         const reversal = side === 'LONG' ? 'LONG (BUY)' : 'SHORT (SELL)';
-        message = `🩸 <b>LIQ ${baseCoin}</b>\n`;
+        message = `${emoji} <b>LIQ ${baseCoin}</b>\n`;
         message += `💸 ${side} Liquidated\n`;
-        message += `💵 Price: ${price.toFixed(2)}\n`;
+        message += `💵 Price: $${price.toFixed(2)}\n`;
         message += `🎯 Target: ${reversal}\n`;
     } else {
-        // 2. Сообщение АЛЛИГАТОРА (Вход или Выход)
-        const directionEmoji = side === 'LONG' ? '🟢' : '🔴';
-        const action = side === 'LONG' ? 'LONG' : 'SHORT';
-        
-        message = `🐊 ${baseCoin} ${action} ${directionEmoji}\n`;
-        message += `💵 Price: ${price.toFixed(2)}\n`;
-        
+        const emoji = side === 'LONG' ? '🟢' : '🔴';
+        const action = side === 'LONG' ? 'BUY' : 'SELL';
+        message = `${emoji} ALLIGATOR SIGNAL\n`;
+        message += `Symbol: ${baseCoin}/USDT\n`;
+        message += `Action: ${action}\n`;
+        message += `Price: $${price.toFixed(2)}\n`;
+        message += `Time: ${new Date().toLocaleString()}\n`;
         if (pnlPercent !== null && typeof pnlPercent === 'number') {
-            const sign = pnlPercent > 0 ? '+' : '';
-            message += `👉 Exit: ${sign}${pnlPercent.toFixed(2)}%\n`;
+            message += `PnL: ${pnlPercent > 0 ? '+' : ''}${pnlPercent.toFixed(2)}%\n`;
         }
     }
+    
+    message += `\n<a href="https://www.coinglass.com/tv/Binance_${symbol}">📊 Chart</a>`;
 
-    message += `📊 <a href="https://www.coinglass.com/tv/Binance_${symbol}">CHART</a> 🧬 <a href="https://t1prime.com/gen/${symbol}">GEN</a>`;
-
-    // Отправка
     fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -5689,13 +5693,19 @@ function sendTelegramSignal(symbol, side, price, pnlPercent = null) {
     })
     .then(res => res.json())
     .then(data => {
-        if (data.ok) {
-            log(`[Telegram] Message sent for ${symbol}`);
+        // БЕЗОПАСНЫЙ ЛОГ: проверяем существование функции log
+        const logMsg = `[Telegram] Message sent for ${symbol}`;
+        if (typeof log === 'function') {
+            log(logMsg);
+        } else if (typeof APP !== 'undefined' && typeof APP.log === 'function') {
+            APP.log(logMsg);
         } else {
-            log(`[Telegram] Error: ${data.description}`, 'warn');
+            console.log(logMsg);
         }
     })
-    .catch(err => log(`[Telegram] Network error: ${err.message}`, 'warn'));
+    .catch(err => console.warn("TG Network Error", err));
+
+
 
 
     // --- Отправка на локальный коннектор (всегда) ---
