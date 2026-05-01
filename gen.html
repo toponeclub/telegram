@@ -1137,6 +1137,13 @@ button {
     </div>
 </div>
 
+
+<div id="chart-menu" style="display:none; position:fixed; z-index:10000; background:#1b1f23; border:1px solid #3e434a; border-radius:4px; padding:4px 0; min-width:150px; box-shadow:0 4px 15px rgba(0,0,0,0.5);">
+    <div onclick="APP.copyPriceFromMenu()" style="padding:8px 12px; cursor:pointer; font-size:12px; color:#eee;" onmouseover="this.style.background='#2b2f36'" onmouseout="this.style.background='none'"><i class="fas fa-copy" style="color:#00ff9d;width:18px"></i> Copy Price</div>
+    <div onclick="APP.copyScreenshotToClipboard(); APP.hideMenu()" style="padding:8px 12px; cursor:pointer; font-size:12px; color:#eee;" onmouseover="this.style.background='#2b2f36'" onmouseout="this.style.background='none'"><i class="fas fa-camera" style="width:18px"></i> Copy Image</div>
+    <div onclick="APP.saveChartImage()" style="padding:8px 12px; cursor:pointer; font-size:12px; color:#eee;" onmouseover="this.style.background='#2b2f36'" onmouseout="this.style.background='none'"><i class="fas fa-download" style="width:18px"></i> Save Image</div>
+</div>
+
 <!-- Скрипт для переключения вкладок -->
 
 <!--    <script>
@@ -1311,6 +1318,9 @@ recalcAlligatorHistory() {
         { id: 'L_CORR', type: 'long', name: 'LONG CORRECTION', w: 82, desc: 'Buy dip in strong uptrend', check: (s) => s.priceChange24h > 5 && s.trend < -1 },
         { id: 'S_CORR', type: 'short', name: 'SHORT CORRECTION', w: 82, desc: 'Sell rally in strong downtrend', check: (s) => s.priceChange24h < -5 && s.trend > 1 }
     ];
+
+
+    
 
     // --- INITIALIZATION ---
 function init() {
@@ -2468,6 +2478,8 @@ if (k.x) {
         STATE.liqMarkers.push(marker);
         if (STATE.liqMarkers.length > 2000) STATE.liqMarkers.shift();
         APP.updateAllMarkers(); // используем APP, а не this
+        // side определяется как: liq.S === 'SELL' ? 'LONG' : 'SHORT'
+        sendTelegramSignal(liq.s, liq.S === 'SELL' ? 'LONG' : 'SHORT', parseFloat(liq.p), 'LIQ');
 
         // Обновление индикатора Liq History (если включён)
         if (APP.indicators && APP.indicators['liqHist'] && STATE.prices.length > 0) {
@@ -3274,6 +3286,41 @@ createLine(high - diff * 0.618, '0.618', '#3b82f6', 1, 0)
     if (STATE.prices.length) APP.runAnalysis();   // было runAnalysis()
 },
 
+lastMenuPrice: 0,
+        hideMenu: function() { 
+            const m = document.getElementById('chart-menu');
+            if (m) m.style.display = 'none'; 
+        },
+        saveChartImage: function() {
+            const container = document.querySelector('.chart-container');
+            html2canvas(container, { backgroundColor: '#0b0e11', scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `chart-${STATE.symbol}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                this.hideMenu();
+            });
+        },
+        copyPriceFromMenu: function() {
+            if (!this.lastMenuPrice) return;
+            navigator.clipboard.writeText(this.lastMenuPrice.toFixed(8).replace(/\.?0+$/, ""));
+            log(`Price copied: ${this.lastMenuPrice.toFixed(4)}`);
+            this.hideMenu();
+        },
+        showContext: function(e, isMobile = false) {
+            e.preventDefault();
+            const menu = document.getElementById('chart-menu');
+            if (!menu) return;
+            const rect = document.getElementById('tv-chart').getBoundingClientRect();
+            const x = isMobile ? e.changedTouches[0].clientX : e.clientX;
+            const y = isMobile ? e.changedTouches[0].clientY : e.clientY;
+            
+            this.lastMenuPrice = STATE.series.candle.coordinateToPrice(y - rect.top);
+            menu.style.left = `${x}px`;
+            menu.style.top = `${y}px`;
+            menu.style.display = 'block';
+        },
+
         // --- ИСПРАВЛЕННЫЙ ZOOM (ОРИГИНАЛЬНЫЙ + СБРОС ЦЕНЫ) ---
         zoomChart(type) {
             const timeScale = STATE.chart.timeScale();
@@ -3335,6 +3382,8 @@ adjustLiqGlow(delta) {
         });
     }
 },
+
+
 
 
 setupRangeButtons: function() {
@@ -3521,7 +3570,7 @@ setupRangeButtons: function() {
         },
 
         
-
+       
        updateDrawing(pos) {
     const el = document.getElementById('temp-el');
     const d = this.tempDrawing;
@@ -5547,49 +5596,107 @@ function testTelegramConnection() {
         });
 }
 
+// --- ИСПРАВЛЕННЫЕ ОБРАБОТЧИКИ ДЛЯ ТЕЛЕФОНА И ПК ---
+
+// Правая кнопка мыши (ПК)
+document.getElementById('tv-chart').oncontextmenu = (e) => APP.showContext(e);
+
+// Логика для телефона: "навел-отпустил-тапнул"
+document.getElementById('tv-chart').addEventListener('touchend', (e) => {
+    const now = Date.now();
+    const lastTap = window.lastTap || 0;
+    const diff = now - lastTap;
+
+    // Если это повторный тап (от 50мс до 350мс после предыдущего)
+    if (diff > 50 && diff < 350) {
+        APP.showContext(e, true);
+        window.lastTap = 0; // Сбрасываем, чтобы не частило
+    } else {
+        window.lastTap = now;
+    }
+});
+
+// Закрытие меню при клике/тапе в любое место
+const closeMenuHandler = (e) => {
+    const menu = document.getElementById('chart-menu');
+    if (menu && menu.style.display === 'block') {
+        // Если нажали НЕ на меню, закрываем его
+        if (!menu.contains(e.target)) {
+            APP.hideMenu();
+        }
+    }
+};
+
+// Слушаем и мышь, и касания для закрытия
+window.addEventListener('mousedown', closeMenuHandler);
+window.addEventListener('touchstart', (e) => {
+    // Проверяем нажатие вне меню для мобилок
+    const menu = document.getElementById('chart-menu');
+    if (menu && menu.style.display === 'block' && !menu.contains(e.target)) {
+        APP.hideMenu();
+        // Не даем сработать другим событиям, если мы просто закрывали меню
+    }
+}, { passive: true });
+
 
 
 function sendTelegramSignal(symbol, side, price, pnlPercent = null) {
     const token = document.getElementById('tgToken').value.trim();
     const chatId = document.getElementById('tgChat').value.trim();
 
-    const baseCoin = symbol.replace('USDT', '');
-    const directionEmoji = side === 'LONG' ? '🟢' : '🔴';
-    const action = side === 'LONG' ? 'LONG' : 'SHORT';
-    
-    // Формируем сообщение по образцу
-    let message = `🐊 ${baseCoin} ${action} ${directionEmoji}\n`;
-    message += `💵 Price: ${price.toFixed(2)}\n`;
-    if (pnlPercent !== null) {
-        const sign = pnlPercent > 0 ? '+' : '';
-        message += `👉 Exit: ${sign}${pnlPercent.toFixed(2)}%\n`;
+    if (!token || !chatId) {
+        log(`[Telegram] Skipped (no credentials)`, 'info');
+        return;
     }
+
+    const baseCoin = symbol.replace('USDT', '');
+    let message = "";
+
+    // Логика формирования сообщения
+    if (pnlPercent === 'LIQ') { 
+        // 1. Сообщение о ЛИКВИДАЦИИ
+        const reversal = side === 'LONG' ? 'LONG (BUY)' : 'SHORT (SELL)';
+        message = `🩸 <b>LIQ ${baseCoin}</b>\n`;
+        message += `💸 ${side} Liquidated\n`;
+        message += `💵 Price: ${price.toFixed(2)}\n`;
+        message += `🎯 Target: ${reversal}\n`;
+    } else {
+        // 2. Сообщение АЛЛИГАТОРА (Вход или Выход)
+        const directionEmoji = side === 'LONG' ? '🟢' : '🔴';
+        const action = side === 'LONG' ? 'LONG' : 'SHORT';
+        
+        message = `🐊 ${baseCoin} ${action} ${directionEmoji}\n`;
+        message += `💵 Price: ${price.toFixed(2)}\n`;
+        
+        if (pnlPercent !== null && typeof pnlPercent === 'number') {
+            const sign = pnlPercent > 0 ? '+' : '';
+            message += `👉 Exit: ${sign}${pnlPercent.toFixed(2)}%\n`;
+        }
+    }
+
     message += `📊 <a href="https://www.coinglass.com/tv/Binance_${symbol}">CHART</a> 🧬 <a href="https://t1prime.com/gen/${symbol}">GEN</a>`;
 
-    // --- Отправка в Telegram (если есть токен и chatId) ---
-    if (token && chatId) {
-        fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: message,
-                parse_mode: 'HTML',
-                disable_web_page_preview: true
-            })
+    // Отправка
+    fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.ok) {
-                log(`[Telegram] Signal sent for ${symbol}`);
-            } else {
-                log(`[Telegram] Error: ${data.description}`, 'warn');
-            }
-        })
-        .catch(err => log(`[Telegram] Network error: ${err.message}`, 'warn'));
-    } else {
-        log(`[Telegram] Skipped (no credentials)`, 'info');
-    }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.ok) {
+            log(`[Telegram] Message sent for ${symbol}`);
+        } else {
+            log(`[Telegram] Error: ${data.description}`, 'warn');
+        }
+    })
+    .catch(err => log(`[Telegram] Network error: ${err.message}`, 'warn'));
+
 
     // --- Отправка на локальный коннектор (всегда) ---
     const CONNECTOR_URL = 'http://localhost:3000/signal';
