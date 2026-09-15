@@ -1,0 +1,3020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GRIND // OS</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+
+<style>
+:root {
+    --bg-deep: #030303;
+    --bg-surface: #0a0a0c;
+    --bg-elevated: #121214;
+    --border-thin: rgba(255, 255, 255, 0.04);
+    --border-hover: rgba(255, 255, 255, 0.12);
+    --accent: #00ffd5;
+    --accent-dim: rgba(0, 255, 213, 0.08);
+    --text-main: #f0f0f0;
+    --text-muted: #666666;
+    --text-hover: #b3b3b3;
+    --green: #00ff88;
+    --red: #ff2a5f;
+    --gold: #ffcc00;
+    --font-ui: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    --sidebar-width: 280px;
+}
+
+body.theme-emerald { --accent: #00ff88; --accent-dim: rgba(0, 255, 136, 0.08); }
+body.theme-violet  { --accent: #b700ff; --accent-dim: rgba(183, 0, 255, 0.08); }
+body.theme-gold    { --accent: #ffcc00; --accent-dim: rgba(255, 204, 0, 0.08); }
+body.theme-crimson { --accent: #ff2a5f; --accent-dim: rgba(255, 42, 95, 0.08); }
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-ui); -webkit-tap-highlight-color: transparent; }
+
+body {
+    background-color: var(--bg-deep);
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+}
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border-thin);
+    display: flex; flex-direction: column;
+    transition: var(--transition-smooth);
+    position: relative; z-index: 100; flex-shrink: 0;
+}
+.sidebar.collapsed { width: 0; transform: translateX(-100%); border-right: none; }
+
+.toggle-btn {
+    position: absolute; right: -14px; top: 24px;
+    width: 28px; height: 28px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-thin);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); cursor: pointer; z-index: 101;
+    transition: var(--transition-smooth);
+}
+.toggle-btn:hover { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px var(--accent-dim); }
+.sidebar.collapsed .toggle-btn { right: -40px; transform: rotate(180deg); }
+
+.nav-menu { flex: 1; padding: 40px 15px 20px; overflow-y: auto; overflow-x: hidden; white-space: nowrap; }
+
+.nav-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; color: var(--text-muted);
+    font-size: 0.8rem; font-weight: 500; cursor: pointer;
+    border-radius: 8px; margin-bottom: 2px;
+    transition: var(--transition-smooth);
+}
+.nav-item-content { display: flex; align-items: center; gap: 14px; }
+.nav-item-content i { width: 16px; font-size: 0.9rem; text-align: center; transition: var(--transition-smooth); }
+.nav-item:hover { color: var(--text-main); background: rgba(255,255,255,0.02); }
+.nav-item:hover i { color: var(--accent); }
+.nav-item.active { color: var(--text-main); background: var(--accent-dim); }
+.nav-item.active i { color: var(--accent); }
+
+.sub-menu { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 42px; }
+.sub-menu.open { max-height: 200px; }
+.sub-item { padding: 8px 0; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; transition: var(--transition-smooth); }
+.sub-item:hover { color: var(--accent); padding-left: 4px; }
+
+/* ═══ ACTIVE STATES (sidebar) ═══ */
+
+/* Sub-item active — նշված է accent-ով, ունի կետ ձախից */
+.sub-item.active {
+    color: var(--accent);
+    font-weight: 600;
+}
+.sub-item.active {
+    color: var(--accent);
+    font-weight: 600;
+}
+/* Parent nav-item — մշտապես highlighted, երբ accordion-ը բաց է կամ child active */
+.nav-item.has-active-child {
+    color: var(--text-main);
+    background: rgba(0, 255, 213, 0.04);
+}
+.nav-item.has-active-child i,
+.nav-item.has-active-child .fa-angle-down {
+    color: var(--accent);
+}
+
+/* Բացված sub-menu — թեթև accent գիծ ձախից */
+.sub-menu.open {
+    border-left: 1px solid rgba(0, 255, 213, 0.15);
+    margin-left: 20px;
+    padding-left: 22px;
+}
+
+/* Angle icon-ը պտտվում է, երբ բաց է */
+.nav-item .fa-angle-down {
+    transition: transform 0.3s var(--transition-smooth);
+}
+.nav-item.open .fa-angle-down {
+    transform: rotate(180deg);
+}
+
+/* ─── MAIN WRAPPER ─── */
+.main-wrapper {
+    flex: 1; display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+    transition: var(--transition-smooth); min-width: 0;
+}
+
+/* ─── TOPBAR ─── */
+.topbar {
+    height: 70px;
+    border-bottom: 1px solid var(--border-thin);
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 40px;
+    background: rgba(3, 3, 3, 0.8);
+    backdrop-filter: blur(12px);
+    z-index: 90; flex-shrink: 0;
+}
+.top-left { display: flex; align-items: center; gap: 20px; }
+.brand { font-size: 1.1rem; font-weight: 800; letter-spacing: 3px; color: #fff; }
+
+.lang-selector {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--text-muted); font-size: 0.75rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px;
+    cursor: pointer; padding: 6px 12px; border-radius: 6px;
+    border: 1px solid transparent; transition: var(--transition-smooth);
+}
+.lang-selector:hover { border-color: var(--border-thin); color: var(--text-main); }
+.lang-selector i { color: var(--accent); font-size: 0.85rem; }
+
+.top-right { display: flex; align-items: center; gap: 16px; }
+
+/* ─── WALLET BUTTON ─── */
+.wallet-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    letter-spacing: 0.5px;
+}
+.wallet-btn:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-dim);
+    transform: translateY(-1px);
+}
+.wallet-btn.connected {
+    color: var(--green);
+}
+.wallet-btn.connected:hover {
+    border-color: var(--green);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
+}
+.wallet-btn i { font-size: 0.9rem; }
+
+/* ─── BACK BUTTON (in topbar, only when iframe is active) ─── */
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--accent);
+    border-radius: 8px;
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+.back-btn:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-dim);
+}
+.back-btn i { font-size: 0.85rem; }
+.back-btn.hidden { display: none !important; }
+
+.icon-btn {
+    background: transparent; border: none; color: var(--text-muted);
+    font-size: 1.1rem; cursor: pointer;
+    transition: var(--transition-smooth);
+    display: flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 8px;
+}
+.icon-btn:hover { color: var(--accent); background: rgba(255,255,255,0.02); }
+.icon-btn.active { color: var(--accent); background: var(--accent-dim); }
+
+/* ─── DYNAMIC VIEW ─── */
+.dynamic-view {
+    flex: 1; overflow-y: auto;
+    padding: 50px 40px;
+    scroll-behavior: smooth;
+    position: relative;
+}
+.dynamic-view.hidden { display: none; }
+
+/* ─── QUOTE ─── */
+.quote-container { text-align: center; margin-bottom: 60px; max-width: 800px; margin-left: auto; margin-right: auto; }
+.quote-text { font-size: 1.3rem; font-weight: 300; color: var(--text-main); margin-bottom: 12px; line-height: 1.4; }
+.quote-author { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 3px; }
+
+/* ─── BENTO GRID ─── */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px; max-width: 1600px; margin: 0 auto;
+    grid-auto-flow: dense;
+}
+.bento-grid.hidden { display: none; }
+
+.module {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-thin);
+    border-radius: 12px;
+    padding: 30px;
+    transition: var(--transition-smooth);
+    position: relative;
+    min-height: 180px;
+    display: flex; flex-direction: column;
+    min-width: 0;
+}
+.module:hover { border-color: var(--border-hover); transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+.module[data-size="1x1"] { grid-column: span 1; min-height: 180px; }
+.module[data-size="2x1"] { grid-column: span 2; min-height: 220px; }
+.module[data-size="1x2"] { grid-column: span 1; min-height: 340px; }
+.module[data-size="2x2"] { grid-column: span 2; min-height: 420px; }
+.module[data-size="full"] { grid-column: 1 / -1; min-height: 380px; }
+
+/* Hover controls */
+.widget-controls {
+    position: absolute; top: 15px; right: 15px;
+    display: flex; gap: 4px;
+    opacity: 0; transition: opacity 0.25s var(--transition-smooth);
+    z-index: 20; pointer-events: none;
+}
+.module:hover .widget-controls { opacity: 1; pointer-events: auto; }
+
+.widget-btn {
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+    border: 1px solid var(--border-thin);
+    border-radius: 6px; color: var(--text-muted);
+    cursor: pointer; font-size: 10px;
+    transition: var(--transition-smooth);
+}
+.widget-btn:hover { background: var(--bg-elevated); color: var(--text-main); border-color: var(--border-hover); }
+.widget-btn.grip { cursor: grab; }
+.widget-btn.grip:active { cursor: grabbing; }
+.widget-btn.danger:hover { color: var(--red); border-color: rgba(255,42,95,0.4); background: rgba(255,42,95,0.15); }
+
+/* Drag states */
+.module.dragging { opacity: 0.35; cursor: grabbing; transform: scale(0.97); }
+.module.drop-target { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim), 0 0 30px var(--accent-dim); }
+.module.entering { animation: cardIn 0.4s var(--transition-smooth); }
+@keyframes cardIn {
+    from { opacity: 0; transform: scale(0.9) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Blur overlay */
+.blur-overlay {
+    position: absolute; inset: 0;
+    background: rgba(3, 3, 3, 0.85);
+    backdrop-filter: blur(10px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; z-index: 10; padding: 20px;
+    border-radius: 12px; transition: opacity 0.4s var(--transition-smooth);
+}
+.blur-overlay.unlocked { opacity: 0; pointer-events: none; }
+.lock-icon { font-size: 1.5rem; color: var(--text-muted); margin-bottom: 12px; }
+.unlock-btn {
+    background: var(--accent); color: #000; border: none;
+    padding: 10px 22px; border-radius: 50px;
+    font-weight: 800; font-size: 0.7rem; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    font-family: var(--font-ui); transition: var(--transition-smooth);
+}
+.unlock-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--accent-dim); }
+
+/* ─── MOD HEADER ─── */
+.mod-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; gap: 10px; flex-shrink: 0; min-width: 0;
+}
+.mod-title {
+    font-size: 0.7rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 2px;
+    color: var(--text-muted);
+    display: flex; align-items: center; gap: 10px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    min-width: 0;
+}
+.mod-title i { color: var(--accent); flex-shrink: 0; }
+.mod-action {
+    background: none; border: none; color: var(--text-muted);
+    cursor: pointer; transition: var(--transition-smooth);
+    padding: 4px; font-size: 0.8rem;
+}
+.mod-action:hover { color: var(--text-main); }
+
+/* ─── WIDGET CONTENT (existing) ─── */
+.goal-row {
+    display: flex; justify-content: space-between;
+    font-size: 0.8rem; padding: 12px 0;
+    border-bottom: 1px solid var(--border-thin);
+    color: var(--text-hover);
+}
+.goal-row:last-child { border-bottom: none; }
+.goal-status { font-family: var(--font-mono); color: var(--accent); font-size: 0.75rem; }
+
+.supp-tag {
+    display: inline-block; background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-thin);
+    padding: 6px 12px; border-radius: 4px;
+    font-size: 0.7rem; margin: 0 6px 6px 0;
+    cursor: pointer; color: var(--text-hover);
+    transition: var(--transition-smooth);
+}
+.supp-tag:hover { border-color: var(--accent); color: var(--text-main); }
+.supp-tag.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+.clock-display { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; flex: 1; }
+.clock-time {
+    font-family: var(--font-mono); font-size: 2.4rem; font-weight: 800;
+    letter-spacing: -2px; color: var(--accent); line-height: 1;
+}
+.clock-date { font-size: 0.65rem; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 8px; font-weight: 600; }
+.clock-tz { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-top: 4px; opacity: 0.6; }
+
+.quote-content { display: flex; flex-direction: column; justify-content: center; flex: 1; text-align: center; }
+.quote-mark { color: var(--accent); font-size: 1.8rem; line-height: 0.5; margin-bottom: 10px; opacity: 0.5; }
+.quote-widget-text { font-size: 0.9rem; color: var(--text-main); line-height: 1.55; font-style: italic; font-weight: 300; }
+.quote-widget-author { font-size: 0.65rem; color: var(--text-muted); margin-top: 12px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
+
+.list-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; font-size: 0.8rem;
+    border-bottom: 1px solid var(--border-thin);
+    color: var(--text-hover);
+}
+.list-item:last-child { border-bottom: none; }
+.check-box {
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--text-muted);
+    border-radius: 4px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: var(--transition-smooth);
+    font-size: 9px; color: transparent;
+}
+.check-box:hover { border-color: var(--accent); }
+.check-box.done { background: var(--accent); border-color: var(--accent); color: #000; }
+.item-text { flex: 1; min-width: 0; }
+.item-text.done { text-decoration: line-through; color: var(--text-muted); }
+.task-time { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); min-width: 42px; opacity: 0.7; }
+
+.progress-bar-wrap { margin: 10px 0; }
+.progress-bar-label { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
+.progress-bar { height: 5px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.8s var(--transition-smooth); }
+
+.notes-area {
+    width: 100%; flex: 1; background: transparent;
+    border: none; color: var(--text-main);
+    font-family: var(--font-ui); font-size: 0.8rem;
+    resize: none; outline: none; line-height: 1.6; min-height: 100px;
+}
+.notes-area::placeholder { color: var(--text-muted); }
+
+.radio-widget {
+    background: rgba(0,0,0,0.4); padding: 12px 18px;
+    border-radius: 8px; border: 1px solid var(--border-thin);
+    display: flex; align-items: center; gap: 16px; margin-top: auto;
+}
+.play-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--accent); color: #000; border: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; cursor: pointer;
+    transition: var(--transition-smooth); flex-shrink: 0;
+}
+.play-btn:hover { transform: scale(1.08); box-shadow: 0 0 15px var(--accent-dim); }
+.radio-meta { font-size: 0.8rem; }
+.radio-meta .live { color: var(--accent); font-weight: 800; font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; }
+
+.feed-item { padding: 10px 0; border-bottom: 1px solid var(--border-thin); font-size: 0.75rem; }
+.feed-item:last-child { border-bottom: none; }
+.feed-user { font-family: var(--font-mono); color: var(--accent); font-size: 10px; font-weight: 700; }
+.feed-text { color: var(--text-hover); margin-top: 4px; }
+
+.affiliate-stat { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 800; color: var(--accent); margin-top: 4px; }
+.affiliate-stat.green { color: var(--green); }
+
+/* ═══════════════════════════════════════════════
+   NEW: BTC CHART WIDGET
+   ═══════════════════════════════════════════════ */
+.btc-chart-header {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 12px; flex-wrap: wrap;
+}
+.btc-price-big {
+    font-family: var(--font-mono); font-size: 1.6rem; font-weight: 800;
+    letter-spacing: -1px; line-height: 1;
+}
+.btc-delta {
+    font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700;
+    padding: 3px 10px; border-radius: 6px;
+}
+.btc-delta.pos { color: var(--green); background: rgba(0,255,136,0.1); }
+.btc-delta.neg { color: var(--red); background: rgba(255,42,95,0.1); }
+
+.btc-chart-wrap {
+    flex: 1; min-height: 0; width: 100%;
+    border-radius: 8px; overflow: hidden;
+    position: relative;
+}
+.btc-tf-tabs { display: flex; gap: 4px; margin-left: auto; }
+.btc-tf {
+    padding: 4px 10px; font-size: 10px; font-weight: 700;
+    background: transparent; border: 1px solid var(--border-thin);
+    color: var(--text-muted); border-radius: 6px; cursor: pointer;
+    transition: var(--transition-smooth); font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+}
+.btc-tf:hover { color: var(--text-main); border-color: var(--border-hover); }
+.btc-tf.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+.btc-ohlc {
+    display: flex; gap: 14px; font-size: 10px;
+    color: var(--text-muted); margin-top: 8px; flex-wrap: wrap;
+    font-family: var(--font-mono);
+}
+.btc-ohlc b { color: var(--text-main); font-weight: 700; margin-left: 4px; }
+
+/* ═══════════════════════════════════════════════
+   NEW: LIQUIDATIONS WIDGET
+   ═══════════════════════════════════════════════ */
+.liq-feed {
+    flex: 1; overflow-y: auto;
+    margin: 0 -8px; padding: 0 8px;
+    min-height: 0;
+}
+.liq-item {
+    display: grid;
+    grid-template-columns: 52px 1fr auto;
+    gap: 8px; padding: 8px 10px;
+    font-size: 0.72rem;
+    border-bottom: 1px dashed rgba(255,255,255,0.04);
+    align-items: center;
+    animation: liqIn 0.35s ease-out;
+    border-radius: 4px;
+}
+@keyframes liqIn {
+    from { opacity: 0; transform: translateX(12px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.liq-time { color: var(--text-muted); font-size: 9px; font-family: var(--font-mono); }
+.liq-symbol { font-weight: 800; letter-spacing: 0.5px; color: var(--text-main); font-family: var(--font-mono); }
+.liq-side { font-size: 9px; font-weight: 700; letter-spacing: 0.5px; }
+.liq-side.long { color: var(--red); }
+.liq-side.short { color: var(--green); }
+.liq-amt {
+    font-weight: 800; font-family: var(--font-mono);
+    text-align: right; font-size: 0.78rem;
+    color: var(--text-main);
+}
+.liq-amt.big { color: var(--gold); text-shadow: 0 0 12px rgba(255,204,0,0.35); }
+.liq-empty {
+    padding: 40px 20px; text-align: center;
+    color: var(--text-muted); font-size: 0.75rem;
+}
+.liq-counter {
+    font-family: var(--font-mono); font-size: 0.65rem;
+    color: var(--red); font-weight: 700;
+    background: rgba(255,42,95,0.1);
+    padding: 3px 8px; border-radius: 4px;
+    border: 1px solid rgba(255,42,95,0.2);
+}
+
+/* ═══════════════════════════════════════════════
+   NEW: SCREENER WIDGET
+   ═══════════════════════════════════════════════ */
+.scr-controls {
+    display: flex; gap: 6px;
+    margin-bottom: 12px; flex-wrap: wrap;
+    align-items: center;
+}
+.scr-tab {
+    padding: 5px 12px; font-size: 10px; font-weight: 700;
+    background: transparent; border: 1px solid var(--border-thin);
+    color: var(--text-muted); border-radius: 6px; cursor: pointer;
+    transition: var(--transition-smooth); letter-spacing: 0.5px;
+    font-family: var(--font-ui);
+}
+.scr-tab:hover { color: var(--text-main); border-color: var(--border-hover); }
+.scr-tab.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+
+.scr-search {
+    margin-left: auto;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border-thin);
+    color: var(--text-main);
+    padding: 5px 12px; border-radius: 6px;
+    font-size: 10px; font-family: var(--font-mono);
+    width: 150px; outline: none;
+    transition: var(--transition-smooth);
+}
+.scr-search:focus { border-color: var(--accent); }
+.scr-search::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+.scr-table-wrap {
+    flex: 1; overflow-y: auto;
+    margin: 0 -8px; padding: 0 8px;
+    min-height: 0;
+}
+.scr-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+}
+.scr-table thead {
+    position: sticky; top: 0;
+    background: var(--bg-surface);
+    z-index: 5;
+}
+.scr-table th {
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 9px; letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-muted); font-weight: 700;
+    border-bottom: 1px solid var(--border-thin);
+    white-space: nowrap; cursor: pointer;
+    font-family: var(--font-ui);
+}
+.scr-table th.num { text-align: right; }
+.scr-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    white-space: nowrap;
+}
+.scr-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.scr-table tbody tr { cursor: pointer; transition: background 0.15s; }
+.scr-table tbody tr:hover { background: rgba(0,255,213,0.04); }
+.scr-sym { font-weight: 700; color: var(--text-main); }
+.scr-rank { color: var(--text-muted); font-size: 9px; }
+.scr-spark { width: 60px; height: 18px; display: block; }
+
+.pos { color: var(--green); }
+.neg { color: var(--red); }
+
+/* ═══════════════════════════════════════════════
+   IFRAME VIEW
+   ═══════════════════════════════════════════════ */
+.iframe-view {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    position: relative;
+    background: var(--bg-deep);
+}
+.iframe-view.active { display: flex; }
+
+.iframe-header {
+    height: 50px;
+    border-bottom: 1px solid var(--border-thin);
+    display: flex; align-items: center;
+    padding: 0 20px; gap: 14px;
+    background: var(--bg-surface);
+    flex-shrink: 0;
+}
+.iframe-back {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px;
+    background: transparent;
+    border: 1px solid var(--border-thin);
+    color: var(--text-muted); border-radius: 8px;
+    font-size: 0.75rem; font-weight: 700;
+    cursor: pointer; transition: var(--transition-smooth);
+    font-family: var(--font-ui);
+}
+.iframe-back:hover { color: var(--accent); border-color: var(--accent); }
+
+.iframe-title {
+    font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--text-main);
+}
+.iframe-url {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 0.68rem;
+    color: var(--text-muted);
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 6px;
+    border: 1px solid var(--border-thin);
+}
+
+.iframe-body {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+.iframe-body iframe {
+    width: 100%; height: 100%;
+    border: none;
+    background: var(--bg-deep);
+}
+.iframe-loader {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: var(--bg-deep);
+    gap: 14px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-family: var(--font-mono);
+    z-index: 2;
+    transition: opacity 0.4s;
+}
+.iframe-loader.hidden { opacity: 0; pointer-events: none; }
+.iframe-spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border-thin);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════
+   EMPTY STATE
+   ═══════════════════════════════════════════════ */
+.empty-dashboard {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 80px 30px; text-align: center;
+    border: 1px dashed var(--border-thin);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.005);
+    max-width: 1600px; margin: 0 auto; min-height: 260px;
+    transition: var(--transition-smooth);
+}
+.empty-dashboard.hidden { display: none; }
+.empty-dashboard.highlight { border-color: var(--accent); background: var(--accent-dim); }
+.empty-icon { font-size: 2.4rem; color: var(--text-muted); margin-bottom: 20px; opacity: 0.6; }
+.empty-title {
+    font-size: 1rem; font-weight: 600; color: var(--text-main);
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;
+}
+.empty-desc {
+    font-size: 0.8rem; color: var(--text-muted);
+    max-width: 400px; line-height: 1.6; margin-bottom: 22px;
+}
+.empty-cta {
+    background: var(--accent); color: #000; border: none;
+    padding: 12px 26px; border-radius: 50px;
+    font-weight: 800; font-size: 0.7rem; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    font-family: var(--font-ui); transition: var(--transition-smooth);
+}
+.empty-cta:hover { transform: scale(1.05); box-shadow: 0 0 24px var(--accent-dim); }
+
+/* ═══════════════════════════════════════════════
+   WIDGET LIBRARY
+   ═══════════════════════════════════════════════ */
+.library-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none;
+    transition: var(--transition-smooth); z-index: 900;
+}
+.library-overlay.open { opacity: 1; pointer-events: auto; }
+
+.widget-library {
+    position: fixed; top: 0; right: 0;
+    width: 400px; max-width: 92vw; height: 100vh;
+    background: var(--bg-surface);
+    border-left: 1px solid var(--border-thin);
+    z-index: 950; display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.widget-library.open { transform: translateX(0); }
+
+.library-header {
+    padding: 30px 30px 22px;
+    border-bottom: 1px solid var(--border-thin);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+}
+.library-title {
+    font-size: 0.8rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--text-main); display: flex; align-items: center; gap: 10px;
+}
+.library-title i { color: var(--accent); }
+.library-close {
+    width: 30px; height: 30px;
+    background: transparent; border: 1px solid var(--border-thin);
+    border-radius: 6px; color: var(--text-muted);
+    cursor: pointer; font-size: 12px;
+    transition: var(--transition-smooth);
+}
+.library-close:hover { color: var(--text-main); border-color: var(--border-hover); }
+
+.library-subtitle {
+    padding: 14px 30px;
+    font-size: 0.72rem; color: var(--text-muted);
+    line-height: 1.6; border-bottom: 1px solid var(--border-thin);
+    background: rgba(0, 255, 213, 0.015);
+}
+.library-subtitle strong { color: var(--accent); font-weight: 700; }
+
+.library-body { flex: 1; overflow-y: auto; padding: 24px 30px 40px; }
+.library-category { margin-bottom: 30px; }
+.library-category-title {
+    font-size: 0.62rem; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--text-muted);
+    font-weight: 600; margin-bottom: 14px; padding-left: 2px;
+}
+
+.library-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.library-item {
+    background: rgba(255,255,255,0.015);
+    border: 1px solid var(--border-thin);
+    border-radius: 10px; padding: 14px;
+    cursor: grab; transition: var(--transition-smooth);
+    display: flex; flex-direction: column; gap: 8px;
+    position: relative; user-select: none; min-height: 100px;
+}
+.library-item:hover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    transform: translateY(-2px);
+}
+.library-item:active { cursor: grabbing; }
+.library-item.dragging { opacity: 0.4; transform: scale(0.95); }
+
+.library-item-icon {
+    width: 28px; height: 28px;
+    background: var(--accent-dim); color: var(--accent);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+}
+.library-item-name {
+    font-size: 0.72rem; font-weight: 700;
+    color: var(--text-main); letter-spacing: 0.3px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.library-item-desc { font-size: 0.62rem; color: var(--text-muted); line-height: 1.4; }
+
+.pro-tag {
+    font-size: 8px; font-weight: 800;
+    color: var(--gold);
+    border: 1px solid rgba(255,204,0,0.3);
+    background: rgba(255,204,0,0.08);
+    padding: 1px 5px; border-radius: 3px;
+    letter-spacing: 1px;
+}
+.add-hint {
+    position: absolute; top: 10px; right: 10px;
+    font-size: 8px; color: var(--text-muted);
+    font-family: var(--font-mono); letter-spacing: 1.5px;
+    opacity: 0.5;
+}
+
+/* ═══════════════════════════════════════════════
+   TRASH ZONE
+   ═══════════════════════════════════════════════ */
+.trash-zone {
+    position: fixed; bottom: 60px; left: 50%;
+    transform: translateX(-50%) translateY(140px);
+    padding: 14px 32px;
+    background: rgba(255, 42, 95, 0.12);
+    border: 2px dashed rgba(255, 42, 95, 0.5);
+    border-radius: 50px; color: var(--red);
+    font-weight: 700; font-size: 0.75rem;
+    letter-spacing: 2px; text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
+    z-index: 1200; transition: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none; backdrop-filter: blur(10px);
+    font-family: var(--font-ui);
+}
+.trash-zone.active { transform: translateX(-50%) translateY(0); pointer-events: auto; }
+.trash-zone.hot {
+    background: rgba(255, 42, 95, 0.35);
+    border-color: var(--red);
+    transform: translateX(-50%) translateY(-8px) scale(1.05);
+    box-shadow: 0 0 40px rgba(255, 42, 95, 0.5);
+}
+
+/* ═══════════════════════════════════════════════
+   TOASTS
+   ═══════════════════════════════════════════════ */
+.toasts {
+    position: fixed; bottom: 60px; right: 24px;
+    display: flex; flex-direction: column;
+    gap: 8px; z-index: 2000; pointer-events: none;
+}
+.toast {
+    padding: 12px 18px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-thin);
+    border-radius: 10px; font-size: 0.75rem;
+    color: var(--text-main);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    display: flex; align-items: center; gap: 10px;
+    animation: toastIn 0.35s var(--transition-smooth);
+    pointer-events: auto; max-width: 340px; font-weight: 500;
+}
+.toast i { color: var(--accent); }
+.toast.out { animation: toastOut 0.3s forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastOut { to { opacity: 0; transform: translateY(20px); } }
+
+/* ═══════════════════════════════════════════════
+   TICKER
+   ═══════════════════════════════════════════════ */
+.crypto-ticker {
+    height: 40px;
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border-thin);
+    display: flex; align-items: center;
+    overflow: hidden; white-space: nowrap;
+    font-family: var(--font-mono); font-size: 0.7rem;
+    z-index: 90; flex-shrink: 0;
+}
+.ticker-track { display: inline-block; animation: scroll-ticker 40s linear infinite; }
+.ticker-item { margin-right: 40px; color: var(--text-muted); }
+.ticker-item span { color: var(--text-main); font-weight: 700; margin-left: 8px; }
+.ticker-item .up { color: var(--green); }
+.ticker-item .down { color: var(--red); }
+@keyframes scroll-ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+/* ═══════════════════════════════════════════════
+   MODALS
+   ═══════════════════════════════════════════════ */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(5px);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 1000; opacity: 0; pointer-events: none;
+    transition: var(--transition-smooth);
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+.modal-content {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-thin);
+    border-radius: 12px; padding: 40px;
+    width: 90%; max-width: 420px;
+    transform: translateY(15px); transition: var(--transition-smooth);
+}
+.modal-overlay.active .modal-content { transform: translateY(0); }
+.modal-title {
+    font-size: 0.85rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 2px;
+    margin-bottom: 25px; display: flex; justify-content: space-between;
+}
+.close-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+.close-btn:hover { color: var(--text-main); }
+
+.theme-option {
+    display: flex; justify-content: space-between;
+    padding: 12px; border: 1px solid var(--border-thin);
+    border-radius: 8px; margin-bottom: 10px;
+    cursor: pointer; transition: var(--transition-smooth);
+    font-size: 0.8rem;
+}
+.theme-option:hover { border-color: var(--accent); }
+
+/* ═══════════════════════════════════════════════
+   LANG MENU
+   ═══════════════════════════════════════════════ */
+.lang-selector-container { position: relative; display: flex; align-items: center; }
+.lang-menu {
+    position: absolute; top: 100%; right: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-thin);
+    border-radius: 8px; display: none; flex-direction: column;
+    min-width: 150px; z-index: 1000; margin-top: 10px;
+}
+.lang-menu.show { display: flex; }
+.lang-menu div {
+    padding: 12px; font-size: 0.75rem; color: var(--text-muted);
+    cursor: pointer; transition: var(--transition-smooth);
+}
+.lang-menu div:hover { background: var(--accent-dim); color: var(--text-main); }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════ */
+@media(max-width: 768px) {
+    .sidebar,
+.sidebar * {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+}
+    .sidebar.open { transform: translateX(0); }
+    .sidebar.collapsed { transform: translateX(-100%); }
+    .topbar { padding: 0 20px; }
+    .dynamic-view { padding: 30px 20px; }
+    .toggle-btn { display: none; }
+    .top-left .hamburger { display: block; background: none; border: none; color: var(--text-main); font-size: 1.2rem; cursor: pointer; }
+    .bento-grid { grid-template-columns: 1fr; }
+    .module[data-size] { grid-column: span 1 !important; }
+    .widget-library { width: 100%; }
+    .library-grid { grid-template-columns: 1fr 1fr; }
+    .quote-text { font-size: 1rem; }
+    .wallet-btn span { display: none; }
+}
+@media(min-width: 769px) { .hamburger { display: none; } }
+
+.hidden { display: none !important; }
+
+/* ════════════════════════════════════════════════════════════
+   DRAG & DROP · POINTER-BASED (smooth 60fps)
+   ════════════════════════════════════════════════════════════ */
+
+/* Grip — միակ drag handle */
+.widget-btn.grip {
+    cursor: grab;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.widget-btn.grip:active { cursor: grabbing; }
+
+/* Բուն վիջեթը drag-ի ժամանակ — fade out, տեղը մնում է */
+.module.dragging {
+    opacity: 0.2;
+    transform: scale(0.97);
+    transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+/* Ghost — cursor-ին հետևող պատճենը */
+.drag-ghost {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    margin: 0 !important;
+    pointer-events: none !important;
+    z-index: 9999 !important;
+    opacity: 0;
+    border-radius: 12px;
+    border: 1px solid var(--accent) !important;
+    background: var(--bg-surface) !important;
+    box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.75),
+        0 0 0 1px var(--accent-dim),
+        0 0 40px var(--accent-dim) !important;
+    transform-origin: top left;
+    will-change: transform;
+    overflow: hidden;
+    transition: opacity 0.12s ease;
+}
+body.is-dragging .drag-ghost { opacity: 1; }
+
+/* Drop target — ուր կընկնի */
+.module.drop-target {
+    border-color: var(--accent) !important;
+    box-shadow:
+        0 0 0 2px var(--accent-dim),
+        0 0 40px var(--accent-dim),
+        inset 0 0 30px var(--accent-dim) !important;
+    transform: scale(1.02) !important;
+    z-index: 5;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Global cursor + selection արգելք */
+body.is-dragging,
+body.is-dragging * {
+    cursor: grabbing !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+/* Iframe-ները drag-ի ժամանակ չեն գողանա pointer events */
+body.is-dragging iframe {
+    pointer-events: none !important;
+}
+
+/* Trash zone */
+.trash-zone {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%) translateY(140px);
+    padding: 14px 32px;
+    background: rgba(255, 42, 95, 0.12);
+    border: 2px dashed rgba(255, 42, 95, 0.5);
+    border-radius: 50px;
+    color: var(--red);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1200;
+    transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    backdrop-filter: blur(10px);
+}
+.trash-zone.active {
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+.trash-zone.hot {
+    background: rgba(255, 42, 95, 0.4);
+    border-color: var(--red);
+    border-style: solid;
+    transform: translateX(-50%) translateY(-10px) scale(1.08);
+    box-shadow: 0 0 60px rgba(255, 42, 95, 0.6);
+}
+</style>
+</head>
+<body class="theme-emerald">
+
+<!-- ════════════════ SIDEBAR ════════════════ -->
+<nav class="sidebar" id="sidebar">
+    <button class="toggle-btn" onclick="toggleSidebar()">
+        <i class="fa-solid fa-chevron-left"></i>
+    </button>
+
+    <div class="nav-menu">
+        <div class="nav-item active" onclick="closeIframeView();loadPage('dashboard', event)">
+            <div class="nav-item-content"><i class="fa-solid fa-border-all"></i> Dashboard</div>
+        </div>
+
+        <div class="nav-item" onclick="openIframeView('https://t1prime.com/academy', 'Grind Academy')">
+            <div class="nav-item-content"><i class="fa-solid fa-graduation-cap"></i> Grind Academy</div>
+        </div>
+
+        <!-- TRADING -->
+        <div class="nav-item" onclick="toggleAccordion('sub-trading')">
+            <div class="nav-item-content"><i class="fa-solid fa-chart-line"></i> Trading</div>
+            <i class="fa-solid fa-angle-down" style="font-size: 0.6rem;"></i>
+        </div>
+        <div class="sub-menu" id="sub-trading">
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/engine', 'Trading Engine')">Engine</div>
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/signals', 'Signals')">Signals</div>
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/calculators', 'Calculators')">Calculators</div>
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/screener', 'Market Screener')">Screener / Markets</div>
+        </div>
+
+        <!-- PRODUCTIVITY -->
+        <div class="nav-item" onclick="toggleAccordion('sub-prod')">
+            <div class="nav-item-content"><i class="fa-solid fa-crosshairs"></i> Productivity</div>
+            <i class="fa-solid fa-angle-down" style="font-size: 0.6rem;"></i>
+        </div>
+        <div class="sub-menu" id="sub-prod">
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/bio', 'Biohacking')">Biohacking</div>
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/goals', 'Goals')">Goals</div>
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/focus', 'Focus')">Focus</div>
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/journal', 'Journal')">Journal</div>
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/heatmap', '365 Heatmap')">365 Heatmap Tracker</div>
+        </div>
+
+        <!-- SOCIAL MEDIA (NEW) -->
+        <div class="nav-item" onclick="toggleAccordion('sub-social')">
+            <div class="nav-item-content"><i class="fa-solid fa-mobile-screen"></i> Social Media</div>
+            <i class="fa-solid fa-angle-down" style="font-size: 0.6rem;"></i>
+        </div>
+        <div class="sub-menu" id="sub-social">
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/smboost', 'SM Boost')">SM Boost</div>
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/contentmash', 'Content Mash')">Content Mash</div>
+        </div>
+
+        <div class="nav-item" onclick="openIframeView('https://t1prime.com/imchat', 'ImChat P2P')">
+            <div class="nav-item-content"><i class="fa-solid fa-user-shield"></i> ImChat P2P</div>
+        </div>
+
+        <!-- AFFILIATE -->
+        <div class="nav-item" onclick="toggleAccordion('sub-aff')">
+            <div class="nav-item-content"><i class="fa-solid fa-share-nodes"></i> Affiliate</div>
+            <i class="fa-solid fa-angle-down" style="font-size: 0.6rem;"></i>
+        </div>
+        <div class="sub-menu" id="sub-aff">
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/affiliate', 'Affiliate Room')">Main Room & PNL</div>
+            <div class="sub-item" onclick="openIframeView('https://t1prime.com/assets', 'Content Assets')">Content Assets</div>
+        </div>
+
+        <div class="nav-item" style="margin-top: 30px; border-top: 1px solid var(--border-thin); padding-top: 20px;">
+            <div class="nav-item-content"><i class="fa-solid fa-credit-card"></i> Subscriptions</div>
+        </div>
+
+        <div class="nav-item" onclick="resetLayout()">
+            <div class="nav-item-content"><i class="fa-solid fa-rotate-left"></i> Reset Layout</div>
+        </div>
+    </div>
+</nav>
+
+<!-- ════════════════ MAIN WRAPPER ════════════════ -->
+<div class="main-wrapper">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+       <div class="top-left">
+    <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="brand"></div>
+
+    <!-- ⬇ NEW: Back button (hidden by default) -->
+    <button class="back-btn hidden" id="backBtn" onclick="closeIframeView()">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Back</span>
+    </button>
+
+    <div class="lang-selector-container">
+        <div class="lang-selector" id="langBtn" onclick="toggleLangMenu()">
+            <span>Grind</span> <i class="fa-solid fa-globe"></i> <span id="langText">EN</span>
+        </div>
+        <div class="lang-menu" id="langMenu">
+            <div onclick="setLang('EN')">US (English)</div>
+            <div onclick="setLang('RU')">RU (Русский)</div>
+            <div onclick="setLang('ARM')">ARM (Հայերեն)</div>
+            <div onclick="setLang('CH')">CH (中文)</div>
+        </div>
+    </div>
+</div>
+
+        <div class="top-right">
+            <!-- WALLET CONNECT -->
+            <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">
+                <i class="fa-solid fa-wallet"></i>
+                <span id="walletText">Connect Wallet</span>
+            </button>
+
+            <button class="icon-btn" id="btnLibrary" title="Widget Library (⌘K)">
+                <i class="fa-solid fa-plus"></i>
+            </button>
+
+            <button class="icon-btn" onclick="openModal('qrModal')" title="Device Sync">
+                <i class="fa-solid fa-mobile-screen"></i>
+            </button>
+
+            <button class="icon-btn" onclick="openModal('settingsModal')" title="Settings">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ── DASHBOARD VIEW ── -->
+    <main class="dynamic-view" id="dashboardView">
+        <div class="quote-container">
+            <div class="quote-text" id="quote-text">
+                "Focus is the new IQ. Whoever can sit still and work for 4 hours straight, owns the market."
+            </div>
+            <div class="quote-author">Doctrine // 001</div>
+        </div>
+
+        <div class="bento-grid" id="bentoGrid"></div>
+
+        <div class="empty-dashboard hidden" id="emptyDashboard">
+            <div class="empty-icon"><i class="fa-solid fa-shapes"></i></div>
+            <div class="empty-title">Your Dashboard is Empty</div>
+            <div class="empty-desc">
+                Բացի՛ր Widget Library-ն և drag արա մոդուլները այստեղ՝ քո GRIND OS-ը կառուցելու համար։
+            </div>
+            <button class="empty-cta" onclick="openLibrary()">
+                <i class="fa-solid fa-plus"></i> &nbsp; Open Widget Library
+            </button>
+        </div>
+    </main>
+
+    <!-- ── IFRAME VIEW (full area, no header) ── -->
+<div class="iframe-view" id="iframeView">
+    <div class="iframe-body">
+        <div class="iframe-loader" id="iframeLoader">
+            <div class="iframe-spinner"></div>
+            <span>Loading module...</span>
+        </div>
+        <iframe id="mainIframe" src="about:blank" allow="clipboard-write; web3" loading="lazy"></iframe>
+    </div>
+</div>
+
+    <!-- TICKER -->
+    <div class="crypto-ticker">
+        <div class="ticker-track">
+            <span class="ticker-item">BTC/USDT <span class="up" id="tick-btc">$64,250.00 ▲</span></span>
+            <span class="ticker-item">ETH/USDT <span class="down" id="tick-eth">$3,420.15 ▼</span></span>
+            <span class="ticker-item">XAU/USD <span class="up">$2,340.50 ▲</span></span>
+            <span class="ticker-item">SOL/USDT <span class="up" id="tick-sol">$145.20 ▲</span></span>
+            <span class="ticker-item">DXY <span class="down">104.20 ▼</span></span>
+            <span class="ticker-item">BTC/USDT <span class="up" id="tick-btc2">$64,250.00 ▲</span></span>
+            <span class="ticker-item">ETH/USDT <span class="down" id="tick-eth2">$3,420.15 ▼</span></span>
+            <span class="ticker-item">XAU/USD <span class="up">$2,340.50 ▲</span></span>
+            <span class="ticker-item">SOL/USDT <span class="up" id="tick-sol2">$145.20 ▲</span></span>
+            <span class="ticker-item">DXY <span class="down">104.20 ▼</span></span>
+        </div>
+    </div>
+</div>
+
+<!-- LIBRARY -->
+<div class="library-overlay" id="libraryOverlay" onclick="closeLibrary()"></div>
+<aside class="widget-library" id="widgetLibrary">
+    <div class="library-header">
+        <div class="library-title"><i class="fa-solid fa-shapes"></i> Widget Library</div>
+        <button class="library-close" onclick="closeLibrary()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="library-subtitle">
+        <strong>Drag</strong> widgets into your dashboard · <strong>Reorder</strong> by dragging inside · <strong>Remove</strong> by dropping in trash zone
+    </div>
+    <div class="library-body" id="libraryBody"></div>
+</aside>
+
+<!-- TRASH -->
+<div class="trash-zone" id="trashZone">
+    <i class="fa-solid fa-trash"></i> Drop to Remove
+</div>
+
+<!-- TOASTS -->
+<div class="toasts" id="toasts"></div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="qrModal">
+    <div class="modal-content">
+        <div class="modal-title">
+            <span>Device Synchronization</span>
+            <button class="close-btn" onclick="closeModals()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div style="height: 180px; border: 1px dashed var(--border-thin); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.75rem;">
+            <i class="fa-solid fa-qrcode" style="font-size: 3rem; margin-bottom: 15px; color: var(--text-main);"></i>
+            Scan to sync session via mobile
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+        <div class="modal-title">
+            <span>System Configuration</span>
+            <button class="close-btn" onclick="closeModals()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 15px;">Interface Accent Theme</div>
+        <div class="theme-option" onclick="setTheme('')"><span>Default Cyan</span> <span style="color: #00ffd5;">●</span></div>
+        <div class="theme-option" onclick="setTheme('theme-emerald')"><span>Emerald</span> <span style="color: #00ff88;">●</span></div>
+        <div class="theme-option" onclick="setTheme('theme-violet')"><span>Violet</span> <span style="color: #b700ff;">●</span></div>
+        <div class="theme-option" onclick="setTheme('theme-gold')"><span>Gold</span> <span style="color: #ffcc00;">●</span></div>
+        <div class="theme-option" onclick="setTheme('theme-crimson')"><span>Crimson</span> <span style="color: #ff2a5f;">●</span></div>
+    </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   GRIND // OS · ENGINE  v2.0
+   ════════════════════════════════════════════════════════════ */
+
+const STORAGE_KEY = 'grind_os_layout_v2';
+const NOTES_KEY = 'grind_os_notes_v1';
+const WALLET_KEY = 'grind_os_wallet';
+
+const $  = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+
+/* ─── WIDGET REGISTRY ─── */
+const WIDGET_REGISTRY = {
+    /* ── TRADING ── */
+    btc_chart: {
+        id: 'btc_chart', name: 'BTC Chart', desc: 'Live BTC candles · TF switch',
+        icon: 'fa-chart-line', size: 'full', category: 'Trading',
+        render: renderBTCChartWidget, init: initBTCChartWidget
+    },
+    liquidations: {
+        id: 'liquidations', name: 'Live Liquidations', desc: 'Whale liq feed · real-time',
+        icon: 'fa-water', size: '1x2', category: 'Trading',
+        render: renderLiquidationsWidget, init: initLiquidationsWidget
+    },
+    screener: {
+        id: 'screener', name: 'Market Screener', desc: 'Multi-filter + search',
+        icon: 'fa-radar', size: 'full', category: 'Trading',
+        render: renderScreenerWidget, init: initScreenerWidget
+    },
+    signals: {
+        id: 'signals', name: 'Intel Signals', desc: 'Live trading alerts',
+        icon: 'fa-satellite', size: '2x2', category: 'Trading', premium: true,
+        render: renderSignalsWidget
+    },
+    terminal: {
+        id: 'terminal', name: 'Pro Terminal', desc: 'DCA · Grid · Risk',
+        icon: 'fa-chart-candlestick', size: '1x1', category: 'Trading', premium: true,
+        render: renderTerminalWidget
+    },
+    heatmap: {
+        id: 'heatmap', name: '365 Consistency', desc: 'Yearly habit matrix',
+        icon: 'fa-fire', size: 'full', category: 'Trading',
+        render: renderHeatmapWidget
+    },
+
+    /* ── PRODUCTIVITY ── */
+    goals: {
+        id: 'goals', name: 'Active Goals', desc: 'Long-term objectives',
+        icon: 'fa-bullseye', size: '1x1', category: 'Productivity',
+        render: renderGoalsWidget
+    },
+    biohacking: {
+        id: 'biohacking', name: 'Bio-Sync Stack', desc: 'Supplement builder',
+        icon: 'fa-dna', size: '1x1', category: 'Productivity',
+        render: renderBiohackingWidget
+    },
+    tasks: {
+        id: 'tasks', name: 'Today Tasks', desc: 'Daily checklist',
+        icon: 'fa-list-check', size: '1x1', category: 'Productivity',
+        render: renderTasksWidget
+    },
+    progress: {
+        id: 'progress', name: 'Progress', desc: 'Weekly bars',
+        icon: 'fa-chart-simple', size: '1x1', category: 'Productivity',
+        render: renderProgressWidget
+    },
+    clock: {
+        id: 'clock', name: 'Clock', desc: 'Time & date',
+        icon: 'fa-clock', size: '1x1', category: 'Productivity',
+        render: renderClockWidget
+    },
+    quote: {
+        id: 'quote', name: 'Quote', desc: 'Daily doctrine',
+        icon: 'fa-quote-left', size: '1x1', category: 'Productivity',
+        render: renderQuoteWidget
+    },
+    notes: {
+        id: 'notes', name: 'Notes', desc: 'Quick scratchpad',
+        icon: 'fa-note-sticky', size: '1x1', category: 'Productivity',
+        render: renderNotesWidget
+    },
+    radio: {
+        id: 'radio', name: 'Deep Work Radio', desc: '24/7 focus stream',
+        icon: 'fa-radio', size: '1x1', category: 'Productivity',
+        render: renderRadioWidget
+    },
+
+    /* ── SOCIAL ── */
+    community: {
+        id: 'community', name: 'Community', desc: 'Live feed',
+        icon: 'fa-users', size: '1x1', category: 'Social',
+        render: renderCommunityWidget
+    },
+    affiliate: {
+        id: 'affiliate', name: 'Affiliate', desc: 'Referrals & earnings',
+        icon: 'fa-share-nodes', size: '1x1', category: 'Social',
+        render: renderAffiliateWidget
+    }
+};
+
+const CATEGORIES = ['Trading', 'Productivity', 'Social'];
+
+/* ─── STATE ─── */
+let state = {
+    widgets: [],
+    subscribed: false,
+    wallet: null
+};
+
+const widgetCleanup = {}; // widgetId → cleanup function (WebSocket, intervals)
+
+function saveState() {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            widgets: state.widgets,
+            subscribed: state.subscribed
+        }));
+    } catch (e) {}
+}
+
+function loadState() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+            const s = JSON.parse(raw);
+            state.widgets = s.widgets || [];
+            state.subscribed = !!s.subscribed;
+            return true;
+        }
+    } catch (e) {}
+    return false;
+}
+
+function getDefaultLayout() {
+    return [
+        { id: uid(), type: 'goals',         size: '1x1' },
+        { id: uid(), type: 'biohacking',    size: '1x1' },
+        { id: uid(), type: 'btc_chart',     size: 'full' }
+    ];
+}
+
+function uid() { return 'w_' + Math.random().toString(36).slice(2, 9); }
+
+/* ════════════════════════════════════════════════════════════
+   GRID RENDER
+   ════════════════════════════════════════════════════════════ */
+function renderGrid() {
+    // Cleanup previous widget resources (WS, intervals)
+    Object.values(widgetCleanup).forEach(fn => { try { fn(); } catch(e) {} });
+    Object.keys(widgetCleanup).forEach(k => delete widgetCleanup[k]);
+
+    const grid = $('#bentoGrid');
+    const emptyState = $('#emptyDashboard');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    if (state.widgets.length === 0) {
+        grid.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+    }
+
+    grid.classList.remove('hidden');
+    emptyState.classList.add('hidden');
+
+    state.widgets.forEach(w => {
+        const reg = WIDGET_REGISTRY[w.type];
+        if (!reg) return;
+
+        const el = document.createElement('div');
+        el.className = 'module entering';
+        el.dataset.widgetId = w.id;
+        el.dataset.widgetType = w.type;
+        el.dataset.size = w.size || reg.size;
+        el.setAttribute('draggable', 'true');
+
+        const locked = reg.premium && !state.subscribed;
+        const unlockedClass = locked ? '' : 'unlocked';
+
+        el.innerHTML = `
+            <div class="widget-controls">
+                <button class="widget-btn grip" title="Drag to move">
+                    <i class="fa-solid fa-grip-vertical"></i>
+                </button>
+                <button class="widget-btn size-btn" title="Change size">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+                <button class="widget-btn danger remove-btn" title="Remove">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            ${reg.premium ? `
+                <div class="blur-overlay blur-mod ${unlockedClass}">
+                    <i class="fa-solid fa-lock lock-icon"></i>
+                    <button class="unlock-btn" onclick="event.stopPropagation();toggleSubscription();">
+                        Unlock PRO
+                    </button>
+                </div>
+            ` : ''}
+
+            ${reg.render(w)}
+        `;
+
+        grid.appendChild(el);
+
+        // Controls
+        el.querySelector('.remove-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeWidget(w.id);
+        });
+        el.querySelector('.size-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            cycleWidgetSize(w.id);
+        });
+
+        // Drag events
+       // Grip — միակ drag handle
+const grip = el.querySelector('.widget-btn.grip');
+if (grip) grip.addEventListener('pointerdown', onGripPointerDown);
+
+// Library drops (HTML5 DnD) — modules-ը droppable են
+el.addEventListener('dragover', onModuleDragOver);
+el.addEventListener('dragleave', onModuleDragLeave);
+el.addEventListener('drop', onModuleDrop);
+
+        // Init widget-specific logic
+        if (typeof reg.init === 'function') {
+            setTimeout(() => {
+                try { reg.init(w, el); } catch(e) { console.warn('Widget init failed:', e); }
+            }, 80);
+        }
+
+        setTimeout(() => el.classList.remove('entering'), 450);
+    });
+
+    initWidgetBehaviors();
+}
+
+/* ─── SIZE CYCLE ─── */
+const SIZE_CYCLE = {
+    '1x1': '2x1',
+    '2x1': '2x2',
+    '2x2': '1x1',
+    '1x2': '1x1',
+    'full': 'full'
+};
+
+function cycleWidgetSize(widgetId) {
+    const w = state.widgets.find(x => x.id === widgetId);
+    if (!w) return;
+    w.size = SIZE_CYCLE[w.size] || '1x1';
+    saveState();
+
+    const el = document.querySelector(`[data-widget-id="${widgetId}"]`);
+    if (el) el.dataset.size = w.size;
+    toast(`Size: ${w.size === 'full' ? 'FULL' : w.size}`);
+}
+
+/* ─── ADD / REMOVE ─── */
+function addWidget(type, position) {
+    const reg = WIDGET_REGISTRY[type];
+    if (!reg) return;
+
+    const id = uid();
+    const widget = { id, type, size: reg.size };
+
+    if (typeof position === 'number' && position >= 0) {
+        state.widgets.splice(position, 0, widget);
+    } else {
+        state.widgets.push(widget);
+    }
+
+    saveState();
+    renderGrid();
+    toast(`Added: ${reg.name}`);
+    closeLibrary();
+}
+
+function removeWidget(widgetId) {
+    const idx = state.widgets.findIndex(x => x.id === widgetId);
+    if (idx === -1) return;
+
+    // Cleanup
+    if (widgetCleanup[widgetId]) {
+        try { widgetCleanup[widgetId](); } catch(e) {}
+        delete widgetCleanup[widgetId];
+    }
+
+    const el = document.querySelector(`[data-widget-id="${widgetId}"]`);
+    if (el) {
+        el.style.transition = 'all 0.25s var(--transition-smooth)';
+        el.style.transform = 'scale(0.85)';
+        el.style.opacity = '0';
+    }
+
+    setTimeout(() => {
+        state.widgets.splice(idx, 1);
+        saveState();
+        renderGrid();
+        toast('Widget removed');
+    }, 240);
+}
+
+/* ════════════════════════════════════════════════════════════
+   DRAG & DROP
+   ════════════════════════════════════════════════════════════ */
+let draggedWidgetId = null;
+let draggingFromLibrary = false;
+
+/* ════════════════════════════════════════════════════════════
+   DRAG & DROP · POINTER-BASED ENGINE
+   ════════════════════════════════════════════════════════════ */
+
+let dragState = null;
+
+/* ─── GRIP pointerdown — start tracking ─── */
+function onGripPointerDown(e) {
+    // Միայն ձախ click կամ touch/pen
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+    const grip = e.currentTarget;
+    const widget = grip.closest('.module');
+    if (!widget) return;
+
+    const rect = widget.getBoundingClientRect();
+
+    dragState = {
+        active: false,
+        widgetId: widget.dataset.widgetId,
+        element: widget,
+        ghost: null,
+        rect,
+        startX: e.clientX,
+        startY: e.clientY,
+        offsetX: e.clientX - rect.left,
+        offsetY: e.clientY - rect.top,
+        target: null,
+        overTrash: false
+    };
+
+    e.preventDefault();
+
+    document.addEventListener('pointermove', onDragPointerMove);
+    document.addEventListener('pointerup', onDragPointerUp);
+    document.addEventListener('pointercancel', onDragPointerUp);
+    document.addEventListener('keydown', onDragKeyDown);
+}
+
+/* ─── POINTER MOVE ─── */
+function onDragPointerMove(e) {
+    if (!dragState) return;
+
+    // Threshold — 6px, որ պատահական click-ը drag չհամարվի
+    if (!dragState.active) {
+        const dx = Math.abs(e.clientX - dragState.startX);
+        const dy = Math.abs(e.clientY - dragState.startY);
+        if (dx < 6 && dy < 6) return;
+        activateDrag();
+    }
+
+    // Ghost-ը հետևում է cursor-ին
+    const x = e.clientX - dragState.offsetX;
+    const y = e.clientY - dragState.offsetY;
+    dragState.ghost.style.transform =
+        `translate3d(${x}px, ${y}px, 0) scale(1.03) rotate(0.5deg)`;
+
+    // Ո՞ր module-ի վրա է cursor-ը
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const target = el ? el.closest('.module') : null;
+
+    if (target && target !== dragState.element && !dragState.overTrash) {
+        if (dragState.target !== target) {
+            if (dragState.target) dragState.target.classList.remove('drop-target');
+            dragState.target = target;
+            target.classList.add('drop-target');
+        }
+    } else {
+        if (dragState.target) {
+            dragState.target.classList.remove('drop-target');
+            dragState.target = null;
+        }
+    }
+
+    // Trash zone check
+    const trash = document.getElementById('trashZone');
+    if (trash && trash.classList.contains('active')) {
+        const tr = trash.getBoundingClientRect();
+        const overTrash =
+            e.clientX >= tr.left && e.clientX <= tr.right &&
+            e.clientY >= tr.top  && e.clientY <= tr.bottom;
+
+        if (overTrash !== dragState.overTrash) {
+            dragState.overTrash = overTrash;
+            trash.classList.toggle('hot', overTrash);
+
+            // Երբ trash-ի վրա է, drop-target-ը հանի
+            if (overTrash && dragState.target) {
+                dragState.target.classList.remove('drop-target');
+                dragState.target = null;
+            }
+        }
+    }
+}
+
+/* ─── ACTIVATE — 6px անցնելուց հետո միայն ─── */
+function activateDrag() {
+    if (!dragState || dragState.active) return;
+    dragState.active = true;
+
+    const el = dragState.element;
+    const rect = dragState.rect;
+
+    // Ghost clone
+    const ghost = el.cloneNode(true);
+    ghost.classList.remove('entering', 'dragging');
+    ghost.classList.add('drag-ghost');
+    ghost.style.width  = rect.width  + 'px';
+    ghost.style.height = rect.height + 'px';
+    ghost.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0)`;
+
+    // Interactive elements-ները ghost-ի մեջ չաշխատեն
+    ghost.querySelectorAll('button, input, textarea, select, iframe, a').forEach(x => {
+        x.setAttribute('tabindex', '-1');
+        x.style.pointerEvents = 'none';
+    });
+
+    document.body.appendChild(ghost);
+    dragState.ghost = ghost;
+
+    // Բուն վիջեթը dim
+    el.classList.add('dragging');
+
+    // Trash zone ցուցադրիր
+    const trash = document.getElementById('trashZone');
+    if (trash) trash.classList.add('active');
+
+    // Global class
+    document.body.classList.add('is-dragging');
+}
+
+/* ─── POINTER UP — commit կամ cancel ─── */
+function onDragPointerUp(e) {
+    if (!dragState) return;
+
+    const wasActive = dragState.active;
+    const targetId  = dragState.target ? dragState.target.dataset.widgetId : null;
+    const overTrash = dragState.overTrash;
+    const widgetId  = dragState.widgetId;
+
+    cleanupDrag();
+
+    if (!wasActive) return;
+
+    if (overTrash) {
+        removeWidget(widgetId);
+    } else if (targetId && targetId !== widgetId) {
+        reorderWidget(widgetId, targetId);
+    }
+}
+
+/* ─── ESC → cancel ─── */
+function onDragKeyDown(e) {
+    if (e.key === 'Escape' && dragState && dragState.active) {
+        cleanupDrag();
+    }
+}
+
+/* ─── CLEANUP ─── */
+function cleanupDrag() {
+    if (!dragState) return;
+
+    if (dragState.ghost)   dragState.ghost.remove();
+    if (dragState.element) dragState.element.classList.remove('dragging');
+    if (dragState.target)  dragState.target.classList.remove('drop-target');
+
+    const trash = document.getElementById('trashZone');
+    if (trash) trash.classList.remove('active', 'hot');
+
+    document.body.classList.remove('is-dragging');
+
+    document.removeEventListener('pointermove', onDragPointerMove);
+    document.removeEventListener('pointerup', onDragPointerUp);
+    document.removeEventListener('pointercancel', onDragPointerUp);
+    document.removeEventListener('keydown', onDragKeyDown);
+
+    dragState = null;
+}
+
+/* ─── REORDER — splice + save + render ─── */
+function reorderWidget(fromId, toId) {
+    const fromIdx = state.widgets.findIndex(w => w.id === fromId);
+    const toIdx   = state.widgets.findIndex(w => w.id === toId);
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+
+    const [moved] = state.widgets.splice(fromIdx, 1);
+    state.widgets.splice(toIdx, 0, moved);
+    saveState();
+    renderGrid();
+}
+
+/* ─── Library → Dashboard drop handlers (HTML5 DnD, միայն library-ի համար) ─── */
+function onModuleDragOver(e) {
+    if (!draggingFromLibrary) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    this.classList.add('drop-target');
+}
+
+function onModuleDragLeave(e) {
+    if (!this.contains(e.relatedTarget)) {
+        this.classList.remove('drop-target');
+    }
+}
+
+function onModuleDrop(e) {
+    if (!draggingFromLibrary) return;
+    e.preventDefault();
+    this.classList.remove('drop-target');
+
+    const type = e.dataTransfer.getData('widget-type');
+    if (!type || !WIDGET_REGISTRY[type]) {
+        draggingFromLibrary = false;
+        return;
+    }
+
+    const targetId = this.dataset.widgetId;
+    const toIdx = state.widgets.findIndex(x => x.id === targetId);
+    addWidget(type, toIdx);
+    draggingFromLibrary = false;
+}
+
+/* ════════════════════════════════════════════════════════════
+   WIDGET RENDERERS
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── BTC CHART ─── */
+function renderBTCChartWidget(w) {
+    const cid = 'btcchart_' + w.id;
+    const priceId = 'btcprice_' + w.id;
+    const deltaId = 'btcdelta_' + w.id;
+    const tfId = 'btctf_' + w.id;
+    const ohlcId = 'btcohlc_' + w.id;
+
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-chart-line"></i> BTC / USDT · PERP</div>
+            <div class="btc-tf-tabs" id="${tfId}">
+                <button class="btc-tf" data-tf="15m">15M</button>
+                <button class="btc-tf active" data-tf="1h">1H</button>
+                <button class="btc-tf" data-tf="4h">4H</button>
+                <button class="btc-tf" data-tf="1d">1D</button>
+            </div>
+        </div>
+        <div class="btc-chart-header">
+            <span class="btc-price-big" id="${priceId}">--</span>
+            <span class="btc-delta" id="${deltaId}">--</span>
+        </div>
+        <div class="btc-chart-wrap" id="${cid}"></div>
+        <div class="btc-ohlc" id="${ohlcId}">
+            <span>O <b class="o">--</b></span>
+            <span>H <b class="h">--</b></span>
+            <span>L <b class="l">--</b></span>
+            <span>C <b class="c">--</b></span>
+            <span>V <b class="v">--</b></span>
+        </div>
+    `;
+}
+
+function initBTCChartWidget(w, el) {
+    const container = el.querySelector(`#btcchart_${w.id}`);
+    if (!container || !window.LightweightCharts) return;
+
+    let tf = '1h';
+    let chart, candleSeries, volSeries;
+
+    function fmtPrice(v) {
+        if (!isFinite(v)) return '--';
+        const a = Math.abs(v);
+        if (a >= 10000) return v.toLocaleString('en-US', {maximumFractionDigits: 0});
+        if (a >= 1000) return v.toFixed(2);
+        if (a >= 1) return v.toFixed(3);
+        return v.toFixed(6);
+    }
+
+    function buildChart() {
+        container.innerHTML = '';
+        chart = LightweightCharts.createChart(container, {
+            layout: { background: { color: 'transparent' }, textColor: '#666', fontFamily: 'JetBrains Mono' },
+            grid: {
+                vertLines: { color: 'rgba(255,255,255,0.02)' },
+                horzLines: { color: 'rgba(255,255,255,0.02)' }
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal,
+                vertLine: { color: 'rgba(0,255,213,0.4)', width: 1, style: 2, labelBackgroundColor: '#00ffd5' },
+                horzLine: { color: 'rgba(0,255,213,0.4)', width: 1, style: 2, labelBackgroundColor: '#00ffd5' }
+            },
+            timeScale: { timeVisible: true, secondsVisible: false, borderColor: 'rgba(255,255,255,0.05)', rightOffset: 5 },
+            rightPriceScale: { borderColor: 'rgba(255,255,255,0.05)', scaleMargins: { top: 0.08, bottom: 0.25 } }
+        });
+
+        candleSeries = chart.addCandlestickSeries({
+            upColor: '#00ff88', downColor: '#ff2a5f',
+            borderVisible: false,
+            wickUpColor: '#00ff88', wickDownColor: '#ff2a5f'
+        });
+
+        volSeries = chart.addHistogramSeries({
+            color: 'rgba(255,255,255,0.15)',
+            priceFormat: { type: 'volume' },
+            priceScaleId: 'vol'
+        });
+        chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
+
+        chart.subscribeCrosshairMove(param => {
+            if (!param || !param.time || !param.seriesData) return;
+            const c = param.seriesData.get(candleSeries);
+            const v = param.seriesData.get(volSeries);
+            const ohlc = el.querySelector(`#btcohlc_${w.id}`);
+            if (!ohlc) return;
+            if (c) {
+                ohlc.querySelector('.o').textContent = fmtPrice(c.open);
+                ohlc.querySelector('.h').textContent = fmtPrice(c.high);
+                ohlc.querySelector('.l').textContent = fmtPrice(c.low);
+                ohlc.querySelector('.c').textContent = fmtPrice(c.close);
+                ohlc.querySelector('.c').style.color = c.close >= c.open ? 'var(--green)' : 'var(--red)';
+            }
+            if (v) ohlc.querySelector('.v').textContent = (v.value/1e6).toFixed(1) + 'M';
+        });
+    }
+
+    async function loadData() {
+        try {
+            const [klines, ticker] = await Promise.all([
+                fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${tf}&limit=300`).then(r => r.json()),
+                fetch('https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=BTCUSDT').then(r => r.json())
+            ]);
+
+            if (!Array.isArray(klines) || !klines.length) return;
+
+            const candles = klines.map(k => ({
+                time: k[0]/1000,
+                open: parseFloat(k[1]),
+                high: parseFloat(k[2]),
+                low: parseFloat(k[3]),
+                close: parseFloat(k[4])
+            }));
+            const vols = klines.map(k => ({
+                time: k[0]/1000,
+                value: parseFloat(k[7]),
+                color: parseFloat(k[4]) >= parseFloat(k[1]) ? 'rgba(0,255,136,0.35)' : 'rgba(255,42,95,0.35)'
+            }));
+
+            candleSeries.setData(candles);
+            volSeries.setData(vols);
+            chart.timeScale().fitContent();
+
+            // Update header
+            const price = parseFloat(ticker.lastPrice);
+            const chg = parseFloat(ticker.priceChangePercent);
+            const priceEl = el.querySelector(`#btcprice_${w.id}`);
+            const deltaEl = el.querySelector(`#btcdelta_${w.id}`);
+            if (priceEl) {
+                priceEl.textContent = '$' + price.toLocaleString('en-US', {maximumFractionDigits: 0});
+                priceEl.style.color = chg >= 0 ? 'var(--green)' : 'var(--red)';
+            }
+            if (deltaEl) {
+                deltaEl.textContent = (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+                deltaEl.className = 'btc-delta ' + (chg >= 0 ? 'pos' : 'neg');
+            }
+        } catch (e) { console.warn('BTC chart load', e); }
+    }
+
+    buildChart();
+    loadData();
+
+    // TF buttons
+    el.querySelectorAll(`#btctf_${w.id} .btc-tf`).forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            el.querySelectorAll(`#btctf_${w.id} .btc-tf`).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            tf = btn.dataset.tf;
+            await loadData();
+        });
+    });
+
+    // Resize
+    const ro = new ResizeObserver(() => {
+        if (chart && container.clientWidth > 0) {
+            chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+        }
+    });
+    ro.observe(container);
+
+    // Refresh every 30s
+    const refreshInt = setInterval(loadData, 30000);
+
+    widgetCleanup[w.id] = () => {
+        clearInterval(refreshInt);
+        ro.disconnect();
+        try { chart.remove(); } catch(e) {}
+    };
+}
+
+/* ─── LIQUIDATIONS ─── */
+function renderLiquidationsWidget(w) {
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-water"></i> Live Liquidations</div>
+            <span class="liq-counter" id="liqcount_${w.id}">0</span>
+        </div>
+        <div class="liq-feed" id="liqfeed_${w.id}">
+            <div class="liq-empty">Waiting for whales... 🐋</div>
+        </div>
+    `;
+}
+
+function initLiquidationsWidget(w, el) {
+    const feed = el.querySelector(`#liqfeed_${w.id}`);
+    const counter = el.querySelector(`#liqcount_${w.id}`);
+    if (!feed || !counter) return;
+
+    let count = 0;
+    const items = [];
+    const maxItems = 40;
+
+    function fmtUSD(v) {
+        if (v >= 1e6) return '$' + (v/1e6).toFixed(2) + 'M';
+        if (v >= 1e3) return '$' + (v/1e3).toFixed(0) + 'K';
+        return '$' + v.toFixed(0);
+    }
+
+    function fmtPrice(v) {
+        if (v >= 1000) return v.toFixed(1);
+        if (v >= 1) return v.toFixed(3);
+        return v.toFixed(5);
+    }
+
+    function addLiq({ symbol, side, price, usd, ts }) {
+        count++;
+        counter.textContent = count;
+
+        const isLong = side === 'LONG';
+        const item = { symbol, side, price, usd, ts: ts || Date.now() };
+        items.unshift(item);
+        if (items.length > maxItems) items.pop();
+
+        const big = usd >= 500000;
+        const time = new Date(item.ts).toTimeString().slice(0, 8);
+        const sideClass = isLong ? 'long' : 'short';
+        const sideLabel = isLong ? 'LONG LIQ' : 'SHORT LIQ';
+
+        const html = `
+            <div class="liq-item">
+                <div class="liq-time">${time}</div>
+                <div>
+                    <div class="liq-symbol">${symbol.replace('USDT','')}</div>
+                    <div class="liq-side ${sideClass}">${sideLabel} · $${fmtPrice(price)}</div>
+                </div>
+                <div class="liq-amt ${big ? 'big' : ''}">${fmtUSD(usd)}</div>
+            </div>
+        `;
+
+        if (items.length === 1) feed.innerHTML = html;
+        else {
+            feed.insertAdjacentHTML('afterbegin', html);
+            const children = feed.querySelectorAll('.liq-item');
+            if (children.length > maxItems) children[children.length - 1].remove();
+        }
+    }
+
+    let ws = null;
+    let reconnectTimeout = null;
+    let alive = true;
+
+    function connect() {
+        if (!alive) return;
+        try {
+            ws = new WebSocket('wss://fstream.binance.com/market/ws/!forceOrder@arr');
+            ws.onmessage = (e) => {
+                try {
+                    const d = JSON.parse(e.data);
+                    const o = d.o;
+                    if (!o || !o.s || !o.s.endsWith('USDT')) return;
+                    const usd = parseFloat(o.q) * parseFloat(o.p);
+                    if (usd < 100000) return; // min 100k
+                    const side = o.S === 'SELL' ? 'LONG' : 'SHORT';
+                    addLiq({ symbol: o.s, side, price: parseFloat(o.p), usd, ts: o.T });
+                } catch(e) {}
+            };
+            ws.onerror = () => {};
+            ws.onclose = () => {
+                if (!alive) return;
+                reconnectTimeout = setTimeout(connect, 3000);
+            };
+        } catch(e) {
+            reconnectTimeout = setTimeout(connect, 3000);
+        }
+    }
+
+    connect();
+
+    widgetCleanup[w.id] = () => {
+        alive = false;
+        if (reconnectTimeout) clearTimeout(reconnectTimeout);
+        if (ws) { try { ws.close(); } catch(e) {} }
+    };
+}
+
+/* ─── SCREENER ─── */
+function renderScreenerWidget(w) {
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-radar"></i> Market Screener</div>
+            <span style="font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted);" id="scrcount_${w.id}">--</span>
+        </div>
+        <div class="scr-controls" id="scrtabs_${w.id}">
+            <button class="scr-tab active" data-scr="volume">Volume</button>
+            <button class="scr-tab" data-scr="gainers">Gainers</button>
+            <button class="scr-tab" data-scr="losers">Losers</button>
+            <button class="scr-tab" data-scr="volatile">Volatility</button>
+            <button class="scr-tab" data-scr="funding_pos">Funding +</button>
+            <button class="scr-tab" data-scr="funding_neg">Funding −</button>
+            <input class="scr-search" id="scrsearch_${w.id}" placeholder="Search...">
+        </div>
+        <div class="scr-table-wrap">
+            <table class="scr-table">
+                <thead>
+                    <tr>
+                        <th style="width:30px;">#</th>
+                        <th>Symbol</th>
+                        <th class="num">Price</th>
+                        <th class="num">24h %</th>
+                        <th class="num">Volume</th>
+                        <th class="num">Funding</th>
+                    </tr>
+                </thead>
+                <tbody id="scrbody_${w.id}"></tbody>
+            </table>
+        </div>
+    `;
+}
+
+function initScreenerWidget(w, el) {
+    const tbody = el.querySelector(`#scrbody_${w.id}`);
+    const countEl = el.querySelector(`#scrcount_${w.id}`);
+    const search = el.querySelector(`#scrsearch_${w.id}`);
+    if (!tbody) return;
+
+    let tickers = [];
+    let funding = {};
+    let mode = 'volume';
+    let query = '';
+    let sortCol = null;
+    let sortDir = 'desc';
+
+    function fmtUSD(v) {
+        if (v >= 1e9) return '$' + (v/1e9).toFixed(1) + 'B';
+        if (v >= 1e6) return '$' + (v/1e6).toFixed(1) + 'M';
+        if (v >= 1e3) return '$' + (v/1e3).toFixed(0) + 'K';
+        return '$' + v.toFixed(0);
+    }
+    function fmtPrice(v) {
+        if (v >= 1000) return v.toFixed(1);
+        if (v >= 100) return v.toFixed(2);
+        if (v >= 1) return v.toFixed(3);
+        return v.toFixed(5);
+    }
+
+    async function fetchAll() {
+        try {
+            const [t, f] = await Promise.all([
+                fetch('https://fapi.binance.com/fapi/v1/ticker/24hr').then(r => r.json()),
+                fetch('https://fapi.binance.com/fapi/v1/premiumIndex').then(r => r.json())
+            ]);
+
+            tickers = t
+                .filter(x => x.symbol.endsWith('USDT') && !x.symbol.includes('_'))
+                .map(x => ({
+                    symbol: x.symbol,
+                    base: x.symbol.replace('USDT',''),
+                    price: parseFloat(x.lastPrice),
+                    change: parseFloat(x.priceChangePercent),
+                    volume: parseFloat(x.quoteVolume)
+                }))
+                .filter(x => x.price > 0 && isFinite(x.volume));
+
+            funding = {};
+            f.forEach(x => { funding[x.symbol] = parseFloat(x.lastFundingRate) * 100; });
+
+            render();
+        } catch(e) { console.warn('Screener fetch', e); }
+    }
+
+    function render() {
+        let list = [...tickers];
+
+        if (query) {
+            const q = query.toUpperCase();
+            list = list.filter(x => x.base.includes(q));
+        }
+
+        // Mode filter
+        if (mode === 'gainers') list.sort((a,b) => b.change - a.change);
+        else if (mode === 'losers') list.sort((a,b) => a.change - b.change);
+        else if (mode === 'volume') list.sort((a,b) => b.volume - a.volume);
+        else if (mode === 'volatile') {
+            list = list.filter(x => x.volume > 5e6);
+            list.sort((a,b) => Math.abs(b.change) - Math.abs(a.change));
+        }
+        else if (mode === 'funding_pos') {
+            list = list.filter(x => funding[x.symbol] != null);
+            list.sort((a,b) => (funding[b.symbol]||0) - (funding[a.symbol]||0));
+        }
+        else if (mode === 'funding_neg') {
+            list = list.filter(x => funding[x.symbol] != null);
+            list.sort((a,b) => (funding[a.symbol]||0) - (funding[b.symbol]||0));
+        }
+
+        // Manual sort override
+        if (sortCol) {
+            const dir = sortDir === 'desc' ? -1 : 1;
+            list.sort((a,b) => {
+                const av = a[sortCol] ?? funding[a.symbol] ?? 0;
+                const bv = b[sortCol] ?? funding[b.symbol] ?? 0;
+                return (av - bv) * dir;
+            });
+        }
+
+        list = list.slice(0, 50);
+        if (countEl) countEl.textContent = list.length + ' pairs';
+
+        tbody.innerHTML = list.map((t, i) => `
+            <tr onclick="window.open('https://t1prime.com/?sym=${t.base}','_blank')">
+                <td class="scr-rank">${i+1}</td>
+                <td><span class="scr-sym">${t.base}</span></td>
+                <td class="num">$${fmtPrice(t.price)}</td>
+                <td class="num ${t.change >= 0 ? 'pos' : 'neg'}" style="font-weight:700;">
+                    ${t.change >= 0 ? '+' : ''}${t.change.toFixed(2)}%
+                </td>
+                <td class="num" style="color:var(--text-hover);">${fmtUSD(t.volume)}</td>
+                <td class="num" style="color:${funding[t.symbol] == null ? 'var(--text-muted)' : (funding[t.symbol] >= 0 ? 'var(--green)' : 'var(--red)')}; font-weight:600;">
+                    ${funding[t.symbol] == null ? '--' : (funding[t.symbol] >= 0 ? '+' : '') + funding[t.symbol].toFixed(4) + '%'}
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Tabs
+    el.querySelectorAll(`#scrtabs_${w.id} .scr-tab`).forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            el.querySelectorAll(`#scrtabs_${w.id} .scr-tab`).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            mode = btn.dataset.scr;
+            sortCol = null;
+            render();
+        });
+    });
+
+    // Search
+    if (search) {
+        search.addEventListener('input', (e) => {
+            query = e.target.value.trim();
+            render();
+        });
+        search.addEventListener('click', e => e.stopPropagation());
+    }
+
+    // Column sort
+    el.querySelectorAll(`#scrtabs_${w.id}`).forEach(() => {}); // placeholder
+    el.querySelectorAll('.scr-table th.num').forEach((th, idx) => {
+        th.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const cols = [null, null, 'price', 'change', 'volume', 'funding'];
+            const col = cols[idx + 1];
+            if (!col) return;
+            if (sortCol === col) sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+            else { sortCol = col; sortDir = 'desc'; }
+            render();
+        });
+    });
+
+    // Stop propagation on table clicks
+    el.querySelector('.scr-table-wrap').addEventListener('click', e => e.stopPropagation());
+
+    fetchAll();
+
+    // Refresh every 45s
+    const refreshInt = setInterval(fetchAll, 45000);
+
+    widgetCleanup[w.id] = () => clearInterval(refreshInt);
+}
+
+/* ─── SIGNALS ─── */
+function renderSignalsWidget() {
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-satellite"></i> Live Intel & Alerts</div>
+            <span style="font-size:0.6rem; color:var(--accent); background:var(--accent-dim); padding:3px 9px; border-radius:10px; font-weight:700; letter-spacing:1px;">PRO</span>
+        </div>
+        <div style="flex:1; overflow:hidden; font-family: var(--font-mono); font-size:0.72rem; line-height:1.9;">
+            <div class="intel-line"><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">ALERT</span>BTC/USDT: OI Spike + Liq Cluster $68,200</div>
+            <div class="intel-line" style="color:var(--gold);"><span style="background:rgba(255,204,0,0.1);color:#ffcc00;padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">INSIGHT</span>Tether Supply: +1B USD minted</div>
+            <div class="intel-line"><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">SIGNAL</span>ETH/USDT: Whale Buy $20M at $3,500</div>
+            <div class="intel-line"><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">ALERT</span>SOL/USDT: Breakout above $145</div>
+        </div>
+    `;
+}
+
+/* ─── TERMINAL ─── */
+function renderTerminalWidget() {
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-chart-candlestick"></i> Pro Terminal</div>
+        </div>
+        <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; border: 1px solid var(--border-thin); font-family: var(--font-mono); font-size: 0.78rem;">
+            <div style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px solid var(--border-thin);">
+                <span style="color:var(--text-muted);">Current Repo:</span><span style="color:var(--accent); font-weight:700;">$1,400.00</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px solid var(--border-thin);">
+                <span style="color:var(--text-muted);">Avg Price:</span><span style="font-weight:700;">$64,250.00</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px solid var(--border-thin);">
+                <span style="color:var(--text-muted);">Next Dobor:</span><span style="color:var(--gold); font-weight:700;">$57,825.00</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; padding: 6px 0;">
+                <span style="color:var(--text-muted);">Total Position:</span><span style="color:var(--green); font-weight:700;">+ $12,450</span>
+            </div>
+        </div>
+    `;
+}
+
+/* ─── HEATMAP ─── */
+function renderHeatmapWidget() {
+    let cells = '';
+    const seed = Math.random();
+    for (let i = 0; i < 182; i++) {
+        const r = Math.abs((Math.sin(i * 12.9898 + seed * 78.233) * 43758.5453) % 1);
+        let lvl = '';
+        if (r > 0.85) lvl = 'lvl-3';
+        else if (r > 0.65) lvl = 'lvl-2';
+        else if (r > 0.45) lvl = 'lvl-1';
+        const bg = lvl === 'lvl-3' ? 'var(--accent)' :
+                   lvl === 'lvl-2' ? 'rgba(0,255,213,0.55)' :
+                   lvl === 'lvl-1' ? 'rgba(0,255,213,0.25)' : 'rgba(255,255,255,0.05)';
+        cells += `<div style="width:100%; aspect-ratio:1; background:${bg}; border-radius:2px;${lvl==='lvl-3'?'box-shadow:0 0 5px var(--accent);':''}"></div>`;
+    }
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-fire"></i> 365 Consistency Matrix</div>
+            <span style="font-size:0.75rem; color:var(--accent); font-weight:700; font-family:var(--font-mono);">DAY 114/365</span>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(26, 1fr); gap:3px; margin-top:6px; flex:1; align-content:start;">${cells}</div>
+    `;
+}
+
+/* ─── GOALS ─── */
+function renderGoalsWidget() {
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-bullseye"></i> Active Goals</div>
+        </div>
+        <div class="goal-row"><span>14/90 Affiliate Challenge</span><span class="goal-status">Day 12</span></div>
+        <div class="goal-row"><span>DCA Grid Deployment</span><span style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem;">Pending</span></div>
+        <div class="goal-row"><span>Deep Work Protocol</span><span style="font-family: var(--font-mono); font-size: 0.75rem;">4/5</span></div>
+    `;
+}
+
+/* ─── BIOHACKING ─── */
+function renderBiohackingWidget() {
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-dna"></i> Bio-Sync Stack</div>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <span class="supp-tag active">L-Theanine 200mg</span>
+            <span class="supp-tag active">Caffeine 100mg</span>
+            <span class="supp-tag">Magnesium Threonate</span>
+        </div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px; margin-top: auto;">
+            <i class="fa-solid fa-circle-check" style="color: var(--accent);"></i> Protocol Initialized
+        </div>
+    `;
+}
+
+/* ─── TASKS ─── */
+function renderTasksWidget() {
+    const tasks = [
+        { time: '09:00', text: 'Morning stack', done: true },
+        { time: '10:30', text: 'Trade review', done: false },
+        { time: '14:00', text: 'Record webinar', done: false },
+        { time: '18:00', text: 'Workout', done: false },
+        { time: '21:00', text: 'Journal', done: false }
+    ];
+    return `
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-list-check"></i> Today</div></div>
+        <div>
+            ${tasks.map(t => `
+                <div class="list-item">
+                    <span class="task-time">${t.time}</span>
+                    <div class="check-box ${t.done ? 'done' : ''}"><i class="fa-solid fa-check"></i></div>
+                    <div class="item-text ${t.done ? 'done' : ''}">${t.text}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+/* ─── PROGRESS ─── */
+function renderProgressWidget() {
+    const items = [
+        { label: 'Biohacking', pct: 78 },
+        { label: 'Trading', pct: 45 },
+        { label: 'Content', pct: 92 },
+        { label: 'Learning', pct: 60 }
+    ];
+    return `
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-chart-simple"></i> Weekly Progress</div></div>
+        <div>
+            ${items.map(x => `
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar-label"><span>${x.label}</span><span style="font-family:var(--font-mono);">${x.pct}%</span></div>
+                    <div class="progress-bar"><div class="progress-bar-fill" style="width:${x.pct}%"></div></div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+/* ─── CLOCK ─── */
+function renderClockWidget() {
+    return `
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-clock"></i> Clock</div></div>
+        <div class="clock-display">
+            <div class="clock-time" id="clock-time">--:--</div>
+            <div class="clock-date" id="clock-date">---</div>
+            <div class="clock-tz" id="clock-tz">--</div>
+        </div>
+    `;
+}
+
+/* ─── QUOTE ─── */
+const QUOTES = [
+    { text: "Money doesn't sleep. If your money isn't working while you sleep, you'll work until you die.", author: 'Grindarm' },
+    { text: "You're not lazy. You just don't have a goal that wakes you up without an alarm.", author: 'Grindarm' },
+    { text: '1% every day = 3700% in a year.', author: 'Grindarm' },
+    { text: "The only person you should compete with is yesterday's you.", author: 'Grindarm' },
+    { text: 'Focus is the new IQ. Whoever can focus 4 hours straight, owns the market.', author: 'Grindarm' }
+];
+
+function renderQuoteWidget() {
+    const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    return `
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-quote-left"></i> Daily Doctrine</div></div>
+        <div class="quote-content">
+            <div class="quote-mark">"</div>
+            <div class="quote-widget-text">${q.text}</div>
+            <div class="quote-widget-author">— ${q.author}</div>
+        </div>
+    `;
+}
+
+/* ─── NOTES ─── */
+function renderNotesWidget() {
+    const saved = localStorage.getItem(NOTES_KEY) || '';
+    return `
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-note-sticky"></i> Notes</div></div>
+        <textarea class="notes-area" id="notesArea" placeholder="Type anything...">${saved}</textarea>
+    `;
+}
+
+/* ─── RADIO ─── */
+function renderRadioWidget() {
+    return `
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-radio"></i> Deep Work Radio</div></div>
+        <div class="radio-widget">
+            <button class="play-btn" id="radioPlayBtn"><i class="fa-solid fa-play"></i></button>
+            <div class="radio-meta">
+                <div style="font-weight:600; color:var(--text-main);">Phonk Focus</div>
+                <div class="live">● LIVE STREAM</div>
+            </div>
+        </div>
+    `;
+}
+
+/* ─── COMMUNITY ─── */
+function renderCommunityWidget() {
+    const feed = [
+        { user: '0x23...4f', text: 'Closed 3rd week of stack', time: '2m' },
+        { user: '0x8a...1c', text: 'Hit 100k on YT 🎯', time: '12m' },
+        { user: '0x44...9e', text: 'Added 5kg to bench', time: '28m' },
+        { user: '0x12...ab', text: 'Just joined!', time: '1h' }
+    ];
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-users"></i> Community</div>
+            <span style="font-size:0.6rem; color:var(--accent); font-family:var(--font-mono); font-weight:700;">12 ONLINE</span>
+        </div>
+        <div style="flex:1; overflow-y:auto;">
+            ${feed.map(f => `
+                <div class="feed-item">
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span class="feed-user">${f.user}</span>
+                        <span style="color:var(--text-muted); font-size:9px; margin-left:auto; opacity:0.6;">${f.time}</span>
+                    </div>
+                    <div class="feed-text">${f.text}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+/* ─── AFFILIATE ─── */
+function renderAffiliateWidget() {
+    return `
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-share-nodes"></i> Affiliate</div></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+            <div>
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; font-weight:600;">Referrals</div>
+                <div class="affiliate-stat">47</div>
+            </div>
+            <div>
+                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; font-weight:600;">Earned</div>
+                <div class="affiliate-stat green">$892</div>
+            </div>
+        </div>
+        <div style="padding:10px; background:rgba(0,0,0,0.35); border-radius:8px; font-family:var(--font-mono); font-size:0.65rem; color:var(--text-hover); margin-bottom:10px; word-break:break-all;">
+            grind.os/r/GRIND-A7X9K2
+        </div>
+        <button style="width:100%; padding:9px; background:var(--accent-dim); color:var(--accent); border:1px solid var(--border-thin); border-radius:8px; font-weight:700; font-size:0.65rem; cursor:pointer; letter-spacing:1.5px; font-family:var(--font-ui);">COPY LINK</button>
+    `;
+}
+
+/* ════════════════════════════════════════════════════════════
+   WIDGET BEHAVIOURS
+   ════════════════════════════════════════════════════════════ */
+function initWidgetBehaviors() {
+    const notes = $('#notesArea');
+    if (notes) notes.addEventListener('input', () => localStorage.setItem(NOTES_KEY, notes.value));
+
+    $$('.check-box').forEach(c => {
+        c.addEventListener('click', (e) => {
+            e.stopPropagation();
+            c.classList.toggle('done');
+            const text = c.parentElement.querySelector('.item-text');
+            if (text) text.classList.toggle('done');
+        });
+    });
+
+    $$('.supp-tag').forEach(tag => {
+        tag.addEventListener('click', (e) => {
+            e.stopPropagation();
+            tag.classList.toggle('active');
+        });
+    });
+
+    const playBtn = $('#radioPlayBtn');
+    if (playBtn) {
+        playBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const icon = playBtn.querySelector('i');
+            const isPlaying = icon.classList.contains('fa-pause');
+            icon.classList.toggle('fa-play');
+            icon.classList.toggle('fa-pause');
+            toast(isPlaying ? 'Radio paused' : '▶ Now playing: Phonk Focus');
+        });
+    }
+
+    updateClock();
+}
+
+/* ─── CLOCK ─── */
+function updateClock() {
+    const el = $('#clock-time');
+    if (!el) return;
+    const d = new Date();
+    el.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+    const dateEl = $('#clock-date');
+    if (dateEl) dateEl.textContent = d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase();
+    const tzEl = $('#clock-tz');
+    if (tzEl) tzEl.textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+setInterval(updateClock, 1000);
+
+/* ════════════════════════════════════════════════════════════
+   WIDGET LIBRARY
+   ════════════════════════════════════════════════════════════ */
+function renderLibrary() {
+    const body = $('#libraryBody');
+    body.innerHTML = '';
+
+    CATEGORIES.forEach(cat => {
+        const widgets = Object.values(WIDGET_REGISTRY).filter(w => w.category === cat);
+        if (!widgets.length) return;
+
+        const catEl = document.createElement('div');
+        catEl.className = 'library-category';
+        catEl.innerHTML = `
+            <div class="library-category-title">${cat}</div>
+            <div class="library-grid">
+                ${widgets.map(w => `
+                    <div class="library-item" draggable="true" data-widget-type="${w.id}">
+                        <span class="add-hint">DRAG</span>
+                        <div class="library-item-icon"><i class="fa-solid ${w.icon}"></i></div>
+                        <div class="library-item-name">
+                            ${w.name}
+                            ${w.premium ? '<span class="pro-tag">PRO</span>' : ''}
+                        </div>
+                        <div class="library-item-desc">${w.desc}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        body.appendChild(catEl);
+    });
+
+    $$('.library-item').forEach(el => {
+        el.addEventListener('dragstart', onLibraryDragStart);
+        el.addEventListener('dragend', onLibraryDragEnd);
+        el.addEventListener('dblclick', () => addWidget(el.dataset.widgetType));
+    });
+}
+
+function onLibraryDragStart(e) {
+    draggingFromLibrary = true;
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('widget-type', this.dataset.widgetType);
+    this.classList.add('dragging');
+}
+
+function onLibraryDragEnd(e) {
+    this.classList.remove('dragging');
+    draggingFromLibrary = false;
+    $('#emptyDashboard').classList.remove('highlight');
+}
+
+function openLibrary() {
+    $('#widgetLibrary').classList.add('open');
+    $('#libraryOverlay').classList.add('open');
+    $('#btnLibrary').classList.add('active');
+}
+
+function closeLibrary() {
+    $('#widgetLibrary').classList.remove('open');
+    $('#libraryOverlay').classList.remove('open');
+    $('#btnLibrary').classList.remove('active');
+    $('#emptyDashboard').classList.remove('highlight');
+}
+
+/* ════════════════════════════════════════════════════════════
+   IFRAME VIEW (sidebar modules)
+   ════════════════════════════════════════════════════════════ */
+function openIframeView(url, title) {
+    const view = $('#iframeView');
+    const dash = $('#dashboardView');
+    const iframe = $('#mainIframe');
+    const loader = $('#iframeLoader');
+    const backBtn = $('#backBtn');
+    const langBox = document.querySelector('.lang-selector-container');
+
+    if (!view || !dash || !iframe) return;
+
+    // Hide dashboard, show iframe view
+    dash.classList.add('hidden');
+    view.classList.add('active');
+
+    // Show back button in topbar
+    if (backBtn) backBtn.classList.remove('hidden');
+
+    // Hide lang selector to keep topbar clean (optional)
+    if (langBox) langBox.style.display = 'none';
+
+    // Load iframe
+    if (loader) loader.classList.remove('hidden');
+    iframe.src = url;
+    iframe.onload = () => { if (loader) loader.classList.add('hidden'); };
+
+    // Update browser title (nice touch)
+    document.title = `T1PRIME · ${title || 'Module'}`;
+
+    // Clear active nav highlight
+    $$('.nav-item').forEach(x => x.classList.remove('active'));
+}
+
+function closeIframeView() {
+    const view = $('#iframeView');
+    const dash = $('#dashboardView');
+    const iframe = $('#mainIframe');
+    const backBtn = $('#backBtn');
+    const langBox = document.querySelector('.lang-selector-container');
+
+    if (view) view.classList.remove('active');
+    if (dash) dash.classList.remove('hidden');
+    if (backBtn) backBtn.classList.add('hidden');
+    if (langBox) langBox.style.display = '';
+
+    // Unload iframe (stop background activity)
+    if (iframe) iframe.src = 'about:blank';
+
+    // Restore title
+    document.title = 'GRIND // OS';
+
+    // Highlight Dashboard nav item
+    const firstNav = document.querySelector('.nav-item');
+    if (firstNav) firstNav.classList.add('active');
+}
+
+/* ════════════════════════════════════════════════════════════
+   WALLET CONNECT (MetaMask / Web3)
+   ════════════════════════════════════════════════════════════ */
+async function connectWallet() {
+    const btn = $('#walletBtn');
+    const txt = $('#walletText');
+
+    // Already connected → disconnect
+    if (state.wallet) {
+        state.wallet = null;
+        localStorage.removeItem(WALLET_KEY);
+        btn.classList.remove('connected');
+        txt.textContent = 'Connect Wallet';
+        toast('Wallet disconnected');
+        return;
+    }
+
+    // Check MetaMask
+    if (typeof window.ethereum === 'undefined') {
+        toast('MetaMask not detected. Install it first.');
+        window.open('https://metamask.io/download/', '_blank');
+        return;
+    }
+
+    try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (!accounts || !accounts.length) return;
+
+        const addr = accounts[0];
+        state.wallet = addr;
+        localStorage.setItem(WALLET_KEY, addr);
+
+        const short = addr.slice(0, 6) + '...' + addr.slice(-4);
+        btn.classList.add('connected');
+        txt.textContent = short;
+        toast('✓ Wallet connected: ' + short);
+
+        // Listen for chain/account changes
+        window.ethereum.on('accountsChanged', (accs) => {
+            if (!accs.length) {
+                state.wallet = null;
+                localStorage.removeItem(WALLET_KEY);
+                btn.classList.remove('connected');
+                txt.textContent = 'Connect Wallet';
+            } else {
+                state.wallet = accs[0];
+                localStorage.setItem(WALLET_KEY, accs[0]);
+                txt.textContent = accs[0].slice(0, 6) + '...' + accs[0].slice(-4);
+            }
+        });
+    } catch (e) {
+        console.warn('Wallet error:', e);
+        if (e.code === 4001) toast('Connection rejected');
+        else toast('Wallet connection failed');
+    }
+}
+
+function restoreWallet() {
+    const saved = localStorage.getItem(WALLET_KEY);
+    if (saved) {
+        state.wallet = saved;
+        const btn = $('#walletBtn');
+        const txt = $('#walletText');
+        btn.classList.add('connected');
+        txt.textContent = saved.slice(0, 6) + '...' + saved.slice(-4);
+    }
+}
+
+/* ════════════════════════════════════════════════════════════
+   SUBSCRIPTION / RESET / TOAST
+   ════════════════════════════════════════════════════════════ */
+function toggleSubscription() {
+    state.subscribed = !state.subscribed;
+    saveState();
+    toast(state.subscribed ? '✓ PRO Unlocked' : 'Logged out');
+    renderGrid();
+}
+
+function resetLayout() {
+    if (!confirm('Reset dashboard to default layout?')) return;
+    state.widgets = getDefaultLayout();
+    saveState();
+    renderGrid();
+    toast('Dashboard reset');
+}
+
+function toast(text) {
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>${text}</span>`;
+    $('#toasts').appendChild(el);
+    setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, 2400);
+}
+
+/* ════════════════════════════════════════════════════════════
+   SIDEBAR / MODALS / LANG
+   ════════════════════════════════════════════════════════════ */
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+function toggleAccordion(id) {
+    // Միայն accordion-ը toggle, ուրիշ ոչինչ
+    const sub = document.getElementById(id);
+    if (!sub) return;
+    sub.classList.toggle('open');
+}
+function loadPage(page, e) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    if (e && e.currentTarget) e.currentTarget.classList.add('active');
+}
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('active')); }
+function setTheme(theme) { document.body.className = theme; closeModals(); }
+
+const dictionary = {
+    'RU': { 'Dashboard': 'Дашборд', 'Active Goals': 'Активные цели', 'Trading': 'Трейдинг', 'Productivity': 'Продуктивность' },
+    'ARM': { 'Dashboard': 'Վահանակ', 'Active Goals': 'Ակտիվ Նպատակներ', 'Trading': 'Առևտուր', 'Productivity': 'Արտադրողականություն' },
+    'CH': { 'Dashboard': '仪表板', 'Active Goals': '活动目标', 'Trading': '交易', 'Productivity': '生产力' }
+};
+let currentLang = 'EN';
+
+function toggleLangMenu() { document.getElementById('langMenu').classList.toggle('show'); }
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.lang-selector-container')) document.getElementById('langMenu').classList.remove('show');
+});
+function setLang(lang) {
+    currentLang = lang;
+    document.getElementById('langText').innerText = lang;
+    document.getElementById('langMenu').classList.remove('show');
+    translateDOM(document.body);
+}
+function translateDOM(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        let text = node.nodeValue.trim();
+        if (!text) return;
+        if (node.origText === undefined) node.origText = text;
+        let targetText = node.origText;
+        if (currentLang !== 'EN' && dictionary[currentLang] && dictionary[currentLang][node.origText]) {
+            targetText = dictionary[currentLang][node.origText];
+        }
+        node.nodeValue = node.nodeValue.replace(text, targetText);
+    } else {
+        if (['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(node.tagName)) return;
+        node.childNodes.forEach(translateDOM);
+    }
+}
+
+/* ─── HEADER QUOTES ─── */
+const HEAD_QUOTES = [
+    '"Focus is the new IQ. Whoever can sit still and work for 4 hours straight, owns the market."',
+    '"Do not trade the market you want. Trade the market in front of you."',
+    '"Emotions cost money. Logic creates wealth."',
+    '"Discipline equals freedom. The bunker is your forge."'
+];
+document.getElementById('quote-text').innerText = HEAD_QUOTES[Math.floor(Math.random() * HEAD_QUOTES.length)];
+
+/* ════════════════════════════════════════════════════════════
+   TICKER (live from Binance)
+   ════════════════════════════════════════════════════════════ */
+async function updateTicker() {
+    try {
+        const symbols = encodeURIComponent(JSON.stringify(["BTCUSDT", "ETHUSDT", "SOLUSDT"]));
+        const r = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr?symbols=' + symbols);
+        const data = await r.json();
+        if (!Array.isArray(data)) return;
+
+        const map = {};
+        data.forEach(d => { map[d.symbol] = d; });
+
+        const set = (id, sym) => {
+            const el = document.getElementById(id);
+            if (!el || !map[sym]) return;
+            const chg = parseFloat(map[sym].priceChangePercent);
+            const price = parseFloat(map[sym].lastPrice);
+            const priceStr = price >= 1000
+                ? price.toLocaleString('en-US', { maximumFractionDigits: 0 })
+                : price.toFixed(2);
+            el.textContent = `$${priceStr} ${chg >= 0 ? '▲' : '▼'}`;
+            el.className = chg >= 0 ? 'up' : 'down';
+        };
+
+        set('tick-btc',  'BTCUSDT');
+        set('tick-btc2', 'BTCUSDT');
+        set('tick-eth',  'ETHUSDT');
+        set('tick-eth2', 'ETHUSDT');
+        set('tick-sol',  'SOLUSDT');
+        set('tick-sol2', 'SOLUSDT');
+    } catch (e) { /* silent */ }
+}
+
+/* ════════════════════════════════════════════════════════════
+   EVENT BINDINGS
+   ════════════════════════════════════════════════════════════ */
+function bindEvents() {
+    const btnLib = $('#btnLibrary');
+    if (btnLib) {
+        btnLib.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const lib = $('#widgetLibrary');
+            if (lib && lib.classList.contains('open')) closeLibrary();
+            else openLibrary();
+        });
+    }
+
+    // ─── Արգելել copy/cut/right-click/drag sidebar-ի վրա ───
+const sidebarEl = document.getElementById('sidebar');
+if (sidebarEl) {
+    ['copy', 'cut', 'contextmenu', 'selectstart', 'dragstart'].forEach(evt => {
+        sidebarEl.addEventListener(evt, (e) => {
+            // Թույլատրել input/textarea-ների վրա (եթե ապագայում ավելացնես)
+            if (e.target.closest('input, textarea')) return;
+            e.preventDefault();
+            return false;
+        });
+    });
+}
+
+    const overlay = $('#libraryOverlay');
+    if (overlay) overlay.addEventListener('click', closeLibrary);
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.lang-selector-container')) {
+            const m = $('#langMenu');
+            if (m) m.classList.remove('show');
+        }
+    });
+
+    // ─── NAV-ITEM click (առանց submenu-ի) → միայն այն highlight ───
+document.querySelectorAll('.nav-item').forEach(item => {
+    // Skip accordion parents — իրենք չեն highlight-վում
+    const hasArrow = item.querySelector('.fa-angle-down');
+    if (hasArrow) return;
+
+    item.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item, .sub-item').forEach(x => x.classList.remove('active'));
+        item.classList.add('active');
+    });
+});
+
+// ─── SUB-ITEM click → միայն այն highlight ───
+document.querySelectorAll('.sub-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.nav-item, .sub-item').forEach(x => x.classList.remove('active'));
+        item.classList.add('active');
+    });
+});
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeLibrary();
+            closeModals();
+            const m = $('#langMenu');
+            if (m) m.classList.remove('show');
+        }
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            openLibrary();
+        }
+    });
+}
+
+/* ════════════════════════════════════════════════════════════
+   BOOT
+   ════════════════════════════════════════════════════════════ */
+function boot() {
+    console.log(
+        '%c GRIND // OS · v2.1 ',
+        'background:linear-gradient(90deg,#00ffd5,#0099ff);color:#000;padding:6px 16px;border-radius:6px;font-weight:900;letter-spacing:3px;'
+    );
+
+    // Load saved layout or use default
+    const loaded = loadState();
+    if (!loaded || !Array.isArray(state.widgets)) {
+        state.widgets = getDefaultLayout();
+        saveState();
+    }
+
+    // Restore wallet connection
+    restoreWallet();
+
+    // Random header quote
+    const hq = document.getElementById('quote-text');
+    if (hq) {
+        hq.innerText = HEAD_QUOTES[Math.floor(Math.random() * HEAD_QUOTES.length)];
+    }
+
+    // Render everything
+    renderGrid();
+    renderLibrary();
+    initDashboardDropZone();
+    initTrashZone();
+    bindEvents();
+    updateClock();
+    updateTicker();
+
+    // Live ticker every 30s
+    setInterval(updateTicker, 30000);
+
+    console.log('%c✦ ＋ Library · drag widgets · ⌘K · Esc', 'color:#00ffd5;font-family:monospace;');
+    console.log('%c✦ Wallet: MetaMask auto-detected', 'color:#888;font-family:monospace;');
+    console.log('%c✦ Modules: BTC Chart · Liquidations · Screener', 'color:#888;font-family:monospace;');
+}
+
+/* ─── START ─── */
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+} else {
+    boot();
+}
+</script>
+
+</body>
+</html>
