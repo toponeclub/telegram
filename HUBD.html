@@ -45,86 +45,165 @@ body {
     overflow: hidden;
 }
 
-/* ─── SIDEBAR ─── */
+/* ════════════════════════════════════════════════════════════
+   SIDEBAR · MINI RAIL + TOGGLE AT TOP
+   ════════════════════════════════════════════════════════════ */
 .sidebar {
-    width: var(--sidebar-width);
+    width: 260px;
     background: var(--bg-surface);
     border-right: 1px solid var(--border-thin);
-    display: flex; flex-direction: column;
-    transition: var(--transition-smooth);
-    position: relative; z-index: 100; flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    z-index: 100;
+    flex-shrink: 0;
+    overflow: visible;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
-.sidebar.collapsed { width: 0; transform: translateX(-100%); border-right: none; }
+
+.sidebar.collapsed { width: 72px; }
 
 .toggle-btn {
-    position: absolute; right: -14px; top: 24px;
-    width: 28px; height: 28px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-thin);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--text-muted); cursor: pointer; z-index: 101;
-    transition: var(--transition-smooth);
+    width: 100%;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 22px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-thin);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    flex-shrink: 0;
+    position: relative;
+    outline: none;
 }
-.toggle-btn:hover { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px var(--accent-dim); }
-.sidebar.collapsed .toggle-btn { right: -40px; transform: rotate(180deg); }
+.toggle-btn:hover { color: var(--accent); background: rgba(255, 255, 255, 0.02); }
+.toggle-btn i { font-size: 1.05rem; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.sidebar.collapsed .toggle-btn { justify-content: center; padding: 0; }
 
-.nav-menu { flex: 1; padding: 40px 15px 20px; overflow-y: auto; overflow-x: hidden; white-space: nowrap; }
+.toggle-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0;
+    width: 0; height: 1px;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toggle-btn:hover::after { width: 100%; }
+
+.nav-menu {
+    flex: 1;
+    padding: 20px 12px 20px;
+    overflow-y: auto;
+    overflow-x: visible;
+    white-space: nowrap;
+}
 
 .nav-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 16px; color: var(--text-muted);
-    font-size: 0.8rem; font-weight: 500; cursor: pointer;
-    border-radius: 8px; margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 8px;
+    margin-bottom: 2px;
+    transition: var(--transition-smooth);
+    position: relative;
+}
+
+.nav-item-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+.nav-item-content i {
+    width: 18px;
+    font-size: 1rem;
+    text-align: center;
+    flex-shrink: 0;
     transition: var(--transition-smooth);
 }
-.nav-item-content { display: flex; align-items: center; gap: 14px; }
-.nav-item-content i { width: 16px; font-size: 0.9rem; text-align: center; transition: var(--transition-smooth); }
-.nav-item:hover { color: var(--text-main); background: rgba(255,255,255,0.02); }
+
+.nav-angle {
+    font-size: 0.6rem !important;
+    width: auto !important;
+    transition: transform 0.3s var(--transition-smooth);
+}
+
+.nav-item:hover { color: var(--text-main); background: rgba(255, 255, 255, 0.02); }
 .nav-item:hover i { color: var(--accent); }
 .nav-item.active { color: var(--text-main); background: var(--accent-dim); }
 .nav-item.active i { color: var(--accent); }
 
-.sub-menu { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; padding-left: 42px; }
-.sub-menu.open { max-height: 200px; }
-.sub-item { padding: 8px 0; color: var(--text-muted); font-size: 0.75rem; cursor: pointer; transition: var(--transition-smooth); }
+.sub-menu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    padding-left: 42px;
+}
+.sub-menu.open { max-height: 260px; }
+
+.sub-item {
+    padding: 8px 0;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
 .sub-item:hover { color: var(--accent); padding-left: 4px; }
+.sub-item.active { color: var(--accent); font-weight: 600; }
 
-/* ═══ ACTIVE STATES (sidebar) ═══ */
+.nav-item.open .nav-angle { transform: rotate(180deg); }
 
-/* Sub-item active — նշված է accent-ով, ունի կետ ձախից */
-.sub-item.active {
-    color: var(--accent);
-    font-weight: 600;
-}
-.sub-item.active {
-    color: var(--accent);
-    font-weight: 600;
-}
-/* Parent nav-item — մշտապես highlighted, երբ accordion-ը բաց է կամ child active */
-.nav-item.has-active-child {
-    color: var(--text-main);
-    background: rgba(0, 255, 213, 0.04);
-}
-.nav-item.has-active-child i,
-.nav-item.has-active-child .fa-angle-down {
-    color: var(--accent);
+/* ─── Collapsed state ─── */
+.sidebar.collapsed .nav-item-content { font-size: 0; gap: 0; justify-content: center; }
+.sidebar.collapsed .nav-item-content i { font-size: 1.15rem; }
+.sidebar.collapsed .nav-angle { display: none; }
+.sidebar.collapsed .nav-item { justify-content: center; padding: 14px 0; }
+.sidebar.collapsed .sub-menu { display: none; }
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE
+   ════════════════════════════════════════════════════════════ */
+@media(max-width: 768px) {
+    .topbar { padding: 0 16px; }
+    .dynamic-view { padding: 30px 20px; }
+    .bento-grid { grid-template-columns: 1fr; }
+    .module[data-size] { grid-column: span 1 !important; }
+    .widget-library { width: 100%; }
+    .library-grid { grid-template-columns: 1fr 1fr; }
+    .quote-text { font-size: 1rem; }
+    .wallet-btn span:not(.wallet-chevron) { display: none; }
+    .lang-selector span:first-child { display: none; }
+
+    .sidebar {
+        position: fixed;
+        top: 0; left: 0;
+        height: 100vh;
+        z-index: 200;
+    }
+    .sidebar:not(.collapsed) {
+        width: 260px;
+        box-shadow: 20px 0 60px rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
 }
 
-/* Բացված sub-menu — թեթև accent գիծ ձախից */
-.sub-menu.open {
-    border-left: 1px solid rgba(0, 255, 213, 0.15);
-    margin-left: 20px;
-    padding-left: 22px;
-}
-
-/* Angle icon-ը պտտվում է, երբ բաց է */
-.nav-item .fa-angle-down {
-    transition: transform 0.3s var(--transition-smooth);
-}
-.nav-item.open .fa-angle-down {
-    transform: rotate(180deg);
-}
+.hamburger { display: none !important; }
+.hidden { display: none !important; }
 
 /* ─── MAIN WRAPPER ─── */
 .main-wrapper {
@@ -158,7 +237,9 @@ body {
 
 .top-right { display: flex; align-items: center; gap: 16px; }
 
-/* ─── WALLET BUTTON ─── */
+/* ═══ WALLET BUTTON + MENU ═══ */
+.wallet-wrap { position: relative; }
+
 .wallet-btn {
     display: flex;
     align-items: center;
@@ -180,16 +261,103 @@ body {
     box-shadow: 0 0 20px var(--accent-dim);
     transform: translateY(-1px);
 }
-.wallet-btn.connected {
-    color: var(--green);
-}
+.wallet-btn.connected { color: var(--green); }
 .wallet-btn.connected:hover {
     border-color: var(--green);
     box-shadow: 0 0 20px rgba(0, 255, 136, 0.15);
 }
 .wallet-btn i { font-size: 0.9rem; }
+.wallet-btn .wallet-chevron {
+    font-size: 0.6rem !important;
+    margin-left: 4px;
+    transition: transform 0.3s var(--transition-smooth);
+}
+.wallet-btn.open .wallet-chevron { transform: rotate(180deg); }
 
-/* ─── BACK BUTTON (in topbar, only when iframe is active) ─── */
+.wallet-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-thin);
+    border-radius: 10px;
+    min-width: 240px;
+    padding: 6px;
+    display: none;
+    z-index: 200;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(0, 255, 213, 0.04);
+    animation: walletMenuIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wallet-menu.open { display: block; }
+
+@keyframes walletMenuIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.wallet-menu-header {
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--border-thin);
+    margin-bottom: 4px;
+}
+.wallet-menu-label {
+    font-size: 0.58rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.wallet-menu-addr {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-main);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.wallet-menu-addr .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulseDot 1.6s infinite;
+}
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+.wallet-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-hover);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+.wallet-menu-item:hover {
+    background: var(--accent-dim);
+    color: var(--accent);
+}
+.wallet-menu-item i { width: 14px; text-align: center; font-size: 0.75rem; }
+.wallet-menu-item.danger:hover {
+    background: rgba(255, 42, 95, 0.1);
+    color: var(--red);
+}
+.wallet-menu-divider {
+    height: 1px;
+    background: var(--border-thin);
+    margin: 4px 0;
+}
+
+/* ─── BACK BUTTON ─── */
 .back-btn {
     display: inline-flex;
     align-items: center;
@@ -232,12 +400,10 @@ body {
 }
 .dynamic-view.hidden { display: none; }
 
-/* ─── QUOTE ─── */
 .quote-container { text-align: center; margin-bottom: 60px; max-width: 800px; margin-left: auto; margin-right: auto; }
 .quote-text { font-size: 1.3rem; font-weight: 300; color: var(--text-main); margin-bottom: 12px; line-height: 1.4; }
 .quote-author { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 3px; }
 
-/* ─── BENTO GRID ─── */
 .bento-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -265,7 +431,6 @@ body {
 .module[data-size="2x2"] { grid-column: span 2; min-height: 420px; }
 .module[data-size="full"] { grid-column: 1 / -1; min-height: 380px; }
 
-/* Hover controls */
 .widget-controls {
     position: absolute; top: 15px; right: 15px;
     display: flex; gap: 4px;
@@ -284,20 +449,23 @@ body {
     transition: var(--transition-smooth);
 }
 .widget-btn:hover { background: var(--bg-elevated); color: var(--text-main); border-color: var(--border-hover); }
-.widget-btn.grip { cursor: grab; }
+.widget-btn.grip { cursor: grab; touch-action: none; }
 .widget-btn.grip:active { cursor: grabbing; }
 .widget-btn.danger:hover { color: var(--red); border-color: rgba(255,42,95,0.4); background: rgba(255,42,95,0.15); }
 
-/* Drag states */
-.module.dragging { opacity: 0.35; cursor: grabbing; transform: scale(0.97); }
-.module.drop-target { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim), 0 0 30px var(--accent-dim); }
+.module.dragging { opacity: 0.2; transform: scale(0.97); pointer-events: none; }
+.module.drop-target {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px var(--accent-dim), 0 0 40px var(--accent-dim), inset 0 0 30px var(--accent-dim) !important;
+    transform: scale(1.02) !important;
+    z-index: 5;
+}
 .module.entering { animation: cardIn 0.4s var(--transition-smooth); }
 @keyframes cardIn {
     from { opacity: 0; transform: scale(0.9) translateY(10px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* Blur overlay */
 .blur-overlay {
     position: absolute; inset: 0;
     background: rgba(3, 3, 3, 0.85);
@@ -318,7 +486,6 @@ body {
 }
 .unlock-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--accent-dim); }
 
-/* ─── MOD HEADER ─── */
 .mod-header {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 20px; gap: 10px; flex-shrink: 0; min-width: 0;
@@ -332,20 +499,8 @@ body {
     min-width: 0;
 }
 .mod-title i { color: var(--accent); flex-shrink: 0; }
-.mod-action {
-    background: none; border: none; color: var(--text-muted);
-    cursor: pointer; transition: var(--transition-smooth);
-    padding: 4px; font-size: 0.8rem;
-}
-.mod-action:hover { color: var(--text-main); }
 
-/* ─── WIDGET CONTENT (existing) ─── */
-.goal-row {
-    display: flex; justify-content: space-between;
-    font-size: 0.8rem; padding: 12px 0;
-    border-bottom: 1px solid var(--border-thin);
-    color: var(--text-hover);
-}
+.goal-row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 12px 0; border-bottom: 1px solid var(--border-thin); color: var(--text-hover); }
 .goal-row:last-child { border-bottom: none; }
 .goal-status { font-family: var(--font-mono); color: var(--accent); font-size: 0.75rem; }
 
@@ -361,10 +516,7 @@ body {
 .supp-tag.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
 .clock-display { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; flex: 1; }
-.clock-time {
-    font-family: var(--font-mono); font-size: 2.4rem; font-weight: 800;
-    letter-spacing: -2px; color: var(--accent); line-height: 1;
-}
+.clock-time { font-family: var(--font-mono); font-size: 2.4rem; font-weight: 800; letter-spacing: -2px; color: var(--accent); line-height: 1; }
 .clock-date { font-size: 0.65rem; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 8px; font-weight: 600; }
 .clock-tz { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-top: 4px; opacity: 0.6; }
 
@@ -373,12 +525,7 @@ body {
 .quote-widget-text { font-size: 0.9rem; color: var(--text-main); line-height: 1.55; font-style: italic; font-weight: 300; }
 .quote-widget-author { font-size: 0.65rem; color: var(--text-muted); margin-top: 12px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
 
-.list-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 0; font-size: 0.8rem;
-    border-bottom: 1px solid var(--border-thin);
-    color: var(--text-hover);
-}
+.list-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; font-size: 0.8rem; border-bottom: 1px solid var(--border-thin); color: var(--text-hover); }
 .list-item:last-child { border-bottom: none; }
 .check-box {
     width: 16px; height: 16px;
@@ -407,18 +554,8 @@ body {
 }
 .notes-area::placeholder { color: var(--text-muted); }
 
-.radio-widget {
-    background: rgba(0,0,0,0.4); padding: 12px 18px;
-    border-radius: 8px; border: 1px solid var(--border-thin);
-    display: flex; align-items: center; gap: 16px; margin-top: auto;
-}
-.play-btn {
-    width: 44px; height: 44px; border-radius: 50%;
-    background: var(--accent); color: #000; border: none;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem; cursor: pointer;
-    transition: var(--transition-smooth); flex-shrink: 0;
-}
+.radio-widget { background: rgba(0,0,0,0.4); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--border-thin); display: flex; align-items: center; gap: 16px; margin-top: auto; }
+.play-btn { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #000; border: none; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; transition: var(--transition-smooth); flex-shrink: 0; }
 .play-btn:hover { transform: scale(1.08); box-shadow: 0 0 15px var(--accent-dim); }
 .radio-meta { font-size: 0.8rem; }
 .radio-meta .live { color: var(--accent); font-weight: 800; font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; }
@@ -431,221 +568,62 @@ body {
 .affiliate-stat { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 800; color: var(--accent); margin-top: 4px; }
 .affiliate-stat.green { color: var(--green); }
 
-/* ═══════════════════════════════════════════════
-   NEW: BTC CHART WIDGET
-   ═══════════════════════════════════════════════ */
-.btc-chart-header {
-    display: flex; align-items: center; gap: 14px;
-    margin-bottom: 12px; flex-wrap: wrap;
-}
-.btc-price-big {
-    font-family: var(--font-mono); font-size: 1.6rem; font-weight: 800;
-    letter-spacing: -1px; line-height: 1;
-}
-.btc-delta {
-    font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700;
-    padding: 3px 10px; border-radius: 6px;
-}
+/* BTC CHART WIDGET */
+.btc-chart-header { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
+.btc-price-big { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 800; letter-spacing: -1px; line-height: 1; }
+.btc-delta { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; padding: 3px 10px; border-radius: 6px; }
 .btc-delta.pos { color: var(--green); background: rgba(0,255,136,0.1); }
 .btc-delta.neg { color: var(--red); background: rgba(255,42,95,0.1); }
-
-.btc-chart-wrap {
-    flex: 1; min-height: 0; width: 100%;
-    border-radius: 8px; overflow: hidden;
-    position: relative;
-}
+.btc-chart-wrap { flex: 1; min-height: 0; width: 100%; border-radius: 8px; overflow: hidden; position: relative; }
 .btc-tf-tabs { display: flex; gap: 4px; margin-left: auto; }
-.btc-tf {
-    padding: 4px 10px; font-size: 10px; font-weight: 700;
-    background: transparent; border: 1px solid var(--border-thin);
-    color: var(--text-muted); border-radius: 6px; cursor: pointer;
-    transition: var(--transition-smooth); font-family: var(--font-mono);
-    letter-spacing: 0.5px;
-}
+.btc-tf { padding: 4px 10px; font-size: 10px; font-weight: 700; background: transparent; border: 1px solid var(--border-thin); color: var(--text-muted); border-radius: 6px; cursor: pointer; transition: var(--transition-smooth); font-family: var(--font-mono); letter-spacing: 0.5px; }
 .btc-tf:hover { color: var(--text-main); border-color: var(--border-hover); }
 .btc-tf.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
-
-.btc-ohlc {
-    display: flex; gap: 14px; font-size: 10px;
-    color: var(--text-muted); margin-top: 8px; flex-wrap: wrap;
-    font-family: var(--font-mono);
-}
+.btc-ohlc { display: flex; gap: 14px; font-size: 10px; color: var(--text-muted); margin-top: 8px; flex-wrap: wrap; font-family: var(--font-mono); }
 .btc-ohlc b { color: var(--text-main); font-weight: 700; margin-left: 4px; }
 
-/* ═══════════════════════════════════════════════
-   NEW: LIQUIDATIONS WIDGET
-   ═══════════════════════════════════════════════ */
-.liq-feed {
-    flex: 1; overflow-y: auto;
-    margin: 0 -8px; padding: 0 8px;
-    min-height: 0;
-}
-.liq-item {
-    display: grid;
-    grid-template-columns: 52px 1fr auto;
-    gap: 8px; padding: 8px 10px;
-    font-size: 0.72rem;
-    border-bottom: 1px dashed rgba(255,255,255,0.04);
-    align-items: center;
-    animation: liqIn 0.35s ease-out;
-    border-radius: 4px;
-}
-@keyframes liqIn {
-    from { opacity: 0; transform: translateX(12px); }
-    to { opacity: 1; transform: translateX(0); }
-}
+/* LIQUIDATIONS WIDGET */
+.liq-feed { flex: 1; overflow-y: auto; margin: 0 -8px; padding: 0 8px; min-height: 0; }
+.liq-item { display: grid; grid-template-columns: 52px 1fr auto; gap: 8px; padding: 8px 10px; font-size: 0.72rem; border-bottom: 1px dashed rgba(255,255,255,0.04); align-items: center; animation: liqIn 0.35s ease-out; border-radius: 4px; }
+@keyframes liqIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
 .liq-time { color: var(--text-muted); font-size: 9px; font-family: var(--font-mono); }
 .liq-symbol { font-weight: 800; letter-spacing: 0.5px; color: var(--text-main); font-family: var(--font-mono); }
 .liq-side { font-size: 9px; font-weight: 700; letter-spacing: 0.5px; }
 .liq-side.long { color: var(--red); }
 .liq-side.short { color: var(--green); }
-.liq-amt {
-    font-weight: 800; font-family: var(--font-mono);
-    text-align: right; font-size: 0.78rem;
-    color: var(--text-main);
-}
+.liq-amt { font-weight: 800; font-family: var(--font-mono); text-align: right; font-size: 0.78rem; color: var(--text-main); }
 .liq-amt.big { color: var(--gold); text-shadow: 0 0 12px rgba(255,204,0,0.35); }
-.liq-empty {
-    padding: 40px 20px; text-align: center;
-    color: var(--text-muted); font-size: 0.75rem;
-}
-.liq-counter {
-    font-family: var(--font-mono); font-size: 0.65rem;
-    color: var(--red); font-weight: 700;
-    background: rgba(255,42,95,0.1);
-    padding: 3px 8px; border-radius: 4px;
-    border: 1px solid rgba(255,42,95,0.2);
-}
+.liq-empty { padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 0.75rem; }
+.liq-counter { font-family: var(--font-mono); font-size: 0.65rem; color: var(--red); font-weight: 700; background: rgba(255,42,95,0.1); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(255,42,95,0.2); }
 
-/* ═══════════════════════════════════════════════
-   NEW: SCREENER WIDGET
-   ═══════════════════════════════════════════════ */
-.scr-controls {
-    display: flex; gap: 6px;
-    margin-bottom: 12px; flex-wrap: wrap;
-    align-items: center;
-}
-.scr-tab {
-    padding: 5px 12px; font-size: 10px; font-weight: 700;
-    background: transparent; border: 1px solid var(--border-thin);
-    color: var(--text-muted); border-radius: 6px; cursor: pointer;
-    transition: var(--transition-smooth); letter-spacing: 0.5px;
-    font-family: var(--font-ui);
-}
+/* SCREENER WIDGET */
+.scr-controls { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+.scr-tab { padding: 5px 12px; font-size: 10px; font-weight: 700; background: transparent; border: 1px solid var(--border-thin); color: var(--text-muted); border-radius: 6px; cursor: pointer; transition: var(--transition-smooth); letter-spacing: 0.5px; font-family: var(--font-ui); }
 .scr-tab:hover { color: var(--text-main); border-color: var(--border-hover); }
 .scr-tab.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
-
-.scr-search {
-    margin-left: auto;
-    background: rgba(0,0,0,0.4);
-    border: 1px solid var(--border-thin);
-    color: var(--text-main);
-    padding: 5px 12px; border-radius: 6px;
-    font-size: 10px; font-family: var(--font-mono);
-    width: 150px; outline: none;
-    transition: var(--transition-smooth);
-}
+.scr-search { margin-left: auto; background: rgba(0,0,0,0.4); border: 1px solid var(--border-thin); color: var(--text-main); padding: 5px 12px; border-radius: 6px; font-size: 10px; font-family: var(--font-mono); width: 150px; outline: none; transition: var(--transition-smooth); }
 .scr-search:focus { border-color: var(--accent); }
 .scr-search::placeholder { color: var(--text-muted); opacity: 0.6; }
-
-.scr-table-wrap {
-    flex: 1; overflow-y: auto;
-    margin: 0 -8px; padding: 0 8px;
-    min-height: 0;
-}
-.scr-table {
-    width: 100%; border-collapse: collapse;
-    font-size: 0.72rem;
-    font-family: var(--font-mono);
-}
-.scr-table thead {
-    position: sticky; top: 0;
-    background: var(--bg-surface);
-    z-index: 5;
-}
-.scr-table th {
-    text-align: left;
-    padding: 8px 10px;
-    font-size: 9px; letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: var(--text-muted); font-weight: 700;
-    border-bottom: 1px solid var(--border-thin);
-    white-space: nowrap; cursor: pointer;
-    font-family: var(--font-ui);
-}
+.scr-table-wrap { flex: 1; overflow-y: auto; margin: 0 -8px; padding: 0 8px; min-height: 0; }
+.scr-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; font-family: var(--font-mono); }
+.scr-table thead { position: sticky; top: 0; background: var(--bg-surface); z-index: 5; }
+.scr-table th { text-align: left; padding: 8px 10px; font-size: 9px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; border-bottom: 1px solid var(--border-thin); white-space: nowrap; cursor: pointer; font-family: var(--font-ui); }
 .scr-table th.num { text-align: right; }
-.scr-table td {
-    padding: 8px 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
-    white-space: nowrap;
-}
+.scr-table td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); white-space: nowrap; }
 .scr-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .scr-table tbody tr { cursor: pointer; transition: background 0.15s; }
 .scr-table tbody tr:hover { background: rgba(0,255,213,0.04); }
 .scr-sym { font-weight: 700; color: var(--text-main); }
 .scr-rank { color: var(--text-muted); font-size: 9px; }
-.scr-spark { width: 60px; height: 18px; display: block; }
 
 .pos { color: var(--green); }
 .neg { color: var(--red); }
 
-/* ═══════════════════════════════════════════════
-   IFRAME VIEW
-   ═══════════════════════════════════════════════ */
-.iframe-view {
-    flex: 1;
-    display: none;
-    flex-direction: column;
-    position: relative;
-    background: var(--bg-deep);
-}
+/* IFRAME VIEW */
+.iframe-view { flex: 1; display: none; flex-direction: column; position: relative; background: var(--bg-deep); }
 .iframe-view.active { display: flex; }
-
-.iframe-header {
-    height: 50px;
-    border-bottom: 1px solid var(--border-thin);
-    display: flex; align-items: center;
-    padding: 0 20px; gap: 14px;
-    background: var(--bg-surface);
-    flex-shrink: 0;
-}
-.iframe-back {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 14px;
-    background: transparent;
-    border: 1px solid var(--border-thin);
-    color: var(--text-muted); border-radius: 8px;
-    font-size: 0.75rem; font-weight: 700;
-    cursor: pointer; transition: var(--transition-smooth);
-    font-family: var(--font-ui);
-}
-.iframe-back:hover { color: var(--accent); border-color: var(--accent); }
-
-.iframe-title {
-    font-size: 0.75rem; font-weight: 700;
-    letter-spacing: 2px; text-transform: uppercase;
-    color: var(--text-main);
-}
-.iframe-url {
-    margin-left: auto;
-    font-family: var(--font-mono); font-size: 0.68rem;
-    color: var(--text-muted);
-    padding: 4px 10px;
-    background: rgba(255,255,255,0.02);
-    border-radius: 6px;
-    border: 1px solid var(--border-thin);
-}
-
-.iframe-body {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-}
-.iframe-body iframe {
-    width: 100%; height: 100%;
-    border: none;
-    background: var(--bg-deep);
-}
+.iframe-body { flex: 1; position: relative; overflow: hidden; }
+.iframe-body iframe { width: 100%; height: 100%; border: none; background: var(--bg-deep); }
 .iframe-loader {
     position: absolute; inset: 0;
     display: flex; flex-direction: column;
@@ -661,18 +639,21 @@ body {
     transition: opacity 0.4s;
 }
 .iframe-loader.hidden { opacity: 0; pointer-events: none; }
-.iframe-spinner {
-    width: 32px; height: 32px;
-    border: 2px solid var(--border-thin);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+.iframe-loader span {
+    color: var(--accent);
+    font-size: 0.72rem;
+    letter-spacing: 3px;
+    text-shadow: 0 0 12px var(--accent-dim);
+    animation: loaderBlink 1.4s steps(2) infinite;
 }
+@keyframes loaderBlink {
+    0%, 50%   { opacity: 1; }
+    51%, 100% { opacity: 0.35; }
+}
+.iframe-spinner { width: 32px; height: 32px; border: 2px solid var(--border-thin); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ═══════════════════════════════════════════════
-   EMPTY STATE
-   ═══════════════════════════════════════════════ */
+/* EMPTY STATE */
 .empty-dashboard {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -686,35 +667,14 @@ body {
 .empty-dashboard.hidden { display: none; }
 .empty-dashboard.highlight { border-color: var(--accent); background: var(--accent-dim); }
 .empty-icon { font-size: 2.4rem; color: var(--text-muted); margin-bottom: 20px; opacity: 0.6; }
-.empty-title {
-    font-size: 1rem; font-weight: 600; color: var(--text-main);
-    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;
-}
-.empty-desc {
-    font-size: 0.8rem; color: var(--text-muted);
-    max-width: 400px; line-height: 1.6; margin-bottom: 22px;
-}
-.empty-cta {
-    background: var(--accent); color: #000; border: none;
-    padding: 12px 26px; border-radius: 50px;
-    font-weight: 800; font-size: 0.7rem; cursor: pointer;
-    text-transform: uppercase; letter-spacing: 1.5px;
-    font-family: var(--font-ui); transition: var(--transition-smooth);
-}
+.empty-title { font-size: 1rem; font-weight: 600; color: var(--text-main); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+.empty-desc { font-size: 0.8rem; color: var(--text-muted); max-width: 400px; line-height: 1.6; margin-bottom: 22px; }
+.empty-cta { background: var(--accent); color: #000; border: none; padding: 12px 26px; border-radius: 50px; font-weight: 800; font-size: 0.7rem; cursor: pointer; text-transform: uppercase; letter-spacing: 1.5px; font-family: var(--font-ui); transition: var(--transition-smooth); }
 .empty-cta:hover { transform: scale(1.05); box-shadow: 0 0 24px var(--accent-dim); }
 
-/* ═══════════════════════════════════════════════
-   WIDGET LIBRARY
-   ═══════════════════════════════════════════════ */
-.library-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(6px);
-    opacity: 0; pointer-events: none;
-    transition: var(--transition-smooth); z-index: 900;
-}
+/* WIDGET LIBRARY */
+.library-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: var(--transition-smooth); z-index: 900; }
 .library-overlay.open { opacity: 1; pointer-events: auto; }
-
 .widget-library {
     position: fixed; top: 0; right: 0;
     width: 400px; max-width: 92vw; height: 100vh;
@@ -725,46 +685,17 @@ body {
     transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .widget-library.open { transform: translateX(0); }
-
-.library-header {
-    padding: 30px 30px 22px;
-    border-bottom: 1px solid var(--border-thin);
-    display: flex; align-items: center; justify-content: space-between;
-    flex-shrink: 0;
-}
-.library-title {
-    font-size: 0.8rem; font-weight: 700;
-    letter-spacing: 2px; text-transform: uppercase;
-    color: var(--text-main); display: flex; align-items: center; gap: 10px;
-}
+.library-header { padding: 30px 30px 22px; border-bottom: 1px solid var(--border-thin); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.library-title { font-size: 0.8rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
 .library-title i { color: var(--accent); }
-.library-close {
-    width: 30px; height: 30px;
-    background: transparent; border: 1px solid var(--border-thin);
-    border-radius: 6px; color: var(--text-muted);
-    cursor: pointer; font-size: 12px;
-    transition: var(--transition-smooth);
-}
+.library-close { width: 30px; height: 30px; background: transparent; border: 1px solid var(--border-thin); border-radius: 6px; color: var(--text-muted); cursor: pointer; font-size: 12px; transition: var(--transition-smooth); }
 .library-close:hover { color: var(--text-main); border-color: var(--border-hover); }
-
-.library-subtitle {
-    padding: 14px 30px;
-    font-size: 0.72rem; color: var(--text-muted);
-    line-height: 1.6; border-bottom: 1px solid var(--border-thin);
-    background: rgba(0, 255, 213, 0.015);
-}
+.library-subtitle { padding: 14px 30px; font-size: 0.72rem; color: var(--text-muted); line-height: 1.6; border-bottom: 1px solid var(--border-thin); background: rgba(0, 255, 213, 0.015); }
 .library-subtitle strong { color: var(--accent); font-weight: 700; }
-
 .library-body { flex: 1; overflow-y: auto; padding: 24px 30px 40px; }
 .library-category { margin-bottom: 30px; }
-.library-category-title {
-    font-size: 0.62rem; letter-spacing: 2.5px;
-    text-transform: uppercase; color: var(--text-muted);
-    font-weight: 600; margin-bottom: 14px; padding-left: 2px;
-}
-
+.library-category-title { font-size: 0.62rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; margin-bottom: 14px; padding-left: 2px; }
 .library-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
 .library-item {
     background: rgba(255,255,255,0.015);
     border: 1px solid var(--border-thin);
@@ -773,46 +704,16 @@ body {
     display: flex; flex-direction: column; gap: 8px;
     position: relative; user-select: none; min-height: 100px;
 }
-.library-item:hover {
-    border-color: var(--accent);
-    background: var(--accent-dim);
-    transform: translateY(-2px);
-}
+.library-item:hover { border-color: var(--accent); background: var(--accent-dim); transform: translateY(-2px); }
 .library-item:active { cursor: grabbing; }
 .library-item.dragging { opacity: 0.4; transform: scale(0.95); }
-
-.library-item-icon {
-    width: 28px; height: 28px;
-    background: var(--accent-dim); color: var(--accent);
-    border-radius: 7px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px;
-}
-.library-item-name {
-    font-size: 0.72rem; font-weight: 700;
-    color: var(--text-main); letter-spacing: 0.3px;
-    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-}
+.library-item-icon { width: 28px; height: 28px; background: var(--accent-dim); color: var(--accent); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.library-item-name { font-size: 0.72rem; font-weight: 700; color: var(--text-main); letter-spacing: 0.3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .library-item-desc { font-size: 0.62rem; color: var(--text-muted); line-height: 1.4; }
+.pro-tag { font-size: 8px; font-weight: 800; color: var(--gold); border: 1px solid rgba(255,204,0,0.3); background: rgba(255,204,0,0.08); padding: 1px 5px; border-radius: 3px; letter-spacing: 1px; }
+.add-hint { position: absolute; top: 10px; right: 10px; font-size: 8px; color: var(--text-muted); font-family: var(--font-mono); letter-spacing: 1.5px; opacity: 0.5; }
 
-.pro-tag {
-    font-size: 8px; font-weight: 800;
-    color: var(--gold);
-    border: 1px solid rgba(255,204,0,0.3);
-    background: rgba(255,204,0,0.08);
-    padding: 1px 5px; border-radius: 3px;
-    letter-spacing: 1px;
-}
-.add-hint {
-    position: absolute; top: 10px; right: 10px;
-    font-size: 8px; color: var(--text-muted);
-    font-family: var(--font-mono); letter-spacing: 1.5px;
-    opacity: 0.5;
-}
-
-/* ═══════════════════════════════════════════════
-   TRASH ZONE
-   ═══════════════════════════════════════════════ */
+/* TRASH ZONE */
 .trash-zone {
     position: fixed; bottom: 60px; left: 50%;
     transform: translateX(-50%) translateY(140px);
@@ -828,49 +729,18 @@ body {
     font-family: var(--font-ui);
 }
 .trash-zone.active { transform: translateX(-50%) translateY(0); pointer-events: auto; }
-.trash-zone.hot {
-    background: rgba(255, 42, 95, 0.35);
-    border-color: var(--red);
-    transform: translateX(-50%) translateY(-8px) scale(1.05);
-    box-shadow: 0 0 40px rgba(255, 42, 95, 0.5);
-}
+.trash-zone.hot { background: rgba(255, 42, 95, 0.4); border-color: var(--red); border-style: solid; transform: translateX(-50%) translateY(-10px) scale(1.08); box-shadow: 0 0 60px rgba(255, 42, 95, 0.6); }
 
-/* ═══════════════════════════════════════════════
-   TOASTS
-   ═══════════════════════════════════════════════ */
-.toasts {
-    position: fixed; bottom: 60px; right: 24px;
-    display: flex; flex-direction: column;
-    gap: 8px; z-index: 2000; pointer-events: none;
-}
-.toast {
-    padding: 12px 18px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-thin);
-    border-radius: 10px; font-size: 0.75rem;
-    color: var(--text-main);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    display: flex; align-items: center; gap: 10px;
-    animation: toastIn 0.35s var(--transition-smooth);
-    pointer-events: auto; max-width: 340px; font-weight: 500;
-}
+/* TOASTS */
+.toasts { position: fixed; bottom: 60px; right: 24px; display: flex; flex-direction: column; gap: 8px; z-index: 2000; pointer-events: none; }
+.toast { padding: 12px 18px; background: var(--bg-elevated); border: 1px solid var(--border-thin); border-radius: 10px; font-size: 0.75rem; color: var(--text-main); box-shadow: 0 10px 30px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 10px; animation: toastIn 0.35s var(--transition-smooth); pointer-events: auto; max-width: 340px; font-weight: 500; }
 .toast i { color: var(--accent); }
 .toast.out { animation: toastOut 0.3s forwards; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes toastOut { to { opacity: 0; transform: translateY(20px); } }
 
-/* ═══════════════════════════════════════════════
-   TICKER
-   ═══════════════════════════════════════════════ */
-.crypto-ticker {
-    height: 40px;
-    background: var(--bg-elevated);
-    border-top: 1px solid var(--border-thin);
-    display: flex; align-items: center;
-    overflow: hidden; white-space: nowrap;
-    font-family: var(--font-mono); font-size: 0.7rem;
-    z-index: 90; flex-shrink: 0;
-}
+/* TICKER */
+.crypto-ticker { height: 40px; background: var(--bg-elevated); border-top: 1px solid var(--border-thin); display: flex; align-items: center; overflow: hidden; white-space: nowrap; font-family: var(--font-mono); font-size: 0.7rem; z-index: 90; flex-shrink: 0; }
 .ticker-track { display: inline-block; animation: scroll-ticker 40s linear infinite; }
 .ticker-item { margin-right: 40px; color: var(--text-muted); }
 .ticker-item span { color: var(--text-main); font-weight: 700; margin-left: 8px; }
@@ -878,9 +748,7 @@ body {
 .ticker-item .down { color: var(--red); }
 @keyframes scroll-ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
-/* ═══════════════════════════════════════════════
-   MODALS
-   ═══════════════════════════════════════════════ */
+/* MODALS */
 .modal-overlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.8);
@@ -890,103 +758,25 @@ body {
     transition: var(--transition-smooth);
 }
 .modal-overlay.active { opacity: 1; pointer-events: auto; }
-.modal-content {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-thin);
-    border-radius: 12px; padding: 40px;
-    width: 90%; max-width: 420px;
-    transform: translateY(15px); transition: var(--transition-smooth);
-}
+.modal-content { background: var(--bg-surface); border: 1px solid var(--border-thin); border-radius: 12px; padding: 40px; width: 90%; max-width: 420px; transform: translateY(15px); transition: var(--transition-smooth); }
 .modal-overlay.active .modal-content { transform: translateY(0); }
-.modal-title {
-    font-size: 0.85rem; font-weight: 600;
-    text-transform: uppercase; letter-spacing: 2px;
-    margin-bottom: 25px; display: flex; justify-content: space-between;
-}
+.modal-title { font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; display: flex; justify-content: space-between; }
 .close-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
 .close-btn:hover { color: var(--text-main); }
-
-.theme-option {
-    display: flex; justify-content: space-between;
-    padding: 12px; border: 1px solid var(--border-thin);
-    border-radius: 8px; margin-bottom: 10px;
-    cursor: pointer; transition: var(--transition-smooth);
-    font-size: 0.8rem;
-}
+.theme-option { display: flex; justify-content: space-between; padding: 12px; border: 1px solid var(--border-thin); border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: var(--transition-smooth); font-size: 0.8rem; }
 .theme-option:hover { border-color: var(--accent); }
 
-/* ═══════════════════════════════════════════════
-   LANG MENU
-   ═══════════════════════════════════════════════ */
+/* LANG MENU */
 .lang-selector-container { position: relative; display: flex; align-items: center; }
-.lang-menu {
-    position: absolute; top: 100%; right: 0;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-thin);
-    border-radius: 8px; display: none; flex-direction: column;
-    min-width: 150px; z-index: 1000; margin-top: 10px;
-}
+.lang-menu { position: absolute; top: 100%; right: 0; background: var(--bg-surface); border: 1px solid var(--border-thin); border-radius: 8px; display: none; flex-direction: column; min-width: 150px; z-index: 1000; margin-top: 10px; }
 .lang-menu.show { display: flex; }
-.lang-menu div {
-    padding: 12px; font-size: 0.75rem; color: var(--text-muted);
-    cursor: pointer; transition: var(--transition-smooth);
-}
+.lang-menu div { padding: 12px; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; transition: var(--transition-smooth); }
 .lang-menu div:hover { background: var(--accent-dim); color: var(--text-main); }
 
-/* ═══════════════════════════════════════════════
-   RESPONSIVE
-   ═══════════════════════════════════════════════ */
-@media(max-width: 768px) {
-    .sidebar,
-.sidebar * {
-    user-select: none !important;
-    -webkit-user-select: none !important;
-    -moz-user-select: none !important;
-    -ms-user-select: none !important;
-}
-    .sidebar.open { transform: translateX(0); }
-    .sidebar.collapsed { transform: translateX(-100%); }
-    .topbar { padding: 0 20px; }
-    .dynamic-view { padding: 30px 20px; }
-    .toggle-btn { display: none; }
-    .top-left .hamburger { display: block; background: none; border: none; color: var(--text-main); font-size: 1.2rem; cursor: pointer; }
-    .bento-grid { grid-template-columns: 1fr; }
-    .module[data-size] { grid-column: span 1 !important; }
-    .widget-library { width: 100%; }
-    .library-grid { grid-template-columns: 1fr 1fr; }
-    .quote-text { font-size: 1rem; }
-    .wallet-btn span { display: none; }
-}
-@media(min-width: 769px) { .hamburger { display: none; } }
-
-.hidden { display: none !important; }
-
-/* ════════════════════════════════════════════════════════════
-   DRAG & DROP · POINTER-BASED (smooth 60fps)
-   ════════════════════════════════════════════════════════════ */
-
-/* Grip — միակ drag handle */
-.widget-btn.grip {
-    cursor: grab;
-    touch-action: none;
-    -webkit-user-select: none;
-    user-select: none;
-}
-.widget-btn.grip:active { cursor: grabbing; }
-
-/* Բուն վիջեթը drag-ի ժամանակ — fade out, տեղը մնում է */
-.module.dragging {
-    opacity: 0.2;
-    transform: scale(0.97);
-    transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    pointer-events: none;
-}
-
-/* Ghost — cursor-ին հետևող պատճենը */
+/* DRAG GHOST */
 .drag-ghost {
     position: fixed !important;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     margin: 0 !important;
     pointer-events: none !important;
     z-index: 9999 !important;
@@ -994,75 +784,39 @@ body {
     border-radius: 12px;
     border: 1px solid var(--accent) !important;
     background: var(--bg-surface) !important;
-    box-shadow:
-        0 24px 60px rgba(0, 0, 0, 0.75),
-        0 0 0 1px var(--accent-dim),
-        0 0 40px var(--accent-dim) !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 0 1px var(--accent-dim), 0 0 40px var(--accent-dim) !important;
     transform-origin: top left;
     will-change: transform;
     overflow: hidden;
     transition: opacity 0.12s ease;
 }
 body.is-dragging .drag-ghost { opacity: 1; }
+body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
+body.is-dragging iframe { pointer-events: none !important; }
 
-/* Drop target — ուր կընկնի */
-.module.drop-target {
-    border-color: var(--accent) !important;
-    box-shadow:
-        0 0 0 2px var(--accent-dim),
-        0 0 40px var(--accent-dim),
-        inset 0 0 30px var(--accent-dim) !important;
-    transform: scale(1.02) !important;
-    z-index: 5;
-    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Global cursor + selection արգելք */
-body.is-dragging,
-body.is-dragging * {
-    cursor: grabbing !important;
-    user-select: none !important;
-    -webkit-user-select: none !important;
-}
-
-/* Iframe-ները drag-ի ժամանակ չեն գողանա pointer events */
-body.is-dragging iframe {
-    pointer-events: none !important;
-}
-
-/* Trash zone */
-.trash-zone {
-    position: fixed;
-    bottom: 60px;
-    left: 50%;
-    transform: translateX(-50%) translateY(140px);
-    padding: 14px 32px;
-    background: rgba(255, 42, 95, 0.12);
-    border: 2px dashed rgba(255, 42, 95, 0.5);
-    border-radius: 50px;
-    color: var(--red);
-    font-weight: 700;
-    font-size: 0.75rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    z-index: 1200;
-    transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    pointer-events: none;
-    backdrop-filter: blur(10px);
-}
-.trash-zone.active {
-    transform: translateX(-50%) translateY(0);
-    pointer-events: auto;
-}
-.trash-zone.hot {
-    background: rgba(255, 42, 95, 0.4);
-    border-color: var(--red);
-    border-style: solid;
-    transform: translateX(-50%) translateY(-10px) scale(1.08);
-    box-shadow: 0 0 60px rgba(255, 42, 95, 0.6);
+/* ════════════════════════════════════════════════════════════
+   REOWN APPKIT · THEME OVERRIDE
+   ════════════════════════════════════════════════════════════ */
+w3m-modal,
+w3m-router,
+wui-modal {
+    --wui-color-accent-100: var(--accent) !important;
+    --wui-color-accent-090: var(--accent) !important;
+    --wui-color-bg-100: var(--bg-surface) !important;
+    --wui-color-bg-125: var(--bg-elevated) !important;
+    --wui-color-bg-150: var(--bg-elevated) !important;
+    --wui-color-bg-175: #1a1a1e !important;
+    --wui-color-bg-200: #1a1a1e !important;
+    --wui-color-fg-100: var(--text-main) !important;
+    --wui-color-fg-200: var(--text-main) !important;
+    --wui-color-fg-275: var(--text-hover) !important;
+    --wui-color-fg-300: var(--text-muted) !important;
+    --wui-color-border-100: var(--border-thin) !important;
+    --wui-color-border-200: var(--border-hover) !important;
+    --wui-font-family: var(--font-ui) !important;
+    --wui-border-radius-l: 14px !important;
+    --wui-border-radius-m: 10px !important;
+    --wui-border-radius-s: 8px !important;
 }
 </style>
 </head>
@@ -1070,74 +824,105 @@ body.is-dragging iframe {
 
 <!-- ════════════════ SIDEBAR ════════════════ -->
 <nav class="sidebar" id="sidebar">
-    <button class="toggle-btn" onclick="toggleSidebar()">
-        <i class="fa-solid fa-chevron-left"></i>
+    <button class="toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">
+        <i class="fa-solid fa-bars"></i>
     </button>
 
     <div class="nav-menu">
-        <div class="nav-item active" onclick="closeIframeView();loadPage('dashboard', event)">
-            <div class="nav-item-content"><i class="fa-solid fa-border-all"></i> Dashboard</div>
+        <!-- GENESIS -->
+        <div class="nav-item active" data-nav="dashboard" onclick="onNavClick(event, 'dashboard')">
+            <div class="nav-item-content">
+                <i class="fa-solid fa-border-all"></i>
+                <span>GENESIS</span>
+            </div>
         </div>
 
-        <div class="nav-item" onclick="openIframeView('https://t1prime.com/academy', 'Grind Academy')">
-            <div class="nav-item-content"><i class="fa-solid fa-graduation-cap"></i> Grind Academy</div>
+        <!-- ACADEMY -->
+        <div class="nav-item" data-href="https://t1prime.com/academy" onclick="onNavClick(event, 'academy')">
+            <div class="nav-item-content">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>ACADEMY</span>
+            </div>
         </div>
 
         <!-- TRADING -->
-        <div class="nav-item" onclick="toggleAccordion('sub-trading')">
-            <div class="nav-item-content"><i class="fa-solid fa-chart-line"></i> Trading</div>
-            <i class="fa-solid fa-angle-down" style="font-size: 0.6rem;"></i>
+        <div class="nav-item" data-sub="sub-trading" onclick="onNavClick(event, 'trading')">
+            <div class="nav-item-content">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Trading</span>
+            </div>
+            <i class="fa-solid fa-angle-down nav-angle"></i>
         </div>
         <div class="sub-menu" id="sub-trading">
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/engine', 'Trading Engine')">Engine</div>
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/signals', 'Signals')">Signals</div>
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/calculators', 'Calculators')">Calculators</div>
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/screener', 'Market Screener')">Screener / Markets</div>
+            <div class="sub-item" data-href="https://t1prime.com/engine" onclick="onSubClick(event)">Engine</div>
+            <div class="sub-item" data-href="https://t1prime.com/signals" onclick="onSubClick(event)">Signals</div>
+            <div class="sub-item" data-href="https://t1prime.com/calculators" onclick="onSubClick(event)">Calculators</div>
+            <div class="sub-item" data-href="https://t1prime.com/screener" onclick="onSubClick(event)">Screener / Markets</div>
         </div>
 
         <!-- PRODUCTIVITY -->
-        <div class="nav-item" onclick="toggleAccordion('sub-prod')">
-            <div class="nav-item-content"><i class="fa-solid fa-crosshairs"></i> Productivity</div>
-            <i class="fa-solid fa-angle-down" style="font-size: 0.6rem;"></i>
+        <div class="nav-item" data-sub="sub-prod" onclick="onNavClick(event, 'productivity')">
+            <div class="nav-item-content">
+                <i class="fa-solid fa-crosshairs"></i>
+                <span>Productivity</span>
+            </div>
+            <i class="fa-solid fa-angle-down nav-angle"></i>
         </div>
         <div class="sub-menu" id="sub-prod">
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/bio', 'Biohacking')">Biohacking</div>
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/goals', 'Goals')">Goals</div>
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/focus', 'Focus')">Focus</div>
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/journal', 'Journal')">Journal</div>
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/heatmap', '365 Heatmap')">365 Heatmap Tracker</div>
+            <div class="sub-item" data-href="https://t1prime.com/bio" onclick="onSubClick(event)">Biohacking</div>
+            <div class="sub-item" data-href="https://t1prime.com/goals" onclick="onSubClick(event)">Goals</div>
+            <div class="sub-item" data-href="https://t1prime.com/focus" onclick="onSubClick(event)">Focus</div>
+            <div class="sub-item" data-href="https://t1prime.com/journal" onclick="onSubClick(event)">Journal</div>
+            <div class="sub-item" data-href="https://t1prime.com/heatmap" onclick="onSubClick(event)">365 Heatmap Tracker</div>
         </div>
 
-        <!-- SOCIAL MEDIA (NEW) -->
-        <div class="nav-item" onclick="toggleAccordion('sub-social')">
-            <div class="nav-item-content"><i class="fa-solid fa-mobile-screen"></i> Social Media</div>
-            <i class="fa-solid fa-angle-down" style="font-size: 0.6rem;"></i>
+        <!-- SOCIAL MEDIA -->
+        <div class="nav-item" data-sub="sub-social" onclick="onNavClick(event, 'social')">
+            <div class="nav-item-content">
+                <i class="fa-solid fa-mobile-screen"></i>
+                <span>Social Media</span>
+            </div>
+            <i class="fa-solid fa-angle-down nav-angle"></i>
         </div>
         <div class="sub-menu" id="sub-social">
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/smboost', 'SM Boost')">SM Boost</div>
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/contentmash', 'Content Mash')">Content Mash</div>
+            <div class="sub-item" data-href="https://t1prime.com/smboost" onclick="onSubClick(event)">SM Boost</div>
+            <div class="sub-item" data-href="https://t1prime.com/contentmash" onclick="onSubClick(event)">Content Mash</div>
         </div>
 
-        <div class="nav-item" onclick="openIframeView('https://t1prime.com/imchat', 'ImChat P2P')">
-            <div class="nav-item-content"><i class="fa-solid fa-user-shield"></i> ImChat P2P</div>
+        <!-- NEXUS -->
+        <div class="nav-item" data-href="https://t1prime.com/imchat" onclick="onNavClick(event, 'nexus')">
+            <div class="nav-item-content">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>NEXUS</span>
+            </div>
         </div>
 
         <!-- AFFILIATE -->
-        <div class="nav-item" onclick="toggleAccordion('sub-aff')">
-            <div class="nav-item-content"><i class="fa-solid fa-share-nodes"></i> Affiliate</div>
-            <i class="fa-solid fa-angle-down" style="font-size: 0.6rem;"></i>
+        <div class="nav-item" data-sub="sub-aff" onclick="onNavClick(event, 'affiliate')">
+            <div class="nav-item-content">
+                <i class="fa-solid fa-share-nodes"></i>
+                <span>Affiliate</span>
+            </div>
+            <i class="fa-solid fa-angle-down nav-angle"></i>
         </div>
         <div class="sub-menu" id="sub-aff">
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/affiliate', 'Affiliate Room')">Main Room & PNL</div>
-            <div class="sub-item" onclick="openIframeView('https://t1prime.com/assets', 'Content Assets')">Content Assets</div>
+            <div class="sub-item" data-href="https://t1prime.com/affiliate" onclick="onSubClick(event)">Main Room & PNL</div>
+            <div class="sub-item" data-href="https://t1prime.com/assets" onclick="onSubClick(event)">Content Assets</div>
         </div>
 
-        <div class="nav-item" style="margin-top: 30px; border-top: 1px solid var(--border-thin); padding-top: 20px;">
-            <div class="nav-item-content"><i class="fa-solid fa-credit-card"></i> Subscriptions</div>
+        <!-- SYSTEM -->
+        <div class="nav-item" style="margin-top: 24px; border-top: 1px solid var(--border-thin); padding-top: 20px;" data-href="https://t1prime.com/subs" onclick="onNavClick(event, 'subs')">
+            <div class="nav-item-content">
+                <i class="fa-solid fa-credit-card"></i>
+                <span>Subscriptions</span>
+            </div>
         </div>
 
         <div class="nav-item" onclick="resetLayout()">
-            <div class="nav-item-content"><i class="fa-solid fa-rotate-left"></i> Reset Layout</div>
+            <div class="nav-item-content">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Reset Layout</span>
+            </div>
         </div>
     </div>
 </nav>
@@ -1147,37 +932,63 @@ body.is-dragging iframe {
 
     <!-- TOPBAR -->
     <header class="topbar">
-       <div class="top-left">
-    <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">
-        <i class="fa-solid fa-bars"></i>
-    </button>
-    <div class="brand"></div>
+        <div class="top-left">
+            <div class="brand"></div>
 
-    <!-- ⬇ NEW: Back button (hidden by default) -->
-    <button class="back-btn hidden" id="backBtn" onclick="closeIframeView()">
-        <i class="fa-solid fa-arrow-left"></i>
-        <span>Back</span>
-    </button>
+            <button class="back-btn hidden" id="backBtn" onclick="closeIframeView()">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Back</span>
+            </button>
 
-    <div class="lang-selector-container">
-        <div class="lang-selector" id="langBtn" onclick="toggleLangMenu()">
-            <span>Grind</span> <i class="fa-solid fa-globe"></i> <span id="langText">EN</span>
+            <div class="lang-selector-container">
+                <div class="lang-selector" id="langBtn" onclick="toggleLangMenu()">
+                    <span>Grind</span> <i class="fa-solid fa-globe"></i> <span id="langText">EN</span>
+                </div>
+                <div class="lang-menu" id="langMenu">
+                    <div onclick="setLang('EN')">US (English)</div>
+                    <div onclick="setLang('RU')">RU (Русский)</div>
+                    <div onclick="setLang('ARM')">ARM (Հայերեն)</div>
+                    <div onclick="setLang('CH')">CH (中文)</div>
+                </div>
+            </div>
         </div>
-        <div class="lang-menu" id="langMenu">
-            <div onclick="setLang('EN')">US (English)</div>
-            <div onclick="setLang('RU')">RU (Русский)</div>
-            <div onclick="setLang('ARM')">ARM (Հայերեն)</div>
-            <div onclick="setLang('CH')">CH (中文)</div>
+
+        <div class="top-right">
+            <!-- WALLET -->
+            <!-- ═══════ WALLET CONNECT (Reown AppKit) ═══════ -->
+<div class="wallet-wrap">
+    <button class="wallet-btn" id="walletBtn" onclick="openWalletModal()">
+        <i class="fa-solid fa-wallet" id="walletIcon"></i>
+        <span id="walletText">Connect Wallet</span>
+        <i class="fa-solid fa-chevron-down wallet-chevron hidden" id="walletChevron"></i>
+    </button>
+
+    <div class="wallet-menu" id="walletMenu">
+        <div class="wallet-menu-header">
+            <div class="wallet-menu-label">Connected Wallet</div>
+            <div class="wallet-menu-addr">
+                <span class="dot"></span>
+                <span id="walletAddr">0x...</span>
+            </div>
+        </div>
+        <div class="wallet-menu-item" onclick="copyWalletAddress()">
+            <i class="fa-solid fa-copy"></i> Copy Address
+        </div>
+        <div class="wallet-menu-item" onclick="openNetworksModal()">
+            <i class="fa-solid fa-network-wired"></i> Switch Network
+        </div>
+        <div class="wallet-menu-item" onclick="viewOnExplorer()">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> View on Explorer
+        </div>
+        <div class="wallet-menu-divider"></div>
+        <div class="wallet-menu-item danger" onclick="disconnectWallet()">
+            <i class="fa-solid fa-right-from-bracket"></i> Disconnect
         </div>
     </div>
 </div>
 
-        <div class="top-right">
-            <!-- WALLET CONNECT -->
-            <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">
-                <i class="fa-solid fa-wallet"></i>
-                <span id="walletText">Connect Wallet</span>
-            </button>
+<!-- Reown AppKit auto-injects its own modal here -->
+<div id="appkit-modal-root"></div>
 
             <button class="icon-btn" id="btnLibrary" title="Widget Library (⌘K)">
                 <i class="fa-solid fa-plus"></i>
@@ -1193,13 +1004,13 @@ body.is-dragging iframe {
         </div>
     </header>
 
-    <!-- ── DASHBOARD VIEW ── -->
+    <!-- DASHBOARD VIEW -->
     <main class="dynamic-view" id="dashboardView">
         <div class="quote-container">
             <div class="quote-text" id="quote-text">
                 "Focus is the new IQ. Whoever can sit still and work for 4 hours straight, owns the market."
             </div>
-            <div class="quote-author">Doctrine // 001</div>
+            <div class="quote-author">GRIND</div>
         </div>
 
         <div class="bento-grid" id="bentoGrid"></div>
@@ -1216,16 +1027,16 @@ body.is-dragging iframe {
         </div>
     </main>
 
-    <!-- ── IFRAME VIEW (full area, no header) ── -->
-<div class="iframe-view" id="iframeView">
-    <div class="iframe-body">
-        <div class="iframe-loader" id="iframeLoader">
-            <div class="iframe-spinner"></div>
-            <span>Loading module...</span>
+    <!-- IFRAME VIEW -->
+    <div class="iframe-view" id="iframeView">
+        <div class="iframe-body">
+            <div class="iframe-loader" id="iframeLoader">
+                <div class="iframe-spinner"></div>
+                <span>◤ ENTERING THE MATRIX ◢</span>
+            </div>
+            <iframe id="mainIframe" src="about:blank" allow="clipboard-write; web3" loading="lazy"></iframe>
         </div>
-        <iframe id="mainIframe" src="about:blank" allow="clipboard-write; web3" loading="lazy"></iframe>
     </div>
-</div>
 
     <!-- TICKER -->
     <div class="crypto-ticker">
@@ -1294,9 +1105,205 @@ body.is-dragging iframe {
     </div>
 </div>
 
+<script type="module">
+/* ════════════════════════════════════════════════════════════
+   REOWN APPKIT · UNIFIED WALLET LOGIN
+   ════════════════════════════════════════════════════════════ */
+
+import { createAppKit } from 'https://esm.sh/@reown/appkit@1.5.4';
+import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers@1.5.4';
+import {
+    mainnet, arbitrum, polygon, bsc, optimism, base
+} from 'https://esm.sh/@reown/appkit@1.5.4/networks';
+
+/* ─── 1. 👈 ՔՈ REOWN PROJECT ID ─── */
+const PROJECT_ID = '9a4485f532467f3b0bb7584537697fd1'; // 👈 փոխարինի՛ր
+
+/* ─── 2. 👈 ՔՈ METADATA ─── */
+const METADATA = {
+    name: 'GRIND OS',
+    description: 'All-in-one Web3 Dashboard',
+    url: 'https://t1prime.com',           // 👈 քո domain
+    icons: ['https://t1prime.com/icon.png'] // 👈 քո icon URL
+};
+
+/* ─── 3. 👈 ՑԱՆԿԸ · որ networks ցույց տա ─── */
+const NETWORKS = [mainnet, arbitrum, polygon, base, tron, solana, etherium]; // 👈 ավել/պակաս արա
+
+/* ─── ADAPTER ─── */
+const ethersAdapter = new EthersAdapter();
+
+/* ─── APPKIT INIT ─── */
+const appkit = createAppKit({
+    adapters: [ethersAdapter],
+    networks: NETWORKS,
+    metadata: METADATA,
+    projectId: PROJECT_ID,
+    features: {
+        analytics: false,
+        email: false,
+        socials: false,
+        swaps: false,
+        onramp: false
+    },
+    themeMode: 'dark',
+    themeVariables: {
+        '--w3m-accent': '#00ffd5',
+        '--w3m-border-radius-master': '8px',
+        '--w3m-font-family': 'Inter, sans-serif'
+    },
+    featuredWalletIds: [
+        // 👈 ցանկության դեպքում ավելացրու կոնկրետ wallet IDs
+    ],
+    allWallets: 'SHOW' // 'SHOW' | 'HIDE' | 'ONLY_MOBILE'
+});
+
+/* ─── EXPOSE TO GLOBAL SCOPE (վերին scope-ից օգտվելու համար) ─── */
+window.reownAppKit = appkit;
+
+/* ─── STATE SYNC ─── */
+function updateWalletUI(account, chainId) {
+    const btn = document.getElementById('walletBtn');
+    const txt = document.getElementById('walletText');
+    const chevron = document.getElementById('walletChevron');
+    const addrEl = document.getElementById('walletAddr');
+
+    if (account) {
+        const short = account.slice(0, 6) + '...' + account.slice(-4);
+        if (btn) btn.classList.add('connected');
+        if (txt) txt.textContent = short;
+        if (chevron) chevron.classList.remove('hidden');
+        if (addrEl) addrEl.textContent = short;
+
+        // Sync to other iframe modules
+        localStorage.setItem('t1prime_wallet', JSON.stringify({
+            address: account,
+            chainId: chainId,
+            connectedAt: Date.now()
+        }));
+
+        // Broadcast for other tabs
+        try {
+            const bc = new BroadcastChannel('t1prime_auth');
+            bc.postMessage({ type: 'wallet-connected', address: account, chainId });
+            bc.close();
+        } catch(e) {}
+    } else {
+        if (btn) btn.classList.remove('connected');
+        if (txt) txt.textContent = 'Connect Wallet';
+        if (chevron) chevron.classList.add('hidden');
+        localStorage.removeItem('t1prime_wallet');
+
+        try {
+            const bc = new BroadcastChannel('t1prime_auth');
+            bc.postMessage({ type: 'wallet-disconnected' });
+            bc.close();
+        } catch(e) {}
+    }
+}
+
+/* ─── SUBSCRIBE TO APPKIT EVENTS ─── */
+appkit.subscribeAccount((account) => {
+    if (account && account.isConnected) {
+        const chainId = appkit.getChainId();
+        updateWalletUI(account.address, chainId);
+    } else {
+        updateWalletUI(null, null);
+    }
+});
+
+appkit.subscribeState((state) => {
+    // Optional — log state changes
+});
+
+/* ─── RESTORE ON LOAD ─── */
+(async () => {
+    const saved = localStorage.getItem('t1prime_wallet');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            // Check if AppKit is already connected
+            const account = appkit.getAccount();
+            if (account && account.isConnected) {
+                updateWalletUI(account.address, appkit.getChainId());
+            }
+        } catch(e) {}
+    }
+})();
+
+/* ─── GLOBAL FUNCTIONS (button handlers) ─── */
+window.openWalletModal = function() {
+    const btn = document.getElementById('walletBtn');
+    const isConnected = btn && btn.classList.contains('connected');
+
+    if (isConnected) {
+        // Toggle dropdown
+        const menu = document.getElementById('walletMenu');
+        if (menu) menu.classList.toggle('open');
+        if (btn) btn.classList.toggle('open');
+    } else {
+        // Open Reown modal
+        appkit.open();
+    }
+};
+
+window.openNetworksModal = function() {
+    document.getElementById('walletMenu')?.classList.remove('open');
+    document.getElementById('walletBtn')?.classList.remove('open');
+    appkit.open({ view: 'Networks' });
+};
+
+window.disconnectWallet = function() {
+    appkit.disconnect();
+    document.getElementById('walletMenu')?.classList.remove('open');
+    document.getElementById('walletBtn')?.classList.remove('open');
+};
+
+window.copyWalletAddress = function() {
+    const account = appkit.getAccount();
+    if (account && account.address) {
+        navigator.clipboard.writeText(account.address)
+            .then(() => window.toast && window.toast('Address copied'))
+            .catch(() => {});
+    }
+    document.getElementById('walletMenu')?.classList.remove('open');
+    document.getElementById('walletBtn')?.classList.remove('open');
+};
+
+window.viewOnExplorer = function() {
+    const account = appkit.getAccount();
+    const chainId = appkit.getChainId();
+    if (!account || !account.address) return;
+
+    const explorers = {
+        1: 'https://etherscan.io/address/',
+        42161: 'https://arbiscan.io/address/',
+        137: 'https://polygonscan.com/address/',
+        56: 'https://bscscan.com/address/',
+        10: 'https://optimistic.etherscan.io/address/',
+        8453: 'https://basescan.org/address/'
+    };
+    const base = explorers[chainId] || explorers[1];
+    window.open(base + account.address, '_blank');
+    document.getElementById('walletMenu')?.classList.remove('open');
+    document.getElementById('walletBtn')?.classList.remove('open');
+};
+
+/* ─── CLOSE DROPDOWN ON OUTSIDE CLICK ─── */
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.wallet-wrap')) {
+        document.getElementById('walletMenu')?.classList.remove('open');
+        document.getElementById('walletBtn')?.classList.remove('open');
+    }
+});
+
+/* ─── LEGACY BRIDGE — ապահովում է որ հին կոդը շարունակի աշխատել ─── */
+window.connectWallet = window.openWalletModal;
+</script>
+
 <script>
 /* ════════════════════════════════════════════════════════════
-   GRIND // OS · ENGINE  v2.0
+   GRIND // OS · ENGINE v2.2
    ════════════════════════════════════════════════════════════ */
 
 const STORAGE_KEY = 'grind_os_layout_v2';
@@ -1308,113 +1315,33 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
 /* ─── WIDGET REGISTRY ─── */
 const WIDGET_REGISTRY = {
-    /* ── TRADING ── */
-    btc_chart: {
-        id: 'btc_chart', name: 'BTC Chart', desc: 'Live BTC candles · TF switch',
-        icon: 'fa-chart-line', size: 'full', category: 'Trading',
-        render: renderBTCChartWidget, init: initBTCChartWidget
-    },
-    liquidations: {
-        id: 'liquidations', name: 'Live Liquidations', desc: 'Whale liq feed · real-time',
-        icon: 'fa-water', size: '1x2', category: 'Trading',
-        render: renderLiquidationsWidget, init: initLiquidationsWidget
-    },
-    screener: {
-        id: 'screener', name: 'Market Screener', desc: 'Multi-filter + search',
-        icon: 'fa-radar', size: 'full', category: 'Trading',
-        render: renderScreenerWidget, init: initScreenerWidget
-    },
-    signals: {
-        id: 'signals', name: 'Intel Signals', desc: 'Live trading alerts',
-        icon: 'fa-satellite', size: '2x2', category: 'Trading', premium: true,
-        render: renderSignalsWidget
-    },
-    terminal: {
-        id: 'terminal', name: 'Pro Terminal', desc: 'DCA · Grid · Risk',
-        icon: 'fa-chart-candlestick', size: '1x1', category: 'Trading', premium: true,
-        render: renderTerminalWidget
-    },
-    heatmap: {
-        id: 'heatmap', name: '365 Consistency', desc: 'Yearly habit matrix',
-        icon: 'fa-fire', size: 'full', category: 'Trading',
-        render: renderHeatmapWidget
-    },
-
-    /* ── PRODUCTIVITY ── */
-    goals: {
-        id: 'goals', name: 'Active Goals', desc: 'Long-term objectives',
-        icon: 'fa-bullseye', size: '1x1', category: 'Productivity',
-        render: renderGoalsWidget
-    },
-    biohacking: {
-        id: 'biohacking', name: 'Bio-Sync Stack', desc: 'Supplement builder',
-        icon: 'fa-dna', size: '1x1', category: 'Productivity',
-        render: renderBiohackingWidget
-    },
-    tasks: {
-        id: 'tasks', name: 'Today Tasks', desc: 'Daily checklist',
-        icon: 'fa-list-check', size: '1x1', category: 'Productivity',
-        render: renderTasksWidget
-    },
-    progress: {
-        id: 'progress', name: 'Progress', desc: 'Weekly bars',
-        icon: 'fa-chart-simple', size: '1x1', category: 'Productivity',
-        render: renderProgressWidget
-    },
-    clock: {
-        id: 'clock', name: 'Clock', desc: 'Time & date',
-        icon: 'fa-clock', size: '1x1', category: 'Productivity',
-        render: renderClockWidget
-    },
-    quote: {
-        id: 'quote', name: 'Quote', desc: 'Daily doctrine',
-        icon: 'fa-quote-left', size: '1x1', category: 'Productivity',
-        render: renderQuoteWidget
-    },
-    notes: {
-        id: 'notes', name: 'Notes', desc: 'Quick scratchpad',
-        icon: 'fa-note-sticky', size: '1x1', category: 'Productivity',
-        render: renderNotesWidget
-    },
-    radio: {
-        id: 'radio', name: 'Deep Work Radio', desc: '24/7 focus stream',
-        icon: 'fa-radio', size: '1x1', category: 'Productivity',
-        render: renderRadioWidget
-    },
-
-    /* ── SOCIAL ── */
-    community: {
-        id: 'community', name: 'Community', desc: 'Live feed',
-        icon: 'fa-users', size: '1x1', category: 'Social',
-        render: renderCommunityWidget
-    },
-    affiliate: {
-        id: 'affiliate', name: 'Affiliate', desc: 'Referrals & earnings',
-        icon: 'fa-share-nodes', size: '1x1', category: 'Social',
-        render: renderAffiliateWidget
-    }
+    btc_chart:    { id:'btc_chart',    name:'BTC Chart',         desc:'Live BTC candles · TF switch', icon:'fa-chart-line',         size:'full', category:'Trading',      render: renderBTCChartWidget, init: initBTCChartWidget },
+    liquidations: { id:'liquidations', name:'Live Liquidations', desc:'Whale liq feed · real-time',   icon:'fa-water',              size:'1x2',  category:'Trading',      render: renderLiquidationsWidget, init: initLiquidationsWidget },
+    screener:     { id:'screener',     name:'Market Screener',   desc:'Multi-filter + search',        icon:'fa-radar',              size:'full', category:'Trading',      render: renderScreenerWidget, init: initScreenerWidget },
+    signals:      { id:'signals',      name:'Intel Signals',     desc:'Live trading alerts',          icon:'fa-satellite',          size:'2x2',  category:'Trading',      premium:true, render: renderSignalsWidget },
+    terminal:     { id:'terminal',     name:'Pro Terminal',      desc:'DCA · Grid · Risk',            icon:'fa-chart-candlestick',  size:'1x1',  category:'Trading',      premium:true, render: renderTerminalWidget },
+    heatmap:      { id:'heatmap',      name:'365 Consistency',   desc:'Yearly habit matrix',          icon:'fa-fire',               size:'full', category:'Trading',      render: renderHeatmapWidget },
+    goals:        { id:'goals',        name:'Active Goals',      desc:'Long-term objectives',         icon:'fa-bullseye',           size:'1x1',  category:'Productivity', render: renderGoalsWidget },
+    biohacking:   { id:'biohacking',   name:'Bio-Sync Stack',    desc:'Supplement builder',           icon:'fa-dna',                size:'1x1',  category:'Productivity', render: renderBiohackingWidget },
+    tasks:        { id:'tasks',        name:'Today Tasks',       desc:'Daily checklist',              icon:'fa-list-check',         size:'1x1',  category:'Productivity', render: renderTasksWidget },
+    progress:     { id:'progress',     name:'Progress',          desc:'Weekly bars',                  icon:'fa-chart-simple',       size:'1x1',  category:'Productivity', render: renderProgressWidget },
+    clock:        { id:'clock',        name:'Clock',             desc:'Time & date',                  icon:'fa-clock',              size:'1x1',  category:'Productivity', render: renderClockWidget },
+    quote:        { id:'quote',        name:'Quote',             desc:'Daily doctrine',               icon:'fa-quote-left',         size:'1x1',  category:'Productivity', render: renderQuoteWidget },
+    notes:        { id:'notes',        name:'Notes',             desc:'Quick scratchpad',             icon:'fa-note-sticky',        size:'1x1',  category:'Productivity', render: renderNotesWidget },
+    radio:        { id:'radio',        name:'Deep Work Radio',   desc:'24/7 focus stream',            icon:'fa-radio',              size:'1x1',  category:'Productivity', render: renderRadioWidget },
+    community:    { id:'community',    name:'Community',         desc:'Live feed',                    icon:'fa-users',              size:'1x1',  category:'Social',       render: renderCommunityWidget },
+    affiliate:    { id:'affiliate',    name:'Affiliate',         desc:'Referrals & earnings',         icon:'fa-share-nodes',        size:'1x1',  category:'Social',       render: renderAffiliateWidget }
 };
 
 const CATEGORIES = ['Trading', 'Productivity', 'Social'];
 
 /* ─── STATE ─── */
-let state = {
-    widgets: [],
-    subscribed: false,
-    wallet: null
-};
-
-const widgetCleanup = {}; // widgetId → cleanup function (WebSocket, intervals)
+let state = { widgets: [], subscribed: false, wallet: null, connecting: false };
+const widgetCleanup = {};
 
 function saveState() {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-            widgets: state.widgets,
-            subscribed: state.subscribed
-        }));
-    } catch (e) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ widgets: state.widgets, subscribed: state.subscribed })); } catch (e) {}
 }
-
 function loadState() {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -1427,22 +1354,19 @@ function loadState() {
     } catch (e) {}
     return false;
 }
-
 function getDefaultLayout() {
     return [
-        { id: uid(), type: 'goals',         size: '1x1' },
-        { id: uid(), type: 'biohacking',    size: '1x1' },
-        { id: uid(), type: 'btc_chart',     size: 'full' }
+        { id: uid(), type: 'goals',      size: '1x1' },
+        { id: uid(), type: 'biohacking', size: '1x1' },
+        { id: uid(), type: 'btc_chart',  size: 'full' }
     ];
 }
-
 function uid() { return 'w_' + Math.random().toString(36).slice(2, 9); }
 
 /* ════════════════════════════════════════════════════════════
    GRID RENDER
    ════════════════════════════════════════════════════════════ */
 function renderGrid() {
-    // Cleanup previous widget resources (WS, intervals)
     Object.values(widgetCleanup).forEach(fn => { try { fn(); } catch(e) {} });
     Object.keys(widgetCleanup).forEach(k => delete widgetCleanup[k]);
 
@@ -1457,7 +1381,6 @@ function renderGrid() {
         emptyState.classList.remove('hidden');
         return;
     }
-
     grid.classList.remove('hidden');
     emptyState.classList.add('hidden');
 
@@ -1470,65 +1393,39 @@ function renderGrid() {
         el.dataset.widgetId = w.id;
         el.dataset.widgetType = w.type;
         el.dataset.size = w.size || reg.size;
-        el.setAttribute('draggable', 'true');
 
         const locked = reg.premium && !state.subscribed;
         const unlockedClass = locked ? '' : 'unlocked';
 
         el.innerHTML = `
             <div class="widget-controls">
-                <button class="widget-btn grip" title="Drag to move">
-                    <i class="fa-solid fa-grip-vertical"></i>
-                </button>
-                <button class="widget-btn size-btn" title="Change size">
-                    <i class="fa-solid fa-expand"></i>
-                </button>
-                <button class="widget-btn danger remove-btn" title="Remove">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+                <button class="widget-btn grip" title="Drag to move"><i class="fa-solid fa-grip-vertical"></i></button>
+                <button class="widget-btn size-btn" title="Change size"><i class="fa-solid fa-expand"></i></button>
+                <button class="widget-btn danger remove-btn" title="Remove"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
             ${reg.premium ? `
                 <div class="blur-overlay blur-mod ${unlockedClass}">
                     <i class="fa-solid fa-lock lock-icon"></i>
-                    <button class="unlock-btn" onclick="event.stopPropagation();toggleSubscription();">
-                        Unlock PRO
-                    </button>
-                </div>
-            ` : ''}
-
+                    <button class="unlock-btn" onclick="event.stopPropagation();toggleSubscription();">Unlock PRO</button>
+                </div>` : ''}
             ${reg.render(w)}
         `;
 
         grid.appendChild(el);
 
-        // Controls
-        el.querySelector('.remove-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            removeWidget(w.id);
-        });
-        el.querySelector('.size-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            cycleWidgetSize(w.id);
-        });
+        el.querySelector('.remove-btn').addEventListener('click', (e) => { e.stopPropagation(); removeWidget(w.id); });
+        el.querySelector('.size-btn').addEventListener('click', (e) => { e.stopPropagation(); cycleWidgetSize(w.id); });
 
-        // Drag events
-       // Grip — միակ drag handle
-const grip = el.querySelector('.widget-btn.grip');
-if (grip) grip.addEventListener('pointerdown', onGripPointerDown);
+        const grip = el.querySelector('.widget-btn.grip');
+        if (grip) grip.addEventListener('pointerdown', onGripPointerDown);
 
-// Library drops (HTML5 DnD) — modules-ը droppable են
-el.addEventListener('dragover', onModuleDragOver);
-el.addEventListener('dragleave', onModuleDragLeave);
-el.addEventListener('drop', onModuleDrop);
+        el.addEventListener('dragover', onModuleDragOver);
+        el.addEventListener('dragleave', onModuleDragLeave);
+        el.addEventListener('drop', onModuleDrop);
 
-        // Init widget-specific logic
         if (typeof reg.init === 'function') {
-            setTimeout(() => {
-                try { reg.init(w, el); } catch(e) { console.warn('Widget init failed:', e); }
-            }, 80);
+            setTimeout(() => { try { reg.init(w, el); } catch(e) { console.warn('Widget init failed:', e); } }, 80);
         }
-
         setTimeout(() => el.classList.remove('entering'), 450);
     });
 
@@ -1536,20 +1433,12 @@ el.addEventListener('drop', onModuleDrop);
 }
 
 /* ─── SIZE CYCLE ─── */
-const SIZE_CYCLE = {
-    '1x1': '2x1',
-    '2x1': '2x2',
-    '2x2': '1x1',
-    '1x2': '1x1',
-    'full': 'full'
-};
-
+const SIZE_CYCLE = { '1x1':'2x1', '2x1':'2x2', '2x2':'1x1', '1x2':'1x1', 'full':'full' };
 function cycleWidgetSize(widgetId) {
     const w = state.widgets.find(x => x.id === widgetId);
     if (!w) return;
     w.size = SIZE_CYCLE[w.size] || '1x1';
     saveState();
-
     const el = document.querySelector(`[data-widget-id="${widgetId}"]`);
     if (el) el.dataset.size = w.size;
     toast(`Size: ${w.size === 'full' ? 'FULL' : w.size}`);
@@ -1563,11 +1452,8 @@ function addWidget(type, position) {
     const id = uid();
     const widget = { id, type, size: reg.size };
 
-    if (typeof position === 'number' && position >= 0) {
-        state.widgets.splice(position, 0, widget);
-    } else {
-        state.widgets.push(widget);
-    }
+    if (typeof position === 'number' && position >= 0) state.widgets.splice(position, 0, widget);
+    else state.widgets.push(widget);
 
     saveState();
     renderGrid();
@@ -1579,11 +1465,7 @@ function removeWidget(widgetId) {
     const idx = state.widgets.findIndex(x => x.id === widgetId);
     if (idx === -1) return;
 
-    // Cleanup
-    if (widgetCleanup[widgetId]) {
-        try { widgetCleanup[widgetId](); } catch(e) {}
-        delete widgetCleanup[widgetId];
-    }
+    if (widgetCleanup[widgetId]) { try { widgetCleanup[widgetId](); } catch(e) {} delete widgetCleanup[widgetId]; }
 
     const el = document.querySelector(`[data-widget-id="${widgetId}"]`);
     if (el) {
@@ -1601,69 +1483,44 @@ function removeWidget(widgetId) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   DRAG & DROP
+   DRAG & DROP · POINTER-BASED
    ════════════════════════════════════════════════════════════ */
-let draggedWidgetId = null;
 let draggingFromLibrary = false;
-
-/* ════════════════════════════════════════════════════════════
-   DRAG & DROP · POINTER-BASED ENGINE
-   ════════════════════════════════════════════════════════════ */
-
 let dragState = null;
 
-/* ─── GRIP pointerdown — start tracking ─── */
 function onGripPointerDown(e) {
-    // Միայն ձախ click կամ touch/pen
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-
     const grip = e.currentTarget;
     const widget = grip.closest('.module');
     if (!widget) return;
 
     const rect = widget.getBoundingClientRect();
-
     dragState = {
-        active: false,
-        widgetId: widget.dataset.widgetId,
-        element: widget,
-        ghost: null,
-        rect,
-        startX: e.clientX,
-        startY: e.clientY,
-        offsetX: e.clientX - rect.left,
-        offsetY: e.clientY - rect.top,
-        target: null,
-        overTrash: false
+        active: false, widgetId: widget.dataset.widgetId, element: widget,
+        ghost: null, rect,
+        startX: e.clientX, startY: e.clientY,
+        offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
+        target: null, overTrash: false
     };
-
     e.preventDefault();
-
     document.addEventListener('pointermove', onDragPointerMove);
     document.addEventListener('pointerup', onDragPointerUp);
     document.addEventListener('pointercancel', onDragPointerUp);
     document.addEventListener('keydown', onDragKeyDown);
 }
 
-/* ─── POINTER MOVE ─── */
 function onDragPointerMove(e) {
     if (!dragState) return;
-
-    // Threshold — 6px, որ պատահական click-ը drag չհամարվի
     if (!dragState.active) {
         const dx = Math.abs(e.clientX - dragState.startX);
         const dy = Math.abs(e.clientY - dragState.startY);
         if (dx < 6 && dy < 6) return;
         activateDrag();
     }
-
-    // Ghost-ը հետևում է cursor-ին
     const x = e.clientX - dragState.offsetX;
     const y = e.clientY - dragState.offsetY;
-    dragState.ghost.style.transform =
-        `translate3d(${x}px, ${y}px, 0) scale(1.03) rotate(0.5deg)`;
+    dragState.ghost.style.transform = `translate3d(${x}px, ${y}px, 0) scale(1.03) rotate(0.5deg)`;
 
-    // Ո՞ր module-ի վրա է cursor-ը
     const el = document.elementFromPoint(e.clientX, e.clientY);
     const target = el ? el.closest('.module') : null;
 
@@ -1673,26 +1530,18 @@ function onDragPointerMove(e) {
             dragState.target = target;
             target.classList.add('drop-target');
         }
-    } else {
-        if (dragState.target) {
-            dragState.target.classList.remove('drop-target');
-            dragState.target = null;
-        }
+    } else if (dragState.target) {
+        dragState.target.classList.remove('drop-target');
+        dragState.target = null;
     }
 
-    // Trash zone check
     const trash = document.getElementById('trashZone');
     if (trash && trash.classList.contains('active')) {
         const tr = trash.getBoundingClientRect();
-        const overTrash =
-            e.clientX >= tr.left && e.clientX <= tr.right &&
-            e.clientY >= tr.top  && e.clientY <= tr.bottom;
-
+        const overTrash = e.clientX >= tr.left && e.clientX <= tr.right && e.clientY >= tr.top && e.clientY <= tr.bottom;
         if (overTrash !== dragState.overTrash) {
             dragState.overTrash = overTrash;
             trash.classList.toggle('hot', overTrash);
-
-            // Երբ trash-ի վրա է, drop-target-ը հանի
             if (overTrash && dragState.target) {
                 dragState.target.classList.remove('drop-target');
                 dragState.target = null;
@@ -1701,149 +1550,154 @@ function onDragPointerMove(e) {
     }
 }
 
-/* ─── ACTIVATE — 6px անցնելուց հետո միայն ─── */
 function activateDrag() {
     if (!dragState || dragState.active) return;
     dragState.active = true;
-
     const el = dragState.element;
     const rect = dragState.rect;
-
-    // Ghost clone
     const ghost = el.cloneNode(true);
     ghost.classList.remove('entering', 'dragging');
     ghost.classList.add('drag-ghost');
-    ghost.style.width  = rect.width  + 'px';
+    ghost.style.width = rect.width + 'px';
     ghost.style.height = rect.height + 'px';
     ghost.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0)`;
-
-    // Interactive elements-ները ghost-ի մեջ չաշխատեն
     ghost.querySelectorAll('button, input, textarea, select, iframe, a').forEach(x => {
         x.setAttribute('tabindex', '-1');
         x.style.pointerEvents = 'none';
     });
-
     document.body.appendChild(ghost);
     dragState.ghost = ghost;
-
-    // Բուն վիջեթը dim
     el.classList.add('dragging');
-
-    // Trash zone ցուցադրիր
     const trash = document.getElementById('trashZone');
     if (trash) trash.classList.add('active');
-
-    // Global class
     document.body.classList.add('is-dragging');
 }
 
-/* ─── POINTER UP — commit կամ cancel ─── */
-function onDragPointerUp(e) {
+function onDragPointerUp() {
     if (!dragState) return;
-
     const wasActive = dragState.active;
-    const targetId  = dragState.target ? dragState.target.dataset.widgetId : null;
+    const targetId = dragState.target ? dragState.target.dataset.widgetId : null;
     const overTrash = dragState.overTrash;
-    const widgetId  = dragState.widgetId;
-
+    const widgetId = dragState.widgetId;
     cleanupDrag();
-
     if (!wasActive) return;
-
-    if (overTrash) {
-        removeWidget(widgetId);
-    } else if (targetId && targetId !== widgetId) {
-        reorderWidget(widgetId, targetId);
-    }
+    if (overTrash) removeWidget(widgetId);
+    else if (targetId && targetId !== widgetId) reorderWidget(widgetId, targetId);
 }
 
-/* ─── ESC → cancel ─── */
 function onDragKeyDown(e) {
-    if (e.key === 'Escape' && dragState && dragState.active) {
-        cleanupDrag();
-    }
+    if (e.key === 'Escape' && dragState && dragState.active) cleanupDrag();
 }
 
-/* ─── CLEANUP ─── */
 function cleanupDrag() {
     if (!dragState) return;
-
-    if (dragState.ghost)   dragState.ghost.remove();
+    if (dragState.ghost) dragState.ghost.remove();
     if (dragState.element) dragState.element.classList.remove('dragging');
-    if (dragState.target)  dragState.target.classList.remove('drop-target');
-
+    if (dragState.target) dragState.target.classList.remove('drop-target');
     const trash = document.getElementById('trashZone');
     if (trash) trash.classList.remove('active', 'hot');
-
     document.body.classList.remove('is-dragging');
-
     document.removeEventListener('pointermove', onDragPointerMove);
     document.removeEventListener('pointerup', onDragPointerUp);
     document.removeEventListener('pointercancel', onDragPointerUp);
     document.removeEventListener('keydown', onDragKeyDown);
-
     dragState = null;
 }
 
-/* ─── REORDER — splice + save + render ─── */
 function reorderWidget(fromId, toId) {
     const fromIdx = state.widgets.findIndex(w => w.id === fromId);
-    const toIdx   = state.widgets.findIndex(w => w.id === toId);
+    const toIdx = state.widgets.findIndex(w => w.id === toId);
     if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
-
     const [moved] = state.widgets.splice(fromIdx, 1);
     state.widgets.splice(toIdx, 0, moved);
     saveState();
     renderGrid();
 }
 
-/* ─── Library → Dashboard drop handlers (HTML5 DnD, միայն library-ի համար) ─── */
+/* ─── Library → Dashboard drop ─── */
 function onModuleDragOver(e) {
     if (!draggingFromLibrary) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
     this.classList.add('drop-target');
 }
-
 function onModuleDragLeave(e) {
-    if (!this.contains(e.relatedTarget)) {
-        this.classList.remove('drop-target');
-    }
+    if (!this.contains(e.relatedTarget)) this.classList.remove('drop-target');
 }
-
 function onModuleDrop(e) {
     if (!draggingFromLibrary) return;
     e.preventDefault();
     this.classList.remove('drop-target');
-
     const type = e.dataTransfer.getData('widget-type');
-    if (!type || !WIDGET_REGISTRY[type]) {
-        draggingFromLibrary = false;
-        return;
-    }
-
+    if (!type || !WIDGET_REGISTRY[type]) { draggingFromLibrary = false; return; }
     const targetId = this.dataset.widgetId;
     const toIdx = state.widgets.findIndex(x => x.id === targetId);
     addWidget(type, toIdx);
     draggingFromLibrary = false;
 }
 
+/* ─── Drop zone (grid + empty state) — THIS WAS MISSING ─── */
+function initDashboardDropZone() {
+    const grid = $('#bentoGrid');
+    const emptyState = $('#emptyDashboard');
+    if (!grid) return;
+
+    const onDragOver = (e) => {
+        if (!draggingFromLibrary) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+        if (emptyState) emptyState.classList.add('highlight');
+    };
+    const onDragLeave = (e) => {
+        if (grid.contains(e.relatedTarget)) return;
+        if (emptyState && emptyState.contains(e.relatedTarget)) return;
+        if (emptyState) emptyState.classList.remove('highlight');
+    };
+    const onDrop = (e) => {
+        e.preventDefault();
+        if (emptyState) emptyState.classList.remove('highlight');
+        const type = e.dataTransfer.getData('widget-type');
+        if (!type || !WIDGET_REGISTRY[type]) { draggingFromLibrary = false; return; }
+        addWidget(type);
+        draggingFromLibrary = false;
+    };
+
+    [grid, emptyState].filter(Boolean).forEach(el => {
+        el.addEventListener('dragover', onDragOver);
+        el.addEventListener('dragleave', onDragLeave);
+        el.addEventListener('drop', onDrop);
+    });
+}
+
+/* ─── Trash zone — THIS WAS MISSING ─── */
+function initTrashZone() {
+    const trash = $('#trashZone');
+    if (!trash) return;
+
+    trash.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        trash.classList.add('hot');
+    });
+    trash.addEventListener('dragleave', (e) => {
+        if (!trash.contains(e.relatedTarget)) trash.classList.remove('hot');
+    });
+    trash.addEventListener('drop', (e) => {
+        e.preventDefault();
+        trash.classList.remove('hot');
+        const wid = e.dataTransfer.getData('text/plain');
+        if (wid && state.widgets.find(w => w.id === wid)) removeWidget(wid);
+    });
+}
+
 /* ════════════════════════════════════════════════════════════
    WIDGET RENDERERS
    ════════════════════════════════════════════════════════════ */
 
-/* ─── BTC CHART ─── */
 function renderBTCChartWidget(w) {
-    const cid = 'btcchart_' + w.id;
-    const priceId = 'btcprice_' + w.id;
-    const deltaId = 'btcdelta_' + w.id;
-    const tfId = 'btctf_' + w.id;
-    const ohlcId = 'btcohlc_' + w.id;
-
     return `
         <div class="mod-header">
             <div class="mod-title"><i class="fa-solid fa-chart-line"></i> BTC / USDT · PERP</div>
-            <div class="btc-tf-tabs" id="${tfId}">
+            <div class="btc-tf-tabs" id="btctf_${w.id}">
                 <button class="btc-tf" data-tf="15m">15M</button>
                 <button class="btc-tf active" data-tf="1h">1H</button>
                 <button class="btc-tf" data-tf="4h">4H</button>
@@ -1851,11 +1705,11 @@ function renderBTCChartWidget(w) {
             </div>
         </div>
         <div class="btc-chart-header">
-            <span class="btc-price-big" id="${priceId}">--</span>
-            <span class="btc-delta" id="${deltaId}">--</span>
+            <span class="btc-price-big" id="btcprice_${w.id}">--</span>
+            <span class="btc-delta" id="btcdelta_${w.id}">--</span>
         </div>
-        <div class="btc-chart-wrap" id="${cid}"></div>
-        <div class="btc-ohlc" id="${ohlcId}">
+        <div class="btc-chart-wrap" id="btcchart_${w.id}"></div>
+        <div class="btc-ohlc" id="btcohlc_${w.id}">
             <span>O <b class="o">--</b></span>
             <span>H <b class="h">--</b></span>
             <span>L <b class="l">--</b></span>
@@ -1872,23 +1726,20 @@ function initBTCChartWidget(w, el) {
     let tf = '1h';
     let chart, candleSeries, volSeries;
 
-    function fmtPrice(v) {
+    const fmtPrice = (v) => {
         if (!isFinite(v)) return '--';
         const a = Math.abs(v);
         if (a >= 10000) return v.toLocaleString('en-US', {maximumFractionDigits: 0});
         if (a >= 1000) return v.toFixed(2);
         if (a >= 1) return v.toFixed(3);
         return v.toFixed(6);
-    }
+    };
 
     function buildChart() {
         container.innerHTML = '';
         chart = LightweightCharts.createChart(container, {
             layout: { background: { color: 'transparent' }, textColor: '#666', fontFamily: 'JetBrains Mono' },
-            grid: {
-                vertLines: { color: 'rgba(255,255,255,0.02)' },
-                horzLines: { color: 'rgba(255,255,255,0.02)' }
-            },
+            grid: { vertLines: { color: 'rgba(255,255,255,0.02)' }, horzLines: { color: 'rgba(255,255,255,0.02)' } },
             crosshair: {
                 mode: LightweightCharts.CrosshairMode.Normal,
                 vertLine: { color: 'rgba(0,255,213,0.4)', width: 1, style: 2, labelBackgroundColor: '#00ffd5' },
@@ -1898,17 +1749,8 @@ function initBTCChartWidget(w, el) {
             rightPriceScale: { borderColor: 'rgba(255,255,255,0.05)', scaleMargins: { top: 0.08, bottom: 0.25 } }
         });
 
-        candleSeries = chart.addCandlestickSeries({
-            upColor: '#00ff88', downColor: '#ff2a5f',
-            borderVisible: false,
-            wickUpColor: '#00ff88', wickDownColor: '#ff2a5f'
-        });
-
-        volSeries = chart.addHistogramSeries({
-            color: 'rgba(255,255,255,0.15)',
-            priceFormat: { type: 'volume' },
-            priceScaleId: 'vol'
-        });
+        candleSeries = chart.addCandlestickSeries({ upColor: '#00ff88', downColor: '#ff2a5f', borderVisible: false, wickUpColor: '#00ff88', wickDownColor: '#ff2a5f' });
+        volSeries = chart.addHistogramSeries({ color: 'rgba(255,255,255,0.15)', priceFormat: { type: 'volume' }, priceScaleId: 'vol' });
         chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
 
         chart.subscribeCrosshairMove(param => {
@@ -1934,27 +1776,15 @@ function initBTCChartWidget(w, el) {
                 fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=${tf}&limit=300`).then(r => r.json()),
                 fetch('https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=BTCUSDT').then(r => r.json())
             ]);
-
             if (!Array.isArray(klines) || !klines.length) return;
 
-            const candles = klines.map(k => ({
-                time: k[0]/1000,
-                open: parseFloat(k[1]),
-                high: parseFloat(k[2]),
-                low: parseFloat(k[3]),
-                close: parseFloat(k[4])
-            }));
-            const vols = klines.map(k => ({
-                time: k[0]/1000,
-                value: parseFloat(k[7]),
-                color: parseFloat(k[4]) >= parseFloat(k[1]) ? 'rgba(0,255,136,0.35)' : 'rgba(255,42,95,0.35)'
-            }));
+            const candles = klines.map(k => ({ time: k[0]/1000, open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]) }));
+            const vols = klines.map(k => ({ time: k[0]/1000, value: parseFloat(k[7]), color: parseFloat(k[4]) >= parseFloat(k[1]) ? 'rgba(0,255,136,0.35)' : 'rgba(255,42,95,0.35)' }));
 
             candleSeries.setData(candles);
             volSeries.setData(vols);
             chart.timeScale().fitContent();
 
-            // Update header
             const price = parseFloat(ticker.lastPrice);
             const chg = parseFloat(ticker.priceChangePercent);
             const priceEl = el.querySelector(`#btcprice_${w.id}`);
@@ -1973,7 +1803,6 @@ function initBTCChartWidget(w, el) {
     buildChart();
     loadData();
 
-    // TF buttons
     el.querySelectorAll(`#btctf_${w.id} .btc-tf`).forEach(btn => {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -1984,25 +1813,15 @@ function initBTCChartWidget(w, el) {
         });
     });
 
-    // Resize
     const ro = new ResizeObserver(() => {
-        if (chart && container.clientWidth > 0) {
-            chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
-        }
+        if (chart && container.clientWidth > 0) chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
     });
     ro.observe(container);
 
-    // Refresh every 30s
     const refreshInt = setInterval(loadData, 30000);
-
-    widgetCleanup[w.id] = () => {
-        clearInterval(refreshInt);
-        ro.disconnect();
-        try { chart.remove(); } catch(e) {}
-    };
+    widgetCleanup[w.id] = () => { clearInterval(refreshInt); ro.disconnect(); try { chart.remove(); } catch(e) {} };
 }
 
-/* ─── LIQUIDATIONS ─── */
 function renderLiquidationsWidget(w) {
     return `
         <div class="mod-header">
@@ -2024,22 +1843,12 @@ function initLiquidationsWidget(w, el) {
     const items = [];
     const maxItems = 40;
 
-    function fmtUSD(v) {
-        if (v >= 1e6) return '$' + (v/1e6).toFixed(2) + 'M';
-        if (v >= 1e3) return '$' + (v/1e3).toFixed(0) + 'K';
-        return '$' + v.toFixed(0);
-    }
-
-    function fmtPrice(v) {
-        if (v >= 1000) return v.toFixed(1);
-        if (v >= 1) return v.toFixed(3);
-        return v.toFixed(5);
-    }
+    const fmtUSD = (v) => v >= 1e6 ? '$' + (v/1e6).toFixed(2) + 'M' : v >= 1e3 ? '$' + (v/1e3).toFixed(0) + 'K' : '$' + v.toFixed(0);
+    const fmtPrice = (v) => v >= 1000 ? v.toFixed(1) : v >= 1 ? v.toFixed(3) : v.toFixed(5);
 
     function addLiq({ symbol, side, price, usd, ts }) {
         count++;
         counter.textContent = count;
-
         const isLong = side === 'LONG';
         const item = { symbol, side, price, usd, ts: ts || Date.now() };
         items.unshift(item);
@@ -2058,8 +1867,7 @@ function initLiquidationsWidget(w, el) {
                     <div class="liq-side ${sideClass}">${sideLabel} · $${fmtPrice(price)}</div>
                 </div>
                 <div class="liq-amt ${big ? 'big' : ''}">${fmtUSD(usd)}</div>
-            </div>
-        `;
+            </div>`;
 
         if (items.length === 1) feed.innerHTML = html;
         else {
@@ -2069,9 +1877,7 @@ function initLiquidationsWidget(w, el) {
         }
     }
 
-    let ws = null;
-    let reconnectTimeout = null;
-    let alive = true;
+    let ws = null, reconnectTimeout = null, alive = true;
 
     function connect() {
         if (!alive) return;
@@ -2083,31 +1889,19 @@ function initLiquidationsWidget(w, el) {
                     const o = d.o;
                     if (!o || !o.s || !o.s.endsWith('USDT')) return;
                     const usd = parseFloat(o.q) * parseFloat(o.p);
-                    if (usd < 100000) return; // min 100k
+                    if (usd < 100000) return;
                     const side = o.S === 'SELL' ? 'LONG' : 'SHORT';
                     addLiq({ symbol: o.s, side, price: parseFloat(o.p), usd, ts: o.T });
                 } catch(e) {}
             };
             ws.onerror = () => {};
-            ws.onclose = () => {
-                if (!alive) return;
-                reconnectTimeout = setTimeout(connect, 3000);
-            };
-        } catch(e) {
-            reconnectTimeout = setTimeout(connect, 3000);
-        }
+            ws.onclose = () => { if (alive) reconnectTimeout = setTimeout(connect, 3000); };
+        } catch(e) { reconnectTimeout = setTimeout(connect, 3000); }
     }
-
     connect();
-
-    widgetCleanup[w.id] = () => {
-        alive = false;
-        if (reconnectTimeout) clearTimeout(reconnectTimeout);
-        if (ws) { try { ws.close(); } catch(e) {} }
-    };
+    widgetCleanup[w.id] = () => { alive = false; if (reconnectTimeout) clearTimeout(reconnectTimeout); if (ws) { try { ws.close(); } catch(e) {} } };
 }
 
-/* ─── SCREENER ─── */
 function renderScreenerWidget(w) {
     return `
         <div class="mod-header">
@@ -2147,25 +1941,10 @@ function initScreenerWidget(w, el) {
     const search = el.querySelector(`#scrsearch_${w.id}`);
     if (!tbody) return;
 
-    let tickers = [];
-    let funding = {};
-    let mode = 'volume';
-    let query = '';
-    let sortCol = null;
-    let sortDir = 'desc';
+    let tickers = [], funding = {}, mode = 'volume', query = '';
 
-    function fmtUSD(v) {
-        if (v >= 1e9) return '$' + (v/1e9).toFixed(1) + 'B';
-        if (v >= 1e6) return '$' + (v/1e6).toFixed(1) + 'M';
-        if (v >= 1e3) return '$' + (v/1e3).toFixed(0) + 'K';
-        return '$' + v.toFixed(0);
-    }
-    function fmtPrice(v) {
-        if (v >= 1000) return v.toFixed(1);
-        if (v >= 100) return v.toFixed(2);
-        if (v >= 1) return v.toFixed(3);
-        return v.toFixed(5);
-    }
+    const fmtUSD = (v) => v >= 1e9 ? '$' + (v/1e9).toFixed(1) + 'B' : v >= 1e6 ? '$' + (v/1e6).toFixed(1) + 'M' : v >= 1e3 ? '$' + (v/1e3).toFixed(0) + 'K' : '$' + v.toFixed(0);
+    const fmtPrice = (v) => v >= 1000 ? v.toFixed(1) : v >= 100 ? v.toFixed(2) : v >= 1 ? v.toFixed(3) : v.toFixed(5);
 
     async function fetchAll() {
         try {
@@ -2173,126 +1952,68 @@ function initScreenerWidget(w, el) {
                 fetch('https://fapi.binance.com/fapi/v1/ticker/24hr').then(r => r.json()),
                 fetch('https://fapi.binance.com/fapi/v1/premiumIndex').then(r => r.json())
             ]);
-
-            tickers = t
-                .filter(x => x.symbol.endsWith('USDT') && !x.symbol.includes('_'))
-                .map(x => ({
-                    symbol: x.symbol,
-                    base: x.symbol.replace('USDT',''),
-                    price: parseFloat(x.lastPrice),
-                    change: parseFloat(x.priceChangePercent),
-                    volume: parseFloat(x.quoteVolume)
-                }))
-                .filter(x => x.price > 0 && isFinite(x.volume));
-
+            tickers = t.filter(x => x.symbol.endsWith('USDT') && !x.symbol.includes('_')).map(x => ({
+                symbol: x.symbol, base: x.symbol.replace('USDT',''),
+                price: parseFloat(x.lastPrice), change: parseFloat(x.priceChangePercent), volume: parseFloat(x.quoteVolume)
+            })).filter(x => x.price > 0 && isFinite(x.volume));
             funding = {};
             f.forEach(x => { funding[x.symbol] = parseFloat(x.lastFundingRate) * 100; });
-
             render();
         } catch(e) { console.warn('Screener fetch', e); }
     }
 
     function render() {
         let list = [...tickers];
-
-        if (query) {
-            const q = query.toUpperCase();
-            list = list.filter(x => x.base.includes(q));
-        }
-
-        // Mode filter
+        if (query) list = list.filter(x => x.base.includes(query.toUpperCase()));
         if (mode === 'gainers') list.sort((a,b) => b.change - a.change);
         else if (mode === 'losers') list.sort((a,b) => a.change - b.change);
         else if (mode === 'volume') list.sort((a,b) => b.volume - a.volume);
-        else if (mode === 'volatile') {
-            list = list.filter(x => x.volume > 5e6);
-            list.sort((a,b) => Math.abs(b.change) - Math.abs(a.change));
-        }
-        else if (mode === 'funding_pos') {
-            list = list.filter(x => funding[x.symbol] != null);
-            list.sort((a,b) => (funding[b.symbol]||0) - (funding[a.symbol]||0));
-        }
-        else if (mode === 'funding_neg') {
-            list = list.filter(x => funding[x.symbol] != null);
-            list.sort((a,b) => (funding[a.symbol]||0) - (funding[b.symbol]||0));
-        }
-
-        // Manual sort override
-        if (sortCol) {
-            const dir = sortDir === 'desc' ? -1 : 1;
-            list.sort((a,b) => {
-                const av = a[sortCol] ?? funding[a.symbol] ?? 0;
-                const bv = b[sortCol] ?? funding[b.symbol] ?? 0;
-                return (av - bv) * dir;
-            });
-        }
+        else if (mode === 'volatile') { list = list.filter(x => x.volume > 5e6); list.sort((a,b) => Math.abs(b.change) - Math.abs(a.change)); }
+        else if (mode === 'funding_pos') { list = list.filter(x => funding[x.symbol] != null); list.sort((a,b) => (funding[b.symbol]||0) - (funding[a.symbol]||0)); }
+        else if (mode === 'funding_neg') { list = list.filter(x => funding[x.symbol] != null); list.sort((a,b) => (funding[a.symbol]||0) - (funding[b.symbol]||0)); }
 
         list = list.slice(0, 50);
         if (countEl) countEl.textContent = list.length + ' pairs';
 
         tbody.innerHTML = list.map((t, i) => `
-            <tr onclick="window.open('https://t1prime.com/?sym=${t.base}','_blank')">
+            <tr data-sym="${t.base}">
                 <td class="scr-rank">${i+1}</td>
                 <td><span class="scr-sym">${t.base}</span></td>
                 <td class="num">$${fmtPrice(t.price)}</td>
-                <td class="num ${t.change >= 0 ? 'pos' : 'neg'}" style="font-weight:700;">
-                    ${t.change >= 0 ? '+' : ''}${t.change.toFixed(2)}%
-                </td>
+                <td class="num ${t.change >= 0 ? 'pos' : 'neg'}" style="font-weight:700;">${t.change >= 0 ? '+' : ''}${t.change.toFixed(2)}%</td>
                 <td class="num" style="color:var(--text-hover);">${fmtUSD(t.volume)}</td>
-                <td class="num" style="color:${funding[t.symbol] == null ? 'var(--text-muted)' : (funding[t.symbol] >= 0 ? 'var(--green)' : 'var(--red)')}; font-weight:600;">
-                    ${funding[t.symbol] == null ? '--' : (funding[t.symbol] >= 0 ? '+' : '') + funding[t.symbol].toFixed(4) + '%'}
-                </td>
-            </tr>
-        `).join('');
+                <td class="num" style="color:${funding[t.symbol] == null ? 'var(--text-muted)' : (funding[t.symbol] >= 0 ? 'var(--green)' : 'var(--red)')}; font-weight:600;">${funding[t.symbol] == null ? '--' : (funding[t.symbol] >= 0 ? '+' : '') + funding[t.symbol].toFixed(4) + '%'}</td>
+            </tr>`).join('');
+
+        tbody.querySelectorAll('tr').forEach(tr => {
+            tr.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.open(`https://t1prime.com/?sym=${tr.dataset.sym}`, '_blank');
+            });
+        });
     }
 
-    // Tabs
     el.querySelectorAll(`#scrtabs_${w.id} .scr-tab`).forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             el.querySelectorAll(`#scrtabs_${w.id} .scr-tab`).forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             mode = btn.dataset.scr;
-            sortCol = null;
             render();
         });
     });
 
-    // Search
     if (search) {
-        search.addEventListener('input', (e) => {
-            query = e.target.value.trim();
-            render();
-        });
+        search.addEventListener('input', (e) => { query = e.target.value.trim(); render(); });
         search.addEventListener('click', e => e.stopPropagation());
     }
 
-    // Column sort
-    el.querySelectorAll(`#scrtabs_${w.id}`).forEach(() => {}); // placeholder
-    el.querySelectorAll('.scr-table th.num').forEach((th, idx) => {
-        th.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const cols = [null, null, 'price', 'change', 'volume', 'funding'];
-            const col = cols[idx + 1];
-            if (!col) return;
-            if (sortCol === col) sortDir = sortDir === 'desc' ? 'asc' : 'desc';
-            else { sortCol = col; sortDir = 'desc'; }
-            render();
-        });
-    });
-
-    // Stop propagation on table clicks
     el.querySelector('.scr-table-wrap').addEventListener('click', e => e.stopPropagation());
-
     fetchAll();
-
-    // Refresh every 45s
     const refreshInt = setInterval(fetchAll, 45000);
-
     widgetCleanup[w.id] = () => clearInterval(refreshInt);
 }
 
-/* ─── SIGNALS ─── */
 function renderSignalsWidget() {
     return `
         <div class="mod-header">
@@ -2300,79 +2021,53 @@ function renderSignalsWidget() {
             <span style="font-size:0.6rem; color:var(--accent); background:var(--accent-dim); padding:3px 9px; border-radius:10px; font-weight:700; letter-spacing:1px;">PRO</span>
         </div>
         <div style="flex:1; overflow:hidden; font-family: var(--font-mono); font-size:0.72rem; line-height:1.9;">
-            <div class="intel-line"><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">ALERT</span>BTC/USDT: OI Spike + Liq Cluster $68,200</div>
-            <div class="intel-line" style="color:var(--gold);"><span style="background:rgba(255,204,0,0.1);color:#ffcc00;padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">INSIGHT</span>Tether Supply: +1B USD minted</div>
-            <div class="intel-line"><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">SIGNAL</span>ETH/USDT: Whale Buy $20M at $3,500</div>
-            <div class="intel-line"><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">ALERT</span>SOL/USDT: Breakout above $145</div>
-        </div>
-    `;
+            <div><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">ALERT</span>BTC/USDT: OI Spike + Liq Cluster $68,200</div>
+            <div style="color:var(--gold);"><span style="background:rgba(255,204,0,0.1);color:#ffcc00;padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">INSIGHT</span>Tether Supply: +1B USD minted</div>
+            <div><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">SIGNAL</span>ETH/USDT: Whale Buy $20M at $3,500</div>
+            <div><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">ALERT</span>SOL/USDT: Breakout above $145</div>
+        </div>`;
 }
 
-/* ─── TERMINAL ─── */
 function renderTerminalWidget() {
     return `
-        <div class="mod-header">
-            <div class="mod-title"><i class="fa-solid fa-chart-candlestick"></i> Pro Terminal</div>
-        </div>
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-chart-candlestick"></i> Pro Terminal</div></div>
         <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; border: 1px solid var(--border-thin); font-family: var(--font-mono); font-size: 0.78rem;">
-            <div style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px solid var(--border-thin);">
-                <span style="color:var(--text-muted);">Current Repo:</span><span style="color:var(--accent); font-weight:700;">$1,400.00</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px solid var(--border-thin);">
-                <span style="color:var(--text-muted);">Avg Price:</span><span style="font-weight:700;">$64,250.00</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px solid var(--border-thin);">
-                <span style="color:var(--text-muted);">Next Dobor:</span><span style="color:var(--gold); font-weight:700;">$57,825.00</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; padding: 6px 0;">
-                <span style="color:var(--text-muted);">Total Position:</span><span style="color:var(--green); font-weight:700;">+ $12,450</span>
-            </div>
-        </div>
-    `;
+            <div style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px solid var(--border-thin);"><span style="color:var(--text-muted);">Current Repo:</span><span style="color:var(--accent); font-weight:700;">$1,400.00</span></div>
+            <div style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px solid var(--border-thin);"><span style="color:var(--text-muted);">Avg Price:</span><span style="font-weight:700;">$64,250.00</span></div>
+            <div style="display:flex; justify-content:space-between; padding: 6px 0;"><span style="color:var(--text-muted);">Total Position:</span><span style="color:var(--green); font-weight:700;">+ $12,450</span></div>
+        </div>`;
 }
 
-/* ─── HEATMAP ─── */
 function renderHeatmapWidget() {
     let cells = '';
     const seed = Math.random();
     for (let i = 0; i < 182; i++) {
         const r = Math.abs((Math.sin(i * 12.9898 + seed * 78.233) * 43758.5453) % 1);
-        let lvl = '';
-        if (r > 0.85) lvl = 'lvl-3';
-        else if (r > 0.65) lvl = 'lvl-2';
-        else if (r > 0.45) lvl = 'lvl-1';
-        const bg = lvl === 'lvl-3' ? 'var(--accent)' :
-                   lvl === 'lvl-2' ? 'rgba(0,255,213,0.55)' :
-                   lvl === 'lvl-1' ? 'rgba(0,255,213,0.25)' : 'rgba(255,255,255,0.05)';
-        cells += `<div style="width:100%; aspect-ratio:1; background:${bg}; border-radius:2px;${lvl==='lvl-3'?'box-shadow:0 0 5px var(--accent);':''}"></div>`;
+        let bg = 'rgba(255,255,255,0.05)', glow = '';
+        if (r > 0.85) { bg = 'var(--accent)'; glow = 'box-shadow:0 0 5px var(--accent);'; }
+        else if (r > 0.65) bg = 'rgba(0,255,213,0.55)';
+        else if (r > 0.45) bg = 'rgba(0,255,213,0.25)';
+        cells += `<div style="width:100%; aspect-ratio:1; background:${bg}; border-radius:2px;${glow}"></div>`;
     }
     return `
         <div class="mod-header">
             <div class="mod-title"><i class="fa-solid fa-fire"></i> 365 Consistency Matrix</div>
             <span style="font-size:0.75rem; color:var(--accent); font-weight:700; font-family:var(--font-mono);">DAY 114/365</span>
         </div>
-        <div style="display:grid; grid-template-columns: repeat(26, 1fr); gap:3px; margin-top:6px; flex:1; align-content:start;">${cells}</div>
-    `;
+        <div style="display:grid; grid-template-columns: repeat(26, 1fr); gap:3px; margin-top:6px; flex:1; align-content:start;">${cells}</div>`;
 }
 
-/* ─── GOALS ─── */
 function renderGoalsWidget() {
     return `
-        <div class="mod-header">
-            <div class="mod-title"><i class="fa-solid fa-bullseye"></i> Active Goals</div>
-        </div>
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-bullseye"></i> Active Goals</div></div>
         <div class="goal-row"><span>14/90 Affiliate Challenge</span><span class="goal-status">Day 12</span></div>
         <div class="goal-row"><span>DCA Grid Deployment</span><span style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem;">Pending</span></div>
-        <div class="goal-row"><span>Deep Work Protocol</span><span style="font-family: var(--font-mono); font-size: 0.75rem;">4/5</span></div>
-    `;
+        <div class="goal-row"><span>Deep Work Protocol</span><span style="font-family: var(--font-mono); font-size: 0.75rem;">4/5</span></div>`;
 }
 
-/* ─── BIOHACKING ─── */
 function renderBiohackingWidget() {
     return `
-        <div class="mod-header">
-            <div class="mod-title"><i class="fa-solid fa-dna"></i> Bio-Sync Stack</div>
-        </div>
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-dna"></i> Bio-Sync Stack</div></div>
         <div style="margin-bottom: 15px;">
             <span class="supp-tag active">L-Theanine 200mg</span>
             <span class="supp-tag active">Caffeine 100mg</span>
@@ -2380,11 +2075,9 @@ function renderBiohackingWidget() {
         </div>
         <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px; margin-top: auto;">
             <i class="fa-solid fa-circle-check" style="color: var(--accent);"></i> Protocol Initialized
-        </div>
-    `;
+        </div>`;
 }
 
-/* ─── TASKS ─── */
 function renderTasksWidget() {
     const tasks = [
         { time: '09:00', text: 'Morning stack', done: true },
@@ -2395,40 +2088,30 @@ function renderTasksWidget() {
     ];
     return `
         <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-list-check"></i> Today</div></div>
-        <div>
-            ${tasks.map(t => `
-                <div class="list-item">
-                    <span class="task-time">${t.time}</span>
-                    <div class="check-box ${t.done ? 'done' : ''}"><i class="fa-solid fa-check"></i></div>
-                    <div class="item-text ${t.done ? 'done' : ''}">${t.text}</div>
-                </div>
-            `).join('')}
-        </div>
-    `;
+        <div>${tasks.map(t => `
+            <div class="list-item">
+                <span class="task-time">${t.time}</span>
+                <div class="check-box ${t.done ? 'done' : ''}"><i class="fa-solid fa-check"></i></div>
+                <div class="item-text ${t.done ? 'done' : ''}">${t.text}</div>
+            </div>`).join('')}
+        </div>`;
 }
 
-/* ─── PROGRESS ─── */
 function renderProgressWidget() {
     const items = [
-        { label: 'Biohacking', pct: 78 },
-        { label: 'Trading', pct: 45 },
-        { label: 'Content', pct: 92 },
-        { label: 'Learning', pct: 60 }
+        { label: 'Biohacking', pct: 78 }, { label: 'Trading', pct: 45 },
+        { label: 'Content', pct: 92 }, { label: 'Learning', pct: 60 }
     ];
     return `
         <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-chart-simple"></i> Weekly Progress</div></div>
-        <div>
-            ${items.map(x => `
-                <div class="progress-bar-wrap">
-                    <div class="progress-bar-label"><span>${x.label}</span><span style="font-family:var(--font-mono);">${x.pct}%</span></div>
-                    <div class="progress-bar"><div class="progress-bar-fill" style="width:${x.pct}%"></div></div>
-                </div>
-            `).join('')}
-        </div>
-    `;
+        <div>${items.map(x => `
+            <div class="progress-bar-wrap">
+                <div class="progress-bar-label"><span>${x.label}</span><span style="font-family:var(--font-mono);">${x.pct}%</span></div>
+                <div class="progress-bar"><div class="progress-bar-fill" style="width:${x.pct}%"></div></div>
+            </div>`).join('')}
+        </div>`;
 }
 
-/* ─── CLOCK ─── */
 function renderClockWidget() {
     return `
         <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-clock"></i> Clock</div></div>
@@ -2436,11 +2119,9 @@ function renderClockWidget() {
             <div class="clock-time" id="clock-time">--:--</div>
             <div class="clock-date" id="clock-date">---</div>
             <div class="clock-tz" id="clock-tz">--</div>
-        </div>
-    `;
+        </div>`;
 }
 
-/* ─── QUOTE ─── */
 const QUOTES = [
     { text: "Money doesn't sleep. If your money isn't working while you sleep, you'll work until you die.", author: 'Grindarm' },
     { text: "You're not lazy. You just don't have a goal that wakes you up without an alarm.", author: 'Grindarm' },
@@ -2457,20 +2138,16 @@ function renderQuoteWidget() {
             <div class="quote-mark">"</div>
             <div class="quote-widget-text">${q.text}</div>
             <div class="quote-widget-author">— ${q.author}</div>
-        </div>
-    `;
+        </div>`;
 }
 
-/* ─── NOTES ─── */
 function renderNotesWidget() {
     const saved = localStorage.getItem(NOTES_KEY) || '';
     return `
         <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-note-sticky"></i> Notes</div></div>
-        <textarea class="notes-area" id="notesArea" placeholder="Type anything...">${saved}</textarea>
-    `;
+        <textarea class="notes-area" id="notesArea" placeholder="Type anything...">${saved}</textarea>`;
 }
 
-/* ─── RADIO ─── */
 function renderRadioWidget() {
     return `
         <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-radio"></i> Deep Work Radio</div></div>
@@ -2480,11 +2157,9 @@ function renderRadioWidget() {
                 <div style="font-weight:600; color:var(--text-main);">Phonk Focus</div>
                 <div class="live">● LIVE STREAM</div>
             </div>
-        </div>
-    `;
+        </div>`;
 }
 
-/* ─── COMMUNITY ─── */
 function renderCommunityWidget() {
     const feed = [
         { user: '0x23...4f', text: 'Closed 3rd week of stack', time: '2m' },
@@ -2505,36 +2180,23 @@ function renderCommunityWidget() {
                         <span style="color:var(--text-muted); font-size:9px; margin-left:auto; opacity:0.6;">${f.time}</span>
                     </div>
                     <div class="feed-text">${f.text}</div>
-                </div>
-            `).join('')}
-        </div>
-    `;
+                </div>`).join('')}
+        </div>`;
 }
 
-/* ─── AFFILIATE ─── */
 function renderAffiliateWidget() {
     return `
         <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-share-nodes"></i> Affiliate</div></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
-            <div>
-                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; font-weight:600;">Referrals</div>
-                <div class="affiliate-stat">47</div>
-            </div>
-            <div>
-                <div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; font-weight:600;">Earned</div>
-                <div class="affiliate-stat green">$892</div>
-            </div>
+            <div><div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; font-weight:600;">Referrals</div><div class="affiliate-stat">47</div></div>
+            <div><div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; font-weight:600;">Earned</div><div class="affiliate-stat green">$892</div></div>
         </div>
         <div style="padding:10px; background:rgba(0,0,0,0.35); border-radius:8px; font-family:var(--font-mono); font-size:0.65rem; color:var(--text-hover); margin-bottom:10px; word-break:break-all;">
             grind.os/r/GRIND-A7X9K2
-        </div>
-        <button style="width:100%; padding:9px; background:var(--accent-dim); color:var(--accent); border:1px solid var(--border-thin); border-radius:8px; font-weight:700; font-size:0.65rem; cursor:pointer; letter-spacing:1.5px; font-family:var(--font-ui);">COPY LINK</button>
-    `;
+        </div>`;
 }
 
-/* ════════════════════════════════════════════════════════════
-   WIDGET BEHAVIOURS
-   ════════════════════════════════════════════════════════════ */
+/* ─── WIDGET BEHAVIOURS ─── */
 function initWidgetBehaviors() {
     const notes = $('#notesArea');
     if (notes) notes.addEventListener('input', () => localStorage.setItem(NOTES_KEY, notes.value));
@@ -2549,10 +2211,7 @@ function initWidgetBehaviors() {
     });
 
     $$('.supp-tag').forEach(tag => {
-        tag.addEventListener('click', (e) => {
-            e.stopPropagation();
-            tag.classList.toggle('active');
-        });
+        tag.addEventListener('click', (e) => { e.stopPropagation(); tag.classList.toggle('active'); });
     });
 
     const playBtn = $('#radioPlayBtn');
@@ -2566,11 +2225,9 @@ function initWidgetBehaviors() {
             toast(isPlaying ? 'Radio paused' : '▶ Now playing: Phonk Focus');
         });
     }
-
     updateClock();
 }
 
-/* ─── CLOCK ─── */
 function updateClock() {
     const el = $('#clock-time');
     if (!el) return;
@@ -2588,6 +2245,7 @@ setInterval(updateClock, 1000);
    ════════════════════════════════════════════════════════════ */
 function renderLibrary() {
     const body = $('#libraryBody');
+    if (!body) return;
     body.innerHTML = '';
 
     CATEGORIES.forEach(cat => {
@@ -2603,15 +2261,10 @@ function renderLibrary() {
                     <div class="library-item" draggable="true" data-widget-type="${w.id}">
                         <span class="add-hint">DRAG</span>
                         <div class="library-item-icon"><i class="fa-solid ${w.icon}"></i></div>
-                        <div class="library-item-name">
-                            ${w.name}
-                            ${w.premium ? '<span class="pro-tag">PRO</span>' : ''}
-                        </div>
+                        <div class="library-item-name">${w.name}${w.premium ? '<span class="pro-tag">PRO</span>' : ''}</div>
                         <div class="library-item-desc">${w.desc}</div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
+                    </div>`).join('')}
+            </div>`;
         body.appendChild(catEl);
     });
 
@@ -2628,11 +2281,11 @@ function onLibraryDragStart(e) {
     e.dataTransfer.setData('widget-type', this.dataset.widgetType);
     this.classList.add('dragging');
 }
-
-function onLibraryDragEnd(e) {
+function onLibraryDragEnd() {
     this.classList.remove('dragging');
     draggingFromLibrary = false;
-    $('#emptyDashboard').classList.remove('highlight');
+    const ed = $('#emptyDashboard');
+    if (ed) ed.classList.remove('highlight');
 }
 
 function openLibrary() {
@@ -2640,16 +2293,16 @@ function openLibrary() {
     $('#libraryOverlay').classList.add('open');
     $('#btnLibrary').classList.add('active');
 }
-
 function closeLibrary() {
     $('#widgetLibrary').classList.remove('open');
     $('#libraryOverlay').classList.remove('open');
     $('#btnLibrary').classList.remove('active');
-    $('#emptyDashboard').classList.remove('highlight');
+    const ed = $('#emptyDashboard');
+    if (ed) ed.classList.remove('highlight');
 }
 
 /* ════════════════════════════════════════════════════════════
-   IFRAME VIEW (sidebar modules)
+   IFRAME VIEW
    ════════════════════════════════════════════════════════════ */
 function openIframeView(url, title) {
     const view = $('#iframeView');
@@ -2661,26 +2314,31 @@ function openIframeView(url, title) {
 
     if (!view || !dash || !iframe) return;
 
-    // Hide dashboard, show iframe view
     dash.classList.add('hidden');
     view.classList.add('active');
-
-    // Show back button in topbar
     if (backBtn) backBtn.classList.remove('hidden');
-
-    // Hide lang selector to keep topbar clean (optional)
     if (langBox) langBox.style.display = 'none';
 
-    // Load iframe
     if (loader) loader.classList.remove('hidden');
+    // Inject wallet state via URL hash
+const wallet = localStorage.getItem('t1prime_wallet');
+if (wallet) {
+    try {
+        const data = JSON.parse(wallet);
+        const sep = url.includes('?') ? '&' : '?';
+        url += `${sep}wallet=${data.address}&chain=${data.chainId}`;
+    } catch(e) {}
+}
     iframe.src = url;
     iframe.onload = () => { if (loader) loader.classList.add('hidden'); };
 
-    // Update browser title (nice touch)
     document.title = `T1PRIME · ${title || 'Module'}`;
 
-    // Clear active nav highlight
-    $$('.nav-item').forEach(x => x.classList.remove('active'));
+    // Mobile → auto-close sidebar
+    if (window.innerWidth <= 768) {
+        const sb = $('#sidebar');
+        if (sb) sb.classList.add('collapsed');
+    }
 }
 
 function closeIframeView() {
@@ -2694,83 +2352,253 @@ function closeIframeView() {
     if (dash) dash.classList.remove('hidden');
     if (backBtn) backBtn.classList.add('hidden');
     if (langBox) langBox.style.display = '';
-
-    // Unload iframe (stop background activity)
     if (iframe) iframe.src = 'about:blank';
-
-    // Restore title
     document.title = 'GRIND // OS';
-
-    // Highlight Dashboard nav item
-    const firstNav = document.querySelector('.nav-item');
-    if (firstNav) firstNav.classList.add('active');
 }
 
 /* ════════════════════════════════════════════════════════════
-   WALLET CONNECT (MetaMask / Web3)
+   SIDEBAR · NAV + SUBMENU BEHAVIOR
    ════════════════════════════════════════════════════════════ */
+function toggleSidebar() {
+    const sb = $('#sidebar');
+    if (!sb) return;
+    sb.classList.toggle('collapsed');
+    closeWalletMenu();
+}
+
+/* ─── Nav click — handle both submenu items and normal navigation ─── */
+function onNavClick(e, key) {
+    e.stopPropagation();
+
+    const item = e.currentTarget;
+    const sidebar = $('#sidebar');
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    const subId = item.dataset.sub;
+    const href = item.dataset.href;
+    const nav = item.dataset.nav;
+
+    // Clear all active states
+    $$('.nav-item, .sub-item').forEach(x => x.classList.remove('active'));
+
+    // CASE 1: Has submenu
+    if (subId) {
+        item.classList.add('active');
+
+        if (isCollapsed) {
+            // 1. Expand sidebar
+            sidebar.classList.remove('collapsed');
+
+            // 2. Close other submenus
+            $$('.sub-menu').forEach(m => {
+                if (m.id !== subId) {
+                    m.classList.remove('open');
+                    const parent = m.previousElementSibling;
+                    if (parent && parent.classList.contains('nav-item')) parent.classList.remove('open');
+                }
+            });
+
+            // 3. Open this submenu AFTER expansion animation
+            const sub = document.getElementById(subId);
+            if (sub) {
+                setTimeout(() => {
+                    sub.classList.add('open');
+                    item.classList.add('open');
+                }, 200);
+            }
+            return;
+        }
+
+        // Already expanded → just toggle
+        const sub = document.getElementById(subId);
+        if (sub) {
+            const wasOpen = sub.classList.contains('open');
+
+            // Close other submenus
+            $$('.sub-menu').forEach(m => {
+                if (m.id !== subId) {
+                    m.classList.remove('open');
+                    const parent = m.previousElementSibling;
+                    if (parent && parent.classList.contains('nav-item')) parent.classList.remove('open');
+                }
+            });
+
+            sub.classList.toggle('open');
+            item.classList.toggle('open');
+        }
+        return;
+    }
+
+    // CASE 2: Normal nav item
+    item.classList.add('active');
+
+    if (href) {
+        openIframeView(href, nav || 'Module');
+    } else if (nav === 'dashboard') {
+        closeIframeView();
+    }
+}
+
+/* ─── Sub-item click ─── */
+function onSubClick(e) {
+    e.stopPropagation();
+    const item = e.currentTarget;
+    const href = item.dataset.href;
+
+    $$('.nav-item, .sub-item').forEach(x => x.classList.remove('active'));
+    item.classList.add('active');
+
+    // Keep parent highlighted
+    const sub = item.closest('.sub-menu');
+    if (sub) {
+        const parent = sub.previousElementSibling;
+        if (parent && parent.classList.contains('nav-item')) parent.classList.add('active');
+    }
+
+    if (href) openIframeView(href, item.textContent.trim());
+
+    // Mobile → close sidebar
+    if (window.innerWidth <= 768) {
+        const sb = $('#sidebar');
+        if (sb) sb.classList.add('collapsed');
+    }
+}
+
+/* ════════════════════════════════════════════════════════════
+   WALLET — PROPER LOGIN/LOGOUT
+   ════════════════════════════════════════════════════════════ */
+function onWalletClick(e) {
+    e.stopPropagation();
+
+    // If not connected → connect
+    if (!state.wallet) {
+        connectWallet();
+        return;
+    }
+
+    // If connected → toggle dropdown
+    toggleWalletMenu();
+}
+
+function toggleWalletMenu() {
+    const menu = $('#walletMenu');
+    const btn = $('#walletBtn');
+    if (!menu || !btn) return;
+    const isOpen = menu.classList.contains('open');
+    if (isOpen) closeWalletMenu();
+    else {
+        menu.classList.add('open');
+        btn.classList.add('open');
+    }
+}
+
+function closeWalletMenu() {
+    const menu = $('#walletMenu');
+    const btn = $('#walletBtn');
+    if (menu) menu.classList.remove('open');
+    if (btn) btn.classList.remove('open');
+}
+
 async function connectWallet() {
     const btn = $('#walletBtn');
     const txt = $('#walletText');
+    if (state.connecting) return;
 
-    // Already connected → disconnect
-    if (state.wallet) {
-        state.wallet = null;
-        localStorage.removeItem(WALLET_KEY);
-        btn.classList.remove('connected');
-        txt.textContent = 'Connect Wallet';
-        toast('Wallet disconnected');
-        return;
-    }
-
-    // Check MetaMask
     if (typeof window.ethereum === 'undefined') {
-        toast('MetaMask not detected. Install it first.');
-        window.open('https://metamask.io/download/', '_blank');
+        toast('MetaMask not detected · Install to connect');
+        setTimeout(() => window.open('https://metamask.io/download/', '_blank'), 800);
         return;
     }
+
+    state.connecting = true;
+    if (txt) txt.textContent = 'Connecting...';
 
     try {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (!accounts || !accounts.length) return;
+        if (!accounts || !accounts.length) { resetWalletUI(); return; }
 
         const addr = accounts[0];
         state.wallet = addr;
         localStorage.setItem(WALLET_KEY, addr);
+        applyWalletUI(addr);
+        toast('✓ Connected: ' + shortAddr(addr));
 
-        const short = addr.slice(0, 6) + '...' + addr.slice(-4);
-        btn.classList.add('connected');
-        txt.textContent = short;
-        toast('✓ Wallet connected: ' + short);
-
-        // Listen for chain/account changes
-        window.ethereum.on('accountsChanged', (accs) => {
-            if (!accs.length) {
-                state.wallet = null;
-                localStorage.removeItem(WALLET_KEY);
-                btn.classList.remove('connected');
-                txt.textContent = 'Connect Wallet';
-            } else {
-                state.wallet = accs[0];
-                localStorage.setItem(WALLET_KEY, accs[0]);
-                txt.textContent = accs[0].slice(0, 6) + '...' + accs[0].slice(-4);
-            }
-        });
-    } catch (e) {
-        console.warn('Wallet error:', e);
-        if (e.code === 4001) toast('Connection rejected');
+        if (window.ethereum.on) {
+            window.ethereum.on('accountsChanged', (accs) => {
+                if (!accs.length) disconnectWallet();
+                else {
+                    state.wallet = accs[0];
+                    localStorage.setItem(WALLET_KEY, accs[0]);
+                    applyWalletUI(accs[0]);
+                }
+            });
+            window.ethereum.on('chainChanged', () => window.location.reload());
+        }
+    } catch (err) {
+        if (err.code === 4001) toast('Connection rejected');
         else toast('Wallet connection failed');
+        resetWalletUI();
+    } finally {
+        state.connecting = false;
     }
+}
+
+function disconnectWallet() {
+    state.wallet = null;
+    localStorage.removeItem(WALLET_KEY);
+    resetWalletUI();
+    closeWalletMenu();
+    toast('Disconnected');
+}
+
+function resetWalletUI() {
+    const btn = $('#walletBtn');
+    const txt = $('#walletText');
+    const icon = $('#walletIcon');
+    const chevron = $('#walletChevron');
+    if (btn) btn.classList.remove('connected', 'open');
+    if (txt) txt.textContent = 'Connect Wallet';
+    if (icon) icon.className = 'fa-solid fa-wallet';
+    if (chevron) chevron.classList.add('hidden');
+}
+
+function applyWalletUI(addr) {
+    const btn = $('#walletBtn');
+    const txt = $('#walletText');
+    const icon = $('#walletIcon');
+    const chevron = $('#walletChevron');
+    const addrEl = $('#walletAddr');
+
+    const short = shortAddr(addr);
+    if (btn) btn.classList.add('connected');
+    if (txt) txt.textContent = short;
+    if (icon) icon.className = 'fa-solid fa-wallet';
+    if (chevron) chevron.classList.remove('hidden');
+    if (addrEl) addrEl.textContent = short;
+}
+
+function shortAddr(addr) {
+    return addr.slice(0, 6) + '...' + addr.slice(-4);
+}
+
+function copyWalletAddress() {
+    if (!state.wallet) return;
+    navigator.clipboard.writeText(state.wallet)
+        .then(() => toast('Address copied'))
+        .catch(() => toast('Copy failed'));
+    closeWalletMenu();
+}
+
+function viewOnExplorer() {
+    if (!state.wallet) return;
+    window.open(`https://etherscan.io/address/${state.wallet}`, '_blank');
+    closeWalletMenu();
 }
 
 function restoreWallet() {
     const saved = localStorage.getItem(WALLET_KEY);
     if (saved) {
         state.wallet = saved;
-        const btn = $('#walletBtn');
-        const txt = $('#walletText');
-        btn.classList.add('connected');
-        txt.textContent = saved.slice(0, 6) + '...' + saved.slice(-4);
+        applyWalletUI(saved);
     }
 }
 
@@ -2793,46 +2621,37 @@ function resetLayout() {
 }
 
 function toast(text) {
+    const wrap = $('#toasts');
+    if (!wrap) return;
     const el = document.createElement('div');
     el.className = 'toast';
     el.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>${text}</span>`;
-    $('#toasts').appendChild(el);
+    wrap.appendChild(el);
     setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, 2400);
 }
 
-/* ════════════════════════════════════════════════════════════
-   SIDEBAR / MODALS / LANG
-   ════════════════════════════════════════════════════════════ */
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
-function toggleAccordion(id) {
-    // Միայն accordion-ը toggle, ուրիշ ոչինչ
-    const sub = document.getElementById(id);
-    if (!sub) return;
-    sub.classList.toggle('open');
-}
-function loadPage(page, e) {
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    if (e && e.currentTarget) e.currentTarget.classList.add('active');
-}
-function openModal(id) { document.getElementById(id).classList.add('active'); }
+/* ─── MODALS / LANG ─── */
+function openModal(id) { const el = document.getElementById(id); if (el) el.classList.add('active'); }
 function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('active')); }
 function setTheme(theme) { document.body.className = theme; closeModals(); }
 
 const dictionary = {
-    'RU': { 'Dashboard': 'Дашборд', 'Active Goals': 'Активные цели', 'Trading': 'Трейдинг', 'Productivity': 'Продуктивность' },
-    'ARM': { 'Dashboard': 'Վահանակ', 'Active Goals': 'Ակտիվ Նպատակներ', 'Trading': 'Առևտուր', 'Productivity': 'Արտադրողականություն' },
-    'CH': { 'Dashboard': '仪表板', 'Active Goals': '活动目标', 'Trading': '交易', 'Productivity': '生产力' }
+    'RU': { 'Dashboard':'Дашборд', 'Active Goals':'Активные цели', 'Trading':'Трейдинг', 'Productivity':'Продуктивность' },
+    'ARM': { 'Dashboard':'Վահանակ', 'Active Goals':'Ակտիվ Նպատակներ', 'Trading':'Առևտուր', 'Productivity':'Արտադրողականություն' },
+    'CH': { 'Dashboard':'仪表板', 'Active Goals':'活动目标', 'Trading':'交易', 'Productivity':'生产力' }
 };
 let currentLang = 'EN';
 
-function toggleLangMenu() { document.getElementById('langMenu').classList.toggle('show'); }
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.lang-selector-container')) document.getElementById('langMenu').classList.remove('show');
-});
+function toggleLangMenu() {
+    const m = $('#langMenu');
+    if (m) m.classList.toggle('show');
+}
 function setLang(lang) {
     currentLang = lang;
-    document.getElementById('langText').innerText = lang;
-    document.getElementById('langMenu').classList.remove('show');
+    const lt = $('#langText');
+    if (lt) lt.innerText = lang;
+    const m = $('#langMenu');
+    if (m) m.classList.remove('show');
     translateDOM(document.body);
 }
 function translateDOM(node) {
@@ -2840,11 +2659,11 @@ function translateDOM(node) {
         let text = node.nodeValue.trim();
         if (!text) return;
         if (node.origText === undefined) node.origText = text;
-        let targetText = node.origText;
+        let target = node.origText;
         if (currentLang !== 'EN' && dictionary[currentLang] && dictionary[currentLang][node.origText]) {
-            targetText = dictionary[currentLang][node.origText];
+            target = dictionary[currentLang][node.origText];
         }
-        node.nodeValue = node.nodeValue.replace(text, targetText);
+        node.nodeValue = node.nodeValue.replace(text, target);
     } else {
         if (['SCRIPT', 'STYLE', 'NOSCRIPT'].includes(node.tagName)) return;
         node.childNodes.forEach(translateDOM);
@@ -2858,10 +2677,9 @@ const HEAD_QUOTES = [
     '"Emotions cost money. Logic creates wealth."',
     '"Discipline equals freedom. The bunker is your forge."'
 ];
-document.getElementById('quote-text').innerText = HEAD_QUOTES[Math.floor(Math.random() * HEAD_QUOTES.length)];
 
 /* ════════════════════════════════════════════════════════════
-   TICKER (live from Binance)
+   TICKER
    ════════════════════════════════════════════════════════════ */
 async function updateTicker() {
     try {
@@ -2878,20 +2696,15 @@ async function updateTicker() {
             if (!el || !map[sym]) return;
             const chg = parseFloat(map[sym].priceChangePercent);
             const price = parseFloat(map[sym].lastPrice);
-            const priceStr = price >= 1000
-                ? price.toLocaleString('en-US', { maximumFractionDigits: 0 })
-                : price.toFixed(2);
+            const priceStr = price >= 1000 ? price.toLocaleString('en-US', { maximumFractionDigits: 0 }) : price.toFixed(2);
             el.textContent = `$${priceStr} ${chg >= 0 ? '▲' : '▼'}`;
             el.className = chg >= 0 ? 'up' : 'down';
         };
 
-        set('tick-btc',  'BTCUSDT');
-        set('tick-btc2', 'BTCUSDT');
-        set('tick-eth',  'ETHUSDT');
-        set('tick-eth2', 'ETHUSDT');
-        set('tick-sol',  'SOLUSDT');
-        set('tick-sol2', 'SOLUSDT');
-    } catch (e) { /* silent */ }
+        set('tick-btc', 'BTCUSDT'); set('tick-btc2', 'BTCUSDT');
+        set('tick-eth', 'ETHUSDT'); set('tick-eth2', 'ETHUSDT');
+        set('tick-sol', 'SOLUSDT'); set('tick-sol2', 'SOLUSDT');
+    } catch (e) {}
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -2908,54 +2721,25 @@ function bindEvents() {
         });
     }
 
-    // ─── Արգելել copy/cut/right-click/drag sidebar-ի վրա ───
-const sidebarEl = document.getElementById('sidebar');
-if (sidebarEl) {
-    ['copy', 'cut', 'contextmenu', 'selectstart', 'dragstart'].forEach(evt => {
-        sidebarEl.addEventListener(evt, (e) => {
-            // Թույլատրել input/textarea-ների վրա (եթե ապագայում ավելացնես)
-            if (e.target.closest('input, textarea')) return;
-            e.preventDefault();
-            return false;
-        });
-    });
-}
-
     const overlay = $('#libraryOverlay');
     if (overlay) overlay.addEventListener('click', closeLibrary);
 
+    // Close menus on outside click
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.lang-selector-container')) {
             const m = $('#langMenu');
             if (m) m.classList.remove('show');
         }
+        if (!e.target.closest('#walletWrap')) {
+            closeWalletMenu();
+        }
     });
-
-    // ─── NAV-ITEM click (առանց submenu-ի) → միայն այն highlight ───
-document.querySelectorAll('.nav-item').forEach(item => {
-    // Skip accordion parents — իրենք չեն highlight-վում
-    const hasArrow = item.querySelector('.fa-angle-down');
-    if (hasArrow) return;
-
-    item.addEventListener('click', () => {
-        document.querySelectorAll('.nav-item, .sub-item').forEach(x => x.classList.remove('active'));
-        item.classList.add('active');
-    });
-});
-
-// ─── SUB-ITEM click → միայն այն highlight ───
-document.querySelectorAll('.sub-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.nav-item, .sub-item').forEach(x => x.classList.remove('active'));
-        item.classList.add('active');
-    });
-});
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeLibrary();
             closeModals();
+            closeWalletMenu();
             const m = $('#langMenu');
             if (m) m.classList.remove('show');
         }
@@ -2964,34 +2748,63 @@ document.querySelectorAll('.sub-item').forEach(item => {
             openLibrary();
         }
     });
+
+    // Resize → close wallet menu
+    window.addEventListener('resize', closeWalletMenu);
+}
+
+// Listen for wallet updates from parent
+window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'wallet-update') {
+        // e.data.address, e.data.chainId
+        // ... update UI
+    }
+});
+
+try {
+    const bc = new BroadcastChannel('t1prime_auth');
+    bc.onmessage = (e) => {
+        if (e.data.type === 'wallet-connected') {
+            // ... wallet connected externally
+        } else if (e.data.type === 'wallet-disconnected') {
+            // ... wallet disconnected
+        }
+    };
+} catch(e) {}
+
+// Read from localStorage on load
+const saved = localStorage.getItem('t1prime_wallet');
+if (saved) {
+    try {
+        const data = JSON.parse(saved);
+        // ... use data.address, data.chainId
+    } catch(e) {}
 }
 
 /* ════════════════════════════════════════════════════════════
    BOOT
    ════════════════════════════════════════════════════════════ */
 function boot() {
-    console.log(
-        '%c GRIND // OS · v2.1 ',
-        'background:linear-gradient(90deg,#00ffd5,#0099ff);color:#000;padding:6px 16px;border-radius:6px;font-weight:900;letter-spacing:3px;'
-    );
+    console.log('%c GRIND // OS · v2.2 ',
+        'background:linear-gradient(90deg,#00ffd5,#0099ff);color:#000;padding:6px 16px;border-radius:6px;font-weight:900;letter-spacing:3px;');
 
-    // Load saved layout or use default
     const loaded = loadState();
     if (!loaded || !Array.isArray(state.widgets)) {
         state.widgets = getDefaultLayout();
         saveState();
     }
 
-    // Restore wallet connection
     restoreWallet();
 
-    // Random header quote
     const hq = document.getElementById('quote-text');
-    if (hq) {
-        hq.innerText = HEAD_QUOTES[Math.floor(Math.random() * HEAD_QUOTES.length)];
+    if (hq) hq.innerText = HEAD_QUOTES[Math.floor(Math.random() * HEAD_QUOTES.length)];
+
+    // Mobile → default collapsed
+    if (window.innerWidth <= 768) {
+        const sb = $('#sidebar');
+        if (sb) sb.classList.add('collapsed');
     }
 
-    // Render everything
     renderGrid();
     renderLibrary();
     initDashboardDropZone();
@@ -2999,21 +2812,17 @@ function boot() {
     bindEvents();
     updateClock();
     updateTicker();
-
-    // Live ticker every 30s
     setInterval(updateTicker, 30000);
 
     console.log('%c✦ ＋ Library · drag widgets · ⌘K · Esc', 'color:#00ffd5;font-family:monospace;');
-    console.log('%c✦ Wallet: MetaMask auto-detected', 'color:#888;font-family:monospace;');
-    console.log('%c✦ Modules: BTC Chart · Liquidations · Screener', 'color:#888;font-family:monospace;');
+    console.log('%c✦ Sidebar click on icon → auto-expand + open submenu', 'color:#888;font-family:monospace;');
+    console.log('%c✦ Wallet: click → connect · connected → dropdown', 'color:#888;font-family:monospace;');
 }
 
-/* ─── START ─── */
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-} else {
-    boot();
-}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+
+
 </script>
 
 </body>
