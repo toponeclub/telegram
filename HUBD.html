@@ -2616,9 +2616,14 @@ const arbitrum = {
 const modal = createAppKit({
     adapters: [new EthersAdapter()],
     networks: [mainnet, arbitrum],
-    metadata: { name: 'GRIND OS', description: 'Web3 Dashboard', url: 'https://t1prime.com', icons: [] },
+    metadata: { 
+        name: 'GRIND OS', 
+        description: 'Web3 Dashboard', 
+        url: window.location.origin, 
+        icons: ['https://t1prime.com/favicon.ico'] 
+    },
     projectId: '9a4485f532467f3b0bb7584537697fd1',
-    features: { analytics: false, email: true, socials: ['google'] } 
+    features: { analytics: false } // Անջատված են email-ն ու socials-ը
 });
 
 function syncAdminData(address) {
