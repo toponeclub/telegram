@@ -964,7 +964,7 @@ wui-modal {
             <!-- WALLET -->
             <!-- ═══════ WALLET CONNECT (Reown AppKit) ═══════ -->
 <div class="wallet-wrap">
-    <button id="wallet-btn" class="wallet-btn" onclick="openWalletModal()">
+    <button id="wallet-btn" class="wallet-btn" onclick="HubAuth.toggleMenu()">
         <i class="fa-solid fa-wallet"></i> 
         <span id="wallet-text">Connect Wallet</span>
     </button>
@@ -977,22 +977,18 @@ wui-modal {
                 <span id="walletAddr">0x...</span>
             </div>
         </div>
-        <div class="wallet-menu-item" onclick="copyWalletAddress()">
+        <div class="wallet-menu-item" onclick="HubAuth.copyAddress()">
             <i class="fa-solid fa-copy"></i> Copy Address
         </div>
-        <div class="wallet-menu-item" onclick="openNetworksModal()">
-            <i class="fa-solid fa-network-wired"></i> Switch Network
-        </div>
-        <div class="wallet-menu-item" onclick="viewOnExplorer()">
+        <div class="wallet-menu-item" onclick="HubAuth.viewExplorer()">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> View on Explorer
         </div>
         <div class="wallet-menu-divider"></div>
-        <div class="wallet-menu-item danger" onclick="disconnectWallet()">
+        <div class="wallet-menu-item danger" onclick="HubAuth.logout()">
             <i class="fa-solid fa-right-from-bracket"></i> Disconnect
         </div>
     </div>
 </div>
-
 <!-- Reown AppKit auto-injects its own modal here -->
 <div id="appkit-modal-root"></div>
 
@@ -2596,92 +2592,134 @@ else boot();
 
 
 </script>
-<script type="module">
-import { createAppKit } from 'https://esm.sh/@reown/appkit?bundle';
-import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers?bundle';
-
-const mainnet = { 
-    id: 1, name: 'Ethereum', 
-    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
-    rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } }, 
-    blockExplorers: { default: { name: 'Etherscan', url: 'https://etherscan.io' } } 
-};
-const arbitrum = { 
-    id: 42161, name: 'Arbitrum', 
-    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
-    rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } }, 
-    blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } } 
-};
-
-const modal = createAppKit({
-    adapters: [new EthersAdapter()],
-    networks: [mainnet, arbitrum],
-    metadata: { 
-        name: 'GRIND OS', 
-        description: 'Web3 Dashboard', 
-        url: window.location.origin, 
-        icons: ['https://t1prime.com/favicon.ico'] 
-    },
-    projectId: '9a4485f532467f3b0bb7584537697fd1',
-    features: { analytics: false } // Անջատված են email-ն ու socials-ը
+<script>
+// EIP-6963 Wallet Listener (ճիշտ դետեկտոր)
+const EIPProviders = {};
+window.addEventListener("eip6963:announceProvider", (event) => {
+    EIPProviders[event.detail.info.uuid] = event.detail;
 });
+window.dispatchEvent(new Event("eip6963:requestProvider"));
 
-function syncAdminData(address) {
-    let users = JSON.parse(localStorage.getItem('admin_users_db') || '[]');
-    let user = users.find(u => u.tg_id === address);
-    
-    if (!user) {
-        user = {
-            tg_id: address,
-            username: 'User_' + address.slice(2, 6).toUpperCase(),
-            expires_at: Date.now() + (180 * 24 * 60 * 60 * 1000) 
-        };
-        users.push(user);
-        localStorage.setItem('admin_users_db', JSON.stringify(users));
-    }
-    localStorage.setItem('current_user_id', address);
-}
+const HubAuth = {
+    account: null,
 
-window.openWalletModal = () => {
-    const btn = document.getElementById('wallet-btn');
-    const menu = document.getElementById('walletMenu');
-    if (btn && btn.classList.contains('connected')) {
-        menu?.classList.toggle('open');
-    } else {
-        modal.open();
+    async connect() {
+        let provider = null;
+        
+        // Ստուգում ենք EIP-6963-ով (MetaMask, Rabby, և այլն)
+        const entries = Object.entries(EIPProviders);
+        if (entries.length > 0) {
+            provider = entries[0][1].provider;
+        } else if (window.ethereum) {
+            provider = window.ethereum; // Fallback
+        }
+
+        if (!provider) {
+            alert("No Web3 wallet detected! Please install MetaMask or Rabby.");
+            window.open("https://metamask.io/download/", "_blank");
+            return;
+        }
+
+        try {
+            const accounts = await provider.request({ method: "eth_requestAccounts" });
+            if (accounts && accounts.length > 0) {
+                this.account = accounts[0].toLowerCase();
+                this.saveSession();
+                this.syncAdminData(this.account);
+                this.updateUI();
+            }
+        } catch (err) {
+            console.error("Connection rejected", err);
+        }
+    },
+
+    saveSession() {
+        if (this.account) {
+            localStorage.setItem('t1prime_wallet', JSON.stringify({ address: this.account }));
+        }
+    },
+
+    restoreSession() {
+        const saved = localStorage.getItem('t1prime_wallet');
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.address) {
+                    this.account = data.address;
+                    this.updateUI();
+                }
+            } catch(e) {}
+        }
+    },
+
+    syncAdminData(address) {
+        let users = JSON.parse(localStorage.getItem('admin_users_db') || '[]');
+        let user = users.find(u => u.tg_id === address);
+        
+        if (!user) {
+            user = {
+                tg_id: address,
+                username: 'User_' + address.slice(2, 6).toUpperCase(),
+                expires_at: Date.now() + (180 * 24 * 60 * 60 * 1000) // +6 ամիս
+            };
+            users.push(user);
+            localStorage.setItem('admin_users_db', JSON.stringify(users));
+        }
+        localStorage.setItem('current_user_id', address);
+    },
+
+    toggleMenu() {
+        const menu = document.getElementById('walletMenu');
+        if (!this.account) {
+            this.connect();
+        } else {
+            menu?.classList.toggle('open');
+        }
+    },
+
+    logout() {
+        this.account = null;
+        localStorage.removeItem('t1prime_wallet');
+        localStorage.removeItem('current_user_id');
+        this.updateUI();
+        document.getElementById('walletMenu')?.classList.remove('open');
+    },
+
+    updateUI() {
+        const btnText = document.getElementById('wallet-text');
+        const btn = document.getElementById('wallet-btn');
+        const addrEl = document.getElementById('walletAddr');
+        
+        if (this.account) {
+            const short = this.account.slice(0, 6) + '...' + this.account.slice(-4);
+            if (btnText) btnText.textContent = short;
+            if (addrEl) addrEl.textContent = short;
+            if (btn) btn.classList.add('connected');
+        } else {
+            if (btnText) btnText.textContent = 'Connect Wallet';
+            if (btn) btn.classList.remove('connected');
+        }
+    },
+
+    copyAddress() {
+        if (this.account) {
+            navigator.clipboard.writeText(this.account);
+            alert('Address copied!');
+        }
+        document.getElementById('walletMenu')?.classList.remove('open');
+    },
+
+    viewExplorer() {
+        if (this.account) {
+            window.open(`https://etherscan.io/address/${this.account}`, '_blank');
+        }
+        document.getElementById('walletMenu')?.classList.remove('open');
     }
 };
 
-window.openNetworksModal = () => { modal.open({ view: 'Networks' }); document.getElementById('walletMenu')?.classList.remove('open'); };
-window.disconnectWallet = async () => { await modal.disconnect(); document.getElementById('walletMenu')?.classList.remove('open'); };
-window.copyWalletAddress = () => {
-    const address = modal.getAccount()?.address;
-    if (address) { navigator.clipboard.writeText(address); alert('Address copied!'); }
-    document.getElementById('walletMenu')?.classList.remove('open');
-};
-window.viewOnExplorer = () => {
-    const address = modal.getAccount()?.address;
-    if (address) window.open(`https://etherscan.io/address/${address}`, '_blank');
-    document.getElementById('walletMenu')?.classList.remove('open');
-};
-
-modal.subscribeAccount((account) => {
-    const btnText = document.getElementById('wallet-text');
-    const btn = document.getElementById('wallet-btn');
-    const addrEl = document.getElementById('walletAddr');
-    const menu = document.getElementById('walletMenu');
-    
-    if (account?.isConnected) {
-        const short = account.address.slice(0, 6) + '...' + account.address.slice(-4);
-        if (btnText) btnText.textContent = short;
-        if (addrEl) addrEl.textContent = short;
-        if (btn) btn.classList.add('connected');
-        syncAdminData(account.address); 
-    } else {
-        if (btnText) btnText.textContent = 'Connect Wallet';
-        if (btn) btn.classList.remove('connected');
-        if (menu) menu.classList.remove('open');
-    }
+// Էջը բացվելիս վերականգնում ենք սեսիան
+document.addEventListener('DOMContentLoaded', () => {
+    HubAuth.restoreSession();
 });
 </script>
 </body>
