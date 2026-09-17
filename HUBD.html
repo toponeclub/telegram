@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 <style>
 :root {
     --bg-deep: #030303;
@@ -178,6 +178,13 @@ body {
    RESPONSIVE — MOBILE
    ════════════════════════════════════════════════════════════ */
 @media(max-width: 768px) {
+    /* Սա աշխատելու է ՄԻԱՅՆ հեռախոսների վրա */
+    .main-wrapper {
+        margin-left: 72px;
+        width: calc(100vw - 72px);
+        flex: none;
+    }
+
     .topbar { padding: 0 16px; }
     .dynamic-view { padding: 30px 20px; }
     .bento-grid { grid-template-columns: 1fr; }
@@ -957,10 +964,9 @@ wui-modal {
             <!-- WALLET -->
             <!-- ═══════ WALLET CONNECT (Reown AppKit) ═══════ -->
 <div class="wallet-wrap">
-    <button class="wallet-btn" id="walletBtn" onclick="openWalletModal()">
-        <i class="fa-solid fa-wallet" id="walletIcon"></i>
-        <span id="walletText">Connect Wallet</span>
-        <i class="fa-solid fa-chevron-down wallet-chevron hidden" id="walletChevron"></i>
+    <button id="wallet-btn" class="wallet-btn" onclick="openWalletModal()">
+        <i class="fa-solid fa-wallet"></i> 
+        <span id="wallet-text">Connect Wallet</span>
     </button>
 
     <div class="wallet-menu" id="walletMenu">
@@ -1034,8 +1040,7 @@ wui-modal {
                 <div class="iframe-spinner"></div>
                 <span>◤ ENTERING THE MATRIX ◢</span>
             </div>
-            <iframe id="mainIframe" src="about:blank" allow="clipboard-write; web3" loading="lazy"></iframe>
-        </div>
+<iframe id="mainIframe" src="about:blank" allow="clipboard-write" loading="lazy"></iframe>        </div>
     </div>
 
     <!-- TICKER -->
@@ -1105,201 +1110,7 @@ wui-modal {
     </div>
 </div>
 
-<script type="module">
-/* ════════════════════════════════════════════════════════════
-   REOWN APPKIT · UNIFIED WALLET LOGIN
-   ════════════════════════════════════════════════════════════ */
 
-import { createAppKit } from 'https://esm.sh/@reown/appkit@1.5.4';
-import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers@1.5.4';
-import {
-    mainnet, arbitrum, polygon, bsc, optimism, base
-} from 'https://esm.sh/@reown/appkit@1.5.4/networks';
-
-/* ─── 1. 👈 ՔՈ REOWN PROJECT ID ─── */
-const PROJECT_ID = '9a4485f532467f3b0bb7584537697fd1'; // 👈 փոխարինի՛ր
-
-/* ─── 2. 👈 ՔՈ METADATA ─── */
-const METADATA = {
-    name: 'GRIND OS',
-    description: 'All-in-one Web3 Dashboard',
-    url: 'https://t1prime.com',           // 👈 քո domain
-    icons: ['https://t1prime.com/icon.png'] // 👈 քո icon URL
-};
-
-/* ─── 3. 👈 ՑԱՆԿԸ · որ networks ցույց տա ─── */
-const NETWORKS = [mainnet, arbitrum, polygon, base, tron, solana, etherium]; // 👈 ավել/պակաս արա
-
-/* ─── ADAPTER ─── */
-const ethersAdapter = new EthersAdapter();
-
-/* ─── APPKIT INIT ─── */
-const appkit = createAppKit({
-    adapters: [ethersAdapter],
-    networks: NETWORKS,
-    metadata: METADATA,
-    projectId: PROJECT_ID,
-    features: {
-        analytics: false,
-        email: false,
-        socials: false,
-        swaps: false,
-        onramp: false
-    },
-    themeMode: 'dark',
-    themeVariables: {
-        '--w3m-accent': '#00ffd5',
-        '--w3m-border-radius-master': '8px',
-        '--w3m-font-family': 'Inter, sans-serif'
-    },
-    featuredWalletIds: [
-        // 👈 ցանկության դեպքում ավելացրու կոնկրետ wallet IDs
-    ],
-    allWallets: 'SHOW' // 'SHOW' | 'HIDE' | 'ONLY_MOBILE'
-});
-
-/* ─── EXPOSE TO GLOBAL SCOPE (վերին scope-ից օգտվելու համար) ─── */
-window.reownAppKit = appkit;
-
-/* ─── STATE SYNC ─── */
-function updateWalletUI(account, chainId) {
-    const btn = document.getElementById('walletBtn');
-    const txt = document.getElementById('walletText');
-    const chevron = document.getElementById('walletChevron');
-    const addrEl = document.getElementById('walletAddr');
-
-    if (account) {
-        const short = account.slice(0, 6) + '...' + account.slice(-4);
-        if (btn) btn.classList.add('connected');
-        if (txt) txt.textContent = short;
-        if (chevron) chevron.classList.remove('hidden');
-        if (addrEl) addrEl.textContent = short;
-
-        // Sync to other iframe modules
-        localStorage.setItem('t1prime_wallet', JSON.stringify({
-            address: account,
-            chainId: chainId,
-            connectedAt: Date.now()
-        }));
-
-        // Broadcast for other tabs
-        try {
-            const bc = new BroadcastChannel('t1prime_auth');
-            bc.postMessage({ type: 'wallet-connected', address: account, chainId });
-            bc.close();
-        } catch(e) {}
-    } else {
-        if (btn) btn.classList.remove('connected');
-        if (txt) txt.textContent = 'Connect Wallet';
-        if (chevron) chevron.classList.add('hidden');
-        localStorage.removeItem('t1prime_wallet');
-
-        try {
-            const bc = new BroadcastChannel('t1prime_auth');
-            bc.postMessage({ type: 'wallet-disconnected' });
-            bc.close();
-        } catch(e) {}
-    }
-}
-
-/* ─── SUBSCRIBE TO APPKIT EVENTS ─── */
-appkit.subscribeAccount((account) => {
-    if (account && account.isConnected) {
-        const chainId = appkit.getChainId();
-        updateWalletUI(account.address, chainId);
-    } else {
-        updateWalletUI(null, null);
-    }
-});
-
-appkit.subscribeState((state) => {
-    // Optional — log state changes
-});
-
-/* ─── RESTORE ON LOAD ─── */
-(async () => {
-    const saved = localStorage.getItem('t1prime_wallet');
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            // Check if AppKit is already connected
-            const account = appkit.getAccount();
-            if (account && account.isConnected) {
-                updateWalletUI(account.address, appkit.getChainId());
-            }
-        } catch(e) {}
-    }
-})();
-
-/* ─── GLOBAL FUNCTIONS (button handlers) ─── */
-window.openWalletModal = function() {
-    const btn = document.getElementById('walletBtn');
-    const isConnected = btn && btn.classList.contains('connected');
-
-    if (isConnected) {
-        // Toggle dropdown
-        const menu = document.getElementById('walletMenu');
-        if (menu) menu.classList.toggle('open');
-        if (btn) btn.classList.toggle('open');
-    } else {
-        // Open Reown modal
-        appkit.open();
-    }
-};
-
-window.openNetworksModal = function() {
-    document.getElementById('walletMenu')?.classList.remove('open');
-    document.getElementById('walletBtn')?.classList.remove('open');
-    appkit.open({ view: 'Networks' });
-};
-
-window.disconnectWallet = function() {
-    appkit.disconnect();
-    document.getElementById('walletMenu')?.classList.remove('open');
-    document.getElementById('walletBtn')?.classList.remove('open');
-};
-
-window.copyWalletAddress = function() {
-    const account = appkit.getAccount();
-    if (account && account.address) {
-        navigator.clipboard.writeText(account.address)
-            .then(() => window.toast && window.toast('Address copied'))
-            .catch(() => {});
-    }
-    document.getElementById('walletMenu')?.classList.remove('open');
-    document.getElementById('walletBtn')?.classList.remove('open');
-};
-
-window.viewOnExplorer = function() {
-    const account = appkit.getAccount();
-    const chainId = appkit.getChainId();
-    if (!account || !account.address) return;
-
-    const explorers = {
-        1: 'https://etherscan.io/address/',
-        42161: 'https://arbiscan.io/address/',
-        137: 'https://polygonscan.com/address/',
-        56: 'https://bscscan.com/address/',
-        10: 'https://optimistic.etherscan.io/address/',
-        8453: 'https://basescan.org/address/'
-    };
-    const base = explorers[chainId] || explorers[1];
-    window.open(base + account.address, '_blank');
-    document.getElementById('walletMenu')?.classList.remove('open');
-    document.getElementById('walletBtn')?.classList.remove('open');
-};
-
-/* ─── CLOSE DROPDOWN ON OUTSIDE CLICK ─── */
-document.addEventListener('click', (e) => {
-    if (!e.target.closest('.wallet-wrap')) {
-        document.getElementById('walletMenu')?.classList.remove('open');
-        document.getElementById('walletBtn')?.classList.remove('open');
-    }
-});
-
-/* ─── LEGACY BRIDGE — ապահովում է որ հին կոդը շարունակի աշխատել ─── */
-window.connectWallet = window.openWalletModal;
-</script>
 
 <script>
 /* ════════════════════════════════════════════════════════════
@@ -2123,11 +1934,106 @@ function renderClockWidget() {
 }
 
 const QUOTES = [
-    { text: "Money doesn't sleep. If your money isn't working while you sleep, you'll work until you die.", author: 'Grindarm' },
-    { text: "You're not lazy. You just don't have a goal that wakes you up without an alarm.", author: 'Grindarm' },
-    { text: '1% every day = 3700% in a year.', author: 'Grindarm' },
-    { text: "The only person you should compete with is yesterday's you.", author: 'Grindarm' },
-    { text: 'Focus is the new IQ. Whoever can focus 4 hours straight, owns the market.', author: 'Grindarm' }
+    { text: "Money doesn't sleep. If your money isn't working while you sleep, you'll work until you die.", author: 'Grind' },
+    { text: "You're not lazy. You just don't have a goal that wakes you up without an alarm.", author: 'Grind' },
+    { text: "1% every day = 3700% in a year.", author: 'Grind' },
+    { text: "The only person you should compete with is yesterday's you.", author: 'Grind' },
+    { text: "Focus is the new IQ. Whoever can focus 4 hours straight, owns the market.", author: 'Grind' },
+    { text: "Speed is everything. Things can be done quickly; people just choose to be slow.", author: 'Grind' },
+    { text: "A business is money in. Everything else—logos, accountants, registered trademarks—is circle-jerk bullshit until you get paid.", author: 'Grind' },
+    { text: "If no one pays you, it’s not a business.", author: 'Grind' },
+    { text: "Look after yourself first. When the company fails, you need to walk away with suitcases, not empty hands.", author: 'Grind' },
+    { text: "You don’t make money. You take money from other people by giving them goods, services, or information.", author: 'Grind' },
+    { text: "Stress tolerance is the only metric that separates the rich from the broke.", author: 'Grind' },
+    { text: "Sell the need at all times. People buy what they need, not what you want them to want.", author: 'Grind' },
+    { text: "Until you are a rich, big company, contracts and legal paperwork are not real. Cash is real.", author: 'Grind' },
+    { text: "Never be content. When money comes in, wake up the next day broke and find more.", author: 'Grind' },
+    { text: "Irrational self-confidence sells. Never pitch with a 'maybe.'", author: 'Grind' },
+    { text: "Chaos and opportunity are the same word for a hustler. Every crisis is a cash machine.", author: 'Grind' },
+    { text: "If you didn't see it happen, it didn't exist. Check on your work, check on your people.", author: 'Grind' },
+    { text: "Your network is your net worth. Roll with losers, and you will stay a loser.", author: 'Grind' },
+    { text: "Keep your panties dry until the big guy's hard. Don't get giddy over money that hasn't hit the bank yet.", author: 'Grind' },
+    { text: "Every day you wake up broke. Yesterday's millions don't pay today's bills.", author: 'Grind' },
+    { text: "The difficulty gives it value. If the path to greatness were easy, everyone would walk it, and it would lead nowhere.", author: 'Grind' },
+    { text: "Discipline is doing what you're supposed to do regardless of how you feel.", author: 'Grind' },
+    { text: "Feelings are for children and amateurs. Professionals execute.", author: 'Grind' },
+    { text: "If you only go to the gym when you feel like it, you will always lose to the man who goes when he hates it.", author: 'Grind' },
+    { text: "Pain is an ingredient. Thank God for the hard times—they forge superheroes.", author: 'Grind' },
+    { text: "As a man, make everything your fault. If you can't control the rain, you could have brought an umbrella.", author: 'Grind' },
+    { text: "The most powerful move you can make against someone who did you wrong is complete, icy indifference.", author: 'Grind' },
+    { text: "Build a digital empire, or stay a consumer in someone else's matrix.", author: 'Grind' },
+    { text: "If you have an internet connection and no money, poverty is a choice.", author: 'Grind' },
+    { text: "Stop consuming content and start documenting your ascent.", author: 'Grind' },
+    { text: "The 1% don't wait for permission. They act with absolute ownership from day one.", author: 'Grind' },
+    { text: "The secret to greatness is compounding. Linear growth is a slow death.", author: 'Grind' },
+    { text: "Wisdom over knowledge. Self-analyze more, read fluff less.", author: 'Grind' },
+    { text: "Safety is doom. Enter the arena of high risk and high reward, or stay mediocre forever.", author: 'Grind' },
+    { text: "The man who takes the game seriously quickly destroys the amateur.", author: 'Grind' },
+    { text: "Optimize for performance, never for the performative.", author: 'Grind' },
+    { text: "If you worked as hard on your life as you do on video games, you'd own a fleet of supercars.", author: 'Grind' },
+    { text: "Everything you want, someone else is trying to take. Act like you're in a war, because you are.", author: 'Grind' },
+    { text: "You become the average of the four people you consume from the most.", author: 'Grind' },
+    { text: "Stop hoping. Start digging.", author: 'Grind' },
+    { text: "Money buys absolute freedom. If you want freedom, get rich.", author: 'Grind' },
+    { text: "The difference between an amateur and a professional is microscopic; the rewards are infinite.", author: 'Grind' },
+    { text: "No warm-ups on the streets of reality. Hit hard from the first second.", author: 'Grind' },
+    { text: "If you aren't willing to suffer through the process, you don't deserve the prize.", author: 'Grind' },
+    { text: "A clear plan beats a thousand prayers.", author: 'Grind' },
+    { text: "Do you want to be invisible with a low rent bill, or important and pay the heavy price of greatness?", author: 'Grind' },
+    { text: "The universe is fair: it never rewards a coward and never fails a relentless worker.", author: 'Grind' },
+    { text: "If your close friends are broke, your bank account has an expiration date.", author: 'Grind' },
+    { text: "Think money, speak money, act money.", author: 'Grind' },
+    { text: "Where your attention goes, your dopamine flows, and your empire grows.", author: 'Grind' },
+    { text: "Stop looking at politics when you haven't made your first million. Fix your income before you try to fix the tax code.", author: 'Grind' },
+    { text: "The car you drive is a megaphone for your competence. Look the part, play the part, own the market.", author: 'Grind' },
+    { text: "Never share your master plan with anyone who isn't already winning harder than you.", author: 'Grind' },
+    { text: "Sharing your raw goals drains your energy in reality. Keep your moves silent until they shake the room.", author: 'Grind' },
+    { text: "90% of people's problems have one root cause: a lack of cash. Fix the root, and the symptoms disappear.", author: 'Grind' },
+    { text: "Mistakes are just tuition fees paid to the school of execution. Try, fail, adapt, conquer.", author: 'Grind' },
+    { text: "Normal people give up when things get hard. Winners realize it just requires more steps and double down.", author: 'Grind' },
+    { text: "A weak body invites strong men to take your wealth. Build muscle to protect your cash.", author: 'Grind' },
+    { text: "If you feel stuck in deep ass, accept the pain immediately and plot your escape.", author: 'Grind' },
+    { text: "Work smart and hard. The brilliant idea is useless without brutal execution.", author: 'Grind' },
+    { text: "There is no magic recipe. Find your unique angle, leverage your past, and squeeze the world until it complies.", author: 'Grind' },
+    { text: "Use adaptogens to hold the pressure, but never rely on crutches to do the heavy lifting.", author: 'Grind' },
+    { text: "You owe a debt to your ancestors who survived hell: become strong, wealthy, and unstoppable.", author: 'Grind' },
+    { text: "Stop blaming parents, weather, or governments. Total accountability is the birthright of a king.", author: 'Grind' },
+    { text: "Everything you do comes down to three things: social dominance, sexual attractiveness, and financial power.", author: 'Grind' },
+    { text: "If you are broke, you are wrong by definition. Stop defending it and start fixing it.", author: 'Grind' },
+    { text: "Knowing a truth and doing nothing with it is just an expensive form of self-entertainment.", author: 'Grind' },
+    { text: "The human mind craves comfort; greatness demands suffering. Choose your master.", author: 'Grind' },
+    { text: "When the ship is going down, grab your cash and abandon the vanity projects.", author: 'Grind' },
+    { text: "If you have time to scroll through social media feeds aimlessly, you have too much comfort in your life.", author: 'Grind' },
+    { text: "A man’s word is his only bond in business. If your physique is weak, your word loses its weight.", author: 'Grind' },
+    { text: "Do not let minor inconveniences distract you from total market dominance.", author: 'Grind' },
+    { text: "The market doesn't care about your feelings, your background, or your excuses. It only rewards value.", author: 'Grind' },
+    { text: "Unfair advantages are still advantages. Find yours and exploit them ruthlessly.", author: 'Grind' },
+    { text: "If you want loyalty from the market, give them an offer they'd feel stupid rejecting.", author: 'Grind' },
+    { text: "Build your digital leverage today so your past self can fund your future freedom.", author: 'Grind' },
+    { text: "You can have 100% confidence and 1,000% doubt at the exact same time. Move forward anyway.", author: 'Grind' },
+    { text: "Success is the only valid revenge against every doubter who ever told you to stay down.", author: 'Grind' },
+    { text: "If you feel hopeless, congratulations—you are officially on the entrepreneur's path.", author: 'Grind' },
+    { text: "Just one more call, one more sale, one more push. That's all it takes to break through.", author: 'Grind' },
+    { text: "The real you is hidden underneath layers of comfort and hesitation. Strip them away with action.", author: 'Grind' },
+    { text: "Stop seeking validation from people who are too scared to step into the arena.", author: 'Grind' },
+    { text: "Results are the only language the world understands. Speak it fluently.", author: 'Grind' },
+    { text: "A high-performance day leaves no room for regret. Did you make the best move on the board? Yes or no.", author: 'Grind' },
+    { text: "If you always make mathematically correct, ruthless moves, you win the game by default.", author: 'Grind' },
+    { text: "Eternal silence is coming. Stop wasting your limited consciousness on trivial distractions.", author: 'Grind' },
+    { text: "The 100 pushups remain 100 pushups whether you feel like doing them or not. Do the work.", author: 'Grind' },
+    { text: "When angry, channel fury. When happy, amplify it. Never let sadness slow your momentum.", author: 'Grind' },
+    { text: "Defrag your mind like an old hard drive. Clear the cache of useless opinions and societal programming.", author: 'Grind' },
+    { text: "Examine every belief you hold; if it didn't come from personal trial, you've been programmed.", author: 'Grind' },
+    { text: "Aimlessness is the devil's playground. If you don't know what to do, get rich and get strong first.", author: 'Grind' },
+    { text: "Losers want people to pretend winning isn't great. Winning is amazing—go experience it.", author: 'Grind' },
+    { text: "Adopt stress only for worthy emolument. Make sure the juice is worth the squeeze.", author: 'Grind' },
+    { text: "Pessimistic critical realism beats fairy-tale prayers every single time. Start digging out of your cell.", author: 'Grind' },
+    { text: "The difference between a master and a novice is that the master fails faster and learns twice as hard.", author: 'Grind' },
+    { text: "Your time on earth is a single tick of a clock. Spend it building a legacy, not collecting comfort.", author: 'Grind' },
+    { text: "Do hard things on purpose to inoculate your mind against weakness.", author: 'Grind' },
+    { text: "Whatever you hate doing the most is usually the exact medicine your character requires.", author: 'Grind' },
+    { text: "A wolf in a pack thrives where a lone wolf hesitates. Build your network of high-performers.", author: 'Grind' },
+    { text: "Grind is not an option; it's an absolute protocol for total dominance. Execute.", author: 'Grind' }
 ];
 
 function renderQuoteWidget() {
@@ -2466,141 +2372,7 @@ function onSubClick(e) {
 /* ════════════════════════════════════════════════════════════
    WALLET — PROPER LOGIN/LOGOUT
    ════════════════════════════════════════════════════════════ */
-function onWalletClick(e) {
-    e.stopPropagation();
 
-    // If not connected → connect
-    if (!state.wallet) {
-        connectWallet();
-        return;
-    }
-
-    // If connected → toggle dropdown
-    toggleWalletMenu();
-}
-
-function toggleWalletMenu() {
-    const menu = $('#walletMenu');
-    const btn = $('#walletBtn');
-    if (!menu || !btn) return;
-    const isOpen = menu.classList.contains('open');
-    if (isOpen) closeWalletMenu();
-    else {
-        menu.classList.add('open');
-        btn.classList.add('open');
-    }
-}
-
-function closeWalletMenu() {
-    const menu = $('#walletMenu');
-    const btn = $('#walletBtn');
-    if (menu) menu.classList.remove('open');
-    if (btn) btn.classList.remove('open');
-}
-
-async function connectWallet() {
-    const btn = $('#walletBtn');
-    const txt = $('#walletText');
-    if (state.connecting) return;
-
-    if (typeof window.ethereum === 'undefined') {
-        toast('MetaMask not detected · Install to connect');
-        setTimeout(() => window.open('https://metamask.io/download/', '_blank'), 800);
-        return;
-    }
-
-    state.connecting = true;
-    if (txt) txt.textContent = 'Connecting...';
-
-    try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (!accounts || !accounts.length) { resetWalletUI(); return; }
-
-        const addr = accounts[0];
-        state.wallet = addr;
-        localStorage.setItem(WALLET_KEY, addr);
-        applyWalletUI(addr);
-        toast('✓ Connected: ' + shortAddr(addr));
-
-        if (window.ethereum.on) {
-            window.ethereum.on('accountsChanged', (accs) => {
-                if (!accs.length) disconnectWallet();
-                else {
-                    state.wallet = accs[0];
-                    localStorage.setItem(WALLET_KEY, accs[0]);
-                    applyWalletUI(accs[0]);
-                }
-            });
-            window.ethereum.on('chainChanged', () => window.location.reload());
-        }
-    } catch (err) {
-        if (err.code === 4001) toast('Connection rejected');
-        else toast('Wallet connection failed');
-        resetWalletUI();
-    } finally {
-        state.connecting = false;
-    }
-}
-
-function disconnectWallet() {
-    state.wallet = null;
-    localStorage.removeItem(WALLET_KEY);
-    resetWalletUI();
-    closeWalletMenu();
-    toast('Disconnected');
-}
-
-function resetWalletUI() {
-    const btn = $('#walletBtn');
-    const txt = $('#walletText');
-    const icon = $('#walletIcon');
-    const chevron = $('#walletChevron');
-    if (btn) btn.classList.remove('connected', 'open');
-    if (txt) txt.textContent = 'Connect Wallet';
-    if (icon) icon.className = 'fa-solid fa-wallet';
-    if (chevron) chevron.classList.add('hidden');
-}
-
-function applyWalletUI(addr) {
-    const btn = $('#walletBtn');
-    const txt = $('#walletText');
-    const icon = $('#walletIcon');
-    const chevron = $('#walletChevron');
-    const addrEl = $('#walletAddr');
-
-    const short = shortAddr(addr);
-    if (btn) btn.classList.add('connected');
-    if (txt) txt.textContent = short;
-    if (icon) icon.className = 'fa-solid fa-wallet';
-    if (chevron) chevron.classList.remove('hidden');
-    if (addrEl) addrEl.textContent = short;
-}
-
-function shortAddr(addr) {
-    return addr.slice(0, 6) + '...' + addr.slice(-4);
-}
-
-function copyWalletAddress() {
-    if (!state.wallet) return;
-    navigator.clipboard.writeText(state.wallet)
-        .then(() => toast('Address copied'))
-        .catch(() => toast('Copy failed'));
-    closeWalletMenu();
-}
-
-function viewOnExplorer() {
-    if (!state.wallet) return;
-    window.open(`https://etherscan.io/address/${state.wallet}`, '_blank');
-    closeWalletMenu();
-}
-
-function restoreWallet() {
-    const saved = localStorage.getItem(WALLET_KEY);
-    if (saved) {
-        state.wallet = saved;
-        applyWalletUI(saved);
-    }
-}
 
 /* ════════════════════════════════════════════════════════════
    SUBSCRIPTION / RESET / TOAST
@@ -2794,7 +2566,7 @@ function boot() {
         saveState();
     }
 
-    restoreWallet();
+
 
     const hq = document.getElementById('quote-text');
     if (hq) hq.innerText = HEAD_QUOTES[Math.floor(Math.random() * HEAD_QUOTES.length)];
@@ -2824,6 +2596,88 @@ else boot();
 
 
 </script>
+<script type="module">
+import { createAppKit } from 'https://esm.sh/@reown/appkit?bundle';
+import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers?bundle';
 
+const mainnet = { 
+    id: 1, name: 'Ethereum', 
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
+    rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } }, 
+    blockExplorers: { default: { name: 'Etherscan', url: 'https://etherscan.io' } } 
+};
+const arbitrum = { 
+    id: 42161, name: 'Arbitrum', 
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
+    rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } }, 
+    blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } } 
+};
+
+const modal = createAppKit({
+    adapters: [new EthersAdapter()],
+    networks: [mainnet, arbitrum],
+    metadata: { name: 'GRIND OS', description: 'Web3 Dashboard', url: 'https://t1prime.com', icons: [] },
+    projectId: '9a4485f532467f3b0bb7584537697fd1',
+    features: { analytics: false, email: true, socials: ['google'] } 
+});
+
+function syncAdminData(address) {
+    let users = JSON.parse(localStorage.getItem('admin_users_db') || '[]');
+    let user = users.find(u => u.tg_id === address);
+    
+    if (!user) {
+        user = {
+            tg_id: address,
+            username: 'User_' + address.slice(2, 6).toUpperCase(),
+            expires_at: Date.now() + (180 * 24 * 60 * 60 * 1000) 
+        };
+        users.push(user);
+        localStorage.setItem('admin_users_db', JSON.stringify(users));
+    }
+    localStorage.setItem('current_user_id', address);
+}
+
+window.openWalletModal = () => {
+    const btn = document.getElementById('wallet-btn');
+    const menu = document.getElementById('walletMenu');
+    if (btn && btn.classList.contains('connected')) {
+        menu?.classList.toggle('open');
+    } else {
+        modal.open();
+    }
+};
+
+window.openNetworksModal = () => { modal.open({ view: 'Networks' }); document.getElementById('walletMenu')?.classList.remove('open'); };
+window.disconnectWallet = async () => { await modal.disconnect(); document.getElementById('walletMenu')?.classList.remove('open'); };
+window.copyWalletAddress = () => {
+    const address = modal.getAccount()?.address;
+    if (address) { navigator.clipboard.writeText(address); alert('Address copied!'); }
+    document.getElementById('walletMenu')?.classList.remove('open');
+};
+window.viewOnExplorer = () => {
+    const address = modal.getAccount()?.address;
+    if (address) window.open(`https://etherscan.io/address/${address}`, '_blank');
+    document.getElementById('walletMenu')?.classList.remove('open');
+};
+
+modal.subscribeAccount((account) => {
+    const btnText = document.getElementById('wallet-text');
+    const btn = document.getElementById('wallet-btn');
+    const addrEl = document.getElementById('walletAddr');
+    const menu = document.getElementById('walletMenu');
+    
+    if (account?.isConnected) {
+        const short = account.address.slice(0, 6) + '...' + account.address.slice(-4);
+        if (btnText) btnText.textContent = short;
+        if (addrEl) addrEl.textContent = short;
+        if (btn) btn.classList.add('connected');
+        syncAdminData(account.address); 
+    } else {
+        if (btnText) btnText.textContent = 'Connect Wallet';
+        if (btn) btn.classList.remove('connected');
+        if (menu) menu.classList.remove('open');
+    }
+});
+</script>
 </body>
 </html>
