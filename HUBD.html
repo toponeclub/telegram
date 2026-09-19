@@ -825,6 +825,20 @@ wui-modal {
     --wui-border-radius-m: 10px !important;
     --wui-border-radius-s: 8px !important;
 }
+
+.imchat-badge{
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 800;
+    background: var(--red);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 10px;
+    min-width: 22px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    animation: pulseDot 1.6s infinite;
+}
 </style>
 </head>
 <body class="theme-emerald">
@@ -964,7 +978,7 @@ wui-modal {
             <!-- WALLET -->
             <!-- ═══════ WALLET CONNECT (Reown AppKit) ═══════ -->
 <div class="wallet-wrap">
-    <button id="wallet-btn" class="wallet-btn" onclick="HubAuth.toggleMenu()">
+    <button id="wallet-btn" class="wallet-btn" onclick="openWalletModal()">
         <i class="fa-solid fa-wallet"></i> 
         <span id="wallet-text">Connect Wallet</span>
     </button>
@@ -977,18 +991,22 @@ wui-modal {
                 <span id="walletAddr">0x...</span>
             </div>
         </div>
-        <div class="wallet-menu-item" onclick="HubAuth.copyAddress()">
+        <div class="wallet-menu-item" onclick="copyWalletAddress()">
             <i class="fa-solid fa-copy"></i> Copy Address
         </div>
-        <div class="wallet-menu-item" onclick="HubAuth.viewExplorer()">
+        <div class="wallet-menu-item" onclick="openNetworksModal()">
+            <i class="fa-solid fa-network-wired"></i> Switch Network
+        </div>
+        <div class="wallet-menu-item" onclick="viewOnExplorer()">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> View on Explorer
         </div>
         <div class="wallet-menu-divider"></div>
-        <div class="wallet-menu-item danger" onclick="HubAuth.logout()">
+        <div class="wallet-menu-item danger" onclick="disconnectWallet()">
             <i class="fa-solid fa-right-from-bracket"></i> Disconnect
         </div>
     </div>
 </div>
+
 <!-- Reown AppKit auto-injects its own modal here -->
 <div id="appkit-modal-root"></div>
 
@@ -1117,6 +1135,8 @@ const STORAGE_KEY = 'grind_os_layout_v2';
 const NOTES_KEY = 'grind_os_notes_v1';
 const WALLET_KEY = 'grind_os_wallet';
 
+const IMCHAT_URL = 'ImChat.html';   // change to full URL if hosted elsewhere
+
 const $  = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
@@ -1137,7 +1157,17 @@ const WIDGET_REGISTRY = {
     notes:        { id:'notes',        name:'Notes',             desc:'Quick scratchpad',             icon:'fa-note-sticky',        size:'1x1',  category:'Productivity', render: renderNotesWidget },
     radio:        { id:'radio',        name:'Deep Work Radio',   desc:'24/7 focus stream',            icon:'fa-radio',              size:'1x1',  category:'Productivity', render: renderRadioWidget },
     community:    { id:'community',    name:'Community',         desc:'Live feed',                    icon:'fa-users',              size:'1x1',  category:'Social',       render: renderCommunityWidget },
-    affiliate:    { id:'affiliate',    name:'Affiliate',         desc:'Referrals & earnings',         icon:'fa-share-nodes',        size:'1x1',  category:'Social',       render: renderAffiliateWidget }
+    affiliate:    { id:'affiliate',    name:'Affiliate',         desc:'Referrals & earnings',         icon:'fa-share-nodes',        size:'1x1',  category:'Social',       render: renderAffiliateWidget },
+    imchat: {
+    id:'imchat',
+    name:'NEXUS Chat',
+    desc:'P2P encrypted messenger',
+    icon:'fa-comments',
+    size:'2x2',
+    category:'Social',
+    render: renderImChatWidget,
+    init: initImChatWidget
+}
 };
 
 const CATEGORIES = ['Trading', 'Productivity', 'Social'];
@@ -1249,6 +1279,69 @@ function cycleWidgetSize(widgetId) {
     const el = document.querySelector(`[data-widget-id="${widgetId}"]`);
     if (el) el.dataset.size = w.size;
     toast(`Size: ${w.size === 'full' ? 'FULL' : w.size}`);
+}
+
+function renderImChatWidget(w) {
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-comments"></i> NEXUS · P2P</div>
+            <span class="imchat-badge" id="imchatBadge_${w.id}" style="display:none;">0</span>
+        </div>
+        <div style="flex:1; position:relative; overflow:hidden; border-radius:8px; border:1px solid var(--border-thin); background:var(--bg-deep); min-height:0;">
+            <iframe class="imchat-iframe" src="${IMCHAT_URL}" allow="clipboard-write" style="width:100%; height:100%; border:none; display:block;"></iframe>
+        </div>
+    `;
+}
+
+function initImChatWidget(w, el) {
+    const iframe = el.querySelector('.imchat-iframe');
+    const badge  = el.querySelector(`#imchatBadge_${w.id}`);
+    if (!iframe) return;
+
+    const sendInit = () => {
+        const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#00ffd5';
+        try {
+            iframe.contentWindow.postMessage({
+                type: 'hub_init',
+                wallet: state.wallet,
+                accent
+            }, '*');
+        } catch (e) {}
+    };
+
+    // Listen for messages FROM the iframe
+    const onMsg = (e) => {
+        if (!e.data || typeof e.data !== 'object' || !e.data.type) return;
+        // Only accept from our iframe
+        if (iframe.contentWindow && e.source !== iframe.contentWindow) return;
+
+        if (e.data.type === 'imchat_ready') {
+            sendInit();
+        } else if (e.data.type === 'imchat_unread') {
+            const n = Number(e.data.count) || 0;
+            if (badge) {
+                if (n > 0) {
+                    badge.textContent = n > 99 ? '99+' : String(n);
+                    badge.style.display = '';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+    };
+    window.addEventListener('message', onMsg);
+
+    // Iframe loads → send init
+    iframe.addEventListener('load', () => setTimeout(sendInit, 100));
+
+    // Track for theme / wallet broadcasts
+    window._imchatWidgets = window._imchatWidgets || [];
+    window._imchatWidgets.push({ iframe, id: w.id });
+
+    widgetCleanup[w.id] = () => {
+        window.removeEventListener('message', onMsg);
+        window._imchatWidgets = (window._imchatWidgets || []).filter(x => x.iframe !== iframe);
+    };
 }
 
 /* ─── ADD / REMOVE ─── */
@@ -2401,7 +2494,22 @@ function toast(text) {
 /* ─── MODALS / LANG ─── */
 function openModal(id) { const el = document.getElementById(id); if (el) el.classList.add('active'); }
 function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('active')); }
-function setTheme(theme) { document.body.className = theme; closeModals(); }
+function setTheme(theme) {
+    document.body.className = theme;
+    closeModals();
+    // Broadcast new accent to all embedded ImChat iframes
+    setTimeout(broadcastAccent, 60);
+}
+
+function broadcastAccent() {
+    const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+    if (!accent) return;
+    (window._imchatWidgets || []).forEach(({ iframe }) => {
+        try {
+            iframe.contentWindow && iframe.contentWindow.postMessage({ type: 'hub_theme', accent }, '*');
+        } catch (e) {}
+    });
+}
 
 const dictionary = {
     'RU': { 'Dashboard':'Дашборд', 'Active Goals':'Активные цели', 'Trading':'Трейдинг', 'Productivity':'Продуктивность' },
@@ -2592,134 +2700,87 @@ else boot();
 
 
 </script>
-<script>
-// EIP-6963 Wallet Listener (ճիշտ դետեկտոր)
-const EIPProviders = {};
-window.addEventListener("eip6963:announceProvider", (event) => {
-    EIPProviders[event.detail.info.uuid] = event.detail;
+<script type="module">
+import { createAppKit } from 'https://esm.sh/@reown/appkit?bundle';
+import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers?bundle';
+
+const mainnet = { 
+    id: 1, name: 'Ethereum', 
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
+    rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } }, 
+    blockExplorers: { default: { name: 'Etherscan', url: 'https://etherscan.io' } } 
+};
+const arbitrum = { 
+    id: 42161, name: 'Arbitrum', 
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
+    rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } }, 
+    blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } } 
+};
+
+const modal = createAppKit({
+    adapters: [new EthersAdapter()],
+    networks: [mainnet, arbitrum],
+    metadata: { name: 'GRIND OS', description: 'Web3 Dashboard', url: 'https://t1prime.com', icons: [] },
+    projectId: '9a4485f532467f3b0bb7584537697fd1',
+    features: { analytics: false, email: true, socials: ['google'] } 
 });
-window.dispatchEvent(new Event("eip6963:requestProvider"));
 
-const HubAuth = {
-    account: null,
+function syncAdminData(address) {
+    let users = JSON.parse(localStorage.getItem('admin_users_db') || '[]');
+    let user = users.find(u => u.tg_id === address);
+    
+    if (!user) {
+        user = {
+            tg_id: address,
+            username: 'User_' + address.slice(2, 6).toUpperCase(),
+            expires_at: Date.now() + (180 * 24 * 60 * 60 * 1000) 
+        };
+        users.push(user);
+        localStorage.setItem('admin_users_db', JSON.stringify(users));
+    }
+    localStorage.setItem('current_user_id', address);
+}
 
-    async connect() {
-        let provider = null;
-        
-        // Ստուգում ենք EIP-6963-ով (MetaMask, Rabby, և այլն)
-        const entries = Object.entries(EIPProviders);
-        if (entries.length > 0) {
-            provider = entries[0][1].provider;
-        } else if (window.ethereum) {
-            provider = window.ethereum; // Fallback
-        }
-
-        if (!provider) {
-            alert("No Web3 wallet detected! Please install MetaMask or Rabby.");
-            window.open("https://metamask.io/download/", "_blank");
-            return;
-        }
-
-        try {
-            const accounts = await provider.request({ method: "eth_requestAccounts" });
-            if (accounts && accounts.length > 0) {
-                this.account = accounts[0].toLowerCase();
-                this.saveSession();
-                this.syncAdminData(this.account);
-                this.updateUI();
-            }
-        } catch (err) {
-            console.error("Connection rejected", err);
-        }
-    },
-
-    saveSession() {
-        if (this.account) {
-            localStorage.setItem('t1prime_wallet', JSON.stringify({ address: this.account }));
-        }
-    },
-
-    restoreSession() {
-        const saved = localStorage.getItem('t1prime_wallet');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                if (data.address) {
-                    this.account = data.address;
-                    this.updateUI();
-                }
-            } catch(e) {}
-        }
-    },
-
-    syncAdminData(address) {
-        let users = JSON.parse(localStorage.getItem('admin_users_db') || '[]');
-        let user = users.find(u => u.tg_id === address);
-        
-        if (!user) {
-            user = {
-                tg_id: address,
-                username: 'User_' + address.slice(2, 6).toUpperCase(),
-                expires_at: Date.now() + (180 * 24 * 60 * 60 * 1000) // +6 ամիս
-            };
-            users.push(user);
-            localStorage.setItem('admin_users_db', JSON.stringify(users));
-        }
-        localStorage.setItem('current_user_id', address);
-    },
-
-    toggleMenu() {
-        const menu = document.getElementById('walletMenu');
-        if (!this.account) {
-            this.connect();
-        } else {
-            menu?.classList.toggle('open');
-        }
-    },
-
-    logout() {
-        this.account = null;
-        localStorage.removeItem('t1prime_wallet');
-        localStorage.removeItem('current_user_id');
-        this.updateUI();
-        document.getElementById('walletMenu')?.classList.remove('open');
-    },
-
-    updateUI() {
-        const btnText = document.getElementById('wallet-text');
-        const btn = document.getElementById('wallet-btn');
-        const addrEl = document.getElementById('walletAddr');
-        
-        if (this.account) {
-            const short = this.account.slice(0, 6) + '...' + this.account.slice(-4);
-            if (btnText) btnText.textContent = short;
-            if (addrEl) addrEl.textContent = short;
-            if (btn) btn.classList.add('connected');
-        } else {
-            if (btnText) btnText.textContent = 'Connect Wallet';
-            if (btn) btn.classList.remove('connected');
-        }
-    },
-
-    copyAddress() {
-        if (this.account) {
-            navigator.clipboard.writeText(this.account);
-            alert('Address copied!');
-        }
-        document.getElementById('walletMenu')?.classList.remove('open');
-    },
-
-    viewExplorer() {
-        if (this.account) {
-            window.open(`https://etherscan.io/address/${this.account}`, '_blank');
-        }
-        document.getElementById('walletMenu')?.classList.remove('open');
+window.openWalletModal = () => {
+    const btn = document.getElementById('wallet-btn');
+    const menu = document.getElementById('walletMenu');
+    if (btn && btn.classList.contains('connected')) {
+        menu?.classList.toggle('open');
+    } else {
+        modal.open();
     }
 };
 
-// Էջը բացվելիս վերականգնում ենք սեսիան
-document.addEventListener('DOMContentLoaded', () => {
-    HubAuth.restoreSession();
+window.openNetworksModal = () => { modal.open({ view: 'Networks' }); document.getElementById('walletMenu')?.classList.remove('open'); };
+window.disconnectWallet = async () => { await modal.disconnect(); document.getElementById('walletMenu')?.classList.remove('open'); };
+window.copyWalletAddress = () => {
+    const address = modal.getAccount()?.address;
+    if (address) { navigator.clipboard.writeText(address); alert('Address copied!'); }
+    document.getElementById('walletMenu')?.classList.remove('open');
+};
+window.viewOnExplorer = () => {
+    const address = modal.getAccount()?.address;
+    if (address) window.open(`https://etherscan.io/address/${address}`, '_blank');
+    document.getElementById('walletMenu')?.classList.remove('open');
+};
+
+modal.subscribeAccount((account) => {
+    const btnText = document.getElementById('wallet-text');
+    const btn = document.getElementById('wallet-btn');
+    const addrEl = document.getElementById('walletAddr');
+    const menu = document.getElementById('walletMenu');
+    
+    if (account?.isConnected) {
+        const short = account.address.slice(0, 6) + '...' + account.address.slice(-4);
+        if (btnText) btnText.textContent = short;
+        if (addrEl) addrEl.textContent = short;
+        if (btn) btn.classList.add('connected');
+        syncAdminData(account.address); 
+    } else {
+        if (btnText) btnText.textContent = 'Connect Wallet';
+        if (btn) btn.classList.remove('connected');
+        if (menu) menu.classList.remove('open');
+    }
 });
 </script>
 </body>
