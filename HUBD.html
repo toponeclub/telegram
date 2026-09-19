@@ -1135,7 +1135,8 @@ const STORAGE_KEY = 'grind_os_layout_v2';
 const NOTES_KEY = 'grind_os_notes_v1';
 const WALLET_KEY = 'grind_os_wallet';
 
-const IMCHAT_URL = 'ImChat.html';   // change to full URL if hosted elsewhere
+const IMCHAT_URL = 'https://www.t1prime.com/imchat';   // change to full URL if hosted elsewhere
+const ENGINE_URL = 'https://www.t1prime.com/imchat';   // Trading Engine widget    
 
 const $  = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -1158,6 +1159,26 @@ const WIDGET_REGISTRY = {
     radio:        { id:'radio',        name:'Deep Work Radio',   desc:'24/7 focus stream',            icon:'fa-radio',              size:'1x1',  category:'Productivity', render: renderRadioWidget },
     community:    { id:'community',    name:'Community',         desc:'Live feed',                    icon:'fa-users',              size:'1x1',  category:'Social',       render: renderCommunityWidget },
     affiliate:    { id:'affiliate',    name:'Affiliate',         desc:'Referrals & earnings',         icon:'fa-share-nodes',        size:'1x1',  category:'Social',       render: renderAffiliateWidget },
+    engine: {
+    id: 'engine',
+    name: 'Trading Engine',
+    desc: 'Charts · VP · Liq tracker',
+    icon: 'fa-bolt',
+    size: '2x2',
+    category: 'Trading',
+    render: renderEngineWidget,
+    init: initEngineWidget
+}
+    crypto_sparkline: { 
+        id:'crypto_sparkline', 
+        name:'Crypto Sparkline', 
+        desc:'Futuristic animated chart', 
+        icon:'fa-chart-area', 
+        size:'2x2', 
+        category:'Trading', 
+        render: renderCryptoSparklineWidget, 
+        init: initCryptoSparklineWidget 
+    },
     imchat: {
     id:'imchat',
     name:'NEXUS Chat',
@@ -1199,6 +1220,68 @@ function getDefaultLayout() {
     ];
 }
 function uid() { return 'w_' + Math.random().toString(36).slice(2, 9); }
+
+    /* ════════════════════════════════════════════════════════════
+   TRADING ENGINE WIDGET
+   ════════════════════════════════════════════════════════════ */
+function renderEngineWidget(w) {
+    // Grab symbol from localStorage if user has one (optional)
+    const savedSym = (localStorage.getItem('engine_symbol') || 'BTCUSDT').replace('USDT','');
+    const savedTF  = localStorage.getItem('engine_tf') || '5m';
+
+    const src = `${ENGINE_URL}?symbol=${savedSym}USDT&tf=${savedTF}`;
+
+    return `
+        <div style="flex:1; position:relative; overflow:hidden; border-radius:8px; background:var(--bg-deep); min-height:0; border:1px solid var(--border-thin);">
+            <iframe
+                class="engine-iframe"
+                src="${src}"
+                allow="clipboard-write; clipboard-read"
+                loading="lazy"
+                style="width:100%; height:100%; border:none; display:block; background:#050608;"
+            ></iframe>
+        </div>
+    `;
+}
+
+function initEngineWidget(w, el) {
+    const iframe = el.querySelector('.engine-iframe');
+    if (!iframe) return;
+
+    // Push theme accent into engine (engine listens for this — optional)
+    const sendTheme = () => {
+        const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#00ffd5';
+        try {
+            iframe.contentWindow.postMessage({ type: 'SET_ACCENT', accent }, '*');
+        } catch(e) {}
+    };
+
+    iframe.addEventListener('load', () => {
+        setTimeout(sendTheme, 150);
+    });
+
+    // Expose a helper so parent can control symbol / TF later:
+    //   window.ENGINE_WIDGETS[w.id] = { setSymbol, setTF }
+    window.ENGINE_WIDGETS = window.ENGINE_WIDGETS || {};
+    window.ENGINE_WIDGETS[w.id] = {
+        setSymbol: (sym) => {
+            const s = String(sym).toUpperCase().replace(/[^A-Z0-9]/g,'');
+            iframe.contentWindow.postMessage({ type: 'SET_SYMBOL', symbol: s.endsWith('USDT') ? s : s + 'USDT' }, '*');
+            localStorage.setItem('engine_symbol', s.endsWith('USDT') ? s : s + 'USDT');
+        },
+        setTF: (tf) => {
+            iframe.contentWindow.postMessage({ type: 'SET_TF', tf }, '*');
+            localStorage.setItem('engine_tf', tf);
+        },
+        setStyle: (st) => {
+            iframe.contentWindow.postMessage({ type: 'SET_STYLE', style: st }, '*');
+        }
+    };
+
+    widgetCleanup[w.id] = () => {
+        delete window.ENGINE_WIDGETS?.[w.id];
+    };
+}
 
 /* ════════════════════════════════════════════════════════════
    GRID RENDER
@@ -2010,6 +2093,244 @@ function renderProgressWidget() {
                 <div class="progress-bar"><div class="progress-bar-fill" style="width:${x.pct}%"></div></div>
             </div>`).join('')}
         </div>`;
+}
+
+function renderCryptoSparklineWidget(w) {
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-bolt"></i> Sparkline Pro</div>
+            <div style="display:flex; align-items:center; gap:4px; font-size:8px; font-family:var(--font-mono); color:var(--accent); font-weight:700; letter-spacing:1px; background:var(--accent-dim); padding:2px 6px; border-radius:4px; border:1px solid rgba(0,255,213,0.2);">
+                <div style="width:5px; height:5px; background:var(--accent); border-radius:50%; box-shadow:0 0 5px var(--accent); animation:pulseDot 1.5s infinite;"></div> LIVE
+            </div>
+        </div>
+        <div style="display:flex; flex-direction:column; height:100%; min-height:0; position:relative;">
+            
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                <div style="position:relative; flex-shrink:0;">
+                    <input type="text" id="coinInput_${w.id}" value="BTCUSDT" list="coinList_${w.id}" spellcheck="false" style="background:rgba(0,0,0,0.5); color:var(--text-main); border:1px solid var(--border-thin); border-radius:6px; padding:5px 10px; font-size:11px; font-family:var(--font-mono); width:105px; text-transform:uppercase; outline:none; transition:border-color 0.3s; box-shadow:inset 0 2px 10px rgba(0,0,0,0.5);" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-thin)'">
+                    <datalist id="coinList_${w.id}"></datalist>
+                </div>
+                <div style="text-align:right; min-width:120px;">
+                    <div id="currentPrice_${w.id}" style="font-size:clamp(1.1rem, 4cqw, 1.8rem); font-weight:800; font-family:var(--font-mono); line-height:1; letter-spacing:-1px; text-shadow:0 0 20px rgba(255,255,255,0.1); transition:color 0.3s ease;">--</div>
+                    <div id="priceChange_${w.id}" style="font-size:0.72rem; font-family:var(--font-mono); padding:2px 8px; border-radius:4px; display:inline-block; margin-top:5px; font-weight:700; letter-spacing:0.5px;">--</div>
+                </div>
+            </div>
+
+            <div style="position:relative; flex:1; background:linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.4) 100%); border-radius:8px; border:1px solid rgba(255,255,255,0.03); overflow:hidden; margin-bottom:10px; min-height:80px;">
+                <div id="loadingState_${w.id}" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:var(--accent); font-size:10px; font-family:var(--font-mono); letter-spacing:2px; z-index:10; text-shadow:0 0 10px var(--accent); display:none;">SYNCING...</div>
+                <canvas id="sparklineChart_${w.id}" style="width:100%; height:100%; display:block; cursor:crosshair;"></canvas>
+                <div id="hoverTooltip_${w.id}" style="position:absolute; background:rgba(10,10,12,0.95); color:var(--text-main); padding:6px 10px; border-radius:6px; font-size:10px; font-family:var(--font-mono); pointer-events:none; opacity:0; transition:opacity 0.1s; transform:translate(-50%,-100%); border:1px solid var(--accent-dim); box-shadow:0 5px 15px rgba(0,0,0,0.5); z-index:20; white-space:nowrap; text-align:center;"></div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; gap:10px; font-size:9px; color:var(--text-muted); font-family:var(--font-mono);">
+                    <div>H: <strong id="highPrice_${w.id}" style="color:var(--text-main);">--</strong></div>
+                    <div>L: <strong id="lowPrice_${w.id}" style="color:var(--text-main);">--</strong></div>
+                </div>
+                <div id="tfSelector_${w.id}" style="display:flex; gap:4px;">
+                    <button class="scr-tab active" data-interval="1h" data-limit="24" style="padding:4px 8px; font-size:9px;">24H</button>
+                    <button class="scr-tab" data-interval="4h" data-limit="42" style="padding:4px 8px; font-size:9px;">7D</button>
+                    <button class="scr-tab" data-interval="1d" data-limit="30" style="padding:4px 8px; font-size:9px;">1M</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function initCryptoSparklineWidget(w, el) {
+    const API_BASE = 'https://api.binance.com/api/v3';
+    const DPI = window.devicePixelRatio || 1;
+    let currentCoinId = 'BTCUSDT';
+    let priceData = [], rawPrices = [];
+    let animationFrameId = null, pulseAnimationFrameId = null, pulseTimeStart = null;
+    let lastMouseX = -1;
+    const PULSE_DURATION = 2000;
+
+    const SYMBOL_NAMES = { 'BTCUSDT':'BITCOIN', 'ETHUSDT':'ETHEREUM', 'SOLUSDT':'SOLANA', 'BNBUSDT':'BNB', 'XRPUSDT':'RIPPLE', 'DOGEUSDT':'DOGECOIN', 'ADAUSDT':'CARDANO', 'AVAXUSDT':'AVALANCHE', 'LINKUSDT':'CHAINLINK' };
+
+    let config = { interval: '1h', limit: 24, padding: { top: 15, right: 10, bottom: 10, left: 10 }, hoverLineColor: 'rgba(255,255,255,0.15)' };
+    
+    const els = {
+        input: el.querySelector(`#coinInput_${w.id}`),
+        datalist: el.querySelector(`#coinList_${w.id}`),
+        price: el.querySelector(`#currentPrice_${w.id}`),
+        change: el.querySelector(`#priceChange_${w.id}`),
+        high: el.querySelector(`#highPrice_${w.id}`),
+        low: el.querySelector(`#lowPrice_${w.id}`),
+        loading: el.querySelector(`#loadingState_${w.id}`),
+        canvas: el.querySelector(`#sparklineChart_${w.id}`),
+        tooltip: el.querySelector(`#hoverTooltip_${w.id}`),
+        tfs: el.querySelectorAll(`#tfSelector_${w.id} .scr-tab`)
+    };
+    const ctx = els.canvas.getContext('2d');
+
+    function formatPrice(price) {
+        const num = parseFloat(price);
+        return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits: num>100?2:6 }).format(num);
+    }
+
+    async function fetchChartData(symbol, interval, limit) {
+        els.loading.style.display = 'block';
+        try {
+            const data = await fetch(`${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`).then(r=>r.json());
+            els.loading.style.display = 'none';
+            return data.map(k => [parseInt(k[0]), parseFloat(k[4])]);
+        } catch (e) { els.loading.style.display = 'none'; return []; }
+    }
+
+    async function updateWidget(symbol) {
+        try {
+            const marketData = await fetch(`${API_BASE}/ticker/24hr?symbol=${symbol}`).then(r=>r.json());
+            if (marketData && !marketData.code) {
+                const chg = parseFloat(marketData.priceChangePercent);
+                els.price.textContent = formatPrice(marketData.lastPrice);
+                
+                const isUp = chg >= 0;
+                els.price.style.color = isUp ? 'var(--green)' : 'var(--red)';
+                els.change.textContent = `${isUp?'+':''}${chg.toFixed(2)}%`;
+                els.change.style.color = isUp ? 'var(--green)' : 'var(--red)';
+                els.change.style.background = isUp ? 'rgba(0,255,136,0.1)' : 'rgba(255,42,95,0.1)';
+                els.change.style.border = isUp ? '1px solid rgba(0,255,136,0.2)' : '1px solid rgba(255,42,95,0.2)';
+                els.high.textContent = formatPrice(marketData.highPrice);
+                els.low.textContent = formatPrice(marketData.lowPrice);
+            }
+            priceData = await fetchChartData(symbol, config.interval, config.limit);
+            rawPrices = priceData.map(p => p[1]);
+            if (!pulseAnimationFrameId) pulseAnimationFrameId = requestAnimationFrame(animatePulse);
+        } catch(e) {}
+    }
+
+    function drawSparkline(hoverX = -1, pulseScale = 1) {
+        if (!rawPrices.length) return;
+        const rect = els.canvas.parentElement.getBoundingClientRect();
+        els.canvas.width = rect.width * DPI; els.canvas.height = rect.height * DPI;
+        ctx.scale(DPI, DPI);
+
+        const width = rect.width - config.padding.left - config.padding.right;
+        const height = rect.height - config.padding.top - config.padding.bottom;
+        const max = Math.max(...rawPrices), min = Math.min(...rawPrices), range = max - min;
+        const isUp = rawPrices[rawPrices.length-1] >= rawPrices[0];
+        const lineColor = isUp ? '#00ff88' : '#ff2a5f';
+
+        ctx.clearRect(0, 0, rect.width*DPI, rect.height*DPI);
+        if (rawPrices.length < 2 || range <= 0) return;
+
+        const xScale = width / (rawPrices.length - 1), yScale = height / range;
+        const getX = i => config.padding.left + i * xScale;
+        const getY = p => config.padding.top + height - (p - min) * yScale;
+
+        ctx.beginPath();
+        ctx.moveTo(config.padding.left, rect.height);
+        ctx.lineTo(getX(0), getY(rawPrices[0]));
+        for (let i=0; i<rawPrices.length-1; i++) ctx.quadraticCurveTo((getX(i)+getX(i+1))/2, getY(rawPrices[i]), getX(i+1), getY(rawPrices[i+1]));
+        ctx.lineTo(config.padding.left + width, rect.height);
+        ctx.closePath();
+        
+        const grad = ctx.createLinearGradient(0, config.padding.top, 0, rect.height);
+        grad.addColorStop(0, lineColor+'60'); grad.addColorStop(1, lineColor+'00');
+        ctx.fillStyle = grad; ctx.fill();
+
+        ctx.beginPath();
+        ctx.strokeStyle = lineColor; ctx.lineWidth = 2.5;
+        ctx.shadowColor = lineColor; ctx.shadowBlur = 8;
+        ctx.moveTo(getX(0), getY(rawPrices[0]));
+        for (let i=0; i<rawPrices.length-1; i++) ctx.quadraticCurveTo((getX(i)+getX(i+1))/2, getY(rawPrices[i]), getX(i+1), getY(rawPrices[i+1]));
+        ctx.stroke(); ctx.shadowBlur = 0;
+
+        const lastX = getX(rawPrices.length-1), lastY = getY(rawPrices[rawPrices.length-1]);
+        if (pulseScale > 1) {
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, 12*pulseScale, 0, Math.PI*2);
+            ctx.strokeStyle = lineColor + Math.round((0.8/pulseScale)*255).toString(16).padStart(2,'0');
+            ctx.lineWidth = 2*(2-pulseScale); ctx.stroke();
+        }
+        ctx.beginPath(); ctx.arc(lastX, lastY, 4, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
+
+        if (hoverX > -1) {
+            const idx = Math.min(Math.round((hoverX - config.padding.left) / xScale), rawPrices.length-1);
+            if (idx >= 0) {
+                const px = getX(idx), py = getY(rawPrices[idx]);
+                ctx.beginPath(); ctx.strokeStyle = config.hoverLineColor; ctx.setLineDash([3, 3]);
+                ctx.moveTo(px, config.padding.top); ctx.lineTo(px, rect.height - config.padding.bottom); ctx.stroke(); ctx.setLineDash([]);
+                ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
+                return { x: px, y: py, price: rawPrices[idx], time: priceData[idx][0] };
+            }
+        }
+    }
+
+    function animatePulse(timestamp) {
+        if (!pulseTimeStart) pulseTimeStart = timestamp;
+        let progress = (timestamp - pulseTimeStart) / PULSE_DURATION;
+        if (progress >= 1) { progress=1; drawSparkline(lastMouseX, 1); pulseAnimationFrameId=null; return; }
+        drawSparkline(lastMouseX, 1 + 0.6 * Math.sin(progress * Math.PI));
+        pulseAnimationFrameId = requestAnimationFrame(animatePulse);
+    }
+
+    els.canvas.addEventListener('mousemove', e => {
+        lastMouseX = e.clientX - els.canvas.getBoundingClientRect().left;
+        if (pulseAnimationFrameId) { cancelAnimationFrame(pulseAnimationFrameId); pulseAnimationFrameId=null; pulseTimeStart=null; }
+        if (!animationFrameId) animationFrameId = requestAnimationFrame(() => {
+            animationFrameId = null;
+            const h = drawSparkline(lastMouseX, 1);
+            if (h) {
+                const trendColor = h.price >= rawPrices[0] ? 'var(--green)' : 'var(--red)';
+                els.tooltip.innerHTML = `<span style="font-weight:800; font-size:12px; color:${trendColor};">${formatPrice(h.price)}</span><br><span style="color:var(--text-muted); opacity:0.8;">${new Date(h.time).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'})}</span>`;
+                
+                let tipX = h.x + els.canvas.offsetLeft;
+                let tipY = h.y + els.canvas.offsetTop - 15;
+                const tipW = els.tooltip.offsetWidth || 80;
+                
+                // Boundary Fix
+                if (tipY < 40) { tipY = h.y + els.canvas.offsetTop + 20; els.tooltip.style.transform = 'translate(-50%, 0)'; } 
+                else { els.tooltip.style.transform = 'translate(-50%, -100%)'; }
+                if (tipX < tipW/2 + 5) tipX = tipW/2 + 5;
+                if (tipX > els.canvas.offsetWidth - tipW/2 - 5) tipX = els.canvas.offsetWidth - tipW/2 - 5;
+                
+                els.tooltip.style.left = `${tipX}px`; els.tooltip.style.top = `${tipY}px`;
+                els.tooltip.style.opacity = '1';
+            }
+        });
+    });
+
+    els.canvas.addEventListener('mouseout', () => {
+        if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId=null; }
+        els.tooltip.style.opacity = '0'; lastMouseX = -1;
+        if (!pulseAnimationFrameId) pulseAnimationFrameId = requestAnimationFrame(animatePulse);
+    });
+
+    Object.keys(SYMBOL_NAMES).forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id; opt.textContent = SYMBOL_NAMES[id];
+        els.datalist.appendChild(opt);
+    });
+
+    let debounceTimer;
+    els.input.addEventListener('input', e => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            let val = e.target.value.trim().toUpperCase();
+            if(val.length > 2 && !val.includes('USDT') && !val.includes('USD')) val += 'USDT';
+            if(val) { currentCoinId = val; updateWidget(currentCoinId); }
+        }, 600);
+    });
+
+    els.tfs.forEach(btn => btn.addEventListener('click', e => {
+        e.stopPropagation();
+        els.tfs.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        config.interval = btn.dataset.interval; config.limit = parseInt(btn.dataset.limit);
+        updateWidget(currentCoinId);
+    }));
+
+    const ro = new ResizeObserver(() => drawSparkline(lastMouseX, 1));
+    ro.observe(els.canvas.parentElement);
+    updateWidget(currentCoinId);
+
+    widgetCleanup[w.id] = () => {
+        ro.disconnect();
+        if (pulseAnimationFrameId) cancelAnimationFrame(pulseAnimationFrameId);
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
 }
 
 function renderClockWidget() {
