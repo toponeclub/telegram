@@ -992,8 +992,8 @@ const ENGINE = (() => {
     const vp = S.vp;
     if(!vp.ctx || !S.prices.length) return;
     const cv = vp.cv, ctx = vp.ctx;
-    const W = cv.clientWidth, H = cv.clientHeight;
-    ctx.clearRect(0,0,W,H);
+const W = cv.clientWidth, H = cv.clientHeight;
+ctx.clearRect(0,0,W,H);
     const vr = S.charts.main.timeScale().getVisibleRange();
     if(!vr) return;
     const vis = S.prices.filter(p => p.time >= vr.from && p.time <= vr.to);
@@ -1045,7 +1045,7 @@ const ENGINE = (() => {
       const len = intensity * vp.w;
       const alpha = 0.22 + intensity*0.68;
       ctx.fillStyle = `rgba(0,255,213,${alpha})`;
-      ctx.fillRect(rightEdge-len, y, len, h);
+      ctx.fillRect(0, y, len, h);
     }
     const pocPrice = minP + poc*bucket + bucket/2;
     let pocY;
