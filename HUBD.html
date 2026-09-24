@@ -432,11 +432,37 @@ body {
 }
 .module:hover { border-color: var(--border-hover); transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 
-.module[data-size="1x1"] { grid-column: span 1; min-height: 180px; }
-.module[data-size="2x1"] { grid-column: span 2; min-height: 220px; }
-.module[data-size="1x2"] { grid-column: span 1; min-height: 340px; }
-.module[data-size="2x2"] { grid-column: span 2; min-height: 420px; }
+/* ─── Widget Sizes · 12 variants ─── */
+.module[data-size="1x1"]  { grid-column: span 1; min-height: 180px; }
+.module[data-size="2x1"]  { grid-column: span 2; min-height: 220px; }
+.module[data-size="3x1"]  { grid-column: span 3; min-height: 220px; }
+.module[data-size="4x1"]  { grid-column: span 4; min-height: 240px; }
+
+.module[data-size="1x2"]  { grid-column: span 1; min-height: 340px; }
+.module[data-size="2x2"]  { grid-column: span 2; min-height: 420px; }
+.module[data-size="3x2"]  { grid-column: span 3; min-height: 420px; }
+.module[data-size="4x2"]  { grid-column: span 4; min-height: 460px; }
+
+.module[data-size="1x3"]  { grid-column: span 1; min-height: 500px; }
+.module[data-size="2x3"]  { grid-column: span 2; min-height: 620px; }
+.module[data-size="3x3"]  { grid-column: span 3; min-height: 620px; }
+
 .module[data-size="full"] { grid-column: 1 / -1; min-height: 380px; }
+.module[data-size="hero"] { grid-column: 1 / -1; min-height: 560px; }
+
+/* ─── Responsive clamping — wide sizes collapse on smaller screens ─── */
+@media (max-width: 1400px) {
+    .module[data-size="4x1"],
+    .module[data-size="4x2"],
+    .module[data-size="3x3"] { grid-column: span 3; }
+}
+@media (max-width: 1100px) {
+    .module[data-size="3x1"],
+    .module[data-size="3x2"],
+    .module[data-size="3x3"],
+    .module[data-size="4x1"],
+    .module[data-size="4x2"] { grid-column: span 2; }
+}
 
 .widget-controls {
     position: absolute; top: 15px; right: 15px;
@@ -801,6 +827,54 @@ body.is-dragging .drag-ghost { opacity: 1; }
 body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
 body.is-dragging iframe { pointer-events: none !important; }
 
+/* ─── Size Picker Dropdown ─── */
+.size-picker {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-thin);
+    border-radius: 8px;
+    padding: 5px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px;
+    min-width: 220px;
+    z-index: 200;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 255, 213, 0.06);
+    animation: sizePickerIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes sizePickerIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.size-picker-btn {
+    padding: 7px 4px;
+    background: transparent;
+    border: 1px solid var(--border-thin);
+    border-radius: 4px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    text-align: center;
+    line-height: 1;
+}
+.size-picker-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-dim);
+}
+.size-picker-btn.active {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    box-shadow: 0 0 12px var(--accent-dim);
+}
+
 /* ════════════════════════════════════════════════════════════
    REOWN APPKIT · THEME OVERRIDE
    ════════════════════════════════════════════════════════════ */
@@ -838,6 +912,196 @@ wui-modal {
     text-align: center;
     letter-spacing: 0.5px;
     animation: pulseDot 1.6s infinite;
+}
+
+/* ════════════════════════════════════════════════════════════
+   ALARM · TIMER WIDGET — Premium Look
+   ════════════════════════════════════════════════════════════ */
+.clock-mode-btn {
+    flex: 1;
+    padding: 8px 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    z-index: 1;
+}
+.clock-mode-btn:hover {
+    color: var(--text-hover);
+}
+.clock-mode-btn.active {
+    color: #000;
+    background: var(--accent);
+    box-shadow: 0 0 20px var(--accent-dim), 0 0 0 1px var(--accent) inset;
+    text-shadow: none;
+}
+
+.clock-quick-btn {
+    padding: 8px 4px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--border-thin);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.clock-quick-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    transform: translateY(-1px);
+}
+.clock-quick-btn.active {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    box-shadow: 0 0 14px var(--accent-dim);
+}
+
+.clock-action-btn {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border-thin);
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    flex-shrink: 0;
+}
+.clock-action-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-dim);
+}
+.clock-action-btn.primary {
+    color: #000;
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 20px var(--accent-dim);
+}
+.clock-action-btn.primary:hover {
+    background: var(--accent);
+    filter: brightness(1.15);
+    transform: scale(1.03);
+}
+.clock-action-btn.danger:hover {
+    color: var(--red);
+    border-color: var(--red);
+    background: rgba(255,42,95,0.1);
+}
+
+/* ════════════════════════════════════════════════════════════
+   APPLE-STYLE WIDGETS · Rounded · Glass · Resizable
+   ════════════════════════════════════════════════════════════ */
+
+/* Larger radius + glassy look */
+.module {
+    border-radius: 22px !important;
+    background: linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(0,0,0,0.15) 100%) !important;
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    box-shadow:
+        0 1px 0 rgba(255,255,255,0.04) inset,
+        0 12px 40px rgba(0,0,0,0.35);
+    padding: 24px !important;
+}
+.module:hover {
+    box-shadow:
+        0 1px 0 rgba(255,255,255,0.06) inset,
+        0 20px 60px rgba(0,0,0,0.55),
+        0 0 0 1px var(--accent-dim) !important;
+    transform: translateY(-3px);
+}
+
+/* Subtle top highlight (Apple vibe) */
+.module::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    border-radius: 22px 22px 0 0;
+    pointer-events: none;
+}
+
+/* ─── Resize handle (bottom-right corner, Apple style) ─── */
+.resize-handle {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: nwse-resize;
+    opacity: 0;
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 25;
+    touch-action: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.module:hover .resize-handle { opacity: 0.5; }
+.resize-handle:hover { opacity: 1 !important; }
+
+/* Icon: 3 diagonal lines (Apple-style resize glyph) */
+.resize-handle::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    border-radius: 0 0 3px 0;
+    transition: border-color 0.2s;
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 -1px var(--text-muted);
+}
+.resize-handle:hover::after { border-color: var(--accent); box-shadow: 3px 3px 0 -1px var(--accent); }
+
+/* ─── Live preview while resizing ─── */
+body.is-resizing { cursor: nwse-resize !important; }
+body.is-resizing * { cursor: nwse-resize !important; user-select: none !important; }
+body.is-resizing .module { transition: none !important; }
+
+.resize-hint {
+    position: fixed;
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(10px);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    pointer-events: none;
+    z-index: 99999;
+    box-shadow: 0 0 24px var(--accent-dim), 0 8px 24px rgba(0,0,0,0.6);
+    white-space: nowrap;
+}
+
+/* Mobile — hide resize handle (touch is too finicky) */
+@media (max-width: 768px) {
+    .resize-handle { display: none !important; }
 }
 </style>
 </head>
@@ -1049,12 +1313,12 @@ wui-modal {
 
     <!-- IFRAME VIEW -->
     <div class="iframe-view" id="iframeView">
-        <div class="iframe-body">
-            <div class="iframe-loader" id="iframeLoader">
-                <div class="iframe-spinner"></div>
-                <span>◤ ENTERING THE MATRIX ◢</span>
-            </div>
-<iframe id="mainIframe" src="about:blank" allow="clipboard-write" loading="lazy"></iframe>        </div>
+        <div class="iframe-body" id="iframeBody">
+    <div class="iframe-loader" id="iframeLoader">
+        <div class="iframe-spinner"></div>
+        <span>◤ ENTERING THE MATRIX ◢</span>
+    </div>
+</div>
     </div>
 
     <!-- TICKER -->
@@ -1137,6 +1401,7 @@ const WALLET_KEY = 'grind_os_wallet';
 
 const IMCHAT_URL = 'https://www.t1prime.com/imchat';   // change to full URL if hosted elsewhere
 const ENGINE_URL = 'https://www.t1prime.com/enginepro';   // Trading Engine widget    
+const COINGLASS_BASE = 'https://www.coinglass.com/tv/Binance_';
 
 const $  = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -1153,7 +1418,7 @@ const WIDGET_REGISTRY = {
     biohacking:   { id:'biohacking',   name:'Bio-Sync Stack',    desc:'Supplement builder',           icon:'fa-dna',                size:'1x1',  category:'Productivity', render: renderBiohackingWidget },
     tasks:        { id:'tasks',        name:'Today Tasks',       desc:'Daily checklist',              icon:'fa-list-check',         size:'1x1',  category:'Productivity', render: renderTasksWidget },
     progress:     { id:'progress',     name:'Progress',          desc:'Weekly bars',                  icon:'fa-chart-simple',       size:'1x1',  category:'Productivity', render: renderProgressWidget },
-    clock:        { id:'clock',        name:'Clock',             desc:'Time & date',                  icon:'fa-clock',              size:'1x1',  category:'Productivity', render: renderClockWidget },
+    clock: { id:'clock', name:'Alarm · Timer', desc:'Alarm & countdown', icon:'fa-bell', size:'1x1', category:'Productivity', render: renderClockWidget, init: initClockWidget },
     quote:        { id:'quote',        name:'Quote',             desc:'Daily doctrine',               icon:'fa-quote-left',         size:'1x1',  category:'Productivity', render: renderQuoteWidget },
     notes:        { id:'notes',        name:'Notes',             desc:'Quick scratchpad',             icon:'fa-note-sticky',        size:'1x1',  category:'Productivity', render: renderNotesWidget },
     radio:        { id:'radio',        name:'Deep Work Radio',   desc:'24/7 focus stream',            icon:'fa-radio',              size:'1x1',  category:'Productivity', render: renderRadioWidget },
@@ -1168,6 +1433,16 @@ const WIDGET_REGISTRY = {
     category: 'Trading',
     render: renderEngineWidget,
     init: initEngineWidget
+},
+coinglass: {
+    id: 'coinglass',
+    name: 'CoinGlass',
+    desc: 'TV chart · OI · Liq · Heatmaps',
+    icon: 'fa-solid fa-gem',
+    size: '2x2',
+    category: 'Trading',
+    render: renderCoinglassWidget,
+    init: initCoinglassWidget
 },
     crypto_sparkline: { 
         id:'crypto_sparkline', 
@@ -1220,6 +1495,51 @@ function getDefaultLayout() {
     ];
 }
 function uid() { return 'w_' + Math.random().toString(36).slice(2, 9); }
+
+/* ════════════════════════════════════════════════════════════
+   COINGLASS WIDGET (iframe)
+   ════════════════════════════════════════════════════════════ */
+function renderCoinglassWidget(w) {
+    const saved = (localStorage.getItem('hubdl_cg_symbol') || 'BTC').toUpperCase();
+
+    const src = `${COINGLASS_BASE}${saved}USDT`;
+
+    return `
+        <div style="flex:1; position:relative; overflow:hidden; border-radius:8px; background:var(--bg-deep); min-height:0; border:1px solid var(--border-thin);">
+            <iframe
+                class="cg-iframe"
+                src="${src}"
+                allow="clipboard-write; clipboard-read"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                style="width:100%; height:100%; border:none; display:block; background:#050608;"
+            ></iframe>
+        </div>
+    `;
+}
+
+function initCoinglassWidget(w, el) {
+    const iframe = el.querySelector('.cg-iframe');
+    if (!iframe) return;
+
+    // Public API so parent / other widgets can control it
+    window.COINGLASS_WIDGETS = window.COINGLASS_WIDGETS || {};
+    window.COINGLASS_WIDGETS[w.id] = {
+        setSymbol: (sym) => {
+            let s = String(sym || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (!s) s = 'BTC';
+            if (s.endsWith('USDT')) s = s.slice(0, -4);
+            localStorage.setItem('hubdl_cg_symbol', s);
+            iframe.src = `${COINGLASS_BASE}${s}USDT`;
+        }
+    };
+
+    widgetCleanup[w.id] = () => {
+        delete window.COINGLASS_WIDGETS?.[w.id];
+    };
+
+    console.log('[CoinGlass] Widget armed');
+}
 
     /* ════════════════════════════════════════════════════════════
    TRADING ENGINE WIDGET
@@ -1317,7 +1637,7 @@ function renderGrid() {
         const locked = reg.premium && !state.subscribed;
         const unlockedClass = locked ? '' : 'unlocked';
 
-        el.innerHTML = `
+               el.innerHTML = `
             <div class="widget-controls">
                 <button class="widget-btn grip" title="Drag to move"><i class="fa-solid fa-grip-vertical"></i></button>
                 <button class="widget-btn size-btn" title="Change size"><i class="fa-solid fa-expand"></i></button>
@@ -1329,12 +1649,18 @@ function renderGrid() {
                     <button class="unlock-btn" onclick="event.stopPropagation();toggleSubscription();">Unlock PRO</button>
                 </div>` : ''}
             ${reg.render(w)}
+            <div class="resize-handle" title="Drag to resize"></div>
         `;
 
         grid.appendChild(el);
 
         el.querySelector('.remove-btn').addEventListener('click', (e) => { e.stopPropagation(); removeWidget(w.id); });
-        el.querySelector('.size-btn').addEventListener('click', (e) => { e.stopPropagation(); cycleWidgetSize(w.id); });
+        el.querySelector('.size-btn').addEventListener('click', (e) => {
+                    const rh = el.querySelector('.resize-handle');
+        if (rh) rh.addEventListener('pointerdown', onResizeStart);
+    e.stopPropagation();
+    openSizePicker(e.currentTarget, w.id);
+});
 
         const grip = el.querySelector('.widget-btn.grip');
         if (grip) grip.addEventListener('pointerdown', onGripPointerDown);
@@ -1353,15 +1679,93 @@ function renderGrid() {
 }
 
 /* ─── SIZE CYCLE ─── */
-const SIZE_CYCLE = { '1x1':'2x1', '2x1':'2x2', '2x2':'1x1', '1x2':'1x1', 'full':'full' };
-function cycleWidgetSize(widgetId) {
+/* ════════════════════════════════════════════════════════════
+   WIDGET SIZE SYSTEM · 13 variants
+   ════════════════════════════════════════════════════════════ */
+const SIZE_CATALOG = [
+    { key:'1x1',  label:'S',     desc:'Small'           },
+    { key:'2x1',  label:'W',     desc:'Wide'            },
+    { key:'3x1',  label:'W+',    desc:'Wide Plus'       },
+    { key:'4x1',  label:'W++',   desc:'Wide XL'         },
+    { key:'1x2',  label:'T',     desc:'Tall'            },
+    { key:'2x2',  label:'L',     desc:'Large'           },
+    { key:'3x2',  label:'L+',    desc:'Large Wide'      },
+    { key:'4x2',  label:'L++',   desc:'Large XL'        },
+    { key:'1x3',  label:'T+',    desc:'Tall Plus'       },
+    { key:'2x3',  label:'T++',   desc:'Tall XL'         },
+    { key:'3x3',  label:'MAX',   desc:'Maximum'         },
+    { key:'full', label:'FULL',  desc:'Full Width'      },
+    { key:'hero', label:'HERO',  desc:'Full Width Tall' }
+];
+
+/* Cycle order — sequential through catalogue */
+const SIZE_CYCLE = {
+    '1x1':'2x1', '2x1':'3x1', '3x1':'4x1', '4x1':'1x2',
+    '1x2':'2x2', '2x2':'3x2', '3x2':'4x2', '4x2':'1x3',
+    '1x3':'2x3', '2x3':'3x3', '3x3':'full', 'full':'hero', 'hero':'1x1'
+};
+
+function setWidgetSize(widgetId, sizeKey) {
     const w = state.widgets.find(x => x.id === widgetId);
     if (!w) return;
-    w.size = SIZE_CYCLE[w.size] || '1x1';
+    if (!SIZE_CATALOG.find(s => s.key === sizeKey)) return;
+    w.size = sizeKey;
     saveState();
     const el = document.querySelector(`[data-widget-id="${widgetId}"]`);
     if (el) el.dataset.size = w.size;
-    toast(`Size: ${w.size === 'full' ? 'FULL' : w.size}`);
+    const meta = SIZE_CATALOG.find(s => s.key === w.size);
+    toast(`Size: ${meta ? meta.desc : w.size}`);
+}
+
+function cycleWidgetSize(widgetId) {
+    const w = state.widgets.find(x => x.id === widgetId);
+    if (!w) return;
+    const next = SIZE_CYCLE[w.size] || '1x1';
+    setWidgetSize(widgetId, next);
+}
+
+/* ─── Size Picker Dropdown ─── */
+function openSizePicker(btn, widgetId) {
+    closeSizePicker();
+    const w = state.widgets.find(x => x.id === widgetId);
+    if (!w) return;
+
+    const picker = document.createElement('div');
+    picker.className = 'size-picker';
+    picker.innerHTML = SIZE_CATALOG.map(s => `
+        <button class="size-picker-btn ${s.key === w.size ? 'active' : ''}"
+                data-size="${s.key}"
+                title="${s.desc}">${s.label}</button>
+    `).join('');
+
+    picker.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const size = e.target.closest('[data-size]')?.dataset.size;
+        if (size) {
+            setWidgetSize(widgetId, size);
+            closeSizePicker();
+        }
+    });
+
+    const wrap = btn.closest('.widget-controls');
+    if (wrap) {
+        if (getComputedStyle(wrap).position === 'static') wrap.style.position = 'relative';
+        wrap.appendChild(picker);
+    }
+
+    setTimeout(() => {
+        document.addEventListener('click', onSizePickerOutside, { once: true });
+    }, 10);
+}
+function onSizePickerOutside(e) {
+    if (e.target.closest('.size-picker')) {
+        document.addEventListener('click', onSizePickerOutside, { once: true });
+        return;
+    }
+    closeSizePicker();
+}
+function closeSizePicker() {
+    document.querySelectorAll('.size-picker').forEach(p => p.remove());
 }
 
 function renderImChatWidget(w) {
@@ -1587,14 +1991,35 @@ function cleanupDrag() {
     dragState = null;
 }
 
+/* ════════════════════════════════════════════════════════════
+   REORDER · SURGICAL (DOM move, no rebuild)
+   ════════════════════════════════════════════════════════════ */
 function reorderWidget(fromId, toId) {
     const fromIdx = state.widgets.findIndex(w => w.id === fromId);
     const toIdx = state.widgets.findIndex(w => w.id === toId);
     if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
+
+    /* 1. Update state array */
     const [moved] = state.widgets.splice(fromIdx, 1);
     state.widgets.splice(toIdx, 0, moved);
     saveState();
-    renderGrid();
+
+    /* 2. Move the existing DOM element — no rebuild */
+    const grid = $('#bentoGrid');
+    if (!grid) return;
+    const fromEl = grid.querySelector(`[data-widget-id="${fromId}"]`);
+    const toEl = grid.querySelector(`[data-widget-id="${toId}"]`);
+    if (!fromEl || !toEl) return;
+
+    if (fromIdx < toIdx) {
+        /* Dragged downward → insert after target */
+        toEl.parentNode.insertBefore(fromEl, toEl.nextSibling);
+    } else {
+        /* Dragged upward → insert before target */
+        toEl.parentNode.insertBefore(fromEl, toEl);
+    }
+
+    /* ★ NO renderGrid() call — iframes, charts, WS stay alive. */
 }
 
 /* ─── Library → Dashboard drop ─── */
@@ -1650,6 +2075,134 @@ function initDashboardDropZone() {
         el.addEventListener('dragleave', onDragLeave);
         el.addEventListener('drop', onDrop);
     });
+}
+
+/* ════════════════════════════════════════════════════════════
+   DRAG-TO-RESIZE · Snaps to grid cells (like Apple widgets)
+   ════════════════════════════════════════════════════════════ */
+let resizeState = null;
+
+function getGridInfo() {
+    const grid = document.getElementById('bentoGrid');
+    if (!grid) return { cellW: 340, gap: 20, maxCols: 4 };
+    const cs = getComputedStyle(grid);
+    const gap = parseFloat(cs.columnGap) || 20;
+    const cols = (cs.gridTemplateColumns || '').split(' ').filter(s => s && s !== 'none').length || 1;
+    const totalW = grid.clientWidth;
+    const cellW = (totalW - (cols - 1) * gap) / cols;
+    return { cellW, gap, maxCols: Math.max(1, cols) };
+}
+
+function pickSizeKey(cols, rows) {
+    /* Catalog has: 1x1..4x1, 1x2..4x2, 1x3..3x3 */
+    if (rows === 1) cols = Math.min(cols, 4);
+    else if (rows === 2) cols = Math.min(cols, 4);
+    else if (rows >= 3) { rows = 3; cols = Math.min(cols, 3); }
+    return `${cols}x${rows}`;
+}
+
+function onResizeStart(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const handle = e.currentTarget;
+    const widget = handle.closest('.module');
+    if (!widget) return;
+
+    resizeState = {
+        widgetId: widget.dataset.widgetId,
+        element: widget,
+        handle,
+        startX: e.clientX,
+        startY: e.clientY,
+        startW: widget.offsetWidth,
+        startH: widget.offsetHeight,
+        pointerId: e.pointerId,
+        pendingSize: widget.dataset.size
+    };
+
+    /* Create floating hint */
+    let hint = document.getElementById('resizeHint');
+    if (!hint) {
+        hint = document.createElement('div');
+        hint.id = 'resizeHint';
+        hint.className = 'resize-hint';
+        document.body.appendChild(hint);
+    }
+    hint.textContent = (widget.dataset.size || '1x1').toUpperCase();
+
+    document.body.classList.add('is-resizing');
+    document.addEventListener('pointermove', onResizeMove);
+    document.addEventListener('pointerup', onResizeEnd);
+    document.addEventListener('pointercancel', onResizeEnd);
+}
+
+function onResizeMove(e) {
+    if (!resizeState) return;
+    const { startX, startY, startW, startH, element } = resizeState;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    const newW = Math.max(200, startW + dx);
+    const newH = Math.max(140, startH + dy);
+
+    /* Snap to grid cells */
+    const g = getGridInfo();
+    const rawCols = (newW + g.gap) / (g.cellW + g.gap);
+    const cols = Math.max(1, Math.min(g.maxCols, Math.round(rawCols)));
+
+    /* Row height ~= 200px per row */
+    const ROW_H = 200;
+    const rows = Math.max(1, Math.min(3, Math.round((newH + 20) / ROW_H)));
+
+    const sizeKey = pickSizeKey(cols, rows);
+    resizeState.pendingSize = sizeKey;
+
+    /* Live preview */
+    element.style.width = newW + 'px';
+    element.style.height = newH + 'px';
+    element.style.zIndex = '20';
+    element.style.transform = 'none';
+    element.style.transition = 'none';
+    element.style.boxShadow = '0 24px 70px rgba(0,0,0,0.7), 0 0 0 2px var(--accent)';
+
+    /* Update hint */
+    const hint = document.getElementById('resizeHint');
+    if (hint) {
+        const meta = SIZE_CATALOG.find(s => s.key === sizeKey);
+        hint.textContent = `${sizeKey.toUpperCase()}${meta ? ' · ' + meta.desc : ''}`;
+        hint.style.left = (e.clientX + 18) + 'px';
+        hint.style.top = (e.clientY + 18) + 'px';
+    }
+}
+
+function onResizeEnd() {
+    if (!resizeState) return;
+    const { widgetId, element, pendingSize } = resizeState;
+
+    /* Restore */
+    element.style.width = '';
+    element.style.height = '';
+    element.style.zIndex = '';
+    element.style.transform = '';
+    element.style.transition = '';
+    element.style.boxShadow = '';
+
+    const hint = document.getElementById('resizeHint');
+    if (hint) hint.remove();
+
+    document.body.classList.remove('is-resizing');
+    document.removeEventListener('pointermove', onResizeMove);
+    document.removeEventListener('pointerup', onResizeEnd);
+    document.removeEventListener('pointercancel', onResizeEnd);
+
+    /* Apply the snapped size */
+    if (pendingSize) {
+        setWidgetSize(widgetId, pendingSize);
+    }
+
+    resizeState = null;
 }
 
 /* ─── Trash zone — THIS WAS MISSING ─── */
@@ -2186,11 +2739,12 @@ function initCryptoSparklineWidget(w, el) {
                 els.price.textContent = formatPrice(marketData.lastPrice);
                 
                 const isUp = chg >= 0;
-                els.price.style.color = isUp ? 'var(--green)' : 'var(--red)';
-                els.change.textContent = `${isUp?'+':''}${chg.toFixed(2)}%`;
-                els.change.style.color = isUp ? 'var(--green)' : 'var(--red)';
-                els.change.style.background = isUp ? 'rgba(0,255,136,0.1)' : 'rgba(255,42,95,0.1)';
-                els.change.style.border = isUp ? '1px solid rgba(0,255,136,0.2)' : '1px solid rgba(255,42,95,0.2)';
+const upCol = '#00ffc8', dnCol = '#a855f7';
+els.price.style.color = isUp ? upCol : dnCol;
+els.change.textContent = `${isUp?'+':''}${chg.toFixed(2)}%`;
+els.change.style.color = isUp ? upCol : dnCol;
+els.change.style.background = isUp ? 'rgba(0,255,200,0.1)' : 'rgba(168,85,247,0.1)';
+els.change.style.border = isUp ? '1px solid rgba(0,255,200,0.2)' : '1px solid rgba(168,85,247,0.2)';
                 els.high.textContent = formatPrice(marketData.highPrice);
                 els.low.textContent = formatPrice(marketData.lowPrice);
             }
@@ -2210,7 +2764,7 @@ function initCryptoSparklineWidget(w, el) {
         const height = rect.height - config.padding.top - config.padding.bottom;
         const max = Math.max(...rawPrices), min = Math.min(...rawPrices), range = max - min;
         const isUp = rawPrices[rawPrices.length-1] >= rawPrices[0];
-        const lineColor = isUp ? '#00ff88' : '#ff2a5f';
+        const lineColor = isUp ? '#00ffc8' : '#a855f7';
 
         ctx.clearRect(0, 0, rect.width*DPI, rect.height*DPI);
         if (rawPrices.length < 2 || range <= 0) return;
@@ -2273,7 +2827,7 @@ function initCryptoSparklineWidget(w, el) {
             animationFrameId = null;
             const h = drawSparkline(lastMouseX, 1);
             if (h) {
-                const trendColor = h.price >= rawPrices[0] ? 'var(--green)' : 'var(--red)';
+                const trendColor = h.price >= rawPrices[0] ? '#00ffc8' : '#a855f7';
                 els.tooltip.innerHTML = `<span style="font-weight:800; font-size:12px; color:${trendColor};">${formatPrice(h.price)}</span><br><span style="color:var(--text-muted); opacity:0.8;">${new Date(h.time).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'})}</span>`;
                 
                 let tipX = h.x + els.canvas.offsetLeft;
@@ -2333,14 +2887,352 @@ function initCryptoSparklineWidget(w, el) {
     };
 }
 
-function renderClockWidget() {
+function renderClockWidget(w) {
     return `
-        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-clock"></i> Clock</div></div>
-        <div class="clock-display">
-            <div class="clock-time" id="clock-time">--:--</div>
-            <div class="clock-date" id="clock-date">---</div>
-            <div class="clock-tz" id="clock-tz">--</div>
-        </div>`;
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-bell"></i> Alarm · Timer</div>
+            <span id="clockLive_${w.id}" style="font-family:var(--font-mono); font-size:0.7rem; color:var(--accent); font-weight:700; letter-spacing:1px;">--:--:--</span>
+        </div>
+
+        <!-- Mode switcher · segmented control -->
+        <div style="display:flex; gap:0; margin-bottom:14px; background:rgba(0,0,0,0.35); border:1px solid var(--border-thin); border-radius:8px; padding:3px; position:relative;">
+            <button class="clock-mode-btn active" data-mode="alarm" data-wid="${w.id}">ALARM</button>
+            <button class="clock-mode-btn" data-mode="timer" data-wid="${w.id}">TIMER</button>
+        </div>
+
+        <!-- ─── ALARM PANEL ─── -->
+        <div id="alarmPanel_${w.id}" style="display:flex; flex-direction:column; gap:14px; flex:1;">
+
+            <!-- Big digital display -->
+            <div style="text-align:center; padding:6px 0 4px;">
+                <div id="alarmBigDisplay_${w.id}" style="font-family:var(--font-mono); font-size:2.4rem; font-weight:800; letter-spacing:1px; color:var(--accent); line-height:1; text-shadow:0 0 22px var(--accent-dim); transition:color 0.3s;">09:00</div>
+                <div id="alarmStatus_${w.id}" style="font-family:var(--font-mono); font-size:0.65rem; color:var(--text-muted); margin-top:6px; letter-spacing:1.5px; text-transform:uppercase;">OFF</div>
+            </div>
+
+            <!-- Time input -->
+            <div style="display:flex; gap:6px; align-items:stretch;">
+                <input type="time" id="alarmTime_${w.id}" value="09:00"
+                       style="flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--border-thin); color:var(--text-main); padding:10px 12px; border-radius:8px; font-family:var(--font-mono); font-size:0.9rem; font-weight:700; outline:none; transition:border-color 0.2s;"
+                       onfocus="this.style.borderColor='var(--accent)'"
+                       onblur="this.style.borderColor='var(--border-thin)'">
+                <button id="alarmSet_${w.id}" class="clock-action-btn primary">
+                    <i class="fa-solid fa-bell"></i>
+                </button>
+                <button id="alarmClear_${w.id}" class="clock-action-btn danger" title="Clear">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Quick presets -->
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px;">
+                <button class="clock-quick-btn" data-quick="07:00" data-wid="${w.id}">07:00</button>
+                <button class="clock-quick-btn" data-quick="08:00" data-wid="${w.id}">08:00</button>
+                <button class="clock-quick-btn" data-quick="09:00" data-wid="${w.id}">09:00</button>
+                <button class="clock-quick-btn" data-quick="18:00" data-wid="${w.id}">18:00</button>
+            </div>
+
+        </div>
+
+        <!-- ─── TIMER PANEL ─── -->
+        <div id="timerPanel_${w.id}" style="display:none; flex-direction:column; gap:14px; flex:1;">
+
+            <!-- Circular ring + countdown -->
+            <div style="position:relative; display:flex; align-items:center; justify-content:center; height:150px; flex-shrink:0;">
+                <svg width="150" height="150" viewBox="0 0 150 150" style="transform:rotate(-90deg); position:absolute;">
+                    <circle cx="75" cy="75" r="62" stroke="rgba(255,255,255,0.04)" stroke-width="6" fill="none"/>
+                    <circle id="timerRing_${w.id}" cx="75" cy="75" r="62"
+                            stroke="var(--accent)" stroke-width="6" fill="none"
+                            stroke-linecap="round"
+                            stroke-dasharray="389.56" stroke-dashoffset="389.56"
+                            style="transition:stroke-dashoffset 0.5s linear, stroke 0.3s; filter:drop-shadow(0 0 8px var(--accent-dim));"/>
+                </svg>
+                <div style="position:relative; text-align:center; z-index:2;">
+                    <div id="timerDisplay_${w.id}" style="font-family:var(--font-mono); font-size:1.9rem; font-weight:800; letter-spacing:1px; color:var(--accent); line-height:1; text-shadow:0 0 18px var(--accent-dim);">00:00</div>
+                    <div id="timerHint_${w.id}" style="font-family:var(--font-mono); font-size:0.55rem; color:var(--text-muted); margin-top:6px; letter-spacing:2px; text-transform:uppercase;">READY</div>
+                </div>
+            </div>
+
+            <!-- Quick presets -->
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px;">
+                <button class="clock-quick-btn" data-preset="60"   data-wid="${w.id}">1m</button>
+                <button class="clock-quick-btn" data-preset="300"  data-wid="${w.id}">5m</button>
+                <button class="clock-quick-btn" data-preset="900"  data-wid="${w.id}">15m</button>
+                <button class="clock-quick-btn" data-preset="1500" data-wid="${w.id}">25m</button>
+            </div>
+
+            <!-- MM : SS inputs -->
+            <div style="display:flex; gap:6px; align-items:center;">
+                <input type="number" id="timerMin_${w.id}" min="0" max="999" placeholder="00"
+                       style="flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--border-thin); color:var(--text-main); padding:9px; border-radius:8px; font-family:var(--font-mono); font-size:0.85rem; text-align:center; outline:none; font-weight:700; transition:border-color 0.2s;"
+                       onfocus="this.style.borderColor='var(--accent)'"
+                       onblur="this.style.borderColor='var(--border-thin)'">
+                <span style="color:var(--text-muted); font-family:var(--font-mono); font-weight:800;">:</span>
+                <input type="number" id="timerSec_${w.id}" min="0" max="59" placeholder="00"
+                       style="flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--border-thin); color:var(--text-main); padding:9px; border-radius:8px; font-family:var(--font-mono); font-size:0.85rem; text-align:center; outline:none; font-weight:700; transition:border-color 0.2s;"
+                       onfocus="this.style.borderColor='var(--accent)'"
+                       onblur="this.style.borderColor='var(--border-thin)'">
+            </div>
+
+            <!-- START / RESET -->
+            <div style="display:flex; gap:6px;">
+                <button id="timerStart_${w.id}" class="clock-action-btn primary" style="flex:1; width:auto; height:38px;">
+                    <i class="fa-solid fa-play"></i><span style="margin-left:6px; font-size:10px; letter-spacing:1px;">START</span>
+                </button>
+                <button id="timerReset_${w.id}" class="clock-action-btn" style="flex:1; width:auto; height:38px;">
+                    <i class="fa-solid fa-rotate-left"></i><span style="margin-left:6px; font-size:10px; letter-spacing:1px;">RESET</span>
+                </button>
+            </div>
+
+        </div>
+    `;
+}
+
+function initClockWidget(w, el) {
+    const id = w.id;
+
+    const liveEl       = el.querySelector(`#clockLive_${id}`);
+    const alarmPanel   = el.querySelector(`#alarmPanel_${id}`);
+    const timerPanel   = el.querySelector(`#timerPanel_${id}`);
+    const alarmIn      = el.querySelector(`#alarmTime_${id}`);
+    const alarmSet     = el.querySelector(`#alarmSet_${id}`);
+    const alarmClear   = el.querySelector(`#alarmClear_${id}`);
+    const alarmStat    = el.querySelector(`#alarmStatus_${id}`);
+    const alarmBig     = el.querySelector(`#alarmBigDisplay_${id}`);
+    const timerDisp    = el.querySelector(`#timerDisplay_${id}`);
+    const timerHint    = el.querySelector(`#timerHint_${id}`);
+    const timerRing    = el.querySelector(`#timerRing_${id}`);
+    const timerStart   = el.querySelector(`#timerStart_${id}`);
+    const timerReset   = el.querySelector(`#timerReset_${id}`);
+    const minIn        = el.querySelector(`#timerMin_${id}`);
+    const secIn        = el.querySelector(`#timerSec_${id}`);
+
+    const RING_CIRCUMFERENCE = 2 * Math.PI * 62; // r = 62
+    let mode = 'alarm';
+    let alarmTarget = null;
+    let alarmFired = false;
+    let timerEnd = null;
+    let timerTotal = 0;
+    let timerRemaining = 0;
+    let timerRunning = false;
+    let audioCtx = null;
+
+    /* ─── Live clock ─── */
+    const tickLive = () => {
+        if (!liveEl) return;
+        const d = new Date();
+        liveEl.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+        /* Update big alarm display if no alarm set */
+        if (!alarmTarget && alarmBig) {
+            alarmBig.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        }
+    };
+    const liveInt = setInterval(tickLive, 1000);
+    tickLive();
+
+    /* ─── Sound ─── */
+    function ringAlarm() {
+        try {
+            audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            [0, 0.25, 0.5, 0.9, 1.15, 1.4].forEach((t, i) => {
+                const o = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                o.frequency.value = i % 2 === 0 ? 880 : 1100;
+                g.gain.value = 0.12;
+                o.connect(g); g.connect(audioCtx.destination);
+                o.start(audioCtx.currentTime + t);
+                o.stop(audioCtx.currentTime + t + 0.18);
+            });
+        } catch(e) {}
+        try { if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]); } catch(e) {}
+        if (typeof toast === 'function') toast('⏰ Time is up!');
+    }
+
+    /* ─── Mode switch ─── */
+    el.querySelectorAll(`[data-mode][data-wid="${id}"]`).forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mode = btn.dataset.mode;
+            el.querySelectorAll(`[data-mode][data-wid="${id}"]`).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            alarmPanel.style.display = mode === 'alarm' ? 'flex' : 'none';
+            timerPanel.style.display = mode === 'timer' ? 'flex' : 'none';
+        });
+    });
+
+    /* ─── ALARM: Set ─── */
+    alarmSet.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const val = alarmIn.value;
+        if (!val) return;
+        const [hh, mm] = val.split(':').map(Number);
+        const now = new Date();
+        const target = new Date();
+        target.setHours(hh, mm, 0, 0);
+        if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+        alarmTarget = target.getTime();
+        alarmFired = false;
+
+        const hStr = String(hh).padStart(2,'0');
+        const mStr = String(mm).padStart(2,'0');
+        const dayStr = target.getDate() === now.getDate() ? 'TODAY' : 'TOMORROW';
+        alarmBig.textContent = `${hStr}:${mStr}`;
+        alarmBig.style.color = 'var(--accent)';
+        alarmStat.textContent = `${dayStr} · ARMED`;
+        alarmStat.style.color = 'var(--accent)';
+        if (typeof toast === 'function') toast(`Alarm: ${hStr}:${mStr} ${dayStr.toLowerCase()}`);
+    });
+
+    /* ─── ALARM: Clear ─── */
+    alarmClear.addEventListener('click', (e) => {
+        e.stopPropagation();
+        alarmTarget = null;
+        alarmFired = false;
+        alarmStat.textContent = 'OFF';
+        alarmStat.style.color = 'var(--text-muted)';
+        const d = new Date();
+        alarmBig.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        alarmBig.style.color = 'var(--accent)';
+    });
+
+    /* ─── ALARM: Quick presets ─── */
+    el.querySelectorAll(`[data-quick][data-wid="${id}"]`).forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            alarmIn.value = btn.dataset.quick;
+            el.querySelectorAll(`[data-quick][data-wid="${id}"]`).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    /* ─── TIMER: presets ─── */
+    el.querySelectorAll(`[data-preset][data-wid="${id}"]`).forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sec = parseInt(btn.dataset.preset, 10);
+            minIn.value = Math.floor(sec / 60);
+            secIn.value = sec % 60;
+            timerRemaining = sec;
+            timerTotal = sec;
+            updateTimerDisplay();
+            el.querySelectorAll(`[data-preset][data-wid="${id}"]`).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+    /* ─── TIMER: display + ring ─── */
+    function fmtTimer(s) {
+        s = Math.max(0, Math.floor(s));
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const ss = s % 60;
+        if (h > 0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+        return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+    }
+    function updateTimerDisplay() {
+        timerDisp.textContent = fmtTimer(timerRemaining);
+
+        const danger = timerRemaining <= 10 && timerRunning && timerRemaining > 0;
+        timerDisp.style.color = danger ? 'var(--red)' : 'var(--accent)';
+        timerRing.style.stroke = danger ? 'var(--red)' : 'var(--accent)';
+        timerRing.style.filter = danger
+            ? 'drop-shadow(0 0 12px rgba(255,42,95,0.6))'
+            : 'drop-shadow(0 0 8px var(--accent-dim))';
+
+        /* Progress ring */
+        const progress = timerTotal > 0 ? (timerRemaining / timerTotal) : 0;
+        const offset = RING_CIRCUMFERENCE * (1 - progress);
+        timerRing.style.strokeDashoffset = offset;
+
+        /* Hint */
+        if (timerHint) {
+            if (timerRunning) timerHint.textContent = 'RUNNING';
+            else if (timerRemaining > 0) timerHint.textContent = 'PAUSED';
+            else timerHint.textContent = 'READY';
+        }
+    }
+
+    /* ─── TIMER: start/pause ─── */
+    timerStart.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (timerRunning) {
+            timerRunning = false;
+            timerEnd = null;
+            timerStart.querySelector('span').textContent = 'START';
+            timerStart.querySelector('i').className = 'fa-solid fa-play';
+        } else {
+            if (timerRemaining <= 0) {
+                const mm = parseInt(minIn.value || 0, 10);
+                const ss = parseInt(secIn.value || 0, 10);
+                timerRemaining = mm * 60 + ss;
+                timerTotal = timerRemaining;
+            }
+            if (timerRemaining <= 0) return;
+            timerEnd = Date.now() + timerRemaining * 1000;
+            timerRunning = true;
+            timerStart.querySelector('span').textContent = 'PAUSE';
+            timerStart.querySelector('i').className = 'fa-solid fa-pause';
+        }
+        updateTimerDisplay();
+    });
+
+    /* ─── TIMER: reset ─── */
+    timerReset.addEventListener('click', (e) => {
+        e.stopPropagation();
+        timerRunning = false;
+        timerEnd = null;
+        timerRemaining = 0;
+        timerTotal = 0;
+        minIn.value = '';
+        secIn.value = '';
+        timerStart.querySelector('span').textContent = 'START';
+        timerStart.querySelector('i').className = 'fa-solid fa-play';
+        el.querySelectorAll(`[data-preset][data-wid="${id}"]`).forEach(b => b.classList.remove('active'));
+        updateTimerDisplay();
+    });
+
+    /* ─── Global tick ─── */
+    const tick = () => {
+        /* Alarm check */
+        if (alarmTarget && !alarmFired && Date.now() >= alarmTarget) {
+            alarmFired = true;
+            ringAlarm();
+            alarmStat.textContent = '🔔 RINGING';
+            alarmStat.style.color = 'var(--red)';
+            alarmBig.style.color = 'var(--red)';
+            setTimeout(() => {
+                alarmTarget = null;
+                alarmStat.textContent = 'OFF';
+                alarmStat.style.color = 'var(--text-muted)';
+                const d = new Date();
+                alarmBig.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                alarmBig.style.color = 'var(--accent)';
+            }, 5000);
+        }
+        /* Timer countdown */
+        if (timerRunning && timerEnd) {
+            const left = Math.round((timerEnd - Date.now()) / 1000);
+            timerRemaining = Math.max(0, left);
+            updateTimerDisplay();
+            if (left <= 0) {
+                timerRunning = false;
+                timerEnd = null;
+                timerStart.querySelector('span').textContent = 'START';
+                timerStart.querySelector('i').className = 'fa-solid fa-play';
+                ringAlarm();
+            }
+        }
+    };
+    const tickInt = setInterval(tick, 500);
+
+    updateTimerDisplay();
+
+    /* ─── Cleanup ─── */
+    widgetCleanup[w.id] = () => {
+        clearInterval(liveInt);
+        clearInterval(tickInt);
+        if (audioCtx) { try { audioCtx.close(); } catch(e) {} }
+    };
 }
 
 const QUOTES = [
@@ -2620,47 +3512,91 @@ function closeLibrary() {
 /* ════════════════════════════════════════════════════════════
    IFRAME VIEW
    ════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════
+   IFRAME VIEW · CACHED (no reload on re-entry)
+   ════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════
+   IFRAME VIEW · MULTI-CACHE (no reload on tab switch)
+   ════════════════════════════════════════════════════════════ */
+const _iframeCache = new Map();
+let _activeIframeUrl = null;
+
 function openIframeView(url, title) {
-    const view = $('#iframeView');
-    const dash = $('#dashboardView');
-    const iframe = $('#mainIframe');
-    const loader = $('#iframeLoader');
+    const view    = $('#iframeView');
+    const dash    = $('#dashboardView');
     const backBtn = $('#backBtn');
     const langBox = document.querySelector('.lang-selector-container');
+    const body    = document.getElementById('iframeBody');
+    const loader  = document.getElementById('iframeLoader');
+    if (!view || !dash || !body) return;
 
-    if (!view || !dash || !iframe) return;
+    /* Build final URL with wallet params */
+    let finalUrl = url;
+    const wallet = localStorage.getItem('t1prime_wallet');
+    if (wallet) {
+        try {
+            const data = JSON.parse(wallet);
+            const sep = finalUrl.includes('?') ? '&' : '?';
+            finalUrl += `${sep}wallet=${data.address}&chain=${data.chainId}`;
+        } catch(e) {}
+    }
 
+    /* Hide all currently visible iframes */
+    _iframeCache.forEach(e => { e.wrapper.style.display = 'none'; });
+
+    /* Switch views */
     dash.classList.add('hidden');
     view.classList.add('active');
     if (backBtn) backBtn.classList.remove('hidden');
     if (langBox) langBox.style.display = 'none';
 
+    /* ★ CACHE HIT — show, don't reload */
+    if (_iframeCache.has(finalUrl)) {
+        const entry = _iframeCache.get(finalUrl);
+        entry.wrapper.style.display = 'block';
+        _activeIframeUrl = finalUrl;
+        if (loader) {
+            if (entry.loaded) loader.classList.add('hidden');
+            else loader.classList.remove('hidden');
+        }
+        document.title = `T1PRIME · ${title || 'Module'}`;
+        if (window.innerWidth <= 768) {
+            const sb = $('#sidebar'); if (sb) sb.classList.add('collapsed');
+        }
+        return;
+    }
+
+    /* ★ CACHE MISS — create new iframe */
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:absolute;inset:0;display:block;';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = finalUrl;
+    iframe.allow = 'clipboard-write; clipboard-read';
+    iframe.style.cssText = 'width:100%;height:100%;border:none;background:var(--bg-deep);display:block;';
+
+    wrapper.appendChild(iframe);
+    body.appendChild(wrapper);
+
+    const entry = { wrapper, iframe, loaded: false };
+    _iframeCache.set(finalUrl, entry);
+    _activeIframeUrl = finalUrl;
+
     if (loader) loader.classList.remove('hidden');
-    // Inject wallet state via URL hash
-const wallet = localStorage.getItem('t1prime_wallet');
-if (wallet) {
-    try {
-        const data = JSON.parse(wallet);
-        const sep = url.includes('?') ? '&' : '?';
-        url += `${sep}wallet=${data.address}&chain=${data.chainId}`;
-    } catch(e) {}
-}
-    iframe.src = url;
-    iframe.onload = () => { if (loader) loader.classList.add('hidden'); };
+    iframe.onload = () => {
+        entry.loaded = true;
+        if (_activeIframeUrl === finalUrl && loader) loader.classList.add('hidden');
+    };
 
     document.title = `T1PRIME · ${title || 'Module'}`;
-
-    // Mobile → auto-close sidebar
     if (window.innerWidth <= 768) {
-        const sb = $('#sidebar');
-        if (sb) sb.classList.add('collapsed');
+        const sb = $('#sidebar'); if (sb) sb.classList.add('collapsed');
     }
 }
 
 function closeIframeView() {
-    const view = $('#iframeView');
-    const dash = $('#dashboardView');
-    const iframe = $('#mainIframe');
+    const view    = $('#iframeView');
+    const dash    = $('#dashboardView');
     const backBtn = $('#backBtn');
     const langBox = document.querySelector('.lang-selector-container');
 
@@ -2668,7 +3604,10 @@ function closeIframeView() {
     if (dash) dash.classList.remove('hidden');
     if (backBtn) backBtn.classList.add('hidden');
     if (langBox) langBox.style.display = '';
-    if (iframe) iframe.src = 'about:blank';
+
+    /* ★ DO NOT touch iframes — they stay alive in DOM.
+       WebSockets, charts, scroll positions, alerts — all preserved. */
+
     document.title = 'GRIND // OS';
 }
 
@@ -2904,6 +3843,8 @@ async function updateTicker() {
     } catch (e) {}
 }
 
+
+
 /* ════════════════════════════════════════════════════════════
    EVENT BINDINGS
    ════════════════════════════════════════════════════════════ */
@@ -2916,6 +3857,24 @@ function bindEvents() {
             if (lib && lib.classList.contains('open')) closeLibrary();
             else openLibrary();
         });
+            /* ════════════════════════════════════════════════════════
+       GLOBAL OUTSIDE-CLICK
+       Ազատ տեղ click անելուց → ամբողջ sidebar-ը collapse
+       ════════════════════════════════════════════════════════ */
+    document.addEventListener('click', (e) => {
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+
+        /* Click եղել ա sidebar-ի ներսում → թող աշխատի ինչպես կա */
+        if (sidebar.contains(e.target)) return;
+
+        /* Փակիր բոլոր բաց submenus-ները */
+        document.querySelectorAll('.sub-menu').forEach(m => m.classList.remove('open'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('open'));
+
+        /* Collapse ամբողջ sidebar-ը */
+        sidebar.classList.add('collapsed');
+    });
     }
 
     const overlay = $('#libraryOverlay');
