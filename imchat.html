@@ -89,13 +89,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 
 .full-overlay{position:absolute;inset:0;background:rgba(5,7,10,.9);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5;text-align:center;padding:20px}
 
-.qr-avatar{
-  width:44px;height:44px;border-radius:10px;flex-shrink:0;
-  display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);
-  padding:5px;background:#000;border:1px solid rgba(255,255,255,.06);
-  box-shadow:0 4px 10px rgba(0,0,0,.5);overflow:hidden;
-  cursor:pointer;transition:transform .15s ease,box-shadow .2s ease;
-}
+.qr-avatar{width:44px;height:44px;border-radius:10px;flex-shrink:0;display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);padding:5px;background:#000;border:1px solid rgba(255,255,255,.06);box-shadow:0 4px 10px rgba(0,0,0,.5);overflow:hidden;cursor:pointer;transition:transform .15s ease,box-shadow .2s ease}
 .qr-avatar:hover{transform:scale(1.07);box-shadow:0 0 0 1px var(--border-accent),0 6px 18px rgba(0,0,0,.6)}
 .qr-avatar.sm{width:36px;height:36px;padding:4px}
 .qr-avatar.lg{width:64px;height:64px;padding:7px;border-radius:14px}
@@ -106,12 +100,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 
 .modal-overlay{position:fixed;inset:0;background:rgba(5,7,10,.88);backdrop-filter:blur(12px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
 .modal-overlay.show{display:flex}
-.share-card{
-  background:linear-gradient(180deg,rgba(18,22,28,.98),rgba(10,13,17,.98));
-  border:1px solid var(--border-accent);border-radius:18px;padding:26px 22px;max-width:380px;width:100%;
-  text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.7),0 0 50px var(--accent-dim);
-  animation:fadeIn .28s ease forwards;margin:auto;
-}
+.share-card{background:linear-gradient(180deg,rgba(18,22,28,.98),rgba(10,13,17,.98));border:1px solid var(--border-accent);border-radius:18px;padding:26px 22px;max-width:380px;width:100%;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.7),0 0 50px var(--accent-dim);animation:fadeIn .28s ease forwards;margin:auto}
 .share-title{font-size:10px;letter-spacing:4px;color:var(--text-muted);font-weight:700;text-transform:uppercase}
 .share-sub{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);margin-top:6px;letter-spacing:1px;margin-bottom:14px}
 .share-qr-wrap{display:inline-flex;padding:14px;background:#ffffff;border-radius:14px;border:1px solid var(--border-light);margin:4px 0 16px;box-shadow:0 0 30px var(--accent-dim)}
@@ -122,13 +111,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 .share-actions{display:flex;gap:10px}
 .share-actions .btn-action{margin-top:0}
 
-.toast{
-  position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
-  background:rgba(15,17,22,.97);border:1px solid var(--border-accent);color:var(--accent);
-  padding:11px 22px;border-radius:10px;font-size:11px;font-family:'JetBrains Mono',monospace;
-  letter-spacing:1.5px;z-index:300;opacity:0;pointer-events:none;transition:all .3s ease;
-  box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 20px var(--accent-dim);white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;
-}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(15,17,22,.97);border:1px solid var(--border-accent);color:var(--accent);padding:11px 22px;border-radius:10px;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:1.5px;z-index:300;opacity:0;pointer-events:none;transition:all .3s ease;box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 20px var(--accent-dim);white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.warn{border-color:rgba(255,184,0,.6);color:var(--warning);box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 20px rgba(255,184,0,.25)}
 .toast.ok{border-color:rgba(0,255,213,.6);color:var(--accent)}
@@ -236,15 +219,9 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 
 <script>
 /* ============================================================
-   NEXUS · P2P Chat — v4 (final)
-   Fixes vs v3:
-   1. Close handler no longer deletes activeSessions unconditionally.
-      → kills the "TUNNEL NOT ACTIVE" bug when both peers dial.
-   2. Data listener attached SYNCHRONOUSLY, with a message queue,
-      so the first handshake_req is never lost during ECDH keygen.
-   3. Handshake retries every 1.5s until ack (up to 10 tries).
-   4. Idempotent handshake_ack: re-acks duplicate handshake_req.
-   5. Real scannable QR (qrcodejs) in the share modal.
+   NEXUS · P2P Chat — v5
+   Adds: URL-parameter wallet fallback (works even if hub's
+         postMessage path is broken).
    ============================================================ */
 
 const CryptoEngine = {
@@ -317,10 +294,27 @@ const App = {
   activePeer:null,
   chatHistory:{}, contacts:[], unread:{},
   booted:false, _inited:false, _shareAddr:null,
+  _bootTimer:null,
 
   TTL_MS: 15*60*1000,
   lastActivity: Date.now(),
   _idleTimer:null,
+
+  /* ─── Helpers ─── */
+  _readUrlWallet(){
+    try{
+      const p=new URLSearchParams(window.location.search);
+      const w=(p.get('wallet')||p.get('address')||p.get('addr')||'').trim().toLowerCase();
+      return /^0x[a-f0-9]{6,}$/.test(w) ? w : null;
+    }catch(e){ return null; }
+  },
+  _readUrlAccent(){
+    try{
+      const p=new URLSearchParams(window.location.search);
+      const a=(p.get('accent')||p.get('color')||'').trim();
+      return a && a.startsWith('#') ? a : null;
+    }catch(e){ return null; }
+  },
 
   init(){
     if(this._inited) return;
@@ -340,7 +334,25 @@ const App = {
 
     this.initActivityWatch();
     window.addEventListener('keydown', e=>{ if(e.key==='Escape') this.closeShare(); });
-    console.log('[NEXUS] init() ready, waiting for hub_init');
+
+    /* ─── URL FALLBACK ───
+       Read wallet from ?wallet=... so we boot even if the hub's
+       postMessage path is broken (e.g. hub crashes in bindEvents). */
+    const urlAccent=this._readUrlAccent();
+    if(urlAccent) this.setAccent(urlAccent);
+
+    const urlWallet=this._readUrlWallet();
+    if(urlWallet){
+      console.log('[NEXUS] wallet from URL:', urlWallet);
+      this.boot(urlWallet);
+    } else {
+      // No URL wallet → wait for hub_init (up to 3s), else show waiting screen
+      this._bootTimer=setTimeout(()=>{
+        if(!this.booted){
+          console.warn('[NEXUS] No hub_init and no ?wallet= — still waiting');
+        }
+      }, 3000);
+    }
   },
   toHub(msg){
     try{ if(window.parent && window.parent!==window) window.parent.postMessage(msg,'*'); }catch(e){}
@@ -348,7 +360,8 @@ const App = {
   onHubMessage(e){
     const d=e.data; if(!d||typeof d!=='object'||!d.type) return;
     if(d.type==='hub_init'){
-      console.log('[NEXUS] hub_init wallet=', d.wallet);
+      if(this._bootTimer){ clearTimeout(this._bootTimer); this._bootTimer=null; }
+      console.log('[NEXUS] hub_init received, wallet=', d.wallet);
       if(d.accent) this.setAccent(d.accent);
       document.getElementById('waiting-screen').style.display='none';
       document.getElementById('app-shell').style.display='flex';
@@ -384,7 +397,6 @@ const App = {
     this._toastT=setTimeout(()=>t.classList.remove('show'),2800);
   },
 
-  /* ─── SESSION STORAGE ─── */
   sessKey(){ return 'nexus_sess_'+(this.myAddress||'anon'); },
   saveSession(){
     if(!this.myAddress) return;
@@ -426,9 +438,14 @@ const App = {
   },
 
   boot(addr){
-    const norm=addr.toLowerCase();
+    const norm=String(addr||'').toLowerCase();
+    if(!/^0x[a-f0-9]{6,}$/.test(norm)){
+      console.warn('[NEXUS] boot() rejected invalid address:', addr);
+      return;
+    }
     if(this.booted && this.myAddress===norm) return;
     if(this.booted) this.shutdown(true);
+
     this.myAddress=norm;
     this.dbPrefix=`nexus_${this.myAddress}_`;
     this.loadContacts();
@@ -574,9 +591,6 @@ const App = {
     this.renderSidebar();
   },
 
-  /* *** THE CORE FIX ***
-     Attach data handler SYNCHRONOUSLY, queue early messages,
-     then do async ECDH. Retry handshake until ack. */
   setupDataChannel(conn){
     conn._queue = [];
     conn._ready = false;
@@ -636,7 +650,7 @@ const App = {
     const addr = conn.peerAddress;
     console.log('[NEXUS] channel closed', addr||conn.peer);
 
-    // *** THE FIX: only clean up if THIS conn was the active one ***
+    // Only clean up if THIS conn was the active one
     if(addr && this.connections[addr]===conn){
       delete this.connections[addr];
       delete this.activeSessions[addr];
@@ -672,19 +686,16 @@ const App = {
     }
 
     if(data.type==='handshake_req'){
-      // Idempotent: if we already completed on this exact conn, just re-ack
       if(this.connections[addr]===conn && this.activeSessions[addr]){
         try{ conn.send({type:'handshake_ack',address:this.myAddress,pub:conn._myPub}); }catch(e){}
         return;
       }
 
-      // Duplicate channel resolution: smaller PeerJS ID keeps its outgoing
       const myId = this.peer && this.peer.id;
       const theirId = conn.peer;
       const iAmSmaller = myId && theirId && myId < theirId;
 
       if(iAmSmaller){
-        // Look for any OTHER channel we have for this peer
         let myOutgoing = null;
         for(const [a,c] of Object.entries(this.connections)){
           if(a===addr && c!==conn) myOutgoing = c;
@@ -699,7 +710,6 @@ const App = {
         }
       }
 
-      // Accept this channel as active
       const prev = this.connections[addr];
       if(prev && prev !== conn){ try{ prev.close(); }catch(e){} }
       this.connections[addr] = conn;
@@ -733,7 +743,6 @@ const App = {
       delete this.pendingConns[addr];
       this.lastSeen[addr] = Date.now();
 
-      // Close any sibling channels for this addr
       for(const [a,c] of Object.entries(this.connections)){
         if(a===addr && c!==conn){ try{c.close()}catch(e){} }
       }
@@ -762,10 +771,7 @@ const App = {
     if(data.type==='enc' && this.activeSessions[addr]){
       this.lastSeen[addr] = Date.now();
       const dec = await CryptoEngine.decrypt(this.activeSessions[addr], data.payload);
-      if(dec==='[CORRUPTED]'){
-        console.warn('[NEXUS] decrypt failed from', addr);
-        return;
-      }
+      if(dec==='[CORRUPTED]'){ console.warn('[NEXUS] decrypt failed from', addr); return; }
       try{
         const msg = JSON.parse(dec);
         msg.dir='received';
