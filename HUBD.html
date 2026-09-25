@@ -4189,6 +4189,17 @@ modal.subscribeAccount((account) => {
         if (addrEl) addrEl.textContent = short;
         if (btn) btn.classList.add('connected');
         syncAdminData(account.address); 
+        
+        // ՆՈՐ ԿՈԴ՝ ԱՆՄԻՋԱՊԵՍ ՈՒՂԱՐԿԵԼ ՉԱՏԻՆ
+        (window._imchatWidgets || []).forEach(({ iframe }) => {
+            try {
+                iframe.contentWindow.postMessage({
+                    type: 'hub_init',
+                    wallet: account.address,
+                    accent: getComputedStyle(document.body).getPropertyValue('--accent').trim()
+                }, '*');
+            } catch(e) {}
+        });
     } else {
         if (btnText) btnText.textContent = 'Connect Wallet';
         if (btn) btn.classList.remove('connected');
