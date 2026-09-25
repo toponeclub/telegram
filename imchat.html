@@ -304,8 +304,9 @@ const App = {
     this.myAddress=norm;
     this.dbPrefix=`nexus_${this.myAddress}_`;
     this.loadContacts();
-    document.getElementById('waiting-screen').style.display='none';
-    document.getElementById('app-shell').style.display='flex';
+// chat standalone.html-ni andar boot function-ni shuruat ma athva direct onLoad par:
+document.getElementById('waiting-screen').style.display='none';
+document.getElementById('app-shell').style.display='flex';
 
     // Deterministic peer id
     const safe=btoa(this.myAddress).replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,20);
