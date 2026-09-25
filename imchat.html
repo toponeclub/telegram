@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{
   --bg-main:#05070a; --bg-panel:rgba(15,17,22,.9); --bg-hover:rgba(255,255,255,.04);
@@ -35,7 +36,8 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 .sidebar{width:300px;border-right:1px solid var(--border-light);display:flex;flex-direction:column;background:var(--bg-panel);backdrop-filter:blur(20px);flex-shrink:0;transition:transform .3s}
 .node-header{padding:18px;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center;gap:10px}
 .node-identity{display:flex;align-items:center;gap:12px;min-width:0}
-.node-id-tag{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-dim);padding:6px 10px;border-radius:6px;border:1px solid var(--border-accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node-id-tag{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-dim);padding:6px 10px;border-radius:6px;border:1px solid var(--border-accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;transition:all .2s}
+.node-id-tag:hover{background:rgba(0,255,213,.18)}
 .list-section-title{font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:2px;padding:16px 18px 8px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
 .list-section-title .req-count{background:var(--warning);color:#000;font-size:9px;padding:1px 7px;border-radius:8px;letter-spacing:0}
 .contacts-scroll{flex:1;overflow-y:auto;padding:6px}
@@ -55,6 +57,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 @keyframes pendingBlink{0%,100%{opacity:1}50%{opacity:.35}}
 .icon-btn-small{background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:4px;border-radius:4px;font-size:11px;transition:all .2s}
 .icon-btn-small:hover{color:var(--danger);background:rgba(255,51,102,.1)}
+.icon-btn-small.retry:hover{color:var(--accent);background:var(--accent-dim)}
 
 .icon-btn-header{background:transparent;border:1px solid var(--border-light);color:var(--text-muted);width:32px;height:32px;flex-shrink:0;border-radius:8px;cursor:pointer;font-size:12px;transition:all .2s;display:flex;align-items:center;justify-content:center}
 .icon-btn-header:hover{color:var(--danger);border-color:rgba(255,51,102,.5);background:rgba(255,51,102,.08);box-shadow:0 0 12px rgba(255,51,102,.18)}
@@ -89,7 +92,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 
 .full-overlay{position:absolute;inset:0;background:rgba(5,7,10,.9);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5;text-align:center;padding:20px}
 
-/* QR AVATAR */
+/* LO-FI AVATAR (small, decorative) */
 .qr-avatar{
   width:44px;height:44px;border-radius:10px;flex-shrink:0;
   display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);
@@ -107,22 +110,29 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 .req-id{color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:13px;margin:14px 0 30px;word-break:break-all;padding:0 20px}
 
 /* QR SHARE MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(5,7,10,.88);backdrop-filter:blur(12px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay{position:fixed;inset:0;background:rgba(5,7,10,.88);backdrop-filter:blur(12px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
 .modal-overlay.show{display:flex}
 .share-card{
   background:linear-gradient(180deg,rgba(18,22,28,.98),rgba(10,13,17,.98));
-  border:1px solid var(--border-accent);border-radius:18px;padding:26px 22px;max-width:370px;width:100%;
+  border:1px solid var(--border-accent);border-radius:18px;padding:26px 22px;max-width:380px;width:100%;
   text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.7),0 0 50px var(--accent-dim);
-  animation:fadeIn .28s ease forwards;
+  animation:fadeIn .28s ease forwards;margin:auto;
 }
 .share-title{font-size:10px;letter-spacing:4px;color:var(--text-muted);font-weight:700;text-transform:uppercase}
-.share-sub{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);margin-top:6px;letter-spacing:1px}
-.share-qr-wrap{display:inline-flex;padding:13px;background:#000;border-radius:14px;border:1px solid var(--border-light);margin:16px 0 16px;box-shadow:0 0 30px var(--accent-dim)}
+.share-sub{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);margin-top:6px;letter-spacing:1px;margin-bottom:14px}
+.share-qr-wrap{
+  display:inline-flex;padding:14px;background:#ffffff;border-radius:14px;
+  border:1px solid var(--border-light);margin:4px 0 16px;
+  box-shadow:0 0 30px var(--accent-dim), inset 0 0 0 1px rgba(255,255,255,.1);
+}
+.share-qr-wrap img, .share-qr-wrap canvas{display:block;border-radius:4px}
+.share-hint{font-size:10px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-bottom:14px}
 .share-addr{
   font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);
   word-break:break-all;background:var(--accent-dim);border:1px solid var(--border-accent);
-  border-radius:10px;padding:11px 12px;margin-bottom:14px;line-height:1.5;
+  border-radius:10px;padding:11px 12px;margin-bottom:14px;line-height:1.5;cursor:pointer;transition:all .2s;
 }
+.share-addr:hover{background:rgba(0,255,213,.15)}
 .share-actions{display:flex;gap:10px}
 .share-actions .btn-action{margin-top:0}
 
@@ -136,6 +146,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.warn{border-color:rgba(255,184,0,.6);color:var(--warning);box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 20px rgba(255,184,0,.25)}
+.toast.ok{border-color:rgba(0,255,213,.6);color:var(--accent)}
 
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .animate-fade{animation:fadeIn .35s ease forwards}
@@ -149,13 +160,12 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
   .msg-wrapper{max-width:88%}
   .controls-bar{padding:12px}
   .chat-header{padding:12px 14px}
-  .share-qr-wrap canvas{width:190px!important;height:190px!important}
 }
 </style>
 </head>
 <body>
 
-<!-- WAITING STATE (until hub sends wallet) -->
+<!-- WAITING STATE -->
 <div id="waiting-screen" class="waiting-overlay">
   <div class="waiting-card animate-fade">
     <i class="fa-solid fa-satellite-dish"></i>
@@ -172,7 +182,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
     <div class="node-header">
       <div class="node-identity">
         <div id="my-avatar" title="Share my identity"></div>
-        <div class="node-id-tag" id="my-address-display">0x...</div>
+        <div class="node-id-tag" id="my-address-display" title="Click to copy / share">0x...</div>
       </div>
       <button class="icon-btn-header" title="Burn all sessions" onclick="App.secureWipeAll(false)"><i class="fa-solid fa-fire"></i></button>
     </div>
@@ -212,7 +222,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
           </div>
         </div>
       </div>
-      <button class="icon-btn-header" id="burn-btn" title="Burn this chat (wipe history + keys)" onclick="App.burnActive()" style="display:none"><i class="fa-solid fa-fire-flame-curved"></i></button>
+      <button class="icon-btn-header" id="burn-btn" title="Burn this chat" onclick="App.burnActive()" style="display:none"><i class="fa-solid fa-fire-flame-curved"></i></button>
     </header>
 
     <div class="messages-flow" id="messages-flow"></div>
@@ -230,7 +240,8 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
     <div class="share-title">SECURE IDENTITY</div>
     <div class="share-sub" id="share-label">NODE</div>
     <div class="share-qr-wrap" id="share-qr"></div>
-    <div class="share-addr" id="share-addr">0x...</div>
+    <div class="share-hint"><i class="fa-solid fa-camera"></i> SCAN WITH YOUR PHONE</div>
+    <div class="share-addr" id="share-addr" onclick="App.copyAddress()" title="Click to copy">0x...</div>
     <div class="share-actions">
       <button class="btn-action" onclick="App.copyAddress()"><i class="fa-regular fa-copy"></i>&nbsp;COPY</button>
       <button class="btn-action primary" onclick="App.downloadQR()"><i class="fa-solid fa-download"></i>&nbsp;SAVE</button>
@@ -243,9 +254,15 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 
 <script>
 /* ============================================================
-   NEXUS · P2P Chat (Hub-Embedded Edition) — v2
-   Fixes: PeerJS handshake race condition, duplicate connects,
-          visible pending state, request notifications, debug logs
+   NEXUS · P2P Chat — v3
+   FIXES:
+   1. ECDH key now stored per-connection (conn._ecdh) — was being
+      overwritten by the second simultaneous dial, causing key mismatch.
+   2. Duplicate-channel resolution — smaller PeerJS ID keeps outgoing,
+      larger keeps incoming. Both ends agree on the same physical channel.
+   3. Real scannable QR via qrcodejs (white background).
+   4. Manual RETRY button on each contact card.
+   5. Full state-transition toasts.
    ============================================================ */
 
 // ─── 1. Crypto ───
@@ -269,7 +286,7 @@ const CryptoEngine = {
   }
 };
 
-// ─── 2. LO-FI QR Avatar ───
+// ─── 2. LO-FI avatar (decorative, small) ───
 const QRAvatar = {
   SIZE: 9,
   matrix(address){
@@ -310,26 +327,6 @@ const QRAvatar = {
       }
       el.appendChild(p);
     }
-  },
-  buildCanvas(address, px){
-    const m=this.matrix(address);
-    const color=this.color(address);
-    const canvas=document.createElement('canvas');
-    canvas.width=px; canvas.height=px;
-    const ctx=canvas.getContext('2d');
-    ctx.fillStyle='#000';
-    ctx.fillRect(0,0,px,px);
-    const pad=Math.round(px*0.07);
-    const cell=(px-pad*2)/this.SIZE;
-    const gap=Math.max(1,Math.round(cell*0.12));
-    ctx.fillStyle=color;
-    ctx.shadowColor=color;
-    ctx.shadowBlur=px*0.015;
-    for(let r=0;r<this.SIZE;r++) for(let c=0;c<this.SIZE;c++){
-      if(m[r][c]) ctx.fillRect(pad+c*cell+gap/2, pad+r*cell+gap/2, cell-gap, cell-gap);
-    }
-    ctx.shadowBlur=0;
-    return canvas;
   }
 };
 
@@ -337,8 +334,8 @@ const QRAvatar = {
 const App = {
   myAddress:null, peer:null, dbPrefix:null,
   connections:{}, activeSessions:{}, incomingRequests:{},
-  pendingConns:{},         // { addr: DataConnection } — avoid duplicate connect() calls
-  lastSeen:{}, pendingKeys:{},
+  pendingConns:{},
+  lastSeen:{},
   activePeer:null,
   chatHistory:{},
   contacts:[],
@@ -350,6 +347,7 @@ const App = {
   TTL_MS: 15*60*1000,
   lastActivity: Date.now(),
   _idleTimer:null,
+  _pulseInterval: 5000,
 
   /* ─── HUB BRIDGE ─── */
   init(){
@@ -365,9 +363,12 @@ const App = {
     if(myAv) myAv.onclick=()=>this.openShare(this.myAddress);
     const actAv=document.getElementById('active-avatar');
     if(actAv) actAv.onclick=()=>this.openShare(this.activePeer);
+    const myTag=document.getElementById('my-address-display');
+    if(myTag) myTag.onclick=()=>this.openShare(this.myAddress);
 
     this.initActivityWatch();
     window.addEventListener('keydown', e=>{ if(e.key==='Escape') this.closeShare(); });
+    console.log('[NEXUS] init() complete, awaiting hub_init…');
   },
   toHub(msg){
     try{ if(window.parent && window.parent!==window) window.parent.postMessage(msg,'*'); }catch(e){}
@@ -375,6 +376,7 @@ const App = {
   onHubMessage(e){
     const d=e.data; if(!d||typeof d!=='object'||!d.type) return;
     if(d.type==='hub_init'){
+      console.log('[NEXUS] hub_init received, wallet =', d.wallet);
       if(d.accent) this.setAccent(d.accent);
       document.getElementById('waiting-screen').style.display='none';
       document.getElementById('app-shell').style.display='flex';
@@ -398,14 +400,16 @@ const App = {
     const total=Object.values(this.unread).reduce((s,n)=>s+n,0);
     this.toHub({type:'imchat_unread',count:total});
   },
-  toast(msg, warn){
+  toast(msg, kind){
     const t=document.getElementById('toast');
     if(!t) return;
     t.innerText=msg;
-    t.classList.toggle('warn', !!warn);
+    t.classList.remove('warn','ok');
+    if(kind==='warn') t.classList.add('warn');
+    else if(kind==='ok') t.classList.add('ok');
     t.classList.add('show');
     clearTimeout(this._toastT);
-    this._toastT=setTimeout(()=>t.classList.remove('show'),2600);
+    this._toastT=setTimeout(()=>t.classList.remove('show'),2800);
   },
 
   /* ─── SESSION PERSISTENCE ─── */
@@ -444,7 +448,7 @@ const App = {
     }, 30000);
   },
 
-  /* ─── PeerJS ID derivation (shared) ─── */
+  /* ─── PeerJS ID derivation ─── */
   peerIdFor(addr){
     const safe=btoa(addr).replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,20);
     return `imnode_${safe}`;
@@ -465,34 +469,34 @@ const App = {
     document.getElementById('app-shell').style.display='flex';
 
     const nodeId=this.peerIdFor(this.myAddress);
-    console.log('[NEXUS] Booting as', this.myAddress, '→ PeerID:', nodeId);
+    console.log('[NEXUS] Booting. wallet =', this.myAddress, '· PeerID =', nodeId);
 
     if(this.peer) try{this.peer.destroy()}catch(e){}
-    this.peer=new Peer(nodeId,{debug:1});   // debug:1 → helpful logs
+    this.peer=new Peer(nodeId,{debug:1});
 
     this.peer.on('open',(id)=>{
-      console.log('[NEXUS] PeerJS OPEN · my id =', id);
+      console.log('[NEXUS] PeerJS OPEN · id =', id);
       QRAvatar.render(this.myAddress,'my-avatar');
       document.getElementById('my-address-display').innerText=
         this.myAddress.slice(0,6)+'...'+this.myAddress.slice(-4);
       this.renderSidebar();
       this.broadcastUnread();
       if(this._pulse) clearInterval(this._pulse);
-      this._pulse=setInterval(()=>this.networkPulse(),3500);
+      this._pulse=setInterval(()=>this.networkPulse(),this._pulseInterval);
       this.networkPulse();
     });
     this.peer.on('connection',conn=>{
-      console.log('[NEXUS] Incoming PeerJS connection from', conn.peer);
+      console.log('[NEXUS] INCOMING PeerJS connection from', conn.peer);
       this.setupDataChannel(conn);
     });
     this.peer.on('error',err=>{
       console.warn('[NEXUS] PeerJS error:', err.type, err);
       if(err.type==='unavailable-id'){
-        this.toast('PEER ID TAKEN — ANOTHER TAB WITH SAME WALLET', true);
+        this.toast('PEER ID TAKEN · ANOTHER TAB SAME WALLET', 'warn');
       }
     });
     this.peer.on('disconnected',()=>{
-      console.warn('[NEXUS] PeerJS disconnected from signaling server — reconnecting…');
+      console.warn('[NEXUS] signaling disconnected · reconnecting…');
       try{ this.peer.reconnect(); }catch(e){}
     });
     this.booted=true;
@@ -502,7 +506,7 @@ const App = {
     if(this._pulse) clearInterval(this._pulse);
     this.peer=null; this.booted=false;
     this.connections={}; this.activeSessions={}; this.incomingRequests={};
-    this.pendingConns={}; this.pendingKeys={};
+    this.pendingConns={};
     this.chatHistory={}; this.unread={}; this.activePeer=null;
     this.saveSession();
     if(!silent){
@@ -527,19 +531,17 @@ const App = {
     const nameEl=document.getElementById('add-peer-name');
     const addr=(addrEl.value||'').trim().toLowerCase();
     const name=(nameEl.value||'').trim();
-    if(!addr){ this.toast('ENTER A WALLET ADDRESS', true); return; }
-    if(addr===this.myAddress){ this.toast('CANNOT ADD YOURSELF', true); return; }
-    if(!/^0x[a-f0-9]{6,}$/.test(addr)){ this.toast('INVALID WALLET FORMAT', true); return; }
-    if(this.findContact(addr)){ this.toast('CONTACT ALREADY EXISTS'); addrEl.value=''; nameEl.value=''; return; }
+    if(!addr){ this.toast('ENTER A WALLET ADDRESS','warn'); return; }
+    if(addr===this.myAddress){ this.toast('CANNOT ADD YOURSELF','warn'); return; }
+    if(!/^0x[a-f0-9]{6,}$/.test(addr)){ this.toast('INVALID WALLET FORMAT','warn'); return; }
+    if(this.findContact(addr)){ this.toast('CONTACT ALREADY EXISTS','warn'); addrEl.value=''; nameEl.value=''; return; }
 
     this.contacts.push({address:addr, name:name||('Node '+addr.slice(-4))});
     this.saveContacts();
     addrEl.value=''; nameEl.value='';
     this.renderSidebar();
-    this.toast('CONTACT ADDED · CONNECTING…');
-    // Fire an immediate connection attempt (don't wait for next pulse)
+    this.toast('CONTACT ADDED · DIALING…','ok');
     if(this.peer && this.peer.open) this.networkPulse();
-    else this.toast('PEERJS NOT READY — WILL RETRY', true);
   },
   deleteContact(addr){
     if(this.connections[addr]) try{this.connections[addr].close()}catch(e){}
@@ -549,7 +551,6 @@ const App = {
     delete this.chatHistory[addr];
     delete this.unread[addr];
     delete this.pendingConns[addr];
-    delete this.pendingKeys[addr];
     this.contacts=this.contacts.filter(c=>c.address!==addr);
     this.saveContacts();
     this.saveSession();
@@ -576,13 +577,12 @@ const App = {
       const active=this.connections[addr];
       const pending=this.pendingConns[addr];
       const hasActive=active && active.open;
-      const hasPending=pending && (pending.open || !pending.closed);
+      const hasPending=pending && !pending.closed;
 
-      // Skip if already connected or already trying
       if(hasActive || hasPending) return;
 
       const targetId=this.peerIdFor(addr);
-      console.log('[NEXUS] Dialing', addr, '→', targetId);
+      console.log('[NEXUS] → Dialing', addr, '(', targetId, ')');
       let c;
       try{ c=this.peer.connect(targetId,{reliable:true}); }
       catch(e){ console.warn('[NEXUS] connect() threw', e); return; }
@@ -590,16 +590,19 @@ const App = {
 
       this.pendingConns[addr]=c;
 
-      // Hard timeout — clear stuck pending
       const timeout=setTimeout(()=>{
         if(this.pendingConns[addr]===c && !c.open){
-          console.warn('[NEXUS] Pending timeout for', addr);
+          console.warn('[NEXUS] Pending timeout', addr);
           try{ c.close(); }catch(e){}
           if(this.pendingConns[addr]===c) delete this.pendingConns[addr];
         }
-      }, 12000);
+      }, 15000);
       c.on('open',()=>clearTimeout(timeout));
       c.on('close',()=>{
+        clearTimeout(timeout);
+        if(this.pendingConns[addr]===c) delete this.pendingConns[addr];
+      });
+      c.on('error',()=>{
         clearTimeout(timeout);
         if(this.pendingConns[addr]===c) delete this.pendingConns[addr];
       });
@@ -607,12 +610,11 @@ const App = {
       this.setupDataChannel(c);
     });
 
-    // Keepalive + stale-session cleanup
     for(const [addr,conn] of Object.entries(this.connections)){
       if(conn.open){
         try{ conn.send({type:'ping',address:this.myAddress}); }catch(e){}
-        if(this.lastSeen[addr] && now-this.lastSeen[addr]>15000){
-          console.warn('[NEXUS] Stale session, closing', addr);
+        if(this.lastSeen[addr] && now-this.lastSeen[addr]>20000){
+          console.warn('[NEXUS] Stale · closing', addr);
           try{ conn.close(); }catch(e){}
           delete this.connections[addr];
           delete this.activeSessions[addr];
@@ -622,34 +624,39 @@ const App = {
       }
     }
 
-    // Re-render so pending indicators stay fresh
     this.renderSidebar();
   },
 
-  async setupDataChannel(conn){
-    // Save the address of the peer we're connecting TO (if initiator)
-    // For incoming connections, we learn it from the first message.
-    const ecdh=await CryptoEngine.generateECDH();
-    const myPub=await crypto.subtle.exportKey("raw",ecdh.publicKey);
-    this.pendingKeys[conn.peer]=ecdh;
+  /* ─── Close any other DataChannels we have for this peer ─── */
+  closeOtherChannels(addr, keepConn){
+    Object.entries(this.connections).forEach(([a,c])=>{
+      if(a===addr && c && c!==keepConn){ try{ c.close(); }catch(e){} }
+    });
+    Object.entries(this.pendingConns).forEach(([a,c])=>{
+      if(a===addr && c && c!==keepConn){ try{ c.close(); }catch(e){} delete this.pendingConns[a]; }
+    });
+  },
 
-    const sendHandshake=()=>{
+  async setupDataChannel(conn){
+    // *** FIX: attach ECDH to the conn itself, never to a shared map ***
+    const ecdh = await CryptoEngine.generateECDH();
+    const myPub = await crypto.subtle.exportKey("raw", ecdh.publicKey);
+    conn._ecdh = ecdh;
+    conn._myPub = Array.from(new Uint8Array(myPub));
+
+    const sendHandshake = () => {
       try{
         conn.send({
           type:'handshake_req',
           address:this.myAddress,
-          pub:Array.from(new Uint8Array(myPub))
+          pub:conn._myPub
         });
-        console.log('[NEXUS] Sent handshake_req to', conn.peer);
+        console.log('[NEXUS] → handshake_req to', conn.peer);
       }catch(e){ console.warn('[NEXUS] handshake send failed', e); }
     };
 
-    // *** KEY FIX: handle already-open connection (race) ***
-    if(conn.open){
-      sendHandshake();
-    } else {
-      conn.on('open',sendHandshake);
-    }
+    if(conn.open) sendHandshake();
+    else conn.on('open',sendHandshake);
 
     conn.on('data',async data=>{
       if(!data||!data.type) return;
@@ -657,71 +664,105 @@ const App = {
       const addr=conn.peerAddress;
       if(!addr) return;
 
-      // Once we know the address, upgrade pending → real connection
       if(this.pendingConns[addr]===conn) delete this.pendingConns[addr];
 
+      // ─── PING / PONG ───
       if(data.type==='ping'){
         try{ conn.send({type:'pong',address:this.myAddress}); }catch(e){}
         return;
       }
       if(data.type==='pong'){
         this.lastSeen[addr]=Date.now();
-        this.connections[addr]=conn;
+        if(!this.connections[addr]) this.connections[addr]=conn;
         this.renderSidebar();
         if(this.activePeer===addr) this.updateChatHeader();
         return;
       }
 
+      // ─── HANDSHAKE REQUEST ───
       if(data.type==='handshake_req'){
-        console.log('[NEXUS] Received handshake_req from', addr);
+        const myId = this.peer ? this.peer.id : null;
+        const theirId = conn.peer;
+        const iAmSmaller = myId && theirId && myId < theirId;
+
+        console.log('[NEXUS] ← handshake_req from', addr,
+                    '· myId='+myId, '· theirId='+theirId,
+                    '· smaller='+iAmSmaller);
+
+        // DUPLICATE CHANNEL RESOLUTION
+        // Rule: smaller PeerJS ID uses its OWN outgoing channel.
+        //       So if we are smaller and we already have an outgoing,
+        //       we ignore this incoming handshake.
+        if(iAmSmaller){
+          const outgoing = this.pendingConns[addr] || (this.connections[addr] && this.connections[addr]!==conn ? this.connections[addr] : null);
+          if(outgoing && outgoing !== conn && !outgoing.closed){
+            console.log('[NEXUS] Duplicate · keeping outgoing, closing incoming');
+            try{ conn.close(); }catch(e){}
+            return;
+          }
+        }
+
+        // Use this incoming as the active channel
         this.connections[addr]=conn;
         this.lastSeen[addr]=Date.now();
+        // If we had a pending outgoing for this addr, close it
+        this.closeOtherChannels(addr, conn);
 
         if(this.findContact(addr)){
-          // We know them → complete handshake
-          const stored=this.pendingKeys[conn.peer]||ecdh;
-          this.activeSessions[addr]=await CryptoEngine.deriveAES(stored.privateKey,data.pub);
+          // We know them → auto-complete handshake using THIS conn's ecdh
+          this.activeSessions[addr] = await CryptoEngine.deriveAES(conn._ecdh.privateKey, data.pub);
           try{
             conn.send({
               type:'handshake_ack',
               address:this.myAddress,
-              pub:Array.from(new Uint8Array(await crypto.subtle.exportKey("raw",stored.publicKey)))
+              pub:conn._myPub
             });
           }catch(e){}
-          this.toast('TUNNEL SECURED · '+this.contactName(addr));
+          console.log('[NEXUS] ← auto-accepted tunnel with', addr);
+          this.toast('TUNNEL ACTIVE · '+this.contactName(addr),'ok');
+          this.renderSidebar();
+          if(this.activePeer===addr) this.updateChatHeader();
         } else {
-          // Stranger → show as incoming request
+          // Stranger → incoming request
           if(!this.incomingRequests[addr]){
-            this.toast('NEW CONNECTION REQUEST · '+addr.slice(0,6)+'…'+addr.slice(-4), true);
+            this.toast('NEW CONNECTION REQUEST · '+addr.slice(0,6)+'…'+addr.slice(-4), 'warn');
           }
-          this.incomingRequests[addr]={conn,pub:data.pub,ecdh};
+          this.incomingRequests[addr]={conn,pub:data.pub,ecdh:conn._ecdh};
+          this.renderSidebar();
         }
-        this.renderSidebar();
-        if(this.activePeer===addr) this.updateChatHeader();
       }
+
+      // ─── HANDSHAKE ACK ───
       else if(data.type==='handshake_ack'){
-        console.log('[NEXUS] Received handshake_ack from', addr);
+        console.log('[NEXUS] ← handshake_ack from', addr);
         this.lastSeen[addr]=Date.now();
-        const stored=this.pendingKeys[conn.peer]||ecdh;
-        this.activeSessions[addr]=await CryptoEngine.deriveAES(stored.privateKey,data.pub);
+        // Use THIS conn's ecdh — the one we generated for this exact channel
+        this.activeSessions[addr] = await CryptoEngine.deriveAES(conn._ecdh.privateKey, data.pub);
         this.connections[addr]=conn;
-        delete this.pendingKeys[conn.peer];
         delete this.pendingConns[addr];
-        this.toast('TUNNEL ACTIVE · '+this.contactName(addr));
+
+        // Close the OTHER channel (if we have one)
+        this.closeOtherChannels(addr, conn);
+
+        this.toast('TUNNEL ACTIVE · '+this.contactName(addr),'ok');
         this.renderSidebar();
         if(this.activePeer===addr) this.updateChatHeader();
       }
+
+      // ─── HANDSHAKE DECLINE ───
       else if(data.type==='handshake_decline'){
-        console.log('[NEXUS] Handshake declined by', addr);
+        console.log('[NEXUS] ← handshake_decline from', addr);
         try{ conn.close(); }catch(e){}
         delete this.connections[addr];
         delete this.activeSessions[addr];
         delete this.incomingRequests[addr];
         delete this.pendingConns[addr];
-        this.toast('CONNECTION DECLINED', true);
+        this.toast('CONNECTION DECLINED','warn');
         this.renderSidebar();
         if(this.activePeer===addr) this.updateChatHeader();
       }
+
+      // ─── ENCRYPTED MESSAGE ───
       else if(data.type==='enc' && this.activeSessions[addr]){
         this.lastSeen[addr]=Date.now();
         const dec=await CryptoEngine.decrypt(this.activeSessions[addr],data.payload);
@@ -742,22 +783,34 @@ const App = {
               this.renderSidebar();
             }
           }catch(e){}
+        } else {
+          console.warn('[NEXUS] Decryption failed for', addr, '- key mismatch?');
         }
       }
     });
 
     conn.on('close',()=>{
       const addr=conn.peerAddress;
-      console.log('[NEXUS] Connection closed', addr||conn.peer);
+      console.log('[NEXUS] Channel closed', addr||conn.peer);
       if(addr){
-        delete this.connections[addr];
+        if(this.connections[addr]===conn) delete this.connections[addr];
+        if(this.pendingConns[addr]===conn) delete this.pendingConns[addr];
         delete this.activeSessions[addr];
-        delete this.pendingConns[addr];
         this.renderSidebar();
         if(this.activePeer===addr) this.updateChatHeader();
       }
     });
     conn.on('error',(e)=>console.warn('[NEXUS] DataChannel error', e));
+  },
+
+  /* ─── Manual retry from a card ─── */
+  retryContact(addr){
+    if(this.pendingConns[addr]){ try{this.pendingConns[addr].close();}catch(e){} delete this.pendingConns[addr]; }
+    if(this.connections[addr]){ try{this.connections[addr].close();}catch(e){} delete this.connections[addr]; }
+    delete this.activeSessions[addr];
+    this.renderSidebar();
+    this.toast('RETRYING…');
+    if(this.peer && this.peer.open) this.networkPulse();
   },
 
   /* ─── HANDSHAKE ACTIONS ─── */
@@ -767,20 +820,20 @@ const App = {
     if(req && req.conn.open){
       const name='Node '+addr.slice(-4);
       if(!this.findContact(addr)){ this.contacts.push({address:addr,name}); this.saveContacts(); }
-      this.activeSessions[addr]=await CryptoEngine.deriveAES(req.ecdh.privateKey,req.pub);
-      const myPub=await crypto.subtle.exportKey("raw",req.ecdh.publicKey);
+      // *** Use the ecdh we stored on the request (bound to THIS conn) ***
+      this.activeSessions[addr] = await CryptoEngine.deriveAES(req.ecdh.privateKey, req.pub);
       try{
         req.conn.send({
           type:'handshake_ack',
           address:this.myAddress,
-          pub:Array.from(new Uint8Array(myPub))
+          pub:Array.from(new Uint8Array(await crypto.subtle.exportKey("raw",req.ecdh.publicKey)))
         });
       }catch(e){}
       this.connections[addr]=req.conn;
       delete this.incomingRequests[addr];
       this.renderSidebar();
       this.openChat(addr);
-      this.toast('TUNNEL ACCEPTED');
+      this.toast('TUNNEL ACCEPTED','ok');
     }
   },
   declineHandshake(){
@@ -796,31 +849,25 @@ const App = {
 
   /* ─── SECURE WIPE / BURN ─── */
   burnActive(){ if(this.activePeer) this.burnChat(this.activePeer); },
-
   burnChat(addr){
     if(!addr) return;
     if(!confirm('Burn this chat?\n\nHistory and E2E encryption keys will be permanently destroyed. This cannot be undone.')) return;
-
     delete this.chatHistory[addr];
     delete this.unread[addr];
     delete this.activeSessions[addr];
-    delete this.pendingKeys[addr];
     const conn=this.connections[addr];
     if(conn){ try{conn.close()}catch(e){} delete this.connections[addr]; }
     const pc=this.pendingConns[addr];
     if(pc){ try{pc.close()}catch(e){} delete this.pendingConns[addr]; }
-
     this.saveSession();
     this.broadcastUnread();
-
     if(this.activePeer===addr){
       document.getElementById('messages-flow').innerHTML='';
       this.updateChatHeader();
     }
     this.renderSidebar();
-    this.toast('CHAT BURNED · KEYS DESTROYED');
+    this.toast('CHAT BURNED · KEYS DESTROYED','warn');
   },
-
   secureWipeAll(silent){
     Object.values(this.connections).forEach(c=>{ try{c.close(); }catch(e){} });
     Object.values(this.pendingConns).forEach(c=>{ try{c.close(); }catch(e){} });
@@ -828,7 +875,6 @@ const App = {
     this.activeSessions={};
     this.incomingRequests={};
     this.pendingConns={};
-    this.pendingKeys={};
     this.chatHistory={};
     this.unread={};
     this.lastSeen={};
@@ -838,10 +884,10 @@ const App = {
     this.showEmpty();
     this.renderSidebar();
     this.broadcastUnread();
-    this.toast(silent ? 'IDLE TTL · ALL SESSIONS BURNED' : 'ALL SESSIONS BURNED');
+    this.toast(silent ? 'IDLE TTL · ALL SESSIONS BURNED' : 'ALL SESSIONS BURNED','warn');
   },
 
-  /* ─── QR SHARE MODAL ─── */
+  /* ─── QR SHARE MODAL (real scannable QR) ─── */
   openShare(addr){
     if(!addr) return;
     this._shareAddr=addr;
@@ -850,19 +896,41 @@ const App = {
     const wrap=document.getElementById('share-qr');
 
     label.innerText = (addr===this.myAddress)
-      ? 'YOUR NODE · TAP TO SHARE'
+      ? 'YOUR NODE · SCAN TO ADD'
       : (this.contactName(addr)||'REMOTE NODE').toUpperCase();
     addrEl.innerText = addr;
-
     wrap.innerHTML='';
-    const canvas=QRAvatar.buildCanvas(addr, 460);
-    canvas.style.display='block';
-    canvas.style.width='210px';
-    canvas.style.height='210px';
-    canvas.style.borderRadius='6px';
-    wrap.appendChild(canvas);
+
+    // Real scannable QR — white background, dark modules
+    // Use accent color only if it's dark enough on white; else use black
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#00ffd5';
+    const darkColor = this.contrastOnWhite(accent) ? '#000000' : accent;
+
+    try {
+      new QRCode(wrap, {
+        text: addr,
+        width: 220,
+        height: 220,
+        colorDark: '#0a0e12',   // always black-ish for maximum scan reliability
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } catch(e){
+      console.warn('[NEXUS] QR generation failed, falling back', e);
+      wrap.innerHTML='<div style="color:#000;padding:40px;font-family:monospace;font-size:10px">QR ERROR</div>';
+    }
 
     document.getElementById('share-modal').classList.add('show');
+  },
+  // Simple heuristic: if a color is light (contrast on white too low) → use black
+  contrastOnWhite(hex){
+    try{
+      const h=hex.replace('#','').slice(0,6);
+      if(h.length!==6) return false;
+      const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+      const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+      return lum > 140; // light color → poor contrast on white
+    }catch(e){ return false; }
   },
   closeShare(){
     document.getElementById('share-modal').classList.remove('show');
@@ -870,7 +938,7 @@ const App = {
   },
   copyAddress(){
     const addr=this._shareAddr; if(!addr) return;
-    const done=()=>this.toast('ADDRESS COPIED');
+    const done=()=>this.toast('ADDRESS COPIED','ok');
     if(navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(addr).then(done).catch(()=>this._fallbackCopy(addr,done));
     } else {
@@ -887,20 +955,28 @@ const App = {
       document.execCommand('copy');
       ta.remove();
       cb();
-    }catch(e){ this.toast('COPY FAILED', true); }
+    }catch(e){ this.toast('COPY FAILED','warn'); }
   },
   downloadQR(){
     const addr=this._shareAddr; if(!addr) return;
     try{
-      const canvas=QRAvatar.buildCanvas(addr, 900);
+      // qrcodejs puts a canvas or img inside the wrap
+      const wrap=document.getElementById('share-qr');
+      const canvas=wrap.querySelector('canvas');
+      const img=wrap.querySelector('img');
+      let dataUrl=null;
+      if(canvas) dataUrl=canvas.toDataURL('image/png');
+      else if(img) dataUrl=img.src;
+      if(!dataUrl){ this.toast('QR NOT READY','warn'); return; }
+
       const link=document.createElement('a');
       link.download=`nexus_${addr.slice(0,10)}.png`;
-      link.href=canvas.toDataURL('image/png');
+      link.href=dataUrl;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      this.toast('QR SAVED');
-    }catch(e){ this.toast('SAVE FAILED', true); }
+      this.toast('QR SAVED','ok');
+    }catch(e){ this.toast('SAVE FAILED','warn'); }
   },
 
   /* ─── UI RENDER ─── */
@@ -944,16 +1020,20 @@ const App = {
     const avId='av_'+addr.slice(-8)+'_'+Math.random().toString(36).slice(2,5);
     const name=isReq?('Node '+addr.slice(-4)):this.contactName(addr);
     const unread=this.unread[addr]||0;
-    const statusLabel=isReq?'INCOMING':(isSecure?'':'· PENDING');
+    const stateTag = !isReq && !isSecure
+      ? (isPending ? '<span style="color:var(--warning);font-size:9px;font-family:JetBrains Mono">PENDING</span>'
+                   : '<span style="color:var(--text-muted);font-size:9px;font-family:JetBrains Mono">OFFLINE</span>')
+      : '';
     card.innerHTML=`
       <div id="${avId}" title="Share identity"></div>
       <div class="contact-info">
-        <span class="contact-name">${this.esc(name)} ${!isReq&&!isSecure?'<span style="color:var(--warning);font-size:9px;font-family:JetBrains Mono">PENDING</span>':''}</span>
+        <span class="contact-name">${this.esc(name)} ${stateTag}</span>
         <span class="contact-address">${addr.slice(0,8)}...${addr.slice(-6)}</span>
       </div>
       <div class="contact-actions">
         ${unread>0?`<span class="unread-badge">${unread>99?'99+':unread}</span>`:''}
-        ${!isReq?`<button class="icon-btn-small" title="Rename" onclick="event.stopPropagation();App.renameContact('${addr}')"><i class="fa-solid fa-pen"></i></button>
+        ${!isReq?`<button class="icon-btn-small retry" title="Retry connection" onclick="event.stopPropagation();App.retryContact('${addr}')"><i class="fa-solid fa-rotate"></i></button>
+        <button class="icon-btn-small" title="Rename" onclick="event.stopPropagation();App.renameContact('${addr}')"><i class="fa-solid fa-pen"></i></button>
         <button class="icon-btn-small" title="Delete" onclick="event.stopPropagation();App.deleteContact('${addr}')"><i class="fa-solid fa-trash-can"></i></button>`:''}
         <div class="status-dot ${dotCls}"></div>
       </div>`;
@@ -1041,7 +1121,7 @@ const App = {
       input.value='';
       this.lastActivity=Date.now();
     } else {
-      this.toast('TUNNEL NOT ACTIVE', true);
+      this.toast('TUNNEL NOT ACTIVE','warn');
     }
   },
   async transmit(msg){
