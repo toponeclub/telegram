@@ -270,12 +270,12 @@ const App = {
     const d=e.data; if(!d||typeof d!=='object'||!d.type) return;
     if(d.type==='hub_init'){
       if(d.accent) this.setAccent(d.accent);
+      
+      // Այստեղ փոխում ենք. թող անմիջապես թաքցնի waiting screen-ը, նույնիսկ եթե wallet-ը մի փոքր ուշ գա
+      document.getElementById('waiting-screen').style.display='none';
+      document.getElementById('app-shell').style.display='flex';
+
       if(d.wallet) this.boot(d.wallet);
-    }
-    else if(d.type==='hub_theme'){ if(d.accent) this.setAccent(d.accent); }
-    else if(d.type==='hub_wallet_changed'){
-      if(d.wallet){ this.boot(d.wallet); }
-      else this.shutdown();
     }
   },
   setAccent(hex){
