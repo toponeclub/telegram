@@ -256,12 +256,31 @@ const App = {
   booted:false,
 
   /* ─── HUB BRIDGE ─── */
-  init(){
+ init(){
     window.addEventListener('message', e=>this.onHubMessage(e));
-    // Tell parent we're ready (retry a few times for slow parents)
+    
+    // 1. Ստուգում ենք URL-ից կամ LocalStorage-ից, եթե վոլեթն արդեն կա
+    const urlParams = new URLSearchParams(window.location.search);
+    const walletFromUrl = urlParams.get('wallet');
+    let savedWallet = null;
+
+    try {
+      const stored = localStorage.getItem('t1prime_wallet') || localStorage.getItem('current_user_id');
+      if (stored) {
+        savedWallet = stored.startsWith('{') ? JSON.parse(stored).address : stored;
+      }
+    } catch(e) {}
+
+    const activeWallet = walletFromUrl || savedWallet;
+
+    // 2. Եթե վոլեթը գտնվել է, միանգամից բացում ենք չատը
+    if (activeWallet) {
+      this.boot(activeWallet);
+    }
+
+    // 3. Ազդարարում ենք Hub-ին, որ չատը պատրաստ է
     const ready=()=>this.toHub({type:'imchat_ready'});
     ready(); setTimeout(ready,300); setTimeout(ready,1200);
-    // Notify on unload? not needed
   },
   toHub(msg){
     try{ if(window.parent && window.parent!==window) window.parent.postMessage(msg,'*'); }catch(e){}
