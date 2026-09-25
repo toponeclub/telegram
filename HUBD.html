@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root {
     --bg-deep: #030303;
@@ -468,7 +469,8 @@ body {
     position: absolute; top: 15px; right: 15px;
     display: flex; gap: 4px;
     opacity: 0; transition: opacity 0.25s var(--transition-smooth);
-    z-index: 20; pointer-events: none;
+    z-index: 100;
+    pointer-events: none;
 }
 .module:hover .widget-controls { opacity: 1; pointer-events: auto; }
 
@@ -522,6 +524,7 @@ body {
 .mod-header {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 20px; gap: 10px; flex-shrink: 0; min-width: 0;
+    padding-right: 90px; /* Reserve space for absolute controls */
 }
 .mod-title {
     font-size: 0.7rem; font-weight: 600;
@@ -1053,7 +1056,7 @@ wui-modal {
     cursor: nwse-resize;
     opacity: 0;
     transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 25;
+    z-index: 100;
     touch-action: none;
     display: flex;
     align-items: center;
@@ -1103,6 +1106,42 @@ body.is-resizing .module { transition: none !important; }
 @media (max-width: 768px) {
     .resize-handle { display: none !important; }
 }
+
+.mac-segment { display: flex; background: rgba(0,0,0,0.4); border-radius: 12px; padding: 4px; width: 100%; max-width: 220px; margin: 0 auto 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+.mac-seg-btn { flex: 1; padding: 6px 0; font-size: 11px; font-weight: 700; color: var(--text-muted); background: transparent; border: none; border-radius: 9px; cursor: pointer; transition: var(--transition-smooth); letter-spacing: 1px; text-transform: uppercase; }
+.mac-seg-btn.active { background: rgba(255,255,255,0.1); color: var(--text-main); box-shadow: 0 4px 12px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.1); text-shadow: 0 0 8px rgba(255,255,255,0.3); }
+
+.time-hero { font-family: var(--font-mono); font-size: 2.5rem; font-weight: 800; color: var(--text-main); letter-spacing: -2px; text-shadow: 0 0 25px rgba(255,255,255,0.2); margin-bottom: 2px; }
+.date-sub { font-size: 0.75rem; color: var(--accent); text-transform: uppercase; letter-spacing: 3px; font-weight: 700; }
+
+.mac-time-input { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); color: var(--text-main); font-family: var(--font-mono); font-size: 2.2rem; padding: 12px 15px; border-radius: 16px; outline: none; text-align: center; transition: all 0.3s; width: 100%; max-width: 180px; font-weight: 800; letter-spacing: -1px; }
+.mac-time-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim), 0 10px 20px rgba(0,0,0,0.3); }
+
+
+
+.timer-presets { display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; }
+.preset-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); color: var(--text-muted); padding: 5px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; transition: all 0.2s; font-family: var(--font-mono); font-weight: 600; }
+.preset-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+.mac-btn { width: 52px; height: 52px; border-radius: 50%; border: none; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 20px; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); flex-shrink: 0; }
+.mac-btn.play { background: linear-gradient(135deg, var(--accent), #00b396); color: #000; box-shadow: 0 8px 20px var(--accent-dim); }
+.mac-btn.play:hover { transform: scale(1.15); box-shadow: 0 12px 25px rgba(0, 255, 213, 0.4); }
+.mac-btn.stop { background: linear-gradient(135deg, rgba(255,42,95,0.2), rgba(255,42,95,0.05)); border: 1px solid rgba(255,42,95,0.4); color: var(--red); }
+.mac-btn.stop:hover { background: var(--red); color: #fff; transform: scale(1.15); box-shadow: 0 10px 25px rgba(255,42,95,0.4); border-color: transparent; }
+.mac-btn.neutral { background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid rgba(255,255,255,0.1); }
+.mac-btn.neutral:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); }
+
+.ring-svg { position: absolute; width: 100%; height: 100%; transform: rotate(-90deg); transition: filter 0.3s; }
+.ring-bg { stroke: rgba(255,255,255,0.04); }
+.ring-fg { transition: stroke-dashoffset 1s linear, stroke 0.3s; stroke-linecap: round; }
+
+.quote-share-btn { position:absolute; top:20px; left:20px; color:var(--text-muted); cursor:pointer; font-size:1.1rem; transition:var(--transition-smooth); background:none; border:none; z-index:20; }
+.quote-share-btn:hover { color:var(--accent); }
+.share-menu { position:absolute; top:50px; left:20px; background:var(--bg-elevated); border:1px solid var(--border-thin); border-radius:8px; display:none; flex-direction:column; z-index:100; box-shadow:0 10px 30px rgba(0,0,0,0.7); overflow:hidden;}
+.share-menu.open { display:flex; }
+.share-item { padding:12px 16px; font-size:0.75rem; font-weight:600; color:var(--text-muted); cursor:pointer; transition:var(--transition-smooth); display:flex; gap:10px; align-items:center; }
+.share-item:hover { background:var(--accent-dim); color:var(--accent); }
+
 </style>
 </head>
 <body class="theme-emerald">
@@ -1123,7 +1162,7 @@ body.is-resizing .module { transition: none !important; }
         </div>
 
         <!-- ACADEMY -->
-        <div class="nav-item" data-href="https://t1prime.com/academy" onclick="onNavClick(event, 'academy')">
+        <div class="nav-item" data-href="https://t1prime.com/coming" onclick="onNavClick(event, 'academy')">
             <div class="nav-item-content">
                 <i class="fa-solid fa-graduation-cap"></i>
                 <span>ACADEMY</span>
@@ -1140,8 +1179,8 @@ body.is-resizing .module { transition: none !important; }
         </div>
         <div class="sub-menu" id="sub-trading">
             <div class="sub-item" data-href="https://t1prime.com/enginepro" onclick="onSubClick(event)">Engine</div>
-            <div class="sub-item" data-href="https://t1prime.com/signals" onclick="onSubClick(event)">Signals</div>
-            <div class="sub-item" data-href="https://t1prime.com/calculators" onclick="onSubClick(event)">Calculators</div>
+            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Signals</div>
+            <div class="sub-item" data-href="https://t1prime.com/coming onclick="onSubClick(event)">Calculators</div>
             <div class="sub-item" data-href="https://t1prime.com/screener" onclick="onSubClick(event)">Screener / Markets</div>
         </div>
 
@@ -1154,11 +1193,11 @@ body.is-resizing .module { transition: none !important; }
             <i class="fa-solid fa-angle-down nav-angle"></i>
         </div>
         <div class="sub-menu" id="sub-prod">
-            <div class="sub-item" data-href="https://t1prime.com/bio" onclick="onSubClick(event)">Biohacking</div>
-            <div class="sub-item" data-href="https://t1prime.com/goals" onclick="onSubClick(event)">Goals</div>
-            <div class="sub-item" data-href="https://t1prime.com/focus" onclick="onSubClick(event)">Focus</div>
-            <div class="sub-item" data-href="https://t1prime.com/journal" onclick="onSubClick(event)">Journal</div>
-            <div class="sub-item" data-href="https://t1prime.com/heatmap" onclick="onSubClick(event)">365 Heatmap Tracker</div>
+            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Biohacking</div>
+            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Goals</div>
+            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Focus</div>
+            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Journal</div>
+            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">365 Heatmap Tracker</div>
         </div>
 
         <!-- SOCIAL MEDIA -->
@@ -1170,15 +1209,15 @@ body.is-resizing .module { transition: none !important; }
             <i class="fa-solid fa-angle-down nav-angle"></i>
         </div>
         <div class="sub-menu" id="sub-social">
-            <div class="sub-item" data-href="https://t1prime.com/smboost" onclick="onSubClick(event)">SM Boost</div>
-            <div class="sub-item" data-href="https://t1prime.com/contentmash" onclick="onSubClick(event)">Content Mash</div>
+            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">SM Boost</div>
+            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Content Mash</div>
         </div>
 
         <!-- NEXUS -->
         <div class="nav-item" data-href="https://t1prime.com/imchat" onclick="onNavClick(event, 'nexus')">
             <div class="nav-item-content">
                 <i class="fa-solid fa-paper-plane"></i>
-                <span>NEXUS</span>
+                <span>ImChat</span>
             </div>
         </div>
 
@@ -1191,12 +1230,12 @@ body.is-resizing .module { transition: none !important; }
             <i class="fa-solid fa-angle-down nav-angle"></i>
         </div>
         <div class="sub-menu" id="sub-aff">
-            <div class="sub-item" data-href="https://t1prime.com/affiliate" onclick="onSubClick(event)">Main Room & PNL</div>
-            <div class="sub-item" data-href="https://t1prime.com/assets" onclick="onSubClick(event)">Content Assets</div>
+            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Main Room & PNL</div>
+            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Content Assets</div>
         </div>
 
         <!-- SYSTEM -->
-        <div class="nav-item" style="margin-top: 24px; border-top: 1px solid var(--border-thin); padding-top: 20px;" data-href="https://t1prime.com/subs" onclick="onNavClick(event, 'subs')">
+        <div class="nav-item" style="margin-top: 24px; border-top: 1px solid var(--border-thin); padding-top: 20px;" data-href="https://t1prime.com/coming" onclick="onNavClick(event, 'subs')">
             <div class="nav-item-content">
                 <i class="fa-solid fa-credit-card"></i>
                 <span>Subscriptions</span>
@@ -1424,6 +1463,7 @@ const WIDGET_REGISTRY = {
     radio:        { id:'radio',        name:'Deep Work Radio',   desc:'24/7 focus stream',            icon:'fa-radio',              size:'1x1',  category:'Productivity', render: renderRadioWidget },
     community:    { id:'community',    name:'Community',         desc:'Live feed',                    icon:'fa-users',              size:'1x1',  category:'Social',       render: renderCommunityWidget },
     affiliate:    { id:'affiliate',    name:'Affiliate',         desc:'Referrals & earnings',         icon:'fa-share-nodes',        size:'1x1',  category:'Social',       render: renderAffiliateWidget },
+    clock: { id:'clock', name:'Desk Clock', desc:'Alarm & timer', icon:'fa-clock', size:'1x1', category:'Productivity', render: renderClockWidget, init: initClockWidget },
     engine: {
     id: 'engine',
     name: 'Trading Engine',
@@ -1434,6 +1474,15 @@ const WIDGET_REGISTRY = {
     render: renderEngineWidget,
     init: initEngineWidget
 },
+tv_others: {
+        id: 'tv_others',
+        name: 'TV Others',
+        desc: 'TradingView Custom Chart',
+        icon: 'fa-chart-line',
+        size: '2x2',
+        category: 'Trading',
+        render: renderTvOthersWidget
+    },
 coinglass: {
     id: 'coinglass',
     name: 'CoinGlass',
@@ -1454,9 +1503,10 @@ coinglass: {
         render: renderCryptoSparklineWidget, 
         init: initCryptoSparklineWidget 
     },
+    quote: { id:'quote', name:'Quote', desc:'Daily doctrine', icon:'fa-quote-left', size:'1x1', category:'Productivity', render: renderQuoteWidget, init: initQuoteWidget },
     imchat: {
     id:'imchat',
-    name:'NEXUS Chat',
+    name:'ImChat',
     desc:'P2P encrypted messenger',
     icon:'fa-comments',
     size:'2x2',
@@ -1516,6 +1566,98 @@ function renderCoinglassWidget(w) {
             ></iframe>
         </div>
     `;
+}
+
+function renderQuoteWidget(w) {
+    const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    return `
+        <button class="quote-share-btn" onclick="toggleShareMenu(event, '${w.id}')"><i class="fa-solid fa-share-nodes"></i></button>
+        <div class="share-menu" id="shareMenu_${w.id}">
+            <div class="share-item" onclick="exportQuote('${w.id}', 'save')"><i class="fa-solid fa-download"></i> Save Image (9:16)</div>
+            <div class="share-item" onclick="exportQuote('${w.id}', 'copy')"><i class="fa-solid fa-copy"></i> Copy Image</div>
+            <div class="share-item" onclick="shareQuoteLink(event, '${w.id}')"><i class="fa-solid fa-link"></i> Get Link</div>
+        </div>
+        <div class="mod-header" style="justify-content:center;"><div class="mod-title"><i class="fa-solid fa-quote-left"></i> Daily Doctrine</div></div>
+        <div class="quote-content" id="quoteContent_${w.id}">
+            <div class="quote-mark">"</div>
+            <div class="quote-widget-text">${q.text}</div>
+            <div class="quote-widget-author">— ${q.author}</div>
+        </div>`;
+}
+
+function toggleShareMenu(e, id) {
+    e.stopPropagation();
+    document.querySelectorAll('.share-menu').forEach(m => {
+        if(m.id !== `shareMenu_${id}`) m.classList.remove('open');
+    });
+    const menu = document.getElementById(`shareMenu_${id}`);
+    if(menu) menu.classList.toggle('open');
+}
+
+document.addEventListener('click', () => {
+    document.querySelectorAll('.share-menu').forEach(m => m.classList.remove('open'));
+});
+
+async function exportQuote(id, action) {
+    const el = document.getElementById(`quoteContent_${id}`);
+    if(!el || !window.html2canvas) return;
+
+    // Ստեղծում ենք վիրտուալ շրջանակ Reel/Story-ի չափով
+    const frame = document.createElement('div');
+    frame.style.cssText = 'position:fixed; left:-9999px; width:1080px; height:1920px; background:#030303; color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:120px; font-family:"Inter", sans-serif; text-align:center;';
+    
+    const qText = el.querySelector('.quote-widget-text').innerText;
+    const qAuth = el.querySelector('.quote-widget-author').innerText;
+
+    frame.innerHTML = `
+        <div style="font-size:160px; color:#00ffd5; opacity:0.3; margin-bottom:50px; line-height:0.5; font-family:var(--font-mono);">"</div>
+        <div style="font-size:65px; font-weight:300; font-style:italic; line-height:1.5; margin-bottom:60px; font-family:var(--font-ui);">${qText}</div>
+        <div style="font-size:32px; color:#666; letter-spacing:6px; text-transform:uppercase; font-weight:600; font-family:var(--font-ui);">${qAuth}</div>
+        <div style="position:absolute; bottom:120px; font-size:28px; color:#444; font-family:var(--font-mono); font-weight:800; letter-spacing:2px;">T1PRIME.COM</div>
+    `;
+    document.body.appendChild(frame);
+
+    try {
+        const canvas = await html2canvas(frame, { scale: 1, backgroundColor: '#030303' });
+        document.body.removeChild(frame);
+
+        if(action === 'save') {
+            const link = document.createElement('a');
+            link.download = `GRIND_Quote_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            toast('Image Saved (Story Format)');
+        } else if(action === 'copy') {
+            canvas.toBlob(async blob => {
+                await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+                toast('Image Copied to Clipboard');
+            });
+        }
+    } catch(e) {
+        toast('Export failed');
+    }
+}
+
+function shareQuoteLink(e, id) {
+    e.stopPropagation();
+    const el = document.getElementById(`quoteContent_${id}`);
+    const qText = el.querySelector('.quote-widget-text').innerText;
+    const link = `https://t1prime.com/?quote=${encodeURIComponent(qText.slice(0,50))}...`;
+    navigator.clipboard.writeText(link);
+    toast('Link Copied to Clipboard');
+    document.getElementById(`shareMenu_${id}`).classList.remove('open');
+}
+function initQuoteWidget(w, el) {
+    const controls = el.querySelector('.widget-controls');
+    if (controls) {
+        const shareBtn = document.createElement('button');
+        shareBtn.className = 'widget-btn';
+        shareBtn.title = 'Share Quote';
+        shareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
+        shareBtn.onclick = (e) => toggleShareMenu(e, w.id);
+        
+        controls.insertBefore(shareBtn, controls.querySelector('.remove-btn'));
+    }
 }
 
 function initCoinglassWidget(w, el) {
@@ -1656,11 +1798,12 @@ function renderGrid() {
 
         el.querySelector('.remove-btn').addEventListener('click', (e) => { e.stopPropagation(); removeWidget(w.id); });
         el.querySelector('.size-btn').addEventListener('click', (e) => {
-                    const rh = el.querySelector('.resize-handle');
-        if (rh) rh.addEventListener('pointerdown', onResizeStart);
     e.stopPropagation();
     openSizePicker(e.currentTarget, w.id);
 });
+
+const rh = el.querySelector('.resize-handle');
+if (rh) rh.addEventListener('pointerdown', onResizeStart);
 
         const grip = el.querySelector('.widget-btn.grip');
         if (grip) grip.addEventListener('pointerdown', onGripPointerDown);
@@ -1771,7 +1914,7 @@ function closeSizePicker() {
 function renderImChatWidget(w) {
     return `
         <div class="mod-header">
-            <div class="mod-title"><i class="fa-solid fa-comments"></i> NEXUS · P2P</div>
+            <div class="mod-title"><i class="fa-solid fa-comments"></i> ImChat · P2P</div>
             <span class="imchat-badge" id="imchatBadge_${w.id}" style="display:none;">0</span>
         </div>
         <div style="flex:1; position:relative; overflow:hidden; border-radius:8px; border:1px solid var(--border-thin); background:var(--bg-deep); min-height:0;">
@@ -1786,15 +1929,18 @@ function initImChatWidget(w, el) {
     if (!iframe) return;
 
     const sendInit = () => {
-        const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#00ffd5';
-        try {
-            iframe.contentWindow.postMessage({
-                type: 'hub_init',
-                wallet: state.wallet,
-                accent
-            }, '*');
-        } catch (e) {}
-    };
+    const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#00ffd5';
+    const account = modal.getAccount();
+    const walletAddr = account?.isConnected ? account.address : null;
+
+    try {
+        iframe.contentWindow.postMessage({
+            type: 'hub_init',
+            wallet: walletAddr, // փոխարինված է state.wallet-ի փոխարեն
+            accent
+        }, '*');
+    } catch (e) {}
+};
 
     // Listen for messages FROM the iframe
     const onMsg = (e) => {
@@ -2650,20 +2796,26 @@ function renderProgressWidget() {
 
 function renderCryptoSparklineWidget(w) {
     return `
-        <div class="mod-header">
-            <div class="mod-title"><i class="fa-solid fa-bolt"></i> Sparkline Pro</div>
+        <div class="mod-header" style="overflow: visible;">
+            <div class="mod-title" style="overflow: visible; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-bolt" style="color: var(--accent);"></i>
+                <div style="position: relative;">
+                    <input type="text" id="coinInput_${w.id}" value="BTCUSDT" list="coinList_${w.id}" spellcheck="false" 
+                           style="background: transparent; color: var(--text-main); border: none; border-bottom: 1px dashed var(--border-thin); 
+                                  padding: 0; font-size: 0.75rem; font-weight: 700; font-family: var(--font-mono); width: 75px; 
+                                  text-transform: uppercase; outline: none; transition: border-color 0.3s; cursor: pointer;" 
+                           onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-thin)'">
+                    <datalist id="coinList_${w.id}"></datalist>
+                </div>
+            </div>
             <div style="display:flex; align-items:center; gap:4px; font-size:8px; font-family:var(--font-mono); color:var(--accent); font-weight:700; letter-spacing:1px; background:var(--accent-dim); padding:2px 6px; border-radius:4px; border:1px solid rgba(0,255,213,0.2);">
                 <div style="width:5px; height:5px; background:var(--accent); border-radius:50%; box-shadow:0 0 5px var(--accent); animation:pulseDot 1.5s infinite;"></div> LIVE
             </div>
         </div>
         <div style="display:flex; flex-direction:column; height:100%; min-height:0; position:relative;">
             
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
-                <div style="position:relative; flex-shrink:0;">
-                    <input type="text" id="coinInput_${w.id}" value="BTCUSDT" list="coinList_${w.id}" spellcheck="false" style="background:rgba(0,0,0,0.5); color:var(--text-main); border:1px solid var(--border-thin); border-radius:6px; padding:5px 10px; font-size:11px; font-family:var(--font-mono); width:105px; text-transform:uppercase; outline:none; transition:border-color 0.3s; box-shadow:inset 0 2px 10px rgba(0,0,0,0.5);" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-thin)'">
-                    <datalist id="coinList_${w.id}"></datalist>
-                </div>
-                <div style="text-align:right; min-width:120px;">
+            <div style="display:flex; justify-content:flex-end; align-items:flex-start; margin-bottom:10px;">
+                <div style="text-align:right;">
                     <div id="currentPrice_${w.id}" style="font-size:clamp(1.1rem, 4cqw, 1.8rem); font-weight:800; font-family:var(--font-mono); line-height:1; letter-spacing:-1px; text-shadow:0 0 20px rgba(255,255,255,0.1); transition:color 0.3s ease;">--</div>
                     <div id="priceChange_${w.id}" style="font-size:0.72rem; font-family:var(--font-mono); padding:2px 8px; border-radius:4px; display:inline-block; margin-top:5px; font-weight:700; letter-spacing:0.5px;">--</div>
                 </div>
@@ -2889,98 +3041,72 @@ els.change.style.border = isUp ? '1px solid rgba(0,255,200,0.2)' : '1px solid rg
 
 function renderClockWidget(w) {
     return `
-        <div class="mod-header">
-            <div class="mod-title"><i class="fa-solid fa-bell"></i> Alarm · Timer</div>
-            <span id="clockLive_${w.id}" style="font-family:var(--font-mono); font-size:0.7rem; color:var(--accent); font-weight:700; letter-spacing:1px;">--:--:--</span>
+        <div class="mod-header" style="margin-bottom:10px; padding-bottom:10px;">
+            <div class="mod-title"><i class="fa-regular fa-clock"></i> TimeCenter</div>
+            <div id="alarmIndicator_${w.id}" style="display:none; color:var(--accent); font-size:12px; animation: pulseDot 1.5s infinite;"><i class="fa-solid fa-bell"></i></div>
         </div>
 
-        <!-- Mode switcher · segmented control -->
-        <div style="display:flex; gap:0; margin-bottom:14px; background:rgba(0,0,0,0.35); border:1px solid var(--border-thin); border-radius:8px; padding:3px; position:relative;">
-            <button class="clock-mode-btn active" data-mode="alarm" data-wid="${w.id}">ALARM</button>
-            <button class="clock-mode-btn" data-mode="timer" data-wid="${w.id}">TIMER</button>
+       <!-- Yndhanur Zhamy -->
+<div style="display:flex; flex-direction:column; align-items:center; margin-bottom:15px; width:100%;">
+    <div class="time-hero" id="clockLive_${w.id}" style="font-size:2.2rem; line-height:1; white-space:nowrap;">--:--:--</div>
+    <div class="date-sub" id="dateLive_${w.id}" style="white-space:nowrap; padding-right:3px;">---</div>
+</div>
+
+        <!-- Taber -->
+        <div class="mac-segment" style="margin-bottom:15px;">
+            <button class="mac-seg-btn active" data-mode="alarm" data-wid="${w.id}">Alarm</button>
+            <button class="mac-seg-btn" data-mode="timer" data-wid="${w.id}">Timers</button>
         </div>
 
-        <!-- ─── ALARM PANEL ─── -->
-        <div id="alarmPanel_${w.id}" style="display:flex; flex-direction:column; gap:14px; flex:1;">
+        <div style="flex:1; display:flex; flex-direction:column; width:100%; position:relative; overflow:hidden;">
+            
+        <!-- ALARM PANEL -->
+<div id="alarmPanel_${w.id}" style="display:flex; flex-direction:column; align-items:center; width:100%; gap:12px; animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
+    
+    <style>
+        #alarmTime_${w.id} { color-scheme: dark; }
+        #alarmTime_${w.id}::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            margin-left: 10px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>');
+            background-size: 16px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        #alarmTime_${w.id}::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+    </style>
+    <input type="time" id="alarmTime_${w.id}" class="mac-time-input" value="07:00" style="width:100%; max-width:220px; text-align:center;">
 
-            <!-- Big digital display -->
-            <div style="text-align:center; padding:6px 0 4px;">
-                <div id="alarmBigDisplay_${w.id}" style="font-family:var(--font-mono); font-size:2.4rem; font-weight:800; letter-spacing:1px; color:var(--accent); line-height:1; text-shadow:0 0 22px var(--accent-dim); transition:color 0.3s;">09:00</div>
-                <div id="alarmStatus_${w.id}" style="font-family:var(--font-mono); font-size:0.65rem; color:var(--text-muted); margin-top:6px; letter-spacing:1.5px; text-transform:uppercase;">OFF</div>
-            </div>
+    <input type="text" id="alarmNote_${w.id}" placeholder="Your notes..." style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); color:var(--text-main); padding:8px 12px; border-radius:8px; font-size:11px; font-family:var(--font-mono); width:100%; max-width:180px; outline:none; text-align:center;">
+    
+    <button id="alarmToggle_${w.id}" class="mac-btn play" title="Arm/Disarm"><i class="fa-solid fa-bell"></i></button>
+    <div id="alarmStatus_${w.id}" style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted); font-weight:700; letter-spacing:1px;">INACTIVE</div>
+</div>
 
-            <!-- Time input -->
-            <div style="display:flex; gap:6px; align-items:stretch;">
-                <input type="time" id="alarmTime_${w.id}" value="09:00"
-                       style="flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--border-thin); color:var(--text-main); padding:10px 12px; border-radius:8px; font-family:var(--font-mono); font-size:0.9rem; font-weight:700; outline:none; transition:border-color 0.2s;"
-                       onfocus="this.style.borderColor='var(--accent)'"
-                       onblur="this.style.borderColor='var(--border-thin)'">
-                <button id="alarmSet_${w.id}" class="clock-action-btn primary">
-                    <i class="fa-solid fa-bell"></i>
-                </button>
-                <button id="alarmClear_${w.id}" class="clock-action-btn danger" title="Clear">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <!-- Quick presets -->
-            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px;">
-                <button class="clock-quick-btn" data-quick="07:00" data-wid="${w.id}">07:00</button>
-                <button class="clock-quick-btn" data-quick="08:00" data-wid="${w.id}">08:00</button>
-                <button class="clock-quick-btn" data-quick="09:00" data-wid="${w.id}">09:00</button>
-                <button class="clock-quick-btn" data-quick="18:00" data-wid="${w.id}">18:00</button>
-            </div>
-
-        </div>
-
-        <!-- ─── TIMER PANEL ─── -->
-        <div id="timerPanel_${w.id}" style="display:none; flex-direction:column; gap:14px; flex:1;">
-
-            <!-- Circular ring + countdown -->
-            <div style="position:relative; display:flex; align-items:center; justify-content:center; height:150px; flex-shrink:0;">
-                <svg width="150" height="150" viewBox="0 0 150 150" style="transform:rotate(-90deg); position:absolute;">
-                    <circle cx="75" cy="75" r="62" stroke="rgba(255,255,255,0.04)" stroke-width="6" fill="none"/>
-                    <circle id="timerRing_${w.id}" cx="75" cy="75" r="62"
-                            stroke="var(--accent)" stroke-width="6" fill="none"
-                            stroke-linecap="round"
-                            stroke-dasharray="389.56" stroke-dashoffset="389.56"
-                            style="transition:stroke-dashoffset 0.5s linear, stroke 0.3s; filter:drop-shadow(0 0 8px var(--accent-dim));"/>
-                </svg>
-                <div style="position:relative; text-align:center; z-index:2;">
-                    <div id="timerDisplay_${w.id}" style="font-family:var(--font-mono); font-size:1.9rem; font-weight:800; letter-spacing:1px; color:var(--accent); line-height:1; text-shadow:0 0 18px var(--accent-dim);">00:00</div>
-                    <div id="timerHint_${w.id}" style="font-family:var(--font-mono); font-size:0.55rem; color:var(--text-muted); margin-top:6px; letter-spacing:2px; text-transform:uppercase;">READY</div>
-                </div>
-            </div>
-
-            <!-- Quick presets -->
-            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px;">
-                <button class="clock-quick-btn" data-preset="60"   data-wid="${w.id}">1m</button>
-                <button class="clock-quick-btn" data-preset="300"  data-wid="${w.id}">5m</button>
-                <button class="clock-quick-btn" data-preset="900"  data-wid="${w.id}">15m</button>
-                <button class="clock-quick-btn" data-preset="1500" data-wid="${w.id}">25m</button>
-            </div>
-
-            <!-- MM : SS inputs -->
-            <div style="display:flex; gap:6px; align-items:center;">
-                <input type="number" id="timerMin_${w.id}" min="0" max="999" placeholder="00"
-                       style="flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--border-thin); color:var(--text-main); padding:9px; border-radius:8px; font-family:var(--font-mono); font-size:0.85rem; text-align:center; outline:none; font-weight:700; transition:border-color 0.2s;"
-                       onfocus="this.style.borderColor='var(--accent)'"
-                       onblur="this.style.borderColor='var(--border-thin)'">
-                <span style="color:var(--text-muted); font-family:var(--font-mono); font-weight:800;">:</span>
-                <input type="number" id="timerSec_${w.id}" min="0" max="59" placeholder="00"
-                       style="flex:1; background:rgba(0,0,0,0.4); border:1px solid var(--border-thin); color:var(--text-main); padding:9px; border-radius:8px; font-family:var(--font-mono); font-size:0.85rem; text-align:center; outline:none; font-weight:700; transition:border-color 0.2s;"
-                       onfocus="this.style.borderColor='var(--accent)'"
-                       onblur="this.style.borderColor='var(--border-thin)'">
-            </div>
-
-            <!-- START / RESET -->
-            <div style="display:flex; gap:6px;">
-                <button id="timerStart_${w.id}" class="clock-action-btn primary" style="flex:1; width:auto; height:38px;">
-                    <i class="fa-solid fa-play"></i><span style="margin-left:6px; font-size:10px; letter-spacing:1px;">START</span>
-                </button>
-                <button id="timerReset_${w.id}" class="clock-action-btn" style="flex:1; width:auto; height:38px;">
-                    <i class="fa-solid fa-rotate-left"></i><span style="margin-left:6px; font-size:10px; letter-spacing:1px;">RESET</span>
-                </button>
+            <!-- TIMERS PANEL -->
+            <div id="timerPanel_${w.id}" style="display:none; flex-direction:column; align-items:center; width:100%; height:100%; animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
+                <input type="text" id="timerNote_${w.id}" placeholder="Your notes..." style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); color:var(--text-main); padding:8px 12px; border-radius:8px; font-size:11px; font-family:var(--font-mono); width:100%; max-width:210px; outline:none; text-align:center; margin-bottom:10px;">
+                
+                <div class="timer-presets" style="flex-wrap:wrap; max-width:240px; justify-content:center; gap:6px;">
+    <button class="preset-btn" data-time="1" data-wid="${w.id}">1m</button>
+    <button class="preset-btn" data-time="5" data-wid="${w.id}">5m</button>
+    <button class="preset-btn" data-time="10" data-wid="${w.id}">10m</button>
+    <button class="preset-btn" data-time="15" data-wid="${w.id}">15m</button>
+    <button class="preset-btn" data-time="25" data-wid="${w.id}">25m</button>
+    <button class="preset-btn" data-time="30" data-wid="${w.id}">30m</button>
+    <button class="preset-btn" data-time="60" data-wid="${w.id}">1h</button>
+    <button class="preset-btn" data-time="120" data-wid="${w.id}">2h</button>
+    <button class="preset-btn" data-time="180" data-wid="${w.id}">3h</button>
+    <button class="preset-btn" data-time="240" data-wid="${w.id}">4h</button>
+    <button class="preset-btn" data-time="480" data-wid="${w.id}">8h</button>
+</div>
+                
+                <!-- Multi-Timers List -->
+                <div id="activeTimers_${w.id}" style="flex:1; width:100%; max-width:240px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-bottom:10px; margin-top:5px;"></div>
             </div>
 
         </div>
@@ -2989,70 +3115,81 @@ function renderClockWidget(w) {
 
 function initClockWidget(w, el) {
     const id = w.id;
+    const [liveEl, dateEl, alarmPanel, timerPanel, alarmIn, alarmNote, alarmToggle, alarmStat, alarmInd, timerNote, activeTimersContainer] = 
+        ['clockLive', 'dateLive', 'alarmPanel', 'timerPanel', 'alarmTime', 'alarmNote', 'alarmToggle', 'alarmStatus', 'alarmIndicator', 'timerNote', 'activeTimers']
+        .map(s => el.querySelector(`#${s}_${id}`));
 
-    const liveEl       = el.querySelector(`#clockLive_${id}`);
-    const alarmPanel   = el.querySelector(`#alarmPanel_${id}`);
-    const timerPanel   = el.querySelector(`#timerPanel_${id}`);
-    const alarmIn      = el.querySelector(`#alarmTime_${id}`);
-    const alarmSet     = el.querySelector(`#alarmSet_${id}`);
-    const alarmClear   = el.querySelector(`#alarmClear_${id}`);
-    const alarmStat    = el.querySelector(`#alarmStatus_${id}`);
-    const alarmBig     = el.querySelector(`#alarmBigDisplay_${id}`);
-    const timerDisp    = el.querySelector(`#timerDisplay_${id}`);
-    const timerHint    = el.querySelector(`#timerHint_${id}`);
-    const timerRing    = el.querySelector(`#timerRing_${id}`);
-    const timerStart   = el.querySelector(`#timerStart_${id}`);
-    const timerReset   = el.querySelector(`#timerReset_${id}`);
-    const minIn        = el.querySelector(`#timerMin_${id}`);
-    const secIn        = el.querySelector(`#timerSec_${id}`);
-
-    const RING_CIRCUMFERENCE = 2 * Math.PI * 62; // r = 62
-    let mode = 'alarm';
-    let alarmTarget = null;
-    let alarmFired = false;
-    let timerEnd = null;
-    let timerTotal = 0;
-    let timerRemaining = 0;
-    let timerRunning = false;
+    let mode = 'alarm', alarmTarget = null, alarmFired = false, currentAlarmNote = '';
+    let activeTimers = [];
     let audioCtx = null;
 
-    /* ─── Live clock ─── */
-    const tickLive = () => {
-        if (!liveEl) return;
-        const d = new Date();
-        liveEl.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
-        /* Update big alarm display if no alarm set */
-        if (!alarmTarget && alarmBig) {
-            alarmBig.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-        }
-    };
-    const liveInt = setInterval(tickLive, 1000);
-    tickLive();
-
-    /* ─── Sound ─── */
-    function ringAlarm() {
+    const fmtZero = (n) => String(n).padStart(2, '0');
+    
+    // --- SAVE / LOAD LOGIKA ---
+    const CLOCK_KEY = `grind_clock_${id}`;
+    function saveTimeState() {
+        localStorage.setItem(CLOCK_KEY, JSON.stringify({ alarmTarget, currentAlarmNote, activeTimers }));
+    }
+    
+    function loadTimeState() {
         try {
-            audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            [0, 0.25, 0.5, 0.9, 1.15, 1.4].forEach((t, i) => {
-                const o = audioCtx.createOscillator();
-                const g = audioCtx.createGain();
-                o.frequency.value = i % 2 === 0 ? 880 : 1100;
-                g.gain.value = 0.12;
-                o.connect(g); g.connect(audioCtx.destination);
-                o.start(audioCtx.currentTime + t);
-                o.stop(audioCtx.currentTime + t + 0.18);
-            });
+            const s = JSON.parse(localStorage.getItem(CLOCK_KEY));
+            if(s) {
+                alarmTarget = s.alarmTarget;
+                currentAlarmNote = s.currentAlarmNote || '';
+                activeTimers = s.activeTimers || [];
+                
+                const now = Date.now();
+                activeTimers.forEach(t => {
+                    if(!t.fired) t.remaining = Math.max(0, Math.round((t.end - now)/1000));
+                });
+
+                if(alarmTarget && now < alarmTarget) {
+                    const d = new Date(alarmTarget);
+                    alarmIn.value = `${fmtZero(d.getHours())}:${fmtZero(d.getMinutes())}`;
+                    alarmNote.value = currentAlarmNote;
+                    alarmStat.textContent = `ARMED · ${alarmIn.value}`;
+                    alarmStat.style.color = 'var(--accent)';
+                    alarmToggle.classList.replace('play', 'stop'); 
+                    alarmToggle.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+                    alarmInd.style.display = 'block';
+                } else if (alarmTarget && now >= alarmTarget) {
+                    alarmTarget = null; // Zhamanakn ancel e minch ejy pak er
+                }
+            }
         } catch(e) {}
-        try { if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]); } catch(e) {}
-        if (typeof toast === 'function') toast('⏰ Time is up!');
     }
 
-    /* ─── Mode switch ─── */
+    // 1. MSHTAKAN JHAMY
+    const tickLive = () => { 
+        if(!liveEl) return;
+        const d = new Date();
+        liveEl.textContent = `${fmtZero(d.getHours())}:${fmtZero(d.getMinutes())}:${fmtZero(d.getSeconds())}`;
+        dateEl.textContent = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    };
+    const liveInt = setInterval(tickLive, 1000); tickLive();
+
+    function playMacChime() {
+        try {
+            audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            [783.99, 1046.50, 1318.51].forEach((freq, i) => { 
+                const now = audioCtx.currentTime, osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                osc.type = 'sine'; osc.frequency.value = freq; osc.connect(gain); gain.connect(audioCtx.destination);
+                gain.gain.setValueAtTime(0, now + i*0.08); 
+                gain.gain.linearRampToValueAtTime(0.3, now + i*0.08 + 0.02); 
+                gain.gain.exponentialRampToValueAtTime(0.001, now + i*0.08 + 1.5);
+                osc.start(now + i*0.08); osc.stop(now + i*0.08 + 1.6);
+            });
+        } catch(e) {}
+    }
+    
+    function ringAlarm() { for(let k=0; k<5; k++) setTimeout(playMacChime, k*1000); }
+
+    // 2. TABERI KARAVARUM
     el.querySelectorAll(`[data-mode][data-wid="${id}"]`).forEach(btn => {
         btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            mode = btn.dataset.mode;
+            e.stopPropagation(); mode = btn.dataset.mode;
             el.querySelectorAll(`[data-mode][data-wid="${id}"]`).forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             alarmPanel.style.display = mode === 'alarm' ? 'flex' : 'none';
@@ -3060,180 +3197,155 @@ function initClockWidget(w, el) {
         });
     });
 
-    /* ─── ALARM: Set ─── */
-    alarmSet.addEventListener('click', (e) => {
+    // 3. ALARM LOGIKA
+    alarmToggle.addEventListener('click', (e) => {
         e.stopPropagation();
-        const val = alarmIn.value;
-        if (!val) return;
-        const [hh, mm] = val.split(':').map(Number);
-        const now = new Date();
-        const target = new Date();
-        target.setHours(hh, mm, 0, 0);
-        if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
-        alarmTarget = target.getTime();
-        alarmFired = false;
-
-        const hStr = String(hh).padStart(2,'0');
-        const mStr = String(mm).padStart(2,'0');
-        const dayStr = target.getDate() === now.getDate() ? 'TODAY' : 'TOMORROW';
-        alarmBig.textContent = `${hStr}:${mStr}`;
-        alarmBig.style.color = 'var(--accent)';
-        alarmStat.textContent = `${dayStr} · ARMED`;
-        alarmStat.style.color = 'var(--accent)';
-        if (typeof toast === 'function') toast(`Alarm: ${hStr}:${mStr} ${dayStr.toLowerCase()}`);
-    });
-
-    /* ─── ALARM: Clear ─── */
-    alarmClear.addEventListener('click', (e) => {
-        e.stopPropagation();
-        alarmTarget = null;
-        alarmFired = false;
-        alarmStat.textContent = 'OFF';
-        alarmStat.style.color = 'var(--text-muted)';
-        const d = new Date();
-        alarmBig.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-        alarmBig.style.color = 'var(--accent)';
-    });
-
-    /* ─── ALARM: Quick presets ─── */
-    el.querySelectorAll(`[data-quick][data-wid="${id}"]`).forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            alarmIn.value = btn.dataset.quick;
-            el.querySelectorAll(`[data-quick][data-wid="${id}"]`).forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        });
-    });
-
-    /* ─── TIMER: presets ─── */
-    el.querySelectorAll(`[data-preset][data-wid="${id}"]`).forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const sec = parseInt(btn.dataset.preset, 10);
-            minIn.value = Math.floor(sec / 60);
-            secIn.value = sec % 60;
-            timerRemaining = sec;
-            timerTotal = sec;
-            updateTimerDisplay();
-            el.querySelectorAll(`[data-preset][data-wid="${id}"]`).forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        });
-    });
-
-    /* ─── TIMER: display + ring ─── */
-    function fmtTimer(s) {
-        s = Math.max(0, Math.floor(s));
-        const h = Math.floor(s / 3600);
-        const m = Math.floor((s % 3600) / 60);
-        const ss = s % 60;
-        if (h > 0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
-        return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
-    }
-    function updateTimerDisplay() {
-        timerDisp.textContent = fmtTimer(timerRemaining);
-
-        const danger = timerRemaining <= 10 && timerRunning && timerRemaining > 0;
-        timerDisp.style.color = danger ? 'var(--red)' : 'var(--accent)';
-        timerRing.style.stroke = danger ? 'var(--red)' : 'var(--accent)';
-        timerRing.style.filter = danger
-            ? 'drop-shadow(0 0 12px rgba(255,42,95,0.6))'
-            : 'drop-shadow(0 0 8px var(--accent-dim))';
-
-        /* Progress ring */
-        const progress = timerTotal > 0 ? (timerRemaining / timerTotal) : 0;
-        const offset = RING_CIRCUMFERENCE * (1 - progress);
-        timerRing.style.strokeDashoffset = offset;
-
-        /* Hint */
-        if (timerHint) {
-            if (timerRunning) timerHint.textContent = 'RUNNING';
-            else if (timerRemaining > 0) timerHint.textContent = 'PAUSED';
-            else timerHint.textContent = 'READY';
-        }
-    }
-
-    /* ─── TIMER: start/pause ─── */
-    timerStart.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (timerRunning) {
-            timerRunning = false;
-            timerEnd = null;
-            timerStart.querySelector('span').textContent = 'START';
-            timerStart.querySelector('i').className = 'fa-solid fa-play';
+        if (alarmTarget) {
+            alarmTarget = null; alarmFired = false; currentAlarmNote = '';
+            alarmStat.textContent = 'INACTIVE'; alarmStat.style.color = 'var(--text-muted)';
+            alarmToggle.classList.replace('stop', 'play'); alarmToggle.innerHTML = '<i class="fa-solid fa-bell"></i>';
+            alarmInd.style.display = 'none';
         } else {
-            if (timerRemaining <= 0) {
-                const mm = parseInt(minIn.value || 0, 10);
-                const ss = parseInt(secIn.value || 0, 10);
-                timerRemaining = mm * 60 + ss;
-                timerTotal = timerRemaining;
+            const [hh, mm] = alarmIn.value.split(':').map(Number);
+            const target = new Date(); target.setHours(hh, mm, 0, 0);
+            if (target <= new Date()) target.setDate(target.getDate() + 1);
+            alarmTarget = target.getTime(); alarmFired = false; 
+            currentAlarmNote = alarmNote.value.trim();
+            
+            alarmStat.textContent = `ARMED · ${fmtZero(hh)}:${fmtZero(mm)}`; 
+            alarmStat.style.color = 'var(--accent)';
+            alarmToggle.classList.replace('play', 'stop'); alarmToggle.innerHTML = '<i class="fa-solid fa-bell-slash"></i>';
+            alarmInd.style.display = 'block';
+        }
+        saveTimeState();
+    });
+
+    // 4. MULTI-TIMER LOGIKA
+    function renderActiveTimers() {
+        activeTimersContainer.innerHTML = activeTimers.map(t => {
+            const prog = t.total > 0 ? (t.remaining/t.total) : 0;
+            let color = 'var(--accent)';
+            if(prog < 0.2) color = 'var(--red)';
+            else if(prog < 0.5) color = 'var(--gold)';
+            const timeStr = `${fmtZero(Math.floor(t.remaining/60))}:${fmtZero(t.remaining%60)}`;
+            
+            return `
+            <div data-tid="${t.id}" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:10px; display:flex; align-items:center; gap:12px; animation: cardIn 0.3s ease;">
+                <div style="position:relative; width:38px; height:38px; flex-shrink:0;">
+                    <svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg);">
+                        <circle cx="50" cy="50" r="44" stroke-width="8" fill="none" style="stroke:rgba(255,255,255,0.05);" />
+                        <circle class="timer-ring" cx="50" cy="50" r="44" stroke-width="8" fill="none" stroke-dasharray="276" stroke-dashoffset="${276 * (1 - prog)}" style="stroke:${color}; transition:stroke-dashoffset 1s linear;" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <div class="timer-val" style="font-family:var(--font-mono); font-size:1.1rem; font-weight:800; color:${color}; line-height:1;">${timeStr}</div>
+                    <div style="font-size:9px; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:3px;">${t.note || 'Timer'}</div>
+                </div>
+                <button class="mac-btn stop remove-timer-btn" data-tid="${t.id}" style="width:26px; height:26px; font-size:10px;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            `;
+        }).join('');
+    }
+
+    el.querySelectorAll(`.preset-btn[data-wid="${id}"]`).forEach(btn => {
+        btn.addEventListener('click', () => {
+            const minutes = parseInt(btn.dataset.time);
+            const totalSecs = minutes * 60;
+            activeTimers.unshift({
+                id: 't_' + Math.random().toString(36).substr(2, 9),
+                total: totalSecs,
+                remaining: totalSecs,
+                end: Date.now() + totalSecs * 1000,
+                note: timerNote.value.trim(),
+                fired: false
+            });
+            timerNote.value = '';
+            renderActiveTimers();
+            saveTimeState();
+        });
+    });
+
+    activeTimersContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('.remove-timer-btn');
+        if(btn) {
+            const tid = btn.dataset.tid;
+            activeTimers = activeTimers.filter(t => t.id !== tid);
+            renderActiveTimers();
+            saveTimeState();
+        }
+    });
+
+    // 5. YNDHANUR TICK (Alarm + Timers)
+    const tickInt = setInterval(() => {
+        const now = Date.now();
+        
+        // Alarm check
+        if(alarmTarget && !alarmFired && now >= alarmTarget) {
+            alarmFired = true; ringAlarm(); alarmStat.textContent = 'RINGING...'; alarmStat.style.color = 'var(--red)'; 
+            alarmInd.style.animation = 'pulseDot 0.2s infinite';
+            
+            toast(currentAlarmNote ? `ALARM: ${currentAlarmNote}` : 'ALARM: Time is up!');
+
+            setTimeout(() => { 
+                alarmTarget = null; alarmStat.textContent = 'INACTIVE'; alarmStat.style.color = 'var(--text-muted)'; 
+                alarmToggle.classList.replace('stop', 'play'); alarmToggle.innerHTML = '<i class="fa-solid fa-bell"></i>'; 
+                alarmInd.style.display = 'none'; alarmInd.style.animation = 'pulseDot 1.5s infinite';
+                saveTimeState();
+            }, 8000);
+            saveTimeState();
+        }
+
+        // Multi-timer check
+        let timersUpdated = false;
+        activeTimers.forEach(t => {
+            if(t.fired) return;
+            const newRemaining = Math.max(0, Math.round((t.end - now)/1000));
+            if(newRemaining !== t.remaining) {
+                t.remaining = newRemaining;
+                timersUpdated = true;
+                
+                const row = activeTimersContainer.querySelector(`[data-tid="${t.id}"]`);
+                if(row) {
+                    const prog = t.total > 0 ? (t.remaining/t.total) : 0;
+                    let color = 'var(--accent)';
+                    if(prog < 0.2) color = 'var(--red)';
+                    else if(prog < 0.5) color = 'var(--gold)';
+                    
+                    row.querySelector('.timer-val').textContent = `${fmtZero(Math.floor(t.remaining/60))}:${fmtZero(t.remaining%60)}`;
+                    row.querySelector('.timer-val').style.color = color;
+                    row.querySelector('.timer-ring').style.strokeDashoffset = 276 * (1 - prog);
+                    row.querySelector('.timer-ring').style.stroke = color;
+                }
             }
-            if (timerRemaining <= 0) return;
-            timerEnd = Date.now() + timerRemaining * 1000;
-            timerRunning = true;
-            timerStart.querySelector('span').textContent = 'PAUSE';
-            timerStart.querySelector('i').className = 'fa-solid fa-pause';
-        }
-        updateTimerDisplay();
-    });
 
-    /* ─── TIMER: reset ─── */
-    timerReset.addEventListener('click', (e) => {
-        e.stopPropagation();
-        timerRunning = false;
-        timerEnd = null;
-        timerRemaining = 0;
-        timerTotal = 0;
-        minIn.value = '';
-        secIn.value = '';
-        timerStart.querySelector('span').textContent = 'START';
-        timerStart.querySelector('i').className = 'fa-solid fa-play';
-        el.querySelectorAll(`[data-preset][data-wid="${id}"]`).forEach(b => b.classList.remove('active'));
-        updateTimerDisplay();
-    });
-
-    /* ─── Global tick ─── */
-    const tick = () => {
-        /* Alarm check */
-        if (alarmTarget && !alarmFired && Date.now() >= alarmTarget) {
-            alarmFired = true;
-            ringAlarm();
-            alarmStat.textContent = '🔔 RINGING';
-            alarmStat.style.color = 'var(--red)';
-            alarmBig.style.color = 'var(--red)';
-            setTimeout(() => {
-                alarmTarget = null;
-                alarmStat.textContent = 'OFF';
-                alarmStat.style.color = 'var(--text-muted)';
-                const d = new Date();
-                alarmBig.textContent = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-                alarmBig.style.color = 'var(--accent)';
-            }, 5000);
-        }
-        /* Timer countdown */
-        if (timerRunning && timerEnd) {
-            const left = Math.round((timerEnd - Date.now()) / 1000);
-            timerRemaining = Math.max(0, left);
-            updateTimerDisplay();
-            if (left <= 0) {
-                timerRunning = false;
-                timerEnd = null;
-                timerStart.querySelector('span').textContent = 'START';
-                timerStart.querySelector('i').className = 'fa-solid fa-play';
+            if(t.remaining <= 0 && !t.fired) {
+                t.fired = true;
                 ringAlarm();
+                toast(t.note ? `TIMER: ${t.note}` : 'TIMER: Time is up!');
+                setTimeout(() => {
+                    activeTimers = activeTimers.filter(x => x.id !== t.id);
+                    renderActiveTimers();
+                    saveTimeState();
+                }, 8000);
+                saveTimeState();
             }
+        });
+        
+        // Save if any timer remaining time shifted drastically (optional, but robust)
+        if(timersUpdated && activeTimers.length > 0) {
+            // we don't spam localStorage every second, only when needed, 
+            // but for UI sync across tabs it's fine.
         }
-    };
-    const tickInt = setInterval(tick, 500);
 
-    updateTimerDisplay();
+    }, 500);
 
-    /* ─── Cleanup ─── */
-    widgetCleanup[w.id] = () => {
-        clearInterval(liveInt);
-        clearInterval(tickInt);
-        if (audioCtx) { try { audioCtx.close(); } catch(e) {} }
-    };
+    // BAAART
+    loadTimeState();
+    renderActiveTimers();
+
+    widgetCleanup[w.id] = () => { clearInterval(liveInt); clearInterval(tickInt); if(audioCtx) try{ audioCtx.close(); }catch(e){} };
 }
+
 
 const QUOTES = [
     { text: "Money doesn't sleep. If your money isn't working while you sleep, you'll work until you die.", author: 'Grind' },
@@ -3338,15 +3450,36 @@ const QUOTES = [
     { text: "Grind is not an option; it's an absolute protocol for total dominance. Execute.", author: 'Grind' }
 ];
 
-function renderQuoteWidget() {
+function renderQuoteWidget(w) {
     const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
     return `
-        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-quote-left"></i> Daily Doctrine</div></div>
-        <div class="quote-content">
+        <div class="share-menu" id="shareMenu_${w.id}">
+            <div class="share-item" onclick="exportQuote('${w.id}', 'save')"><i class="fa-solid fa-download"></i> Save Image (9:16)</div>
+            <div class="share-item" onclick="exportQuote('${w.id}', 'copy')"><i class="fa-solid fa-copy"></i> Copy Image</div>
+            <div class="share-item" onclick="shareQuoteLink(event, '${w.id}')"><i class="fa-solid fa-link"></i> Get Link</div>
+        </div>
+        <div class="mod-header" style="justify-content:center;"><div class="mod-title"><i class="fa-solid fa-quote-left"></i> Daily Doctrine</div></div>
+        <div class="quote-content" id="quoteContent_${w.id}">
             <div class="quote-mark">"</div>
             <div class="quote-widget-text">${q.text}</div>
             <div class="quote-widget-author">— ${q.author}</div>
         </div>`;
+}
+
+function renderTvOthersWidget(w) {
+    return `
+        <div class="mod-header" style="margin-bottom:12px;">
+            <div class="mod-title"><i class="fa-solid fa-chart-line"></i> TV Others</div>
+        </div>
+        <div style="flex:1; position:relative; overflow:hidden; border-radius:8px; background:var(--bg-deep); min-height:0; border:1px solid var(--border-thin);">
+            <iframe 
+                src="https://www.tradingview.com/chart/5pK1pCu9/" 
+                allow="clipboard-write; clipboard-read" 
+                loading="lazy" 
+                style="width:100%; height:100%; border:none; display:block; background:#050608;"
+            ></iframe>
+        </div>
+    `;
 }
 
 function renderNotesWidget() {
