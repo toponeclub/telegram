@@ -33,9 +33,9 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 
 /* SIDEBAR */
 .sidebar{width:300px;border-right:1px solid var(--border-light);display:flex;flex-direction:column;background:var(--bg-panel);backdrop-filter:blur(20px);flex-shrink:0;transition:transform .3s}
-.node-header{padding:18px;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center}
+.node-header{padding:18px;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center;gap:10px}
 .node-identity{display:flex;align-items:center;gap:12px;min-width:0}
-.node-id-tag{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-dim);padding:6px 10px;border-radius:6px;border:1px solid var(--border-accent);white-space:nowrap}
+.node-id-tag{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-dim);padding:6px 10px;border-radius:6px;border:1px solid var(--border-accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .list-section-title{font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:2px;padding:16px 18px 8px;text-transform:uppercase}
 .contacts-scroll{flex:1;overflow-y:auto;padding:6px}
 .contact-card{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:4px;border:1px solid transparent;position:relative;transition:all .2s}
@@ -53,6 +53,9 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 .icon-btn-small{background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:4px;border-radius:4px;font-size:11px;transition:all .2s}
 .icon-btn-small:hover{color:var(--danger);background:rgba(255,51,102,.1)}
 
+.icon-btn-header{background:transparent;border:1px solid var(--border-light);color:var(--text-muted);width:32px;height:32px;flex-shrink:0;border-radius:8px;cursor:pointer;font-size:12px;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.icon-btn-header:hover{color:var(--danger);border-color:rgba(255,51,102,.5);background:rgba(255,51,102,.08);box-shadow:0 0 12px rgba(255,51,102,.18)}
+
 .sidebar-footer{padding:16px;border-top:1px solid var(--border-light);background:rgba(0,0,0,.2)}
 .input-field{width:100%;background:rgba(0,0,0,.35);border:1px solid var(--border-light);border-radius:10px;padding:10px 14px;color:#fff;outline:none;font-size:12px;transition:border-color .2s;font-family:inherit}
 .input-field:focus{border-color:var(--accent)}
@@ -62,7 +65,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 
 /* CHAT VIEW */
 .chat-view{flex:1;display:flex;flex-direction:column;position:relative;min-width:0}
-.chat-header{padding:16px 22px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;background:var(--bg-panel);backdrop-filter:blur(20px);z-index:10}
+.chat-header{padding:16px 22px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg-panel);backdrop-filter:blur(20px);z-index:10}
 .chat-header-left{display:flex;align-items:center;gap:12px;min-width:0}
 .chat-name{font-weight:700;font-size:14px;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chat-sub{font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:5px;margin-top:3px}
@@ -84,7 +87,14 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 .full-overlay{position:absolute;inset:0;background:rgba(5,7,10,.9);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5;text-align:center;padding:20px}
 
 /* QR AVATAR */
-.qr-avatar{width:44px;height:44px;border-radius:10px;flex-shrink:0;display:grid;padding:5px;background:#000;border:1px solid rgba(255,255,255,.06);box-shadow:0 4px 10px rgba(0,0,0,.5)}
+.qr-avatar{
+  width:44px;height:44px;border-radius:10px;flex-shrink:0;
+  display:grid;grid-template-columns:repeat(9,1fr);grid-template-rows:repeat(9,1fr);
+  padding:5px;background:#000;border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 4px 10px rgba(0,0,0,.5);overflow:hidden;
+  cursor:pointer;transition:transform .15s ease,box-shadow .2s ease;
+}
+.qr-avatar:hover{transform:scale(1.07);box-shadow:0 0 0 1px var(--border-accent),0 6px 18px rgba(0,0,0,.6)}
 .qr-avatar.sm{width:36px;height:36px;padding:4px}
 .qr-avatar.lg{width:64px;height:64px;padding:7px;border-radius:14px}
 .qr-pixel{width:100%;height:100%}
@@ -92,6 +102,36 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 /* REQUEST OVERLAY */
 .req-overlay{position:absolute;inset:0;background:rgba(5,7,10,.98);z-index:6;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
 .req-id{color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:13px;margin:14px 0 30px;word-break:break-all;padding:0 20px}
+
+/* QR SHARE MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(5,7,10,.88);backdrop-filter:blur(12px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.share-card{
+  background:linear-gradient(180deg,rgba(18,22,28,.98),rgba(10,13,17,.98));
+  border:1px solid var(--border-accent);border-radius:18px;padding:26px 22px;max-width:370px;width:100%;
+  text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.7),0 0 50px var(--accent-dim);
+  animation:fadeIn .28s ease forwards;
+}
+.share-title{font-size:10px;letter-spacing:4px;color:var(--text-muted);font-weight:700;text-transform:uppercase}
+.share-sub{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);margin-top:6px;letter-spacing:1px}
+.share-qr-wrap{display:inline-flex;padding:13px;background:#000;border-radius:14px;border:1px solid var(--border-light);margin:16px 0 16px;box-shadow:0 0 30px var(--accent-dim)}
+.share-addr{
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);
+  word-break:break-all;background:var(--accent-dim);border:1px solid var(--border-accent);
+  border-radius:10px;padding:11px 12px;margin-bottom:14px;line-height:1.5;
+}
+.share-actions{display:flex;gap:10px}
+.share-actions .btn-action{margin-top:0}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:rgba(15,17,22,.97);border:1px solid var(--border-accent);color:var(--accent);
+  padding:11px 22px;border-radius:10px;font-size:11px;font-family:'JetBrains Mono',monospace;
+  letter-spacing:1.5px;z-index:300;opacity:0;pointer-events:none;transition:all .3s ease;
+  box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 20px var(--accent-dim);white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .animate-fade{animation:fadeIn .35s ease forwards}
@@ -105,6 +145,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
   .msg-wrapper{max-width:88%}
   .controls-bar{padding:12px}
   .chat-header{padding:12px 14px}
+  .share-qr-wrap canvas{width:190px!important;height:190px!important}
 }
 </style>
 </head>
@@ -126,9 +167,10 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
   <aside class="sidebar">
     <div class="node-header">
       <div class="node-identity">
-        <div id="my-avatar"></div>
+        <div id="my-avatar" title="Share my identity"></div>
         <div class="node-id-tag" id="my-address-display">0x...</div>
       </div>
+      <button class="icon-btn-header" title="Burn all sessions" onclick="App.secureWipeAll(false)"><i class="fa-solid fa-fire"></i></button>
     </div>
     <div class="contacts-scroll" id="contacts-list"></div>
     <div class="sidebar-footer">
@@ -157,7 +199,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
     <header class="chat-header">
       <div class="chat-header-left">
         <button class="mobile-back-btn" onclick="App.closeChatMobile()"><i class="fa-solid fa-chevron-left"></i></button>
-        <div id="active-avatar"></div>
+        <div id="active-avatar" title="Share identity"></div>
         <div style="min-width:0">
           <div class="chat-name" id="active-peer-name">Unknown_Node</div>
           <div class="chat-sub">
@@ -166,6 +208,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
           </div>
         </div>
       </div>
+      <button class="icon-btn-header" id="burn-btn" title="Burn this chat (wipe history + keys)" onclick="App.burnActive()" style="display:none"><i class="fa-solid fa-fire-flame-curved"></i></button>
     </header>
 
     <div class="messages-flow" id="messages-flow"></div>
@@ -177,12 +220,32 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
   </main>
 </div>
 
+<!-- QR SHARE MODAL -->
+<div class="modal-overlay" id="share-modal" onclick="if(event.target===this)App.closeShare()">
+  <div class="share-card">
+    <div class="share-title">SECURE IDENTITY</div>
+    <div class="share-sub" id="share-label">NODE</div>
+    <div class="share-qr-wrap" id="share-qr"></div>
+    <div class="share-addr" id="share-addr">0x...</div>
+    <div class="share-actions">
+      <button class="btn-action" onclick="App.copyAddress()"><i class="fa-regular fa-copy"></i>&nbsp;COPY</button>
+      <button class="btn-action primary" onclick="App.downloadQR()"><i class="fa-solid fa-download"></i>&nbsp;SAVE</button>
+    </div>
+    <button class="btn-action" style="border-color:var(--border-light);color:var(--text-muted)" onclick="App.closeShare()">CLOSE</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
 /* ============================================================
    NEXUS · P2P Chat (Hub-Embedded Edition)
    - Wallet comes from parent hub via postMessage
    - Accent color inherited dynamically
    - Unread count broadcasted to parent widget
+   - LO-FI QR identity share (modal / copy / PNG download)
+   - sessionStorage-backed history (survives reload, dies with tab)
+   - TTL idle wipe + manual Burn Chat / Burn All
    ============================================================ */
 
 // ─── 1. Crypto ───
@@ -206,32 +269,42 @@ const CryptoEngine = {
   }
 };
 
-// ─── 2. QR Avatar ───
+// ─── 2. LO-FI QR Avatar ───
 const QRAvatar = {
-  render(address, targetId, cls){
-    const el=document.getElementById(targetId); if(!el) return;
-    el.className='qr-avatar '+(cls||'');
-    el.innerHTML='';
-    const hash=address.toLowerCase().replace('0x','');
-    const SIZE=9;
+  SIZE: 9,
+
+  /* Build the deterministic 9x9 matrix from a wallet address */
+  matrix(address){
+    const hash=(address||'0x0').toLowerCase().replace('0x','')||'0';
+    const SIZE=this.SIZE;
     const m=Array.from({length:SIZE},()=>Array(SIZE).fill(0));
-    // Finder patterns (3x3 in 3 corners)
     const finders=[[0,0],[0,SIZE-3],[SIZE-3,0]];
     finders.forEach(([r,c])=>{ for(let i=0;i<3;i++) for(let j=0;j<3;j++) m[r+i][c+j]=1; });
-    // Fill rest from hash
     let idx=0;
     for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
       let inFinder=false;
       finders.forEach(([fr,fc])=>{ if(r>=fr&&r<fr+3&&c>=fc&&c<fc+3) inFinder=true; });
       if(inFinder) continue;
-      const code=hash.charCodeAt((idx+hash.length)%hash.length);
-      m[r][c]= (code*7+idx*13+r*3+c*5)%3===0 ? 1 : 0;
+      const code=hash.charCodeAt((idx+hash.length)%hash.length)||48;
+      m[r][c]=(code*7+idx*13+r*3+c*5)%3===0?1:0;
       idx++;
     }
-    // Colors
-    const hue=parseInt(hash.slice(0,4)||'0',16)%360;
-    const color=`hsl(${hue},85%,62%)`;
-    for(let r=0;r<SIZE;r++) for(let c=0;c<SIZE;c++){
+    return m;
+  },
+  hue(address){
+    const hash=(address||'0x0').toLowerCase().replace('0x','');
+    return parseInt(hash.slice(0,4)||'0',16)%360;
+  },
+  color(address){ return `hsl(${this.hue(address)},85%,62%)`; },
+
+  /* DOM renderer (sidebar cards, headers, request overlay) */
+  render(address, targetId, cls){
+    const el=document.getElementById(targetId); if(!el) return;
+    el.className='qr-avatar '+(cls||'');
+    el.innerHTML='';
+    const m=this.matrix(address);
+    const color=this.color(address);
+    for(let r=0;r<this.SIZE;r++) for(let c=0;c<this.SIZE;c++){
       const p=document.createElement('div');
       p.className='qr-pixel';
       if(m[r][c]){
@@ -241,6 +314,29 @@ const QRAvatar = {
       }
       el.appendChild(p);
     }
+  },
+
+  /* Canvas renderer (modal + PNG export) */
+  buildCanvas(address, px){
+    const m=this.matrix(address);
+    const color=this.color(address);
+    const canvas=document.createElement('canvas');
+    canvas.width=px; canvas.height=px;
+    const ctx=canvas.getContext('2d');
+    ctx.fillStyle='#000';
+    ctx.fillRect(0,0,px,px);
+
+    const pad=Math.round(px*0.07);
+    const cell=(px-pad*2)/this.SIZE;
+    const gap=Math.max(1,Math.round(cell*0.12));
+    ctx.fillStyle=color;
+    ctx.shadowColor=color;
+    ctx.shadowBlur=px*0.015;
+    for(let r=0;r<this.SIZE;r++) for(let c=0;c<this.SIZE;c++){
+      if(m[r][c]) ctx.fillRect(pad+c*cell+gap/2, pad+r*cell+gap/2, cell-gap, cell-gap);
+    }
+    ctx.shadowBlur=0;
+    return canvas;
   }
 };
 
@@ -250,21 +346,40 @@ const App = {
   connections:{}, activeSessions:{}, incomingRequests:{},
   lastSeen:{}, pendingKeys:{},
   activePeer:null,
-  chatHistory:{},          // RAM-only: { addr: [{type:'text',body,time,dir}] }
-  contacts:[],             // persistent: [{ address, name }]
-  unread:{},               // RAM-only per-session
+  chatHistory:{},          // { addr: [{type,body,time,dir}] } — RAM + sessionStorage mirror
+  contacts:[],             // persistent: [{ address, name }] — localStorage
+  unread:{},               // RAM + sessionStorage mirror
   booted:false,
+  _inited:false,
+  _shareAddr:null,
+
+  /* ─── Secure-wipe / TTL config ─── */
+  TTL_MS: 15*60*1000,      // 15 minutes of inactivity
+  lastActivity: Date.now(),
+  _idleTimer:null,
 
   /* ─── HUB BRIDGE ─── */
   init(){
+    if(this._inited) return;
+    this._inited=true;
+
     // Անմիջապես փակում ենք լոադինգը հենց ֆունկցիայի սկզբում
     document.getElementById('waiting-screen').style.display='none';
     document.getElementById('app-shell').style.display='flex';
-    
+
     window.addEventListener('message', e=>this.onHubMessage(e));
-    
-    // մնացած կոդը շարունակվում է նույնությամբ...
-    // Notify on unload? not needed
+
+    // Avatar share hooks
+    const myAv=document.getElementById('my-avatar');
+    if(myAv) myAv.onclick=()=>this.openShare(this.myAddress);
+    const actAv=document.getElementById('active-avatar');
+    if(actAv) actAv.onclick=()=>this.openShare(this.activePeer);
+
+    // Activity tracking for TTL
+    this.initActivityWatch();
+
+    // ESC closes the share modal
+    window.addEventListener('keydown', e=>{ if(e.key==='Escape') this.closeShare(); });
   },
   toHub(msg){
     try{ if(window.parent && window.parent!==window) window.parent.postMessage(msg,'*'); }catch(e){}
@@ -273,8 +388,8 @@ const App = {
     const d=e.data; if(!d||typeof d!=='object'||!d.type) return;
     if(d.type==='hub_init'){
       if(d.accent) this.setAccent(d.accent);
-      
-      // Այստեղ փոխում ենք. թող անմիջապես թաքցնի waiting screen-ը, նույնիսկ եթե wallet-ը մի փոքր ուշ գա
+
+      // Թաքցնում ենք waiting screen-ը անմիջապես, նույնիսկ եթե wallet-ը ուշանում է
       document.getElementById('waiting-screen').style.display='none';
       document.getElementById('app-shell').style.display='flex';
 
@@ -298,6 +413,55 @@ const App = {
     const total=Object.values(this.unread).reduce((s,n)=>s+n,0);
     this.toHub({type:'imchat_unread',count:total});
   },
+  toast(msg){
+    const t=document.getElementById('toast');
+    if(!t) return;
+    t.innerText=msg;
+    t.classList.add('show');
+    clearTimeout(this._toastT);
+    this._toastT=setTimeout(()=>t.classList.remove('show'),2300);
+  },
+
+  /* ─── SESSION PERSISTENCE (sessionStorage = survives reload, dies with tab) ─── */
+  sessKey(){ return 'nexus_sess_'+(this.myAddress||'anon'); },
+  saveSession(){
+    if(!this.myAddress) return;
+    try{
+      sessionStorage.setItem(this.sessKey(), JSON.stringify({
+        chat:this.chatHistory,
+        unread:this.unread,
+        ts:Date.now()
+      }));
+    }catch(e){}
+  },
+  loadSession(){
+    try{
+      const raw=sessionStorage.getItem(this.sessKey());
+      if(!raw){ this.chatHistory={}; this.unread={}; return; }
+      const d=JSON.parse(raw);
+      this.chatHistory=(d&&typeof d.chat==='object'&&d.chat)?d.chat:{};
+      this.unread=(d&&typeof d.unread==='object'&&d.unread)?d.unread:{};
+    }catch(e){ this.chatHistory={}; this.unread={}; }
+  },
+  dropSession(){
+    try{ sessionStorage.removeItem(this.sessKey()); }catch(e){}
+  },
+
+  /* ─── TTL IDLE WATCH ─── */
+  initActivityWatch(){
+    const reset=()=>{ this.lastActivity=Date.now(); };
+    ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(ev=>
+      window.addEventListener(ev, reset, {passive:true})
+    );
+    if(this._idleTimer) clearInterval(this._idleTimer);
+    this._idleTimer=setInterval(()=>{
+      if(!this.booted) return;
+      if(Date.now()-this.lastActivity > this.TTL_MS){
+        this.lastActivity=Date.now();
+        this.secureWipeAll(true);
+      }
+    }, 30000);
+  },
 
   /* ─── BOOT / SHUTDOWN ─── */
   boot(addr){
@@ -307,6 +471,9 @@ const App = {
     this.myAddress=norm;
     this.dbPrefix=`nexus_${this.myAddress}_`;
     this.loadContacts();
+    this.loadSession();              // restore history from this tab's session
+    this.lastActivity=Date.now();
+
     document.getElementById('waiting-screen').style.display='none';
     document.getElementById('app-shell').style.display='flex';
 
@@ -320,6 +487,7 @@ const App = {
       document.getElementById('my-address-display').innerText=
         this.myAddress.slice(0,6)+'...'+this.myAddress.slice(-4);
       this.renderSidebar();
+      this.broadcastUnread();
       if(this._pulse) clearInterval(this._pulse);
       this._pulse=setInterval(()=>this.networkPulse(),3500);
       this.networkPulse();
@@ -334,6 +502,7 @@ const App = {
     this.peer=null; this.booted=false;
     this.connections={}; this.activeSessions={}; this.incomingRequests={};
     this.chatHistory={}; this.unread={}; this.activePeer=null;
+    this.saveSession();
     if(!silent){
       document.getElementById('waiting-screen').style.display='flex';
       document.getElementById('app-shell').style.display='none';
@@ -357,13 +526,14 @@ const App = {
     const addr=(addrEl.value||'').trim().toLowerCase();
     const name=(nameEl.value||'').trim();
     if(!addr||addr===this.myAddress) return;
-    if(!/^0x[a-f0-9]{6,}$/.test(addr) && addr.length<10) return; // basic sanity
+    if(!/^0x[a-f0-9]{6,}$/.test(addr)){ this.toast('INVALID WALLET FORMAT'); return; }
     if(this.findContact(addr)){ addrEl.value=''; nameEl.value=''; return; }
     this.contacts.push({address:addr, name:name||('Node '+addr.slice(-4))});
     this.saveContacts();
     addrEl.value=''; nameEl.value='';
     this.renderSidebar();
     this.networkPulse();
+    this.toast('CONTACT ADDED');
   },
   deleteContact(addr){
     if(this.connections[addr]) try{this.connections[addr].close()}catch(e){}
@@ -373,6 +543,7 @@ const App = {
     delete this.unread[addr];
     this.contacts=this.contacts.filter(c=>c.address!==addr);
     this.saveContacts();
+    this.saveSession();
     if(this.activePeer===addr){ this.activePeer=null; this.showEmpty(); }
     this.renderSidebar();
     this.broadcastUnread();
@@ -429,7 +600,13 @@ const App = {
       if(!addr) return;
 
       if(data.type==='ping'){ try{conn.send({type:'pong',address:this.myAddress})}catch(e){} return; }
-      if(data.type==='pong'){ this.lastSeen[addr]=Date.now(); this.connections[addr]=conn; this.renderSidebar(); if(this.activePeer===addr) this.updateChatHeader(); return; }
+      if(data.type==='pong'){
+        this.lastSeen[addr]=Date.now();
+        this.connections[addr]=conn;
+        this.renderSidebar();
+        if(this.activePeer===addr) this.updateChatHeader();
+        return;
+      }
 
       if(data.type==='handshake_req'){
         this.connections[addr]=conn;
@@ -438,7 +615,8 @@ const App = {
           const stored=this.pendingKeys[conn.peer]||ecdh;
           this.activeSessions[addr]=await CryptoEngine.deriveAES(stored.privateKey,data.pub);
           try{ conn.send({type:'handshake_ack',address:this.myAddress,pub:Array.from(new Uint8Array(await crypto.subtle.exportKey("raw",stored.publicKey)))}); }catch(e){}
-          this.renderSidebar(); if(this.activePeer===addr) this.updateChatHeader();
+          this.renderSidebar();
+          if(this.activePeer===addr) this.updateChatHeader();
         } else {
           this.incomingRequests[addr]={conn,pub:data.pub,ecdh};
           this.renderSidebar();
@@ -450,13 +628,15 @@ const App = {
         this.activeSessions[addr]=await CryptoEngine.deriveAES(stored.privateKey,data.pub);
         this.connections[addr]=conn;
         delete this.pendingKeys[conn.peer];
-        this.renderSidebar(); if(this.activePeer===addr) this.updateChatHeader();
+        this.renderSidebar();
+        if(this.activePeer===addr) this.updateChatHeader();
       }
       else if(data.type==='handshake_decline'){
         try{ conn.close(); }catch(e){}
         delete this.connections[addr]; delete this.activeSessions[addr];
         delete this.incomingRequests[addr];
-        this.renderSidebar(); if(this.activePeer===addr) this.updateChatHeader();
+        this.renderSidebar();
+        if(this.activePeer===addr) this.updateChatHeader();
       }
       else if(data.type==='enc' && this.activeSessions[addr]){
         this.lastSeen[addr]=Date.now();
@@ -468,9 +648,12 @@ const App = {
             msg.time=msg.time||Date.now();
             if(!this.chatHistory[addr]) this.chatHistory[addr]=[];
             this.chatHistory[addr].push(msg);
-            if(this.activePeer===addr){ this.renderMessage(msg); }
-            else{
+            this.saveSession();
+            if(this.activePeer===addr){
+              this.renderMessage(msg);
+            } else {
               this.unread[addr]=(this.unread[addr]||0)+1;
+              this.saveSession();
               this.broadcastUnread();
               this.renderSidebar();
             }
@@ -517,6 +700,118 @@ const App = {
     this.renderSidebar();
   },
 
+  /* ─── SECURE WIPE / BURN ─── */
+  burnActive(){ if(this.activePeer) this.burnChat(this.activePeer); },
+
+  burnChat(addr){
+    if(!addr) return;
+    if(!confirm('Burn this chat?\n\nHistory and E2E encryption keys will be permanently destroyed. This cannot be undone.')) return;
+
+    delete this.chatHistory[addr];
+    delete this.unread[addr];
+    delete this.activeSessions[addr];
+    delete this.pendingKeys[addr];
+    const conn=this.connections[addr];
+    if(conn){ try{conn.close()}catch(e){} delete this.connections[addr]; }
+
+    this.saveSession();
+    this.broadcastUnread();
+
+    if(this.activePeer===addr){
+      document.getElementById('messages-flow').innerHTML='';
+      this.updateChatHeader();
+    }
+    this.renderSidebar();
+    this.toast('CHAT BURNED · KEYS DESTROYED');
+  },
+
+  secureWipeAll(silent){
+    // Close every data channel
+    Object.values(this.connections).forEach(c=>{ try{c.close(); }catch(e){} });
+    // Wipe every key / session / history reference from RAM
+    this.connections={};
+    this.activeSessions={};
+    this.incomingRequests={};
+    this.pendingKeys={};
+    this.chatHistory={};
+    this.unread={};
+    this.lastSeen={};
+    this.activePeer=null;
+
+    // Wipe the sessionStorage mirror
+    this.dropSession();
+
+    document.getElementById('app-shell').classList.remove('in-chat');
+    this.showEmpty();
+    this.renderSidebar();
+    this.broadcastUnread();
+
+    this.toast(silent ? 'IDLE TTL · ALL SESSIONS BURNED' : 'ALL SESSIONS BURNED');
+  },
+
+  /* ─── QR SHARE MODAL ─── */
+  openShare(addr){
+    if(!addr) return;
+    this._shareAddr=addr;
+    const label=document.getElementById('share-label');
+    const addrEl=document.getElementById('share-addr');
+    const wrap=document.getElementById('share-qr');
+
+    label.innerText = (addr===this.myAddress)
+      ? 'YOUR NODE · TAP TO SHARE'
+      : (this.contactName(addr)||'REMOTE NODE').toUpperCase();
+
+    addrEl.innerText = addr;
+
+    wrap.innerHTML='';
+    const canvas=QRAvatar.buildCanvas(addr, 460);
+    canvas.style.display='block';
+    canvas.style.width='210px';
+    canvas.style.height='210px';
+    canvas.style.borderRadius='6px';
+    wrap.appendChild(canvas);
+
+    document.getElementById('share-modal').classList.add('show');
+  },
+  closeShare(){
+    document.getElementById('share-modal').classList.remove('show');
+    this._shareAddr=null;
+  },
+  copyAddress(){
+    const addr=this._shareAddr; if(!addr) return;
+    const done=()=>this.toast('ADDRESS COPIED');
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(addr).then(done).catch(()=>this._fallbackCopy(addr,done));
+    } else {
+      this._fallbackCopy(addr,done);
+    }
+  },
+  _fallbackCopy(text, cb){
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=text;
+      ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      cb();
+    }catch(e){ this.toast('COPY FAILED'); }
+  },
+  downloadQR(){
+    const addr=this._shareAddr; if(!addr) return;
+    try{
+      const canvas=QRAvatar.buildCanvas(addr, 900);
+      const link=document.createElement('a');
+      link.download=`nexus_${addr.slice(0,10)}.png`;
+      link.href=canvas.toDataURL('image/png');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      this.toast('QR SAVED');
+    }catch(e){ this.toast('SAVE FAILED'); }
+  },
+
   /* ─── UI RENDER ─── */
   renderSidebar(){
     const list=document.getElementById('contacts-list');
@@ -540,7 +835,7 @@ const App = {
         const aOn=this.connections[a.address]&&this.connections[a.address].open;
         const bOn=this.connections[b.address]&&this.connections[b.address].open;
         if(aOn!==bOn) return aOn?-1:1;
-        return a.name.localeCompare(b.name);
+        return String(a.name).localeCompare(String(b.name));
       });
       sorted.forEach(c=>list.appendChild(this.makeCard(c.address,false)));
     }
@@ -559,7 +854,7 @@ const App = {
     const name=isReq?('Node '+addr.slice(-4)):this.contactName(addr);
     const unread=this.unread[addr]||0;
     card.innerHTML=`
-      <div id="${avId}"></div>
+      <div id="${avId}" title="Share identity"></div>
       <div class="contact-info">
         <span class="contact-name">${this.esc(name)}</span>
         <span class="contact-address">${addr.slice(0,8)}...${addr.slice(-6)}</span>
@@ -570,7 +865,11 @@ const App = {
         <button class="icon-btn-small" title="Delete" onclick="event.stopPropagation();App.deleteContact('${addr}')"><i class="fa-solid fa-trash-can"></i></button>`:''}
         <div class="status-dot ${dotCls}"></div>
       </div>`;
-    setTimeout(()=>QRAvatar.render(addr,avId,'sm'),0);
+    setTimeout(()=>{
+      QRAvatar.render(addr,avId,'sm');
+      const av=document.getElementById(avId);
+      if(av) av.onclick=(e)=>{ e.stopPropagation(); this.openShare(addr); };
+    },0);
     return card;
   },
   esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); },
@@ -581,29 +880,37 @@ const App = {
     document.getElementById('active-peer-name').innerText='Unknown_Node';
     document.getElementById('active-avatar').innerHTML='';
     document.getElementById('active-status-text').innerText='DISCONNECTED';
+    document.getElementById('active-status-text').style.color='var(--text-muted)';
     document.getElementById('active-status-dot').className='status-dot';
     document.getElementById('messages-flow').innerHTML='';
+    document.getElementById('burn-btn').style.display='none';
+    const input=document.getElementById('chat-input');
+    if(input) input.disabled=true;
   },
 
   openChat(addr,isReq=false){
     this.activePeer=addr;
+    this.lastActivity=Date.now();
     document.getElementById('app-shell').classList.add('in-chat');
     document.getElementById('empty-state').style.display='none';
     const input=document.getElementById('chat-input');
+    const burnBtn=document.getElementById('burn-btn');
 
     if(isReq){
       document.getElementById('request-state').style.display='flex';
       document.getElementById('req-id').innerText=addr.slice(0,16)+'...'+addr.slice(-6);
       QRAvatar.render(addr,'req-avatar','lg');
       input.disabled=true;
+      burnBtn.style.display='none';
     } else {
       document.getElementById('request-state').style.display='none';
       input.disabled=false;
+      burnBtn.style.display='flex';
       document.getElementById('active-peer-name').innerText=this.contactName(addr);
       QRAvatar.render(addr,'active-avatar','sm');
       this.updateChatHeader();
       // Reset unread
-      if(this.unread[addr]){ delete this.unread[addr]; this.broadcastUnread(); this.renderSidebar(); }
+      if(this.unread[addr]){ delete this.unread[addr]; this.saveSession(); this.broadcastUnread(); this.renderSidebar(); }
       // Render history
       const flow=document.getElementById('messages-flow');
       flow.innerHTML='';
@@ -638,8 +945,12 @@ const App = {
     if(sent){
       if(!this.chatHistory[this.activePeer]) this.chatHistory[this.activePeer]=[];
       this.chatHistory[this.activePeer].push(msg);
+      this.saveSession();
       this.renderMessage(msg);
       input.value='';
+      this.lastActivity=Date.now();
+    } else {
+      this.toast('TUNNEL NOT ACTIVE');
     }
   },
   async transmit(msg){
