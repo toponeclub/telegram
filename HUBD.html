@@ -3665,12 +3665,16 @@ function openIframeView(url, title) {
 
     /* Build final URL with wallet params */
     /* Build final URL with wallet params — SINGLE SOURCE OF TRUTH */
+/* Wallet is NOT put in URL — it's broadcast via postMessage.
+   This keeps the iframe URL stable → cache key stable →
+   PeerJS never has two instances for the same wallet. */
 let finalUrl = url;
-const walletAddr = window.currentWallet;   // ← not localStorage!
-if (walletAddr) {
-    const sep = finalUrl.includes('?') ? '&' : '?';
-    finalUrl += `${sep}wallet=${walletAddr}`;
-}
+try {
+    const u = new URL(url, location.origin);
+    u.searchParams.delete('wallet');
+    u.searchParams.delete('chain');
+    finalUrl = u.pathname + (u.search || '') + u.hash;
+} catch(e) { /* leave as-is */ }
 
     /* Hide all currently visible iframes */
     _iframeCache.forEach(e => { e.wrapper.style.display = 'none'; });
@@ -3715,9 +3719,19 @@ if (walletAddr) {
 
     if (loader) loader.classList.remove('hidden');
     iframe.onload = () => {
-        entry.loaded = true;
-        if (_activeIframeUrl === finalUrl && loader) loader.classList.add('hidden');
-    };
+    entry.loaded = true;
+    /* Push current wallet via postMessage (not URL) */
+    if (window.currentWallet) {
+        try {
+            iframe.contentWindow.postMessage({
+                type: 'hub_init',
+                wallet: window.currentWallet,
+                accent: getComputedStyle(document.body).getPropertyValue('--accent').trim()
+            }, '*');
+        } catch(e) {}
+    }
+    if (_activeIframeUrl === finalUrl && loader) loader.classList.add('hidden');
+};
 
     document.title = `T1PRIME · ${title || 'Module'}`;
     if (window.innerWidth <= 768) {
@@ -4205,24 +4219,26 @@ modal.subscribeAccount((account) => {
         const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim();
 
         // 1. Widget iframes (ImChat as widget)
+               const _wallet = account.address;
+        const _accent = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+
+        // 1. ImChat widgets on dashboard
         (window._imchatWidgets || []).forEach(({ iframe }) => {
             try {
                 iframe.contentWindow.postMessage(
-                    { type:'hub_init', wallet: walletAddr, accent }, '*'
+                    { type:'hub_init', wallet:_wallet, accent:_accent }, '*'
                 );
             } catch(e) {}
         });
 
-        // 2. Full-page iframe views (opened from sidebar "Nexus")
-        const body = document.getElementById('iframeBody');
-        if (body) {
-            body.querySelectorAll('iframe').forEach(iframe => {
+        // 2. Full-page iframes (opened via sidebar)
+        const _body = document.getElementById('iframeBody');
+        if (_body) {
+            _body.querySelectorAll('iframe').forEach(iframe => {
                 try {
-                    if (iframe.src && iframe.src.includes('imchat')) {
-                        iframe.contentWindow.postMessage(
-                            { type:'hub_init', wallet: walletAddr, accent }, '*'
-                        );
-                    }
+                    iframe.contentWindow.postMessage(
+                        { type:'hub_init', wallet:_wallet, accent:_accent }, '*'
+                    );
                 } catch(e) {}
             });
         }
