@@ -3664,15 +3664,13 @@ function openIframeView(url, title) {
     if (!view || !dash || !body) return;
 
     /* Build final URL with wallet params */
-    let finalUrl = url;
-    const wallet = localStorage.getItem('t1prime_wallet');
-    if (wallet) {
-        try {
-            const data = JSON.parse(wallet);
-            const sep = finalUrl.includes('?') ? '&' : '?';
-            finalUrl += `${sep}wallet=${data.address}&chain=${data.chainId}`;
-        } catch(e) {}
-    }
+    /* Build final URL with wallet params — SINGLE SOURCE OF TRUTH */
+let finalUrl = url;
+const walletAddr = window.currentWallet;   // ← not localStorage!
+if (walletAddr) {
+    const sep = finalUrl.includes('?') ? '&' : '?';
+    finalUrl += `${sep}wallet=${walletAddr}`;
+}
 
     /* Hide all currently visible iframes */
     _iframeCache.forEach(e => { e.wrapper.style.display = 'none'; });
@@ -4139,7 +4137,15 @@ const modal = createAppKit({
 });
 
 window.appKitModal = modal;
-window.currentWallet = null;
+(function initWallet(){
+    try {
+        const acc = modal.getAccount();
+        window.currentWallet = (acc && acc.isConnected) ? acc.address : null;
+        console.log('[HUB] initial wallet =', window.currentWallet);
+    } catch(e) {
+        window.currentWallet = null;
+    }
+})();
 
 function syncAdminData(address) {
     let users = JSON.parse(localStorage.getItem('admin_users_db') || '[]');
@@ -4195,15 +4201,31 @@ modal.subscribeAccount((account) => {
         syncAdminData(account.address); 
         
         // ՆՈՐ ԿՈԴ՝ ԱՆՄԻՋԱՊԵՍ ՈՒՂԱՐԿԵԼ ՉԱՏԻՆ
+             const walletAddr = window.currentWallet;
+        const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+
+        // 1. Widget iframes (ImChat as widget)
         (window._imchatWidgets || []).forEach(({ iframe }) => {
             try {
-                iframe.contentWindow.postMessage({
-                    type: 'hub_init',
-                    wallet: account.address,
-                    accent: getComputedStyle(document.body).getPropertyValue('--accent').trim()
-                }, '*');
+                iframe.contentWindow.postMessage(
+                    { type:'hub_init', wallet: walletAddr, accent }, '*'
+                );
             } catch(e) {}
         });
+
+        // 2. Full-page iframe views (opened from sidebar "Nexus")
+        const body = document.getElementById('iframeBody');
+        if (body) {
+            body.querySelectorAll('iframe').forEach(iframe => {
+                try {
+                    if (iframe.src && iframe.src.includes('imchat')) {
+                        iframe.contentWindow.postMessage(
+                            { type:'hub_init', wallet: walletAddr, accent }, '*'
+                        );
+                    }
+                } catch(e) {}
+            });
+        }
     } else {
         if (btnText) btnText.textContent = 'Connect Wallet';
         if (btn) btn.classList.remove('connected');
