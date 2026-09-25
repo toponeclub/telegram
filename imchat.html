@@ -36,12 +36,14 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 .node-header{padding:18px;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center;gap:10px}
 .node-identity{display:flex;align-items:center;gap:12px;min-width:0}
 .node-id-tag{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--accent);background:var(--accent-dim);padding:6px 10px;border-radius:6px;border:1px solid var(--border-accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.list-section-title{font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:2px;padding:16px 18px 8px;text-transform:uppercase}
+.list-section-title{font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:2px;padding:16px 18px 8px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
+.list-section-title .req-count{background:var(--warning);color:#000;font-size:9px;padding:1px 7px;border-radius:8px;letter-spacing:0}
 .contacts-scroll{flex:1;overflow-y:auto;padding:6px}
 .contact-card{padding:10px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:12px;margin-bottom:4px;border:1px solid transparent;position:relative;transition:all .2s}
 .contact-card:hover{background:var(--bg-hover)}
 .contact-card.active{background:var(--accent-dim);border-color:var(--border-accent)}
-.contact-card.request{border:1px dashed var(--warning);background:rgba(255,184,0,.05)}
+.contact-card.request{border:1px dashed var(--warning);background:rgba(255,184,0,.05);animation:reqGlow 1.8s infinite}
+@keyframes reqGlow{0%,100%{box-shadow:0 0 0 rgba(255,184,0,0)}50%{box-shadow:0 0 12px rgba(255,184,0,.25)}}
 .contact-info{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
 .contact-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .contact-address{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -49,7 +51,8 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 .unread-badge{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;background:var(--accent);color:#000;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center}
 .status-dot{width:7px;height:7px;border-radius:50%;background:#333;transition:all .3s}
 .status-dot.online{background:var(--accent);box-shadow:var(--accent-glow)}
-.status-dot.pending{background:var(--warning);box-shadow:0 0 8px rgba(255,184,0,.4)}
+.status-dot.pending{background:var(--warning);box-shadow:0 0 8px rgba(255,184,0,.4);animation:pendingBlink 1.2s infinite}
+@keyframes pendingBlink{0%,100%{opacity:1}50%{opacity:.35}}
 .icon-btn-small{background:transparent;border:none;color:var(--text-muted);cursor:pointer;padding:4px;border-radius:4px;font-size:11px;transition:all .2s}
 .icon-btn-small:hover{color:var(--danger);background:rgba(255,51,102,.1)}
 
@@ -132,6 +135,7 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
   box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 20px var(--accent-dim);white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.warn{border-color:rgba(255,184,0,.6);color:var(--warning);box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 20px rgba(255,184,0,.25)}
 
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .animate-fade{animation:fadeIn .35s ease forwards}
@@ -239,13 +243,9 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 
 <script>
 /* ============================================================
-   NEXUS · P2P Chat (Hub-Embedded Edition)
-   - Wallet comes from parent hub via postMessage
-   - Accent color inherited dynamically
-   - Unread count broadcasted to parent widget
-   - LO-FI QR identity share (modal / copy / PNG download)
-   - sessionStorage-backed history (survives reload, dies with tab)
-   - TTL idle wipe + manual Burn Chat / Burn All
+   NEXUS · P2P Chat (Hub-Embedded Edition) — v2
+   Fixes: PeerJS handshake race condition, duplicate connects,
+          visible pending state, request notifications, debug logs
    ============================================================ */
 
 // ─── 1. Crypto ───
@@ -272,8 +272,6 @@ const CryptoEngine = {
 // ─── 2. LO-FI QR Avatar ───
 const QRAvatar = {
   SIZE: 9,
-
-  /* Build the deterministic 9x9 matrix from a wallet address */
   matrix(address){
     const hash=(address||'0x0').toLowerCase().replace('0x','')||'0';
     const SIZE=this.SIZE;
@@ -296,8 +294,6 @@ const QRAvatar = {
     return parseInt(hash.slice(0,4)||'0',16)%360;
   },
   color(address){ return `hsl(${this.hue(address)},85%,62%)`; },
-
-  /* DOM renderer (sidebar cards, headers, request overlay) */
   render(address, targetId, cls){
     const el=document.getElementById(targetId); if(!el) return;
     el.className='qr-avatar '+(cls||'');
@@ -315,8 +311,6 @@ const QRAvatar = {
       el.appendChild(p);
     }
   },
-
-  /* Canvas renderer (modal + PNG export) */
   buildCanvas(address, px){
     const m=this.matrix(address);
     const color=this.color(address);
@@ -325,7 +319,6 @@ const QRAvatar = {
     const ctx=canvas.getContext('2d');
     ctx.fillStyle='#000';
     ctx.fillRect(0,0,px,px);
-
     const pad=Math.round(px*0.07);
     const cell=(px-pad*2)/this.SIZE;
     const gap=Math.max(1,Math.round(cell*0.12));
@@ -344,17 +337,17 @@ const QRAvatar = {
 const App = {
   myAddress:null, peer:null, dbPrefix:null,
   connections:{}, activeSessions:{}, incomingRequests:{},
+  pendingConns:{},         // { addr: DataConnection } — avoid duplicate connect() calls
   lastSeen:{}, pendingKeys:{},
   activePeer:null,
-  chatHistory:{},          // { addr: [{type,body,time,dir}] } — RAM + sessionStorage mirror
-  contacts:[],             // persistent: [{ address, name }] — localStorage
-  unread:{},               // RAM + sessionStorage mirror
+  chatHistory:{},
+  contacts:[],
+  unread:{},
   booted:false,
   _inited:false,
   _shareAddr:null,
 
-  /* ─── Secure-wipe / TTL config ─── */
-  TTL_MS: 15*60*1000,      // 15 minutes of inactivity
+  TTL_MS: 15*60*1000,
   lastActivity: Date.now(),
   _idleTimer:null,
 
@@ -363,22 +356,17 @@ const App = {
     if(this._inited) return;
     this._inited=true;
 
-    // Անմիջապես փակում ենք լոադինգը հենց ֆունկցիայի սկզբում
     document.getElementById('waiting-screen').style.display='none';
     document.getElementById('app-shell').style.display='flex';
 
     window.addEventListener('message', e=>this.onHubMessage(e));
 
-    // Avatar share hooks
     const myAv=document.getElementById('my-avatar');
     if(myAv) myAv.onclick=()=>this.openShare(this.myAddress);
     const actAv=document.getElementById('active-avatar');
     if(actAv) actAv.onclick=()=>this.openShare(this.activePeer);
 
-    // Activity tracking for TTL
     this.initActivityWatch();
-
-    // ESC closes the share modal
     window.addEventListener('keydown', e=>{ if(e.key==='Escape') this.closeShare(); });
   },
   toHub(msg){
@@ -388,11 +376,8 @@ const App = {
     const d=e.data; if(!d||typeof d!=='object'||!d.type) return;
     if(d.type==='hub_init'){
       if(d.accent) this.setAccent(d.accent);
-
-      // Թաքցնում ենք waiting screen-ը անմիջապես, նույնիսկ եթե wallet-ը ուշանում է
       document.getElementById('waiting-screen').style.display='none';
       document.getElementById('app-shell').style.display='flex';
-
       if(d.wallet) this.boot(d.wallet);
     }
   },
@@ -413,24 +398,23 @@ const App = {
     const total=Object.values(this.unread).reduce((s,n)=>s+n,0);
     this.toHub({type:'imchat_unread',count:total});
   },
-  toast(msg){
+  toast(msg, warn){
     const t=document.getElementById('toast');
     if(!t) return;
     t.innerText=msg;
+    t.classList.toggle('warn', !!warn);
     t.classList.add('show');
     clearTimeout(this._toastT);
-    this._toastT=setTimeout(()=>t.classList.remove('show'),2300);
+    this._toastT=setTimeout(()=>t.classList.remove('show'),2600);
   },
 
-  /* ─── SESSION PERSISTENCE (sessionStorage = survives reload, dies with tab) ─── */
+  /* ─── SESSION PERSISTENCE ─── */
   sessKey(){ return 'nexus_sess_'+(this.myAddress||'anon'); },
   saveSession(){
     if(!this.myAddress) return;
     try{
       sessionStorage.setItem(this.sessKey(), JSON.stringify({
-        chat:this.chatHistory,
-        unread:this.unread,
-        ts:Date.now()
+        chat:this.chatHistory, unread:this.unread, ts:Date.now()
       }));
     }catch(e){}
   },
@@ -443,11 +427,8 @@ const App = {
       this.unread=(d&&typeof d.unread==='object'&&d.unread)?d.unread:{};
     }catch(e){ this.chatHistory={}; this.unread={}; }
   },
-  dropSession(){
-    try{ sessionStorage.removeItem(this.sessKey()); }catch(e){}
-  },
+  dropSession(){ try{ sessionStorage.removeItem(this.sessKey()); }catch(e){} },
 
-  /* ─── TTL IDLE WATCH ─── */
   initActivityWatch(){
     const reset=()=>{ this.lastActivity=Date.now(); };
     ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(ev=>
@@ -463,26 +444,34 @@ const App = {
     }, 30000);
   },
 
+  /* ─── PeerJS ID derivation (shared) ─── */
+  peerIdFor(addr){
+    const safe=btoa(addr).replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,20);
+    return `imnode_${safe}`;
+  },
+
   /* ─── BOOT / SHUTDOWN ─── */
   boot(addr){
     const norm=addr.toLowerCase();
     if(this.booted && this.myAddress===norm) return;
-    if(this.booted) this.shutdown(true); // silent restart
+    if(this.booted) this.shutdown(true);
     this.myAddress=norm;
     this.dbPrefix=`nexus_${this.myAddress}_`;
     this.loadContacts();
-    this.loadSession();              // restore history from this tab's session
+    this.loadSession();
     this.lastActivity=Date.now();
 
     document.getElementById('waiting-screen').style.display='none';
     document.getElementById('app-shell').style.display='flex';
 
-    // Deterministic peer id
-    const safe=btoa(this.myAddress).replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,20);
-    const nodeId=`imnode_${safe}`;
+    const nodeId=this.peerIdFor(this.myAddress);
+    console.log('[NEXUS] Booting as', this.myAddress, '→ PeerID:', nodeId);
+
     if(this.peer) try{this.peer.destroy()}catch(e){}
-    this.peer=new Peer(nodeId,{debug:0});
-    this.peer.on('open',()=>{
+    this.peer=new Peer(nodeId,{debug:1});   // debug:1 → helpful logs
+
+    this.peer.on('open',(id)=>{
+      console.log('[NEXUS] PeerJS OPEN · my id =', id);
       QRAvatar.render(this.myAddress,'my-avatar');
       document.getElementById('my-address-display').innerText=
         this.myAddress.slice(0,6)+'...'+this.myAddress.slice(-4);
@@ -492,8 +481,20 @@ const App = {
       this._pulse=setInterval(()=>this.networkPulse(),3500);
       this.networkPulse();
     });
-    this.peer.on('connection',conn=>this.setupDataChannel(conn));
-    this.peer.on('error',err=>console.warn('[P2P]',err.type));
+    this.peer.on('connection',conn=>{
+      console.log('[NEXUS] Incoming PeerJS connection from', conn.peer);
+      this.setupDataChannel(conn);
+    });
+    this.peer.on('error',err=>{
+      console.warn('[NEXUS] PeerJS error:', err.type, err);
+      if(err.type==='unavailable-id'){
+        this.toast('PEER ID TAKEN — ANOTHER TAB WITH SAME WALLET', true);
+      }
+    });
+    this.peer.on('disconnected',()=>{
+      console.warn('[NEXUS] PeerJS disconnected from signaling server — reconnecting…');
+      try{ this.peer.reconnect(); }catch(e){}
+    });
     this.booted=true;
   },
   shutdown(silent){
@@ -501,6 +502,7 @@ const App = {
     if(this._pulse) clearInterval(this._pulse);
     this.peer=null; this.booted=false;
     this.connections={}; this.activeSessions={}; this.incomingRequests={};
+    this.pendingConns={}; this.pendingKeys={};
     this.chatHistory={}; this.unread={}; this.activePeer=null;
     this.saveSession();
     if(!silent){
@@ -510,7 +512,7 @@ const App = {
     this.broadcastUnread();
   },
 
-  /* ─── CONTACTS (persistent) ─── */
+  /* ─── CONTACTS ─── */
   loadContacts(){
     try{ this.contacts=JSON.parse(localStorage.getItem(this.dbPrefix+'contacts')||'[]'); }
     catch(e){ this.contacts=[]; }
@@ -525,22 +527,29 @@ const App = {
     const nameEl=document.getElementById('add-peer-name');
     const addr=(addrEl.value||'').trim().toLowerCase();
     const name=(nameEl.value||'').trim();
-    if(!addr||addr===this.myAddress) return;
-    if(!/^0x[a-f0-9]{6,}$/.test(addr)){ this.toast('INVALID WALLET FORMAT'); return; }
-    if(this.findContact(addr)){ addrEl.value=''; nameEl.value=''; return; }
+    if(!addr){ this.toast('ENTER A WALLET ADDRESS', true); return; }
+    if(addr===this.myAddress){ this.toast('CANNOT ADD YOURSELF', true); return; }
+    if(!/^0x[a-f0-9]{6,}$/.test(addr)){ this.toast('INVALID WALLET FORMAT', true); return; }
+    if(this.findContact(addr)){ this.toast('CONTACT ALREADY EXISTS'); addrEl.value=''; nameEl.value=''; return; }
+
     this.contacts.push({address:addr, name:name||('Node '+addr.slice(-4))});
     this.saveContacts();
     addrEl.value=''; nameEl.value='';
     this.renderSidebar();
-    this.networkPulse();
-    this.toast('CONTACT ADDED');
+    this.toast('CONTACT ADDED · CONNECTING…');
+    // Fire an immediate connection attempt (don't wait for next pulse)
+    if(this.peer && this.peer.open) this.networkPulse();
+    else this.toast('PEERJS NOT READY — WILL RETRY', true);
   },
   deleteContact(addr){
     if(this.connections[addr]) try{this.connections[addr].close()}catch(e){}
+    if(this.pendingConns[addr]) try{this.pendingConns[addr].close()}catch(e){}
     delete this.connections[addr];
     delete this.activeSessions[addr];
     delete this.chatHistory[addr];
     delete this.unread[addr];
+    delete this.pendingConns[addr];
+    delete this.pendingKeys[addr];
     this.contacts=this.contacts.filter(c=>c.address!==addr);
     this.saveContacts();
     this.saveSession();
@@ -562,18 +571,48 @@ const App = {
   networkPulse(){
     if(!this.peer||!this.peer.open) return;
     const now=Date.now();
+
     this.contacts.forEach(({address:addr})=>{
-      const conn=this.connections[addr];
-      if(!conn||!conn.open){
-        const safe=btoa(addr).replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,20);
-        const c=this.peer.connect(`imnode_${safe}`,{reliable:true});
-        if(c) this.setupDataChannel(c);
-      }
+      const active=this.connections[addr];
+      const pending=this.pendingConns[addr];
+      const hasActive=active && active.open;
+      const hasPending=pending && (pending.open || !pending.closed);
+
+      // Skip if already connected or already trying
+      if(hasActive || hasPending) return;
+
+      const targetId=this.peerIdFor(addr);
+      console.log('[NEXUS] Dialing', addr, '→', targetId);
+      let c;
+      try{ c=this.peer.connect(targetId,{reliable:true}); }
+      catch(e){ console.warn('[NEXUS] connect() threw', e); return; }
+      if(!c) return;
+
+      this.pendingConns[addr]=c;
+
+      // Hard timeout — clear stuck pending
+      const timeout=setTimeout(()=>{
+        if(this.pendingConns[addr]===c && !c.open){
+          console.warn('[NEXUS] Pending timeout for', addr);
+          try{ c.close(); }catch(e){}
+          if(this.pendingConns[addr]===c) delete this.pendingConns[addr];
+        }
+      }, 12000);
+      c.on('open',()=>clearTimeout(timeout));
+      c.on('close',()=>{
+        clearTimeout(timeout);
+        if(this.pendingConns[addr]===c) delete this.pendingConns[addr];
+      });
+
+      this.setupDataChannel(c);
     });
+
+    // Keepalive + stale-session cleanup
     for(const [addr,conn] of Object.entries(this.connections)){
       if(conn.open){
         try{ conn.send({type:'ping',address:this.myAddress}); }catch(e){}
         if(this.lastSeen[addr] && now-this.lastSeen[addr]>15000){
+          console.warn('[NEXUS] Stale session, closing', addr);
           try{ conn.close(); }catch(e){}
           delete this.connections[addr];
           delete this.activeSessions[addr];
@@ -582,16 +621,35 @@ const App = {
         }
       }
     }
+
+    // Re-render so pending indicators stay fresh
+    this.renderSidebar();
   },
 
   async setupDataChannel(conn){
+    // Save the address of the peer we're connecting TO (if initiator)
+    // For incoming connections, we learn it from the first message.
     const ecdh=await CryptoEngine.generateECDH();
     const myPub=await crypto.subtle.exportKey("raw",ecdh.publicKey);
     this.pendingKeys[conn.peer]=ecdh;
 
-    conn.on('open',()=>{
-      try{ conn.send({type:'handshake_req',address:this.myAddress,pub:Array.from(new Uint8Array(myPub))}); }catch(e){}
-    });
+    const sendHandshake=()=>{
+      try{
+        conn.send({
+          type:'handshake_req',
+          address:this.myAddress,
+          pub:Array.from(new Uint8Array(myPub))
+        });
+        console.log('[NEXUS] Sent handshake_req to', conn.peer);
+      }catch(e){ console.warn('[NEXUS] handshake send failed', e); }
+    };
+
+    // *** KEY FIX: handle already-open connection (race) ***
+    if(conn.open){
+      sendHandshake();
+    } else {
+      conn.on('open',sendHandshake);
+    }
 
     conn.on('data',async data=>{
       if(!data||!data.type) return;
@@ -599,7 +657,13 @@ const App = {
       const addr=conn.peerAddress;
       if(!addr) return;
 
-      if(data.type==='ping'){ try{conn.send({type:'pong',address:this.myAddress})}catch(e){} return; }
+      // Once we know the address, upgrade pending → real connection
+      if(this.pendingConns[addr]===conn) delete this.pendingConns[addr];
+
+      if(data.type==='ping'){
+        try{ conn.send({type:'pong',address:this.myAddress}); }catch(e){}
+        return;
+      }
       if(data.type==='pong'){
         this.lastSeen[addr]=Date.now();
         this.connections[addr]=conn;
@@ -609,32 +673,52 @@ const App = {
       }
 
       if(data.type==='handshake_req'){
+        console.log('[NEXUS] Received handshake_req from', addr);
         this.connections[addr]=conn;
         this.lastSeen[addr]=Date.now();
+
         if(this.findContact(addr)){
+          // We know them → complete handshake
           const stored=this.pendingKeys[conn.peer]||ecdh;
           this.activeSessions[addr]=await CryptoEngine.deriveAES(stored.privateKey,data.pub);
-          try{ conn.send({type:'handshake_ack',address:this.myAddress,pub:Array.from(new Uint8Array(await crypto.subtle.exportKey("raw",stored.publicKey)))}); }catch(e){}
-          this.renderSidebar();
-          if(this.activePeer===addr) this.updateChatHeader();
+          try{
+            conn.send({
+              type:'handshake_ack',
+              address:this.myAddress,
+              pub:Array.from(new Uint8Array(await crypto.subtle.exportKey("raw",stored.publicKey)))
+            });
+          }catch(e){}
+          this.toast('TUNNEL SECURED · '+this.contactName(addr));
         } else {
+          // Stranger → show as incoming request
+          if(!this.incomingRequests[addr]){
+            this.toast('NEW CONNECTION REQUEST · '+addr.slice(0,6)+'…'+addr.slice(-4), true);
+          }
           this.incomingRequests[addr]={conn,pub:data.pub,ecdh};
-          this.renderSidebar();
         }
+        this.renderSidebar();
+        if(this.activePeer===addr) this.updateChatHeader();
       }
       else if(data.type==='handshake_ack'){
+        console.log('[NEXUS] Received handshake_ack from', addr);
         this.lastSeen[addr]=Date.now();
         const stored=this.pendingKeys[conn.peer]||ecdh;
         this.activeSessions[addr]=await CryptoEngine.deriveAES(stored.privateKey,data.pub);
         this.connections[addr]=conn;
         delete this.pendingKeys[conn.peer];
+        delete this.pendingConns[addr];
+        this.toast('TUNNEL ACTIVE · '+this.contactName(addr));
         this.renderSidebar();
         if(this.activePeer===addr) this.updateChatHeader();
       }
       else if(data.type==='handshake_decline'){
+        console.log('[NEXUS] Handshake declined by', addr);
         try{ conn.close(); }catch(e){}
-        delete this.connections[addr]; delete this.activeSessions[addr];
+        delete this.connections[addr];
+        delete this.activeSessions[addr];
         delete this.incomingRequests[addr];
+        delete this.pendingConns[addr];
+        this.toast('CONNECTION DECLINED', true);
         this.renderSidebar();
         if(this.activePeer===addr) this.updateChatHeader();
       }
@@ -664,14 +748,16 @@ const App = {
 
     conn.on('close',()=>{
       const addr=conn.peerAddress;
+      console.log('[NEXUS] Connection closed', addr||conn.peer);
       if(addr){
         delete this.connections[addr];
         delete this.activeSessions[addr];
+        delete this.pendingConns[addr];
         this.renderSidebar();
         if(this.activePeer===addr) this.updateChatHeader();
       }
     });
-    conn.on('error',()=>{});
+    conn.on('error',(e)=>console.warn('[NEXUS] DataChannel error', e));
   },
 
   /* ─── HANDSHAKE ACTIONS ─── */
@@ -683,10 +769,18 @@ const App = {
       if(!this.findContact(addr)){ this.contacts.push({address:addr,name}); this.saveContacts(); }
       this.activeSessions[addr]=await CryptoEngine.deriveAES(req.ecdh.privateKey,req.pub);
       const myPub=await crypto.subtle.exportKey("raw",req.ecdh.publicKey);
-      try{ req.conn.send({type:'handshake_ack',address:this.myAddress,pub:Array.from(new Uint8Array(myPub))}); }catch(e){}
+      try{
+        req.conn.send({
+          type:'handshake_ack',
+          address:this.myAddress,
+          pub:Array.from(new Uint8Array(myPub))
+        });
+      }catch(e){}
+      this.connections[addr]=req.conn;
       delete this.incomingRequests[addr];
       this.renderSidebar();
       this.openChat(addr);
+      this.toast('TUNNEL ACCEPTED');
     }
   },
   declineHandshake(){
@@ -713,6 +807,8 @@ const App = {
     delete this.pendingKeys[addr];
     const conn=this.connections[addr];
     if(conn){ try{conn.close()}catch(e){} delete this.connections[addr]; }
+    const pc=this.pendingConns[addr];
+    if(pc){ try{pc.close()}catch(e){} delete this.pendingConns[addr]; }
 
     this.saveSession();
     this.broadcastUnread();
@@ -726,26 +822,22 @@ const App = {
   },
 
   secureWipeAll(silent){
-    // Close every data channel
     Object.values(this.connections).forEach(c=>{ try{c.close(); }catch(e){} });
-    // Wipe every key / session / history reference from RAM
+    Object.values(this.pendingConns).forEach(c=>{ try{c.close(); }catch(e){} });
     this.connections={};
     this.activeSessions={};
     this.incomingRequests={};
+    this.pendingConns={};
     this.pendingKeys={};
     this.chatHistory={};
     this.unread={};
     this.lastSeen={};
     this.activePeer=null;
-
-    // Wipe the sessionStorage mirror
     this.dropSession();
-
     document.getElementById('app-shell').classList.remove('in-chat');
     this.showEmpty();
     this.renderSidebar();
     this.broadcastUnread();
-
     this.toast(silent ? 'IDLE TTL · ALL SESSIONS BURNED' : 'ALL SESSIONS BURNED');
   },
 
@@ -760,7 +852,6 @@ const App = {
     label.innerText = (addr===this.myAddress)
       ? 'YOUR NODE · TAP TO SHARE'
       : (this.contactName(addr)||'REMOTE NODE').toUpperCase();
-
     addrEl.innerText = addr;
 
     wrap.innerHTML='';
@@ -796,7 +887,7 @@ const App = {
       document.execCommand('copy');
       ta.remove();
       cb();
-    }catch(e){ this.toast('COPY FAILED'); }
+    }catch(e){ this.toast('COPY FAILED', true); }
   },
   downloadQR(){
     const addr=this._shareAddr; if(!addr) return;
@@ -809,7 +900,7 @@ const App = {
       link.click();
       link.remove();
       this.toast('QR SAVED');
-    }catch(e){ this.toast('SAVE FAILED'); }
+    }catch(e){ this.toast('SAVE FAILED', true); }
   },
 
   /* ─── UI RENDER ─── */
@@ -821,7 +912,7 @@ const App = {
     if(requests.length){
       const h=document.createElement('div');
       h.className='list-section-title';
-      h.innerText='Requests';
+      h.innerHTML='<span>REQUESTS</span><span class="req-count">'+requests.length+'</span>';
       list.appendChild(h);
       requests.forEach(a=>list.appendChild(this.makeCard(a,true)));
     }
@@ -830,7 +921,6 @@ const App = {
       h.className='list-section-title';
       h.innerText='Secure Nodes';
       list.appendChild(h);
-      // Sort: online first, then by name
       const sorted=[...this.contacts].sort((a,b)=>{
         const aOn=this.connections[a.address]&&this.connections[a.address].open;
         const bOn=this.connections[b.address]&&this.connections[b.address].open;
@@ -844,19 +934,21 @@ const App = {
     const conn=this.connections[addr];
     const hasConn=conn&&conn.open;
     const isSecure=this.activeSessions[addr]!==undefined;
+    const isPending=!!this.pendingConns[addr];
     let dotCls='';
     if(hasConn&&isSecure) dotCls='online';
-    else if(hasConn) dotCls='pending';
+    else if(hasConn||isPending) dotCls='pending';
     const card=document.createElement('div');
     card.className=`contact-card ${this.activePeer===addr?'active':''} ${isReq?'request':''}`;
     card.onclick=()=>this.openChat(addr,isReq);
     const avId='av_'+addr.slice(-8)+'_'+Math.random().toString(36).slice(2,5);
     const name=isReq?('Node '+addr.slice(-4)):this.contactName(addr);
     const unread=this.unread[addr]||0;
+    const statusLabel=isReq?'INCOMING':(isSecure?'':'· PENDING');
     card.innerHTML=`
       <div id="${avId}" title="Share identity"></div>
       <div class="contact-info">
-        <span class="contact-name">${this.esc(name)}</span>
+        <span class="contact-name">${this.esc(name)} ${!isReq&&!isSecure?'<span style="color:var(--warning);font-size:9px;font-family:JetBrains Mono">PENDING</span>':''}</span>
         <span class="contact-address">${addr.slice(0,8)}...${addr.slice(-6)}</span>
       </div>
       <div class="contact-actions">
@@ -909,9 +1001,7 @@ const App = {
       document.getElementById('active-peer-name').innerText=this.contactName(addr);
       QRAvatar.render(addr,'active-avatar','sm');
       this.updateChatHeader();
-      // Reset unread
       if(this.unread[addr]){ delete this.unread[addr]; this.saveSession(); this.broadcastUnread(); this.renderSidebar(); }
-      // Render history
       const flow=document.getElementById('messages-flow');
       flow.innerHTML='';
       (this.chatHistory[addr]||[]).forEach(m=>this.renderMessage(m));
@@ -928,10 +1018,11 @@ const App = {
     const conn=this.connections[this.activePeer];
     const hasConn=conn&&conn.open;
     const isSecure=this.activeSessions[this.activePeer]!==undefined;
+    const isPending=!!this.pendingConns[this.activePeer];
     const dot=document.getElementById('active-status-dot');
     const txt=document.getElementById('active-status-text');
     if(hasConn&&isSecure){ dot.className='status-dot online'; txt.innerText='TUNNEL_ACTIVE'; txt.style.color='var(--accent)'; }
-    else if(hasConn){ dot.className='status-dot pending'; txt.innerText='AWAITING_HANDSHAKE'; txt.style.color='var(--warning)'; }
+    else if(hasConn||isPending){ dot.className='status-dot pending'; txt.innerText='AWAITING_HANDSHAKE'; txt.style.color='var(--warning)'; }
     else { dot.className='status-dot'; txt.innerText='OFFLINE'; txt.style.color='var(--text-muted)'; }
   },
 
@@ -950,7 +1041,7 @@ const App = {
       input.value='';
       this.lastActivity=Date.now();
     } else {
-      this.toast('TUNNEL NOT ACTIVE');
+      this.toast('TUNNEL NOT ACTIVE', true);
     }
   },
   async transmit(msg){
@@ -973,7 +1064,6 @@ const App = {
 };
 
 window.addEventListener('load',()=>App.init());
-// Fallback: also try immediately in case load already fired
 if(document.readyState==='complete') App.init();
 </script>
 </body>
