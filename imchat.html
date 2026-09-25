@@ -219,9 +219,13 @@ html,body{height:100%;width:100%;background:radial-gradient(circle at 50% 0%,#0d
 
 <script>
 /* ============================================================
-   NEXUS · P2P Chat — v5
-   Adds: URL-parameter wallet fallback (works even if hub's
-         postMessage path is broken).
+   NEXUS · P2P Chat — v6 · Smooth Edition
+   New in v6:
+   • PeerJS retry on "unavailable-id" (auto-recovers from tab conflict)
+   • Message outbox — sends queue automatically when tunnel is ready
+   • Immediate dial on chat open (no 4s wait)
+   • Better status labels (CONNECTING / SENDING N / OFFLINE)
+   • Never loses contacts/messages on wallet switch
    ============================================================ */
 
 const CryptoEngine = {
@@ -293,6 +297,7 @@ const App = {
   pendingConns:{}, lastSeen:{},
   activePeer:null,
   chatHistory:{}, contacts:[], unread:{},
+  _outbox:{},                       // queued messages per peer
   booted:false, _inited:false, _shareAddr:null,
   _bootTimer:null,
 
@@ -300,7 +305,7 @@ const App = {
   lastActivity: Date.now(),
   _idleTimer:null,
 
-  /* ─── Helpers ─── */
+  /* ─── URL helpers ─── */
   _readUrlWallet(){
     try{
       const p=new URLSearchParams(window.location.search);
@@ -335,9 +340,6 @@ const App = {
     this.initActivityWatch();
     window.addEventListener('keydown', e=>{ if(e.key==='Escape') this.closeShare(); });
 
-    /* ─── URL FALLBACK ───
-       Read wallet from ?wallet=... so we boot even if the hub's
-       postMessage path is broken (e.g. hub crashes in bindEvents). */
     const urlAccent=this._readUrlAccent();
     if(urlAccent) this.setAccent(urlAccent);
 
@@ -346,11 +348,8 @@ const App = {
       console.log('[NEXUS] wallet from URL:', urlWallet);
       this.boot(urlWallet);
     } else {
-      // No URL wallet → wait for hub_init (up to 3s), else show waiting screen
       this._bootTimer=setTimeout(()=>{
-        if(!this.booted){
-          console.warn('[NEXUS] No hub_init and no ?wallet= — still waiting');
-        }
+        if(!this.booted) console.warn('[NEXUS] awaiting hub_init or ?wallet=…');
       }, 3000);
     }
   },
@@ -359,13 +358,17 @@ const App = {
   },
   onHubMessage(e){
     const d=e.data; if(!d||typeof d!=='object'||!d.type) return;
+
     if(d.type==='hub_init'){
       if(this._bootTimer){ clearTimeout(this._bootTimer); this._bootTimer=null; }
-      console.log('[NEXUS] hub_init received, wallet=', d.wallet);
+      console.log('[NEXUS] hub_init wallet=', d.wallet);
       if(d.accent) this.setAccent(d.accent);
       document.getElementById('waiting-screen').style.display='none';
       document.getElementById('app-shell').style.display='flex';
       if(d.wallet) this.boot(d.wallet);
+    }
+    else if(d.type==='hub_theme'){
+      if(d.accent) this.setAccent(d.accent);
     }
   },
   setAccent(hex){
@@ -397,6 +400,7 @@ const App = {
     this._toastT=setTimeout(()=>t.classList.remove('show'),2800);
   },
 
+  /* ─── Session (per-wallet, per-tab) ─── */
   sessKey(){ return 'nexus_sess_'+(this.myAddress||'anon'); },
   saveSession(){
     if(!this.myAddress) return;
@@ -437,10 +441,11 @@ const App = {
     return `imnode_${safe}`;
   },
 
+  /* ─── BOOT: keep the old iframe's PeerJS from conflicting ─── */
   boot(addr){
     const norm=String(addr||'').toLowerCase();
     if(!/^0x[a-f0-9]{6,}$/.test(norm)){
-      console.warn('[NEXUS] boot() rejected invalid address:', addr);
+      console.warn('[NEXUS] boot() rejected:', addr);
       return;
     }
     if(this.booted && this.myAddress===norm) return;
@@ -455,43 +460,70 @@ const App = {
     document.getElementById('waiting-screen').style.display='none';
     document.getElementById('app-shell').style.display='flex';
 
+    QRAvatar.render(this.myAddress,'my-avatar');
+    document.getElementById('my-address-display').innerText=
+      this.myAddress.slice(0,6)+'...'+this.myAddress.slice(-4);
+    this.renderSidebar();
+    this.broadcastUnread();
+
     const nodeId=this.peerIdFor(this.myAddress);
     console.log('[NEXUS] boot wallet=',this.myAddress,'peerId=',nodeId);
 
-    if(this.peer) try{this.peer.destroy()}catch(e){}
-    this.peer=new Peer(nodeId,{debug:1});
+    this._createPeer(nodeId, 0);
+    this.booted=true;
+  },
 
-    this.peer.on('open',(id)=>{
-      console.log('[NEXUS] PeerJS OPEN id=',id);
-      QRAvatar.render(this.myAddress,'my-avatar');
-      document.getElementById('my-address-display').innerText=
-        this.myAddress.slice(0,6)+'...'+this.myAddress.slice(-4);
-      this.renderSidebar();
-      this.broadcastUnread();
+  /* PeerJS with retry on unavailable-id */
+  _createPeer(nodeId, attempt){
+    if(this.peer){ try{this.peer.destroy()}catch(e){} this.peer=null; }
+
+    const p = new Peer(nodeId, {debug:1});
+    this.peer = p;
+
+    p.on('open',(id)=>{
+      if(this.peer !== p) return;
+      console.log('[NEXUS] PeerJS OPEN id=',id,'(attempt '+attempt+')');
       if(this._pulse) clearInterval(this._pulse);
       this._pulse=setInterval(()=>this.networkPulse(),4000);
       this.networkPulse();
     });
-    this.peer.on('connection',conn=>{
-      console.log('[NEXUS] incoming conn from', conn.peer);
+
+    p.on('connection',conn=>{
+      if(this.peer !== p) return;
       this.setupDataChannel(conn);
     });
-    this.peer.on('error',err=>{
-      console.warn('[NEXUS] PeerJS error',err.type);
-      if(err.type==='unavailable-id') this.toast('PEER ID TAKEN · ANOTHER TAB SAME WALLET','warn');
+
+    p.on('error',err=>{
+      if(this.peer !== p) return;
+      console.warn('[NEXUS] PeerJS error:', err.type);
+      if(err.type === 'unavailable-id'){
+        if(attempt < 6){
+          console.log('[NEXUS] id busy, retry', attempt+1, 'in 1.5s');
+          this.toast('SYNCING PEER ID…','warn');
+          setTimeout(()=>{
+            if(this.peer === p && this.myAddress){
+              this._createPeer(nodeId, attempt+1);
+            }
+          }, 1500);
+        } else {
+          this.toast('ANOTHER TAB USES THIS WALLET · CLOSE IT','warn');
+        }
+      }
     });
-    this.peer.on('disconnected',()=>{
-      console.warn('[NEXUS] signaling disconnected, reconnecting');
-      try{ this.peer.reconnect(); }catch(e){}
+
+    p.on('disconnected',()=>{
+      if(this.peer !== p) return;
+      console.warn('[NEXUS] signaling dropped, reconnecting…');
+      try{ p.reconnect(); }catch(e){}
     });
-    this.booted=true;
   },
+
   shutdown(silent){
-    if(this.peer) try{this.peer.destroy()}catch(e){}
+    if(this.peer){ try{this.peer.destroy()}catch(e){} this.peer=null; }
     if(this._pulse) clearInterval(this._pulse);
-    this.peer=null; this.booted=false;
+    this.booted=false;
     this.connections={}; this.activeSessions={}; this.incomingRequests={};
-    this.pendingConns={};
+    this.pendingConns={}; this._outbox={};
     this.chatHistory={}; this.unread={}; this.activePeer=null;
     this.saveSession();
     if(!silent){
@@ -501,6 +533,7 @@ const App = {
     this.broadcastUnread();
   },
 
+  /* ─── CONTACTS (persistent per wallet) ─── */
   loadContacts(){
     try{ this.contacts=JSON.parse(localStorage.getItem(this.dbPrefix+'contacts')||'[]'); }
     catch(e){ this.contacts=[]; }
@@ -524,7 +557,7 @@ const App = {
     this.saveContacts();
     addrEl.value=''; nameEl.value='';
     this.renderSidebar();
-    this.toast('CONTACT ADDED · DIALING…','ok');
+    this.toast('CONTACT ADDED · CONNECTING…','ok');
     if(this.peer && this.peer.open) this.networkPulse();
   },
   deleteContact(addr){
@@ -532,7 +565,7 @@ const App = {
     const pc=this.pendingConns[addr]; if(pc) try{pc.close()}catch(e){}
     delete this.connections[addr]; delete this.activeSessions[addr];
     delete this.chatHistory[addr]; delete this.unread[addr];
-    delete this.pendingConns[addr];
+    delete this.pendingConns[addr]; delete this._outbox[addr];
     this.contacts=this.contacts.filter(c=>c.address!==addr);
     this.saveContacts(); this.saveSession();
     if(this.activePeer===addr){ this.activePeer=null; this.showEmpty(); }
@@ -566,7 +599,6 @@ const App = {
 
       const t=setTimeout(()=>{
         if(this.pendingConns[addr]===c && !c.open){
-          console.warn('[NEXUS] pending timeout', addr);
           try{c.close()}catch(e){}
           if(this.pendingConns[addr]===c) delete this.pendingConns[addr];
         }
@@ -603,18 +635,15 @@ const App = {
       else conn._queue.push(data);
     });
     conn.on('close', ()=>this._onConnClose(conn));
-    conn.on('error', (e)=>console.warn('[NEXUS] conn error',e));
+    conn.on('error', ()=>{});
 
     (async ()=>{
-      try {
+      try{
         const ecdh = await CryptoEngine.generateECDH();
         const myPub = await crypto.subtle.exportKey("raw", ecdh.publicKey);
         conn._ecdh = ecdh;
         conn._myPub = Array.from(new Uint8Array(myPub));
-      } catch(e){
-        console.warn('[NEXUS] keygen failed', e);
-        return;
-      }
+      }catch(e){ return; }
 
       conn._handler = (data) => this._onConnData(conn, data);
       conn._ready = true;
@@ -624,9 +653,9 @@ const App = {
 
       const sendHS = ()=>{
         if(!conn.open) return;
-        try {
+        try{
           conn.send({ type:'handshake_req', address:this.myAddress, pub:conn._myPub });
-        } catch(e){}
+        }catch(e){}
       };
 
       if(conn.open) sendHS();
@@ -648,17 +677,11 @@ const App = {
   _onConnClose(conn){
     if(conn._retryTimer){ clearInterval(conn._retryTimer); conn._retryTimer=null; }
     const addr = conn.peerAddress;
-    console.log('[NEXUS] channel closed', addr||conn.peer);
-
-    // Only clean up if THIS conn was the active one
     if(addr && this.connections[addr]===conn){
       delete this.connections[addr];
       delete this.activeSessions[addr];
     }
-    if(addr && this.pendingConns[addr]===conn){
-      delete this.pendingConns[addr];
-    }
-
+    if(addr && this.pendingConns[addr]===conn) delete this.pendingConns[addr];
     if(addr){
       this.renderSidebar();
       if(this.activePeer===addr) this.updateChatHeader();
@@ -697,17 +720,9 @@ const App = {
 
       if(iAmSmaller){
         let myOutgoing = null;
-        for(const [a,c] of Object.entries(this.connections)){
-          if(a===addr && c!==conn) myOutgoing = c;
-        }
-        for(const [a,c] of Object.entries(this.pendingConns)){
-          if(a===addr && c!==conn) myOutgoing = c;
-        }
-        if(myOutgoing){
-          console.log('[NEXUS] duplicate channel — keeping outgoing');
-          try{ conn.close(); }catch(e){}
-          return;
-        }
+        for(const [a,c] of Object.entries(this.connections)){ if(a===addr && c!==conn) myOutgoing = c; }
+        for(const [a,c] of Object.entries(this.pendingConns)){ if(a===addr && c!==conn) myOutgoing = c; }
+        if(myOutgoing){ try{ conn.close(); }catch(e){} return; }
       }
 
       const prev = this.connections[addr];
@@ -717,17 +732,13 @@ const App = {
 
       if(this.findContact(addr)){
         this.activeSessions[addr] = await CryptoEngine.deriveAES(conn._ecdh.privateKey, data.pub);
-        try{
-          conn.send({type:'handshake_ack', address:this.myAddress, pub:conn._myPub});
-        }catch(e){}
-        console.log('[NEXUS] auto-accepted tunnel with', addr);
+        try{ conn.send({type:'handshake_ack', address:this.myAddress, pub:conn._myPub}); }catch(e){}
         this.toast('TUNNEL ACTIVE · '+this.contactName(addr),'ok');
+        this._flushOutbox(addr);
         this.renderSidebar();
         if(this.activePeer===addr) this.updateChatHeader();
       } else {
-        if(!this.incomingRequests[addr]){
-          this.toast('NEW CONNECTION REQUEST · '+addr.slice(0,6)+'…'+addr.slice(-4),'warn');
-        }
+        if(!this.incomingRequests[addr]) this.toast('NEW REQUEST · '+addr.slice(0,6)+'…'+addr.slice(-4),'warn');
         this.incomingRequests[addr] = { conn, pub:data.pub, ecdh:conn._ecdh };
         this.renderSidebar();
       }
@@ -747,8 +758,8 @@ const App = {
         if(a===addr && c!==conn){ try{c.close()}catch(e){} }
       }
 
-      console.log('[NEXUS] handshake_ack received from', addr);
       this.toast('TUNNEL ACTIVE · '+this.contactName(addr),'ok');
+      this._flushOutbox(addr);
       this.renderSidebar();
       if(this.activePeer===addr) this.updateChatHeader();
       return;
@@ -771,7 +782,7 @@ const App = {
     if(data.type==='enc' && this.activeSessions[addr]){
       this.lastSeen[addr] = Date.now();
       const dec = await CryptoEngine.decrypt(this.activeSessions[addr], data.payload);
-      if(dec==='[CORRUPTED]'){ console.warn('[NEXUS] decrypt failed from', addr); return; }
+      if(dec==='[CORRUPTED]') return;
       try{
         const msg = JSON.parse(dec);
         msg.dir='received';
@@ -819,6 +830,7 @@ const App = {
       }catch(e){}
       this.connections[addr]=req.conn;
       delete this.incomingRequests[addr];
+      this._flushOutbox(addr);
       this.renderSidebar();
       this.openChat(addr);
       this.toast('TUNNEL ACCEPTED','ok');
@@ -842,6 +854,7 @@ const App = {
     delete this.chatHistory[addr];
     delete this.unread[addr];
     delete this.activeSessions[addr];
+    delete this._outbox[addr];
     const c=this.connections[addr]; if(c) try{c.close()}catch(e){}
     const pc=this.pendingConns[addr]; if(pc) try{pc.close()}catch(e){}
     delete this.connections[addr]; delete this.pendingConns[addr];
@@ -857,7 +870,7 @@ const App = {
     Object.values(this.connections).forEach(c=>{ try{c.close()}catch(e){} });
     Object.values(this.pendingConns).forEach(c=>{ try{c.close()}catch(e){} });
     this.connections={}; this.activeSessions={}; this.incomingRequests={};
-    this.pendingConns={};
+    this.pendingConns={}; this._outbox={};
     this.chatHistory={}; this.unread={}; this.lastSeen={};
     this.activePeer=null;
     this.dropSession();
@@ -868,6 +881,32 @@ const App = {
     this.toast(silent?'IDLE TTL · ALL SESSIONS BURNED':'ALL SESSIONS BURNED','warn');
   },
 
+  /* ─── OUTBOX (queued messages when tunnel not ready) ─── */
+  _queueOutbox(addr, msg){
+    if(!this._outbox[addr]) this._outbox[addr]=[];
+    this._outbox[addr].push(msg);
+    if(this.activePeer===addr) this.updateChatHeader();
+  },
+  async _flushOutbox(addr){
+    const q = this._outbox[addr];
+    if(!q || !q.length) return;
+    const key = this.activeSessions[addr];
+    const conn = this.connections[addr];
+    if(!key || !conn || !conn.open) return;
+    delete this._outbox[addr];
+    for(const m of q){
+      try{
+        const enc=await CryptoEngine.encrypt(key,JSON.stringify({
+          type:m.type, body:m.body, time:m.time
+        }));
+        conn.send({type:'enc',payload:enc});
+      }catch(e){ this._queueOutbox(addr, m); }
+    }
+    this.toast('SENT QUEUED · '+q.length+' MSG','ok');
+    if(this.activePeer===addr) this.updateChatHeader();
+  },
+
+  /* ─── QR share ─── */
   openShare(addr){
     if(!addr) return;
     this._shareAddr=addr;
@@ -881,19 +920,16 @@ const App = {
     addrEl.innerText = addr;
     wrap.innerHTML='';
 
-    try {
+    try{
       new QRCode(wrap, {
         text: addr,
         width: 220, height: 220,
-        colorDark: '#0a0e12',
-        colorLight: '#ffffff',
+        colorDark: '#0a0e12', colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.M
       });
-    } catch(e){
-      console.warn('[NEXUS] QR fail', e);
+    }catch(e){
       wrap.innerHTML='<div style="color:#000;padding:40px;font-family:monospace;font-size:10px">QR ERROR</div>';
     }
-
     document.getElementById('share-modal').classList.add('show');
   },
   closeShare(){
@@ -933,6 +969,7 @@ const App = {
     }catch(e){ this.toast('SAVE FAILED','warn'); }
   },
 
+  /* ─── Sidebar ─── */
   renderSidebar(){
     const list=document.getElementById('contacts-list');
     if(!list) return;
@@ -974,7 +1011,7 @@ const App = {
     const name=isReq?('Node '+addr.slice(-4)):this.contactName(addr);
     const unread=this.unread[addr]||0;
     const stateTag = !isReq && !isSecure
-      ? (isPending ? '<span style="color:var(--warning);font-size:9px;font-family:JetBrains Mono">PENDING</span>'
+      ? (isPending ? '<span style="color:var(--warning);font-size:9px;font-family:JetBrains Mono">CONNECTING</span>'
                    : '<span style="color:var(--text-muted);font-size:9px;font-family:JetBrains Mono">OFFLINE</span>')
       : '';
     card.innerHTML=`
@@ -1037,6 +1074,15 @@ const App = {
       (this.chatHistory[addr]||[]).forEach(m=>this.renderMessage(m));
       flow.scrollTop=flow.scrollHeight;
       setTimeout(()=>input.focus(),100);
+
+      /* Immediate dial if not connected */
+      if(this.peer && this.peer.open){
+        const c = this.connections[addr];
+        const p = this.pendingConns[addr];
+        if((!c || !c.open) && (!p || p.closed)){
+          this.networkPulse();
+        }
+      }
     }
     this.renderSidebar();
   },
@@ -1047,38 +1093,61 @@ const App = {
     const hasConn=conn&&conn.open;
     const isSecure=this.activeSessions[this.activePeer]!==undefined;
     const isPending=!!this.pendingConns[this.activePeer];
+    const queued=(this._outbox[this.activePeer]||[]).length;
     const dot=document.getElementById('active-status-dot');
     const txt=document.getElementById('active-status-text');
-    if(hasConn&&isSecure){ dot.className='status-dot online'; txt.innerText='TUNNEL_ACTIVE'; txt.style.color='var(--accent)'; }
-    else if(hasConn||isPending){ dot.className='status-dot pending'; txt.innerText='AWAITING_HANDSHAKE'; txt.style.color='var(--warning)'; }
-    else { dot.className='status-dot'; txt.innerText='OFFLINE'; txt.style.color='var(--text-muted)'; }
+    if(hasConn&&isSecure){
+      dot.className='status-dot online';
+      txt.innerText = queued ? `TUNNEL_ACTIVE · SENDING ${queued}` : 'TUNNEL_ACTIVE';
+      txt.style.color='var(--accent)';
+    }
+    else if(hasConn||isPending){
+      dot.className='status-dot pending';
+      txt.innerText='CONNECTING…';
+      txt.style.color='var(--warning)';
+    }
+    else {
+      dot.className='status-dot';
+      txt.innerText='OFFLINE';
+      txt.style.color='var(--text-muted)';
+    }
   },
 
+  /* ─── Messaging (optimistic + outbox) ─── */
   async sendText(){
     const input=document.getElementById('chat-input');
     const text=(input.value||'').trim();
     if(!text||!this.activePeer) return;
+    const addr = this.activePeer;
     const msg={type:'text',body:text,time:Date.now(),dir:'sent'};
-    const sent=await this.transmit(msg);
-    if(sent){
-      if(!this.chatHistory[this.activePeer]) this.chatHistory[this.activePeer]=[];
-      this.chatHistory[this.activePeer].push(msg);
-      this.saveSession();
-      this.renderMessage(msg);
-      input.value='';
-      this.lastActivity=Date.now();
+
+    /* Render immediately */
+    if(!this.chatHistory[addr]) this.chatHistory[addr]=[];
+    this.chatHistory[addr].push(msg);
+    this.saveSession();
+    this.renderMessage(msg);
+    input.value='';
+    this.lastActivity=Date.now();
+
+    /* Try send now */
+    const key = this.activeSessions[addr];
+    const conn = this.connections[addr];
+    if(key && conn && conn.open){
+      try{
+        const enc=await CryptoEngine.encrypt(key,JSON.stringify({
+          type:msg.type, body:msg.body, time:msg.time
+        }));
+        conn.send({type:'enc',payload:enc});
+      }catch(e){
+        this._queueOutbox(addr, msg);
+        this.toast('QUEUED · RETRYING…','warn');
+      }
     } else {
-      this.toast('TUNNEL NOT ACTIVE','warn');
+      this._queueOutbox(addr, msg);
+      this.toast('QUEUED · CONNECTING…','warn');
+      if(this.peer && this.peer.open) this.networkPulse();
     }
-  },
-  async transmit(msg){
-    const key=this.activeSessions[this.activePeer];
-    const conn=this.connections[this.activePeer];
-    if(!key||!conn||!conn.open) return false;
-    const enc=await CryptoEngine.encrypt(key,JSON.stringify({
-      type:msg.type, body:msg.body, time:msg.time
-    }));
-    try{ conn.send({type:'enc',payload:enc}); return true; }catch(e){ return false; }
+    this.updateChatHeader();
   },
   renderMessage(msg){
     const flow=document.getElementById('messages-flow');
