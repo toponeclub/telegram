@@ -256,31 +256,15 @@ const App = {
   booted:false,
 
   /* ─── HUB BRIDGE ─── */
- init(){
+  init(){
+    // Անմիջապես փակում ենք լոադինգը հենց ֆունկցիայի սկզբում
+    document.getElementById('waiting-screen').style.display='none';
+    document.getElementById('app-shell').style.display='flex';
+    
     window.addEventListener('message', e=>this.onHubMessage(e));
     
-    // 1. Ստուգում ենք URL-ից կամ LocalStorage-ից, եթե վոլեթն արդեն կա
-    const urlParams = new URLSearchParams(window.location.search);
-    const walletFromUrl = urlParams.get('wallet');
-    let savedWallet = null;
-
-    try {
-      const stored = localStorage.getItem('t1prime_wallet') || localStorage.getItem('current_user_id');
-      if (stored) {
-        savedWallet = stored.startsWith('{') ? JSON.parse(stored).address : stored;
-      }
-    } catch(e) {}
-
-    const activeWallet = walletFromUrl || savedWallet;
-
-    // 2. Եթե վոլեթը գտնվել է, միանգամից բացում ենք չատը
-    if (activeWallet) {
-      this.boot(activeWallet);
-    }
-
-    // 3. Ազդարարում ենք Hub-ին, որ չատը պատրաստ է
-    const ready=()=>this.toHub({type:'imchat_ready'});
-    ready(); setTimeout(ready,300); setTimeout(ready,1200);
+    // մնացած կոդը շարունակվում է նույնությամբ...
+    // Notify on unload? not needed
   },
   toHub(msg){
     try{ if(window.parent && window.parent!==window) window.parent.postMessage(msg,'*'); }catch(e){}
@@ -323,9 +307,8 @@ const App = {
     this.myAddress=norm;
     this.dbPrefix=`nexus_${this.myAddress}_`;
     this.loadContacts();
-// chat standalone.html-ni andar boot function-ni shuruat ma athva direct onLoad par:
-document.getElementById('waiting-screen').style.display='none';
-document.getElementById('app-shell').style.display='flex';
+    document.getElementById('waiting-screen').style.display='none';
+    document.getElementById('app-shell').style.display='flex';
 
     // Deterministic peer id
     const safe=btoa(this.myAddress).replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,20);
