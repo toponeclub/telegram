@@ -328,23 +328,14 @@ margin-bottom:2px;
 <button class="ib" id="bs" title="Chart Style"><i class="fa-solid fa-chart-line"></i></button>
 </header>
 
-  <div id="main">
+
  <div id="main">
     <!-- LEFT BAR (Default-ը բաց է, առանց 'collapsed' class-ի) -->
-    <aside id="left-bar">
-      <button class="tb-btn active" data-tool="cross" title="Crosshair"><i class="fa-solid fa-arrow-pointer"></i></button>
-      <button class="tb-btn" data-tool="trend-line" title="Trend Line"><i class="fa-solid fa-slash"></i></button>
-      <button class="tb-btn" data-tool="brush" title="Brush"><i class="fa-solid fa-pen"></i></button>
-      <button class="tb-btn" data-tool="rectangle" title="Rectangle"><i class="fa-solid fa-vector-square"></i></button>
-      <div style="flex:1"></div>
-      <button class="tb-btn del" id="tb-del-all" title="Delete All"><i class="fa-solid fa-trash"></i></button>
-    </aside>
+   
 
 <div id="stack">
       <!-- Ձախ պանելի բացել/փակելու կոճակը -->
-      <button class="left-toggle-btn" id="left-toggle" title="Toggle Toolbar">
-        <i class="fa-solid fa-chevron-left" id="left-toggle-icon"></i>
-      </button>
+   
 
       <!-- Qo hin stack-i mejinutyuny sharunakvum e aysteghic... -->
 <div class="pnl main" id="p-main">
@@ -368,7 +359,7 @@ margin-bottom:2px;
       </button>
 </div>
 
-    <aside id="ctrl">
+  
     <!-- CTRL PANELY SKZBIC PHAK E (class="collapsed") -->
     <aside id="ctrl" class="collapsed">
       <!-- RESIZER -->
@@ -2169,27 +2160,20 @@ console.log('  ✓ Post-rebuild force sync to main range');
 }
 
 return {
-init,
-setSymbol: s => {
-let sym = String(s).toUpperCase();
-if(!sym.endsWith('USDT')) sym += 'USDT';
-S.symbol = sym;
-const ci = $('#ci'); if(ci) ci.value = sym.replace('USDT','');
-reload();
-},
-setTF: tf => {
-S.tf = tf;
-$$('#tfs .tf').forEach(b => b.classList.toggle('active', b.dataset.tf === tf));
-reload();
-}
-};
+        init: () => {
+            XH.init();
+            buildMain();
+            setupMeasure();
+            setupCtx();
+            bindUI();
+            initVP();
+            fetchInit();
+            startWS();
+        }
+    };
 })();
 
-if(document.readyState === 'loading'){
-document.addEventListener('DOMContentLoaded', () => ENGINE.init());
-} else {
 ENGINE.init();
-}
 </script>
 </body>
 </html>
