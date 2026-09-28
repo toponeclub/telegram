@@ -66,6 +66,28 @@ body {
     -ms-user-select: none;
 }
 
+/* Sidebar-ի հիմնական լայնությունները */
+.sidebar {
+    width: 260px;
+    transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+}
+
+/* Icon-only վիճակ */
+.sidebar.collapsed {
+    width: 72px;
+}
+
+/* Fully closed վիճակ (Զրոյական լայնություն) */
+.sidebar.fully-closed {
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border-right: none !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+
 .sidebar.collapsed { width: 72px; }
 
 .toggle-btn {
@@ -1047,37 +1069,9 @@ wui-modal {
 }
 
 /* ─── Resize handle (bottom-right corner, Apple style) ─── */
-.resize-handle {
-    position: absolute;
-    bottom: 4px;
-    right: 4px;
-    width: 24px;
-    height: 24px;
-    cursor: nwse-resize;
-    opacity: 0;
-    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 100;
-    touch-action: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.module:hover .resize-handle { opacity: 0.5; }
-.resize-handle:hover { opacity: 1 !important; }
 
-/* Icon: 3 diagonal lines (Apple-style resize glyph) */
-.resize-handle::after {
-    content: '';
-    width: 10px;
-    height: 10px;
-    border-right: 2px solid var(--text-muted);
-    border-bottom: 2px solid var(--text-muted);
-    border-radius: 0 0 3px 0;
-    transition: border-color 0.2s;
-    transform: translate(-1px, -1px);
-    box-shadow: 3px 3px 0 -1px var(--text-muted);
-}
-.resize-handle:hover::after { border-color: var(--accent); box-shadow: 3px 3px 0 -1px var(--accent); }
+
+
 
 /* ─── Live preview while resizing ─── */
 body.is-resizing { cursor: nwse-resize !important; }
@@ -1122,6 +1116,10 @@ body.is-resizing .module { transition: none !important; }
 .timer-presets { display: flex; gap: 8px; justify-content: center; margin-bottom: 15px; }
 .preset-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); color: var(--text-muted); padding: 5px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; transition: all 0.2s; font-family: var(--font-mono); font-weight: 600; }
 .preset-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+.preset-row, .preset-toggle {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
 
 .mac-btn { width: 52px; height: 52px; border-radius: 50%; border: none; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 20px; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); flex-shrink: 0; }
 .mac-btn.play { background: linear-gradient(135deg, var(--accent), #00b396); color: #000; box-shadow: 0 8px 20px var(--accent-dim); }
@@ -1142,6 +1140,388 @@ body.is-resizing .module { transition: none !important; }
 .share-item { padding:12px 16px; font-size:0.75rem; font-weight:600; color:var(--text-muted); cursor:pointer; transition:var(--transition-smooth); display:flex; gap:10px; align-items:center; }
 .share-item:hover { background:var(--accent-dim); color:var(--accent); }
 
+.sidebar.fully-closed {
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border-right: none !important;
+    overflow: hidden !important;
+}
+@media(max-width: 768px) {
+    .sidebar.fully-closed + .main-wrapper {
+        margin-left: 0 !important;
+        width: 100vw !important;
+    }
+}
+.left-toggle-btn {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 48px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-thin);
+    border-left: none;
+    border-radius: 0 5px 5px 0;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 900;
+    font-size: 10px;
+    transition: var(--transition-smooth);
+}
+.left-toggle-btn:hover {
+    color: var(--accent);
+    background: var(--accent-dim);
+    border-color: var(--accent);
+}
+
+.resize-handle {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 100;
+}
+
+.module:hover .resize-handle {
+    opacity: 0.4;
+}
+
+.resize-handle:hover {
+    opacity: 1 !important;
+}
+
+.resize-handle::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid var(--text-muted);
+    border-bottom: 1.5px solid var(--text-muted);
+    border-radius: 0 0 2px 0;
+    transition: border-color 0.2s ease;
+}
+
+.resize-handle:hover::after {
+    border-color: var(--accent);
+}
+
+/* ─── PRESET BAR ─── */
+.preset-bar {
+    display: flex; 
+    align-items: center; 
+    justify-content: center; /* Կենտրոնացում */
+    gap: 6px;
+    padding: 4px 16px; /* Նեղ տեսք */
+    background: rgba(3, 3, 3, 0.85);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(12px); 
+    overflow-x: auto;
+    z-index: 85; 
+    flex-shrink: 0; 
+    scrollbar-width: none;
+}
+.preset-bar::-webkit-scrollbar { display: none; }
+
+.preset-btn {
+    background: transparent; 
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #888; 
+    font-size: 9px; 
+    font-weight: 600;
+    letter-spacing: 1px; 
+    text-transform: uppercase;
+    padding: 4px 10px; /* Նեղ կոճակներ */
+    border-radius: 4px; /* Քառակուսի ոճ */
+    cursor: pointer;
+    transition: all 0.2s ease; 
+    font-family: var(--font-mono);
+    display: flex; 
+    align-items: center; 
+    gap: 5px; 
+    white-space: nowrap;
+}
+
+/* Hover: Կանաչ երանգ */
+.preset-btn:hover { 
+    color: #4ade80; 
+    border-color: rgba(74, 222, 128, 0.3); 
+    background: rgba(74, 222, 128, 0.05); 
+}
+
+/* Active / Selected: Նուրբ լուսավոր կանաչ */
+.preset-btn.active { 
+    color: #ffffff; 
+    border-color: rgba(74, 222, 128, 0.7); 
+    background: rgba(74, 222, 128, 0.12); 
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.15); 
+}
+
+.preset-btn i { 
+    font-size: 9px; 
+    opacity: 0.8; 
+}
+
+.preset-divider { 
+    width: 1px; 
+    height: 12px; 
+    background: rgba(255, 255, 255, 0.08); 
+    margin: 0 2px; 
+}
+
+/* Վիջեթի չափսերը CSS Grid-ում */
+.widget[data-size="w+"] {
+    grid-column: 1 / -1 !important;
+    grid-row: span 1 !important;
+    width: 100% !important;
+}
+.widget.size-w-plus {
+    grid-column: 1 / -1 !important; /* Ամբողջ լայնությամբ (Hero) */
+    grid-row: span 1;
+}
+
+.widget[data-size="1x1"] { grid-column: span 1; grid-row: span 1; }
+.widget[data-size="2x2"] { grid-column: span 2; grid-row: span 2; }
+.widget[data-size="1x2"] { grid-column: span 1; grid-row: span 2; }
+.widget[data-size="full"] { grid-column: 1 / -1; grid-row: span 2; }
+
+
+/* Միայն quote վիջեթը w+ չափսի դեպքում */
+.module[data-widget-type="quote"][data-size="w+"],
+.module[data-widget-type="quote"].size-w-plus {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-height: 140px;
+}
+/* ─── STRICT MINIMAL CENTERED PRESET BAR ─── */
+.preset-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 100%;
+    padding: 4px 12px;
+    background: #0d0d0d;
+    border-bottom: 1px solid #1f1f1f;
+    overflow-x: auto;
+    z-index: 85;
+    flex-shrink: 0;
+    scrollbar-width: none;
+    border-radius: 0 !important;
+}
+.preset-bar::-webkit-scrollbar { display: none; }
+
+.preset-btn {
+    background: #141414;
+    border: 1px solid #222222;
+    color: #888888;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    height: 22px;
+    border-radius: 0 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-mono);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.preset-btn:hover {
+    background: #191f1b;
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.25);
+}
+
+.preset-btn.active {
+    background: #16261d;
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.5);
+}
+
+.preset-btn i {
+    font-size: 9px;
+    opacity: 0.6;
+}
+
+.preset-btn:hover i,
+.preset-btn.active i {
+    opacity: 1;
+}
+
+.preset-divider {
+    width: 1px;
+    height: 10px;
+    background: #222222;
+    margin: 0 4px;
+}
+
+/* ─── CENTERED HANDLE TOGGLE PRESET BAR ─── */
+.preset-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 85;
+    flex-shrink: 0;
+}
+
+/* Բուն պրեսետների բարը */
+.preset-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 100%;
+    padding: 4px 12px;
+    background: #0d0d0d;
+    border-bottom: 1px solid #1f1f1f;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-radius: 0 !important;
+    max-height: 40px;
+    transition: max-height 0.25s ease, opacity 0.25s ease, padding 0.25s ease, border-bottom 0.25s ease;
+    opacity: 1;
+}
+.preset-bar::-webkit-scrollbar { display: none; }
+
+/* Երբ փակ է (Default) */
+.preset-bar.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+    opacity: 0;
+    overflow: hidden;
+}
+
+/* Մեջտեղի նուրբ բացող-փակող կոճակը բարի սահմանին */
+.preset-handle-btn {
+    position: relative;
+    background: #0d0d0d;
+    border: 1px solid #1f1f1f;
+    border-top: none;
+    color: #666666;
+    width: 36px;
+    height: 14px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 86;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.preset-handle-btn:hover {
+    background: #141414;
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.3);
+    width: 44px; /* Սեղմելիս փոքր-ինչ լայնանում է գեղեցկության համար */
+}
+
+.preset-handle-btn i {
+    font-size: 8px;
+    transition: transform 0.25s ease;
+}
+
+/* Երբ բաց է, սլաքը շրջվում է վերև */
+.preset-wrapper.open .preset-handle-btn i {
+    transform: rotate(180deg);
+}
+
+/* Պրեսետների կոճակների սուր, մինիմալ տեսքը */
+.preset-btn {
+    background: #141414;
+    border: 1px solid #222222;
+    color: #888888;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    height: 22px;
+    border-radius: 0 !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-mono);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.preset-btn:hover {
+    background: #191f1b;
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.25);
+}
+
+.preset-btn.active {
+    background: #16261d;
+    color: #4ade80;
+    border-color: rgba(74, 222, 128, 0.5);
+}
+
+.preset-btn i {
+    font-size: 9px;
+    opacity: 0.6;
+}
+
+.preset-btn:hover i,
+.preset-btn.active i {
+    opacity: 1;
+}
+
+.preset-divider {
+    width: 1px;
+    height: 10px;
+    background: #222222;
+    margin: 0 4px;
+}
+
+/* Հիմնական ձախ պանելը */
+.left-sidebar, #sidebar {
+    width: 240px; /* Կամ քո լայնությունը */
+    transition: width 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
+    overflow: hidden;
+    opacity: 1;
+}
+
+/* 1. Icon-only վիճակ (երբ տեքստերը թաքնված են, մնացել են միայն իքոնկաները) */
+.left-sidebar.collapsed, #sidebar.collapsed {
+    width: 60px !important;
+}
+
+/* 2. Fully Closed վիճակ (երբ պանելը բոլորովին փակվում է՝ width: 0) */
+.left-sidebar.fully-closed, #sidebar.fully-closed {
+    width: 0 !important;
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-right: none !important;
+    opacity: 0;
+    pointer-events: none;
+}
 </style>
 </head>
 <body class="theme-emerald">
@@ -1249,10 +1629,18 @@ body.is-resizing .module { transition: none !important; }
             </div>
         </div>
     </div>
+
+    
 </nav>
+
+
 
 <!-- ════════════════ MAIN WRAPPER ════════════════ -->
 <div class="main-wrapper">
+    <button class="left-toggle-btn" id="left-toggle" title="Toggle Sidebar Completely">
+        <i class="fa-solid fa-chevron-left" id="left-toggle-icon"></i>
+    </button>
+   
 
     <!-- TOPBAR -->
     <header class="topbar">
@@ -1327,14 +1715,32 @@ body.is-resizing .module { transition: none !important; }
         </div>
     </header>
 
+    
+
+<!-- PRESET BAR -->
+<div class="preset-wrapper">
+    <!-- Բուն պրեսետների բարը (Default փակ է .collapsed դասով) -->
+    <div class="preset-bar collapsed" id="presetBar">
+    <button class="preset-btn" onclick="applyPreset('genesis', this)"></i> Genesis</button>
+    <button class="preset-btn" onclick="applyPreset('trading', this)"></i> Trading Pro</button>
+    <button class="preset-btn" onclick="applyPreset('bio', this)"></i> Biohacking</button>
+    <button class="preset-btn" onclick="applyPreset('social', this)"></i> Social Media</button>
+    <button class="preset-btn" onclick="applyPreset('business', this)"></i> Business</button>
+    
+    <div class="preset-divider"></div>
+    
+    <button class="preset-btn" onclick="applyPreset('user', this)"></i> My Setup</button>
+    <button class="preset-btn" onclick="makeMyDefault()"></i> Make Default</button>
+</div>
+
+<button class="preset-handle-btn" id="presetToggleBtn" title="Toggle Presets">
+        <i class="fa-solid fa-chevron-down" id="toggleIcon"></i>
+    </button>
+</div>
+
     <!-- DASHBOARD VIEW -->
     <main class="dynamic-view" id="dashboardView">
-        <div class="quote-container">
-            <div class="quote-text" id="quote-text">
-                "Focus is the new IQ. Whoever can sit still and work for 4 hours straight, owns the market."
-            </div>
-            <div class="quote-author">GRIND</div>
-        </div>
+        
 
         <div class="bento-grid" id="bentoGrid"></div>
 
@@ -1438,6 +1844,8 @@ const STORAGE_KEY = 'grind_os_layout_v2';
 const NOTES_KEY = 'grind_os_notes_v1';
 const WALLET_KEY = 'grind_os_wallet';
 
+
+
 const IMCHAT_URL = 'https://www.t1prime.com/imchat';   // change to full URL if hosted elsewhere
 const ENGINE_URL = 'https://www.t1prime.com/enginepro';   // Trading Engine widget    
 const COINGLASS_BASE = 'https://www.coinglass.com/tv/Binance_';
@@ -1446,7 +1854,7 @@ const $  = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
 /* ─── WIDGET REGISTRY ─── */
-const WIDGET_REGISTRY = {
+const WIDGET_REGISTRY = { 
     btc_chart:    { id:'btc_chart',    name:'BTC Chart',         desc:'Live BTC candles · TF switch', icon:'fa-chart-line',         size:'full', category:'Trading',      render: renderBTCChartWidget, init: initBTCChartWidget },
     liquidations: { id:'liquidations', name:'Live Liquidations', desc:'Whale liq feed · real-time',   icon:'fa-water',              size:'1x2',  category:'Trading',      render: renderLiquidationsWidget, init: initLiquidationsWidget },
     screener:     { id:'screener',     name:'Market Screener',   desc:'Multi-filter + search',        icon:'fa-radar',              size:'full', category:'Trading',      render: renderScreenerWidget, init: initScreenerWidget },
@@ -1519,7 +1927,7 @@ coinglass: {
 const CATEGORIES = ['Trading', 'Productivity', 'Social'];
 
 /* ─── STATE ─── */
-let state = { widgets: [], subscribed: false, wallet: null, connecting: false };
+let state = { widgets: [],  subscribed: false, wallet: null, connecting: false }; 
 const widgetCleanup = {};
 
 function saveState() {
@@ -1545,6 +1953,129 @@ function getDefaultLayout() {
     ];
 }
 function uid() { return 'w_' + Math.random().toString(36).slice(2, 9); }
+
+const OS_PRESETS = {
+   genesis: [
+        { type: 'quote', size: 'w+' },
+        { type: 'crypto_sparkline', size: '2x2' },
+        { type: 'engine', size: '2x2' },
+        { type: 'tasks', size: '1x1' },
+        { type: 'notes', size: '1x1' },
+        { type: 'clock', size: '1x1' }
+    ],
+    trading: [
+        { id: uid(), type: 'quote', size: 'w+' },
+        { id: uid(), type: 'engine', size: '2x2' },
+        { id: uid(), type: 'engine', size: '2x2' },
+        { id: uid(), type: 'screener', size: 'full' },
+        { id: uid(), type: 'liquidations', size: '1x2' },
+        { id: uid(), type: 'notes', size: '1x1' },
+        { id: uid(), type: 'clock', size: '1x1' }
+    ],
+    bio: [
+        { id: uid(), type: 'quote', size: 'w+' },
+        { id: uid(), type: 'heatmap', size: 'full' },
+        { id: uid(), type: 'biohacking', size: '1x1' },
+        { id: uid(), type: 'tasks', size: '1x1' },
+        { id: uid(), type: 'progress', size: '1x1' },
+        { id: uid(), type: 'clock', size: '1x1' },
+        { id: uid(), type: 'notes', size: '1x1' }
+    ],
+    social: [
+        { id: uid(), type: 'quote', size: 'w+' },
+        { id: uid(), type: 'imchat', size: '2x2' },
+        { id: uid(), type: 'tasks', size: '1x1' },
+        { id: uid(), type: 'progress', size: '1x1' },
+        { id: uid(), type: 'community', size: '1x1' }
+    ],
+    business: [
+        { id: uid(), type: 'quote', size: 'w+' },
+        { id: uid(), type: 'screener', size: 'full' },
+        { id: uid(), type: 'affiliate', size: '1x1' },
+        { id: uid(), type: 'clock', size: '1x1' },
+        { id: uid(), type: 'tasks', size: '1x1' },
+        { id: uid(), type: 'notes', size: '1x1' }
+    ]
+};
+
+function renderWidget(w) {
+    return `
+        <div class="widget size-${w.size}" data-id="${w.id}" data-size="${w.size}">
+            <!-- widget content -->
+        </div>
+    `;
+}
+
+function applyPreset(name, btnEl) {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+
+    if (name === 'user') {
+        const saved = localStorage.getItem('grind_os_user_default');
+        if (saved) {
+            state.widgets = JSON.parse(saved);
+            toast('Loaded: Custom Setup');
+        } else {
+            toast('No custom setup saved yet. Click "Make My Default".');
+            return;
+        }
+    } else {
+        // Deep copy + new IDs
+        state.widgets = OS_PRESETS[name].map(w => ({ ...w, id: uid() }));
+        toast(`Loaded Preset: ${name.toUpperCase()}`);
+    }
+    if (!OS_PRESETS[name]) return;
+    
+    // Ստեղծում ենք նոր array՝ պահպանելով preset-ի size-ը
+    state.widgets = OS_PRESETS[name].map(w => ({
+        id: uid(),
+        type: w.type,
+        size: w.size // <--- ՊԱՐՏԱԴԻՐ
+    }));
+
+    saveState();
+    renderGrid();
+}
+
+
+
+function makeMyDefault() {
+    localStorage.setItem('grind_os_user_default', JSON.stringify(state.widgets));
+    toast('Current layout saved as your default.');
+}
+
+// Որպեսզի reset-ի կամ դատարկ էջի ժամանակ բեռնի user-ի պահածը
+function getDefaultLayout() {
+    const userDef = localStorage.getItem('grind_os_user_default');
+    if (userDef) return JSON.parse(userDef);
+    return OS_PRESETS.genesis.map(w => ({ ...w, id: uid() }));
+}
+
+const sidebarToggleBtn = document.getElementById('sidebarToggleBtn'); 
+const sidebar = document.querySelector('.left-sidebar') || document.getElementById('sidebar');
+
+if (sidebarToggleBtn && sidebar) {
+    sidebarToggleBtn.addEventListener('click', () => {
+        const isFull = !sidebar.classList.contains('collapsed') && !sidebar.classList.contains('fully-closed');
+        const isIconOnly = sidebar.classList.contains('collapsed') && !sidebar.classList.contains('fully-closed');
+        const isFullyClosed = sidebar.classList.contains('fully-closed');
+
+        if (isFull) {
+            // 1. Full -> Icon state
+            sidebar.classList.add('collapsed');
+        } else if (isIconOnly) {
+            // 2. Icon state -> 0 (Fully closed)
+            sidebar.classList.remove('collapsed');
+            sidebar.classList.add('fully-closed');
+        } else if (isFullyClosed) {
+            // 3. 0 -> Հետ բերել Icon state (կամ հանել fully-closed-ը)
+            sidebar.classList.remove('fully-closed');
+            sidebar.classList.add('collapsed'); // Այստեղից կամ կարող ես ուղղակի հանել .collapsed, որ միանգամից Full բացվի
+        }
+    });
+}
+
+
 
 /* ════════════════════════════════════════════════════════════
    COINGLASS WIDGET (iframe)
@@ -1683,6 +2214,14 @@ function initCoinglassWidget(w, el) {
     console.log('[CoinGlass] Widget armed');
 }
 
+document.getElementById('presetToggleBtn').addEventListener('click', () => {
+    const bar = document.getElementById('presetBar');
+    const wrapper = bar.closest('.preset-wrapper');
+    
+    bar.classList.toggle('collapsed');
+    wrapper.classList.toggle('open');
+});
+
     /* ════════════════════════════════════════════════════════════
    TRADING ENGINE WIDGET
    ════════════════════════════════════════════════════════════ */
@@ -1774,12 +2313,18 @@ function renderGrid() {
         el.className = 'module entering';
         el.dataset.widgetId = w.id;
         el.dataset.widgetType = w.type;
-        el.dataset.size = w.size || reg.size;
+
+        // Ճիշտ չափսի ընտրություն
+        const finalSize = w.size || reg.defaultSize || reg.size || '1x1';
+        el.dataset.size = finalSize;
+        
+        // Ավելացնում ենք class-եր չափսերի համար
+        el.classList.add(`size-${finalSize.replace('+', '-plus')}`);
 
         const locked = reg.premium && !state.subscribed;
         const unlockedClass = locked ? '' : 'unlocked';
 
-               el.innerHTML = `
+        el.innerHTML = `
             <div class="widget-controls">
                 <button class="widget-btn grip" title="Drag to move"><i class="fa-solid fa-grip-vertical"></i></button>
                 <button class="widget-btn size-btn" title="Change size"><i class="fa-solid fa-expand"></i></button>
@@ -1796,14 +2341,18 @@ function renderGrid() {
 
         grid.appendChild(el);
 
-        el.querySelector('.remove-btn').addEventListener('click', (e) => { e.stopPropagation(); removeWidget(w.id); });
+        el.querySelector('.remove-btn').addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            removeWidget(w.id); 
+        });
+        
         el.querySelector('.size-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    openSizePicker(e.currentTarget, w.id);
-});
+            e.stopPropagation();
+            openSizePicker(e.currentTarget, w.id);
+        });
 
-const rh = el.querySelector('.resize-handle');
-if (rh) rh.addEventListener('pointerdown', onResizeStart);
+        const rh = el.querySelector('.resize-handle');
+        if (rh) rh.addEventListener('pointerdown', onResizeStart);
 
         const grip = el.querySelector('.widget-btn.grip');
         if (grip) grip.addEventListener('pointerdown', onGripPointerDown);
@@ -3458,7 +4007,7 @@ function renderQuoteWidget(w) {
             <div class="share-item" onclick="exportQuote('${w.id}', 'copy')"><i class="fa-solid fa-copy"></i> Copy Image</div>
             <div class="share-item" onclick="shareQuoteLink(event, '${w.id}')"><i class="fa-solid fa-link"></i> Get Link</div>
         </div>
-        <div class="mod-header" style="justify-content:center;"><div class="mod-title"><i class="fa-solid fa-quote-left"></i> Daily Doctrine</div></div>
+       
         <div class="quote-content" id="quoteContent_${w.id}">
             <div class="quote-mark">"</div>
             <div class="quote-widget-text">${q.text}</div>
@@ -3701,6 +4250,19 @@ try {
         return;
     }
 
+    const leftToggle = document.getElementById('left-toggle');
+const leftToggleIcon = document.getElementById('left-toggle-icon');
+const sidebar = document.getElementById('sidebar');
+
+if (leftToggle && sidebar) {
+    leftToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('fully-closed');
+        const isClosed = sidebar.classList.contains('fully-closed');
+        leftToggleIcon.className = isClosed ? 'fa-solid fa-chevron-right' : 'fa-solid fa-chevron-left';
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 350);
+    });
+}
+
     /* ★ CACHE MISS — create new iframe */
     const wrapper = document.createElement('div');
     wrapper.style.cssText = 'position:absolute;inset:0;display:block;';
@@ -3759,13 +4321,28 @@ function closeIframeView() {
 /* ════════════════════════════════════════════════════════════
    SIDEBAR · NAV + SUBMENU BEHAVIOR
    ════════════════════════════════════════════════════════════ */
+// 1. Վերևի հիմնական toggle-ը (Full <-> Icon state)
 function toggleSidebar() {
-    const sb = $('#sidebar');
-    if (!sb) return;
-    sb.classList.toggle('collapsed');
-    closeWalletMenu();
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('collapsed');
 }
 
+// 2. Ձախ կողային հարակից toggle-ը (Any State <-> Fully Closed)
+document.getElementById('left-toggle').addEventListener('click', function() {
+    const sidebar = document.getElementById('sidebar');
+    const icon = document.getElementById('left-toggle-icon');
+    
+    sidebar.classList.toggle('fully-closed');
+    
+    // Սլաքի ուղղության փոփոխություն ըստ վիճակի
+    if (sidebar.classList.contains('fully-closed')) {
+        icon.classList.remove('fa-chevron-left');
+        icon.classList.add('fa-chevron-right');
+    } else {
+        icon.classList.remove('fa-chevron-right');
+        icon.classList.add('fa-chevron-left');
+    }
+});
 /* ─── Nav click — handle both submenu items and normal navigation ─── */
 function onNavClick(e, key) {
     e.stopPropagation();
