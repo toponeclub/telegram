@@ -4659,26 +4659,7 @@ if (saved) {
     } catch(e) {}
 }
 
-// 1. ՊԱՀՊԱՆԵԼ (MAKE MY DEFAULT)
-document.querySelector('#make-default-btn').addEventListener('click', () => {
-    const currentSetup = {
-        // Նշիր այն արժեքները, որոնք պետք է պահվեն
-        presetId: 'active_preset_name', 
-        sidebarClass: document.getElementById('sidebar').className
-    };
-    localStorage.setItem('userDefaultSetup', JSON.stringify(currentSetup));
-});
 
-// 2. ԿԱՆՉԵԼ (MY SETUP)
-document.querySelector('#my-setup-btn').addEventListener('click', () => {
-    const saved = JSON.parse(localStorage.getItem('userDefaultSetup'));
-    if (saved) {
-        // Վերականգնել պահպանված վիճակը
-        // Օրինակ՝
-        document.getElementById('sidebar').className = saved.sidebarClass;
-        // applyPreset(saved.presetId); 
-    }
-});
 
 /* ════════════════════════════════════════════════════════════
    BOOT
@@ -4797,6 +4778,27 @@ window.viewOnExplorer = () => {
     if (address) window.open(`https://etherscan.io/address/${address}`, '_blank');
     document.getElementById('walletMenu')?.classList.remove('open');
 };
+
+// 1. ՊԱՀՊԱՆԵԼ (MAKE MY DEFAULT)
+document.querySelector('#make-default-btn').addEventListener('click', () => {
+    const currentSetup = {
+        // Նշիր այն արժեքները, որոնք պետք է պահվեն
+        presetId: 'active_preset_name', 
+        sidebarClass: document.getElementById('sidebar').className
+    };
+    localStorage.setItem('userDefaultSetup', JSON.stringify(currentSetup));
+});
+
+// 2. ԿԱՆՉԵԼ (MY SETUP)
+document.querySelector('#my-setup-btn').addEventListener('click', () => {
+    const saved = JSON.parse(localStorage.getItem('userDefaultSetup'));
+    if (saved) {
+        // Վերականգնել պահպանված վիճակը
+        // Օրինակ՝
+        document.getElementById('sidebar').className = saved.sidebarClass;
+        // applyPreset(saved.presetId); 
+    }
+});
 
 modal.subscribeAccount((account) => {
     window.currentWallet = account?.isConnected ? account.address : null;
