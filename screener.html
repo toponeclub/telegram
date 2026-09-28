@@ -222,6 +222,60 @@ body::after { content: ''; position: fixed; inset: 0; background-image: linear-g
 .dex-links a:hover { color: var(--ac); border-color: var(--ac); background: rgba(0,255,213,0.1); }
 @media (max-width: 1180px) { .hero { grid-template-columns: 1fr 1fr; } .main-grid { grid-template-columns: 1fr 1fr; } .main-grid > *:nth-child(3) { grid-column: 1 / -1; } }
 @media (max-width: 780px) { .wrap { padding: 12px 12px 40px; } .hero, .main-grid { grid-template-columns: 1fr; } #ctrl { width: 140px; } #engine-app { height: 560px; } }
+
+
+.dex-links { display: flex; gap: 4px; }
+.dex-links a { color: var(--muted); text-decoration: none; transition: 0.15s; font-size: 9px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px; }
+.dex-links a:hover { color: var(--ac); border-color: var(--ac); background: rgba(0,255,213,0.1); }
+
+#ctrl {
+  width: 210px;
+  position: relative;
+  transition: width 0.25s ease, padding 0.25s ease;
+}
+#ctrl.collapsed {
+  width: 0 !important;
+  min-width: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-left: none !important;
+  overflow: hidden;
+}
+.ctrl-rz-x {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: ew-resize;
+  z-index: 20;
+}
+.ctrl-toggle-btn {
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 48px;
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-right: none;
+  border-radius: 5px 0 0 5px;
+  color: var(--t3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  font-size: 10px;
+  transition: var(--tr);
+}
+.ctrl-toggle-btn:hover {
+  color: var(--ac);
+  background: var(--acD);
+  border-color: var(--ac);
+}
+
 </style>
 </head>
 <body>
@@ -344,63 +398,14 @@ body::after { content: ''; position: fixed; inset: 0; background-image: linear-g
     </section>
 
     <section class="card engine-card reveal" id="engine-section" style="animation-delay: 0.5s; --accent: var(--ac);">
-        <div class="card-title"><i class="fas fa-chart-line"></i> TRADING ENGINE PRO <span class="badge">INTEGRATED TERMINAL</span></div>
-        <div id="engine-app">
-            <header id="top">
-                <input type="text" id="ci" class="ci" value="BTC" spellcheck="false" maxlength="14" autocomplete="off">
-                <div class="tfs" id="tfs">
-                    <button class="tf" data-tf="1m">1M</button>
-                    <button class="tf active" data-tf="5m">5M</button>
-                    <button class="tf" data-tf="15m">15M</button>
-                    <button class="tf" data-tf="1h">1H</button>
-                    <button class="tf" data-tf="4h">4H</button>
-                    <button class="tf" data-tf="1d">1D</button>
-                </div>
-                <div class="sp"></div>
-                <div class="hud">
-                    <div class="hud-it keep"><span class="hud-lb">PRICE</span><span class="hud-vl" id="hp">--</span></div>
-                    <div class="hud-it keep"><span class="hud-lb">24H</span><span class="hud-vl" id="hc">--</span></div>
-                </div>
-                <button class="ib" id="bi" title="Indicators"><i class="fa-solid fa-chart-simple"></i></button>
-            </header>
-
-            <div id="main">
-                <div id="stack">
-                    <div class="pnl main" id="p-main">
-    <div class="pnl-body">
-        <div class="lw" id="c-main"></div>
-        <canvas id="vpc"></canvas>
-        <!-- Այս տողն ենք վերադարձնում -->
-        <div id="cursor-lbl"><span class="price">--</span><span class="sep">│</span><span class="pct zero">0.00%</span></div>
-        <div id="alert-lbl"><span class="tag">ALERT</span><span class="price">--</span><span class="sep">│</span><span class="pct zero">0.00%</span></div>
+    <div class="card-title">
+        <i class="fas fa-chart-line"></i> TRADING ENGINE PRO (WIDGET) 
+        <span class="badge">INTEGRATED IFRAME</span>
     </div>
-</div>
-                    <div id="xh-line"></div>
-                    <div id="xh-label"></div>
-                </div>
-
-                <aside id="ctrl">
-                    <div class="lb">
-                        <div class="lb-hd alert"><i class="fa-solid fa-bell"></i><span>Price Alert</span></div>
-                        <div class="lb-row"><input type="number" id="pa" class="lb-in" placeholder="price" step="any"></div>
-                        <div class="lb-row">
-                            <button class="lb-btn set" id="pa-set">Set</button>
-                            <button class="lb-btn clr" id="pa-clr">Clear</button>
-                        </div>
-                        <div class="lb-st" id="pa-st"></div>
-                    </div>
-
-                    <div class="lb">
-                        <div class="lb-hd tg"><i class="fa-brands fa-telegram"></i><span>Telegram</span></div>
-                        <div class="lb-row"><input type="password" id="tg-tok" class="lb-in" placeholder="bot token" autocomplete="off" spellcheck="false"></div>
-                        <div class="lb-row"><input type="text" id="tg-chat" class="lb-in" placeholder="chat id" autocomplete="off" spellcheck="false"></div>
-                        <div class="lb-row"><button class="lb-btn set" id="tg-test">Save + Test</button></div>
-                        <div class="lb-st" id="tg-st">off</div>
-                    </div>
-                </aside>
-            </div>
-        </div>
-    </section>
+    <div id="engine-widget-wrap" style="width: 100%; height: 720px; background: var(--bg); position: relative;">
+        <iframe id="engine-iframe" src="https://t1prime.com/enginepro" style="width: 100%; height: 100%; border: none; background: transparent;" allowfullscreen></iframe>
+    </div>
+</section>
 
     <section class="card reveal" style="animation-delay: 0.55s; --accent: var(--purple);">
         <div class="card-title"><i class="fas fa-grid-2"></i> CORRELATION MATRIX <span class="badge">30D · DAILY RETURNS</span></div>
@@ -520,8 +525,22 @@ function renderSectors(tickers) {
     $('sector-list').innerHTML = rows.map(r => { const w = Math.max(20, Math.min(100, (Math.abs(r.avgChg) / maxAbs) * 100)), cls = r.avgChg >= 0 ? 'pos' : 'neg'; return `<div class="sector-row"><div class="sector-name">${r.name}</div><div class="sector-bar"><div class="sector-fill ${cls}" style="width:${w}%;">${r.count}</div></div><div class="sector-pct ${cls}">${fmtPct(r.avgChg)}</div></div>`; }).join('');
 }
 
-function selectCoinForEngine(symbol) { if(window.ENGINE) { window.ENGINE.setSymbol(symbol); const engineEl = document.getElementById('engine-section'); if(engineEl) engineEl.scrollIntoView({ behavior: 'smooth' }); } }
+function selectCoinForEngine(symbol) {
+    const iframe = document.getElementById('engine-iframe');
+    const engineEl = document.getElementById('engine-section');
+    
+    let cleanSym = symbol.toUpperCase();
+    if (!cleanSym.endsWith('USDT')) cleanSym += 'USDT';
 
+    if (iframe && iframe.contentWindow) {
+        // PostMessage-ov ugharkum enq simvoly iframe-in
+        iframe.contentWindow.postMessage({ type: 'SET_SYMBOL', symbol: cleanSym }, '*');
+    }
+    
+    if (engineEl) {
+        engineEl.scrollIntoView({ behavior: 'smooth' });
+    }
+}
 function renderMovers() {
     let list = [...state.tickers].filter(t => t.volume > 5e6);
     if (state.moversMode === 'gainers') list.sort((a,b) => b.change - a.change); else if (state.moversMode === 'losers') list.sort((a,b) => a.change - b.change); else list.sort((a,b) => b.volume - a.volume);
@@ -534,13 +553,8 @@ function renderMovers() {
                 <i class="fas fa-chart-line chart-icon-btn" onclick="selectCoinForEngine('${t.symbol}')" title="Open in Engine"></i>
             </div>
             <div class="dex-links">
-    <span class="ex-label">DEX:</span>
     <a href="https://app.hyperliquid.xyz/trade/${t.base}" target="_blank">Hyperliquid</a>
     <a href="https://app.evedex.finance/trade/${t.base}" target="_blank">EveDex</a>
-    <span class="ex-label" style="margin-left:6px;">CEX:</span>
-    <a href="https://www.binance.com/en/trade/${t.base}_USDT" target="_blank">Binance</a>
-    <a href="https://www.bybit.com/trade/usdt/${t.base}USDT" target="_blank">Bybit</a>
-    <a href="https://www.bitget.com/futures/usdt/${t.base}USDT" target="_blank">Bitget</a>
 </div>
             <div class="mover-px">$${fmtPrice(t.price)}</div>
             <div class="mover-pct ${cls}">${fmtPct(t.change)}</div>
@@ -571,14 +585,9 @@ async function renderScreener() {
                 </div>
             </td>
             <td>
-                <div class="dex-links">
-    <span class="ex-label">DEX:</span>
+               <div class="dex-links">
     <a href="https://app.hyperliquid.xyz/trade/${t.base}" target="_blank">Hyperliquid</a>
     <a href="https://app.evedex.finance/trade/${t.base}" target="_blank">EveDex</a>
-    <span class="ex-label" style="margin-left:6px;">CEX:</span>
-    <a href="https://www.binance.com/en/trade/${t.base}_USDT" target="_blank">Binance</a>
-    <a href="https://www.bybit.com/trade/usdt/${t.base}USDT" target="_blank">Bybit</a>
-    <a href="https://www.bitget.com/futures/usdt/${t.base}USDT" target="_blank">Bitget</a>
 </div>
             </td>
             <td class="num">$${fmtPrice(t.price)}</td>
