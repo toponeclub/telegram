@@ -22,14 +22,6 @@
 html,body{width:100%;height:100%;background:var(--bg);color:var(--t1);font-family:var(--ui);overflow:hidden;font-size:12px}
 #app{display:grid;grid-template-rows:44px 1fr;width:100vw;height:100vh;overflow:hidden}
 
-#main { display:flex; overflow:hidden; min-height:0; flex-direction:row; }
-#left-bar { width: 44px; background: var(--bg2); border-right: 1px solid var(--bd); display: flex; flex-direction: column; gap: 8px; padding: 12px 0; align-items: center; z-index: 50; flex-shrink: 0; }
-.tb-btn { background: transparent; border: 1px solid transparent; color: var(--t3); width: 30px; height: 30px; border-radius: 4px; cursor: pointer; font-size: 14px; transition: var(--tr); display: flex; align-items: center; justify-content: center; }
-.tb-btn:hover { color: var(--ac); background: var(--acD); border-color: rgba(0,255,213,0.2); }
-.tb-btn.active { color: var(--bg); background: var(--ac); }
-.tb-btn.del { margin-top: auto; color: var(--t3); }
-.tb-btn.del:hover { color: var(--dn); background: rgba(168,85,247,.15); border-color: rgba(168,85,247,.3); }
-
 #top{display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--bg2);border-bottom:1px solid var(--bd);overflow-x:auto;scrollbar-width:none;flex-shrink:0;position:relative;z-index:100}
 #top::-webkit-scrollbar{display:none}
 .ci{background:rgba(0,0,0,.4);border:1px solid rgba(0,255,213,.2);color:#fff;padding:5px 8px;border-radius:5px;font-size:11px;font-weight:700;font-family:var(--mono);text-transform:uppercase;width:82px;text-align:center;transition:var(--tr);flex-shrink:0}
@@ -205,109 +197,13 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--t1);font-famil
   .liq-it{grid-template-columns:40px 1fr}
   .liq-it .tm{display:none}
 }
-
-#ctrl {
-  width: 210px;
-  position: relative;
-  transition: width 0.2s ease, padding 0.2s ease;
-}
-#ctrl.collapsed {
-  width: 0 !important;
-  min-width: 0 !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  border-left: none !important;
-}
-.ctrl-rz-x {
-  position: absolute;
-  left: -3px;
-  top: 0;
-  bottom: 0;
-  width: 6px;
-  cursor: ew-resize;
-  z-index: 20;
-}
-#ctrl.collapsed .ctrl-rz-x {
-  display: none;
-}
-.ctrl-toggle-btn {
-  position: absolute;
-  right: 0; /* Kpnum e stack-i aj koghmin */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 14px;
-  height: 48px;
-  background: var(--bg2);
-  border: 1px solid var(--bd);
-  border-right: none;
-  border-radius: 5px 0 0 5px;
-  color: var(--t3);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  font-size: 10px;
-  transition: var(--tr);
-}
-.ctrl-toggle-btn:hover {
-  color: var(--ac);
-  background: var(--acD);
-  border-color: var(--ac);
-}
-
-#left-bar {
-  transition: width 0.2s ease, padding 0.2s ease;
-  overflow: hidden;
-}
-#left-bar.collapsed {
-  width: 0 !important;
-  min-width: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  border-right: none !important;
-}
-.left-toggle-btn {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 14px;
-  height: 48px;
-  background: var(--bg2);
-  border: 1px solid var(--bd);
-  border-left: none;
-  border-radius: 0 5px 5px 0;
-  color: var(--t3);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  font-size: 10px;
-  transition: var(--tr);
-}
-.left-toggle-btn:hover {
-  color: var(--ac);
-  background: var(--acD);
-  border-color: var(--ac);
-}
 </style>
 </head>
 <body>
 
 <div id="app">
   <header id="top">
-    <!-- 1. Ticker / Coin -->
     <input type="text" id="ci" class="ci" value="BTC" spellcheck="false" maxlength="14" autocomplete="off">
-    
-    <!-- 2. Price & 24H -->
-    <div class="hud" style="margin: 0 8px;">
-      <div class="hud-it keep"><span class="hud-lb">PRICE</span><span class="hud-vl" id="hp">--</span></div>
-      <div class="hud-it keep"><span class="hud-lb">24H</span><span class="hud-vl" id="hc">--</span></div>
-    </div>
-
-    <!-- 3. Timeframes -->
     <div class="tfs" id="tfs">
       <button class="tf" data-tf="1m">1M</button>
       <button class="tf active" data-tf="5m">5M</button>
@@ -316,32 +212,17 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--t1);font-famil
       <button class="tf" data-tf="4h">4H</button>
       <button class="tf" data-tf="1d">1D</button>
     </div>
-    
     <div class="sp"></div>
-    
-    <!-- 4. Icons -->
+    <div class="hud">
+      <div class="hud-it keep"><span class="hud-lb">PRICE</span><span class="hud-vl" id="hp">--</span></div>
+      <div class="hud-it keep"><span class="hud-lb">24H</span><span class="hud-vl" id="hc">--</span></div>
+    </div>
     <button class="ib" id="bi" title="Indicators"><i class="fa-solid fa-chart-simple"></i></button>
     <button class="ib" id="bs" title="Chart Style"><i class="fa-solid fa-chart-line"></i></button>
   </header>
 
- <div id="main">
-    <!-- LEFT BAR (Default-ը բաց է, առանց 'collapsed' class-ի) -->
-    <aside id="left-bar">
-      <button class="tb-btn active" data-tool="cross" title="Crosshair"><i class="fa-solid fa-arrow-pointer"></i></button>
-      <button class="tb-btn" data-tool="trend-line" title="Trend Line"><i class="fa-solid fa-slash"></i></button>
-      <button class="tb-btn" data-tool="brush" title="Brush"><i class="fa-solid fa-pen"></i></button>
-      <button class="tb-btn" data-tool="rectangle" title="Rectangle"><i class="fa-solid fa-vector-square"></i></button>
-      <div style="flex:1"></div>
-      <button class="tb-btn del" id="tb-del-all" title="Delete All"><i class="fa-solid fa-trash"></i></button>
-    </aside>
-
+  <div id="main">
     <div id="stack">
-      <!-- Ձախ պանելի բացել/փակելու կոճակը -->
-      <button class="left-toggle-btn" id="left-toggle" title="Toggle Toolbar">
-        <i class="fa-solid fa-chevron-left" id="left-toggle-icon"></i>
-      </button>
-
-      <!-- Qo hin stack-i mejinutyuny sharunakvum e aysteghic... -->
       <div class="pnl main" id="p-main">
         <div class="pnl-body">
           <div class="lw" id="c-main"></div>
@@ -356,18 +237,9 @@ html,body{width:100%;height:100%;background:var(--bg);color:var(--t1);font-famil
       <!-- Physical vertical line — spans full height of #stack -->
       <div id="xh-line"></div>
       <div id="xh-label"></div>
-      
-      <!-- AVELACRAC KNOPKAN STACK-I VERJUM -->
-      <button class="ctrl-toggle-btn" id="ctrl-toggle" title="Toggle Panel">
-        <i class="fa-solid fa-chevron-left" id="ctrl-toggle-icon"></i>
-      </button>
     </div>
 
-    <!-- CTRL PANELY SKZBIC PHAK E (class="collapsed") -->
-    <aside id="ctrl" class="collapsed">
-      <!-- RESIZER -->
-      <div class="ctrl-rz-x" id="ctrl-resizer"></div>
-
+    <aside id="ctrl">
       <div class="lb">
         <div class="lb-hd alert"><i class="fa-solid fa-bell"></i><span>Price Alert</span></div>
         <div class="lb-row"><input type="number" id="pa" class="lb-in" placeholder="price" step="any"></div>
@@ -688,6 +560,7 @@ const ENGINE = (() => {
   }
 
   /* ═══════════════ MAIN CHART ═══════════════ */
+  /* ═══════════════ MAIN CHART ═══════════════ */
   function buildMain(){
     const container = $('#c-main');
     container.innerHTML = '';
@@ -725,84 +598,6 @@ const ENGINE = (() => {
     hookTimeScale(ch);
     XH.hook(ch, 'main');
     setupCursorTracker(ch);
-
-    import('https://esm.sh/lightweight-charts-drawing').then(({ DrawingManager, getToolRegistry }) => {
-    S.dm = new DrawingManager();
-    S.dm.attach(ch, S.series.candle, container);
-    const registry = getToolRegistry();
-
-    let tool = 'cross', anchors = [], prevId = 'preview', isDrawing = false;
-    const clearPrev = () => { try { S.dm.removeDrawing(prevId); } catch(e){} };
-
-    container.addEventListener('mousedown', e => {
-      if(!tool || tool === 'cross') return;
-      const rc = container.getBoundingClientRect();
-      const time = ch.timeScale().coordinateToTime(e.clientX - rc.left);
-      const price = S.series.candle.coordinateToPrice(e.clientY - rc.top);
-      if(!time || !price) return;
-
-      if (tool === 'brush') {
-        isDrawing = true;
-        anchors = [{time, price}];
-      } else {
-        anchors.push({time, price});
-        const req = registry.get(tool)?.requiredAnchors || 2;
-        if(anchors.length >= req) {
-          clearPrev();
-          const d = registry.createDrawing(tool, 'd-'+Date.now(), [...anchors], { lineColor:'#00ffd5', lineWidth:2, fillColor:'rgba(0,255,213,0.1)' });
-          if(d) S.dm.addDrawing(d);
-          anchors = [];
-        }
-      }
-    });
-
-    container.addEventListener('mousemove', e => {
-      if(!tool || tool === 'cross' || !anchors.length) return;
-      const rc = container.getBoundingClientRect();
-      const time = ch.timeScale().coordinateToTime(e.clientX - rc.left);
-      const price = S.series.candle.coordinateToPrice(e.clientY - rc.top);
-      if(!time || !price) return;
-
-      if (tool === 'brush' && isDrawing) {
-        anchors.push({time, price});
-        clearPrev();
-        const d = registry.createDrawing(tool, prevId, [...anchors], { lineColor:'#00ffd5', lineWidth:2 });
-        if(d) S.dm.addDrawing(d);
-      } else if (tool !== 'brush') {
-        clearPrev();
-        const pts = [...anchors];
-        const req = registry.get(tool)?.requiredAnchors || 2;
-        while(pts.length < req) pts.push({time, price});
-        const d = registry.createDrawing(tool, prevId, pts, { lineColor:'#00ffd5', lineWidth:2, fillColor:'rgba(0,255,213,0.1)' });
-        if(d) S.dm.addDrawing(d);
-      }
-    });
-
-    container.addEventListener('mouseup', () => {
-      if (tool === 'brush' && isDrawing) {
-        isDrawing = false;
-        clearPrev();
-        if(anchors.length > 1) {
-          const d = registry.createDrawing(tool, 'd-'+Date.now(), [...anchors], { lineColor:'#00ffd5', lineWidth:2 });
-          if(d) S.dm.addDrawing(d);
-        }
-        anchors = [];
-      }
-    });
-
-    document.querySelectorAll('#left-bar .tb-btn[data-tool]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#left-bar .tb-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        tool = btn.dataset.tool;
-        anchors = []; clearPrev();
-        ch.applyOptions({ handleScroll: tool==='cross', handleScale: tool==='cross' });
-        container.style.cursor = tool==='cross' ? 'default' : 'crosshair';
-      });
-    });
-
-    document.getElementById('tb-del-all').addEventListener('click', () => S.dm.clearAll());
-  }).catch(() => console.warn('Drawing UI failed'));
   }
 
   function setupCursorTracker(ch){
@@ -1911,8 +1706,6 @@ ctx.clearRect(0,0,W,H);
       });
     });
 
-
-
     $('#bi').addEventListener('click', e => { e.stopPropagation(); openDropdown($('#mi'), e.currentTarget); });
     $('#bs').addEventListener('click', e => { e.stopPropagation(); openDropdown($('#ms'), e.currentTarget); });
     document.addEventListener('click', e => {
@@ -1929,68 +1722,6 @@ ctx.clearRect(0,0,W,H);
     $$('#ms .ddi').forEach(el => {
       el.addEventListener('click', ()=>{ setStyle(el.dataset.st); closeDropdown(); });
     });
-
-    const ctrl = document.getElementById('ctrl');
-const toggleBtn = document.getElementById('ctrl-toggle');
-const toggleIcon = document.getElementById('ctrl-toggle-icon');
-const resizer = document.getElementById('ctrl-resizer');
-
-if(toggleBtn && ctrl) {
-  toggleBtn.addEventListener('click', () => {
-    ctrl.classList.toggle('collapsed');
-    const isCol = ctrl.classList.contains('collapsed');
-    toggleIcon.className = isCol ? 'fa-solid fa-chevron-left' : 'fa-solid fa-chevron-right';
-    
-    // Spasum enq transition-y prcni, vor chart-y resize lini
-    setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
-    }, 250);
-  });
-}
-
-if(resizer && ctrl) {
-  let isResizing = false;
-  resizer.addEventListener('pointerdown', e => {
-    isResizing = true;
-    resizer.setPointerCapture(e.pointerId);
-    e.preventDefault();
-  });
-
-  resizer.addEventListener('pointermove', e => {
-    if (!isResizing) return;
-    const newWidth = window.innerWidth - e.clientX;
-    if (newWidth >= 140 && newWidth <= 500) {
-      ctrl.style.width = newWidth + 'px';
-    }
-  });
-
-  const stopResize = e => {
-    if (!isResizing) return;
-    isResizing = false;
-    try { resizer.releasePointerCapture(e.pointerId); } catch(err){}
-    window.dispatchEvent(new Event('resize'));
-  };
-
-  resizer.addEventListener('pointerup', stopResize);
-  resizer.addEventListener('pointercancel', stopResize);
-}
-
-const leftBar = document.getElementById('left-bar');
-const leftToggle = document.getElementById('left-toggle');
-const leftToggleIcon = document.getElementById('left-toggle-icon');
-
-if (leftToggle && leftBar) {
-  leftToggle.addEventListener('click', () => {
-    leftBar.classList.toggle('collapsed');
-    const isCol = leftBar.classList.contains('collapsed');
-    leftToggleIcon.className = isCol ? 'fa-solid fa-chevron-right' : 'fa-solid fa-chevron-left';
-    
-    // Սպասում ենք անիմացիան ավարտվի, որ չարթը ճիշտ չափեր ստանա
-    setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
-    }, 250);
-  });
-}
 
     const tgSave = ()=>{
       S.tg.token = $('#tg-tok').value.trim();
