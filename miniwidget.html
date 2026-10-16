@@ -1,932 +1,707 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="widgetTitle">AetherStream Core: Crypto Data</title>
-    
-    <style>
-        /* --- AetherStream Core Variables (FROM 3-2) --- */
-        :root {
-            --color-bg-deep: #080c18; /* Глубокий, почти черный фон */
-            --color-bg-glass: rgba(18, 26, 45, 0.4); /* Полупрозрачный фон */
-            --color-border-neon: rgba(58, 134, 255, 0.4); /* Неоновая рамка */
-            --color-accent-neon: #3a86ff; /* Основной неоновый синий */
-            --color-text-main: #e0f0ff;
-            --color-text-dim: #7084a0;
-            --color-gain: #00ff88; /* Cyber Green */
-            --color-loss: #ff3366; /* Neon Pink */
-            --glow-gain: 0 0 10px #00ff88;
-            --glow-loss: 0 0 10px #ff3366;
-            --font-digital: 'Share Tech Mono', monospace;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sparkline · MiniWidget</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* --- Custom Font Import (Digital/Tech Look) --- */
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600;700&display=swap');
+    html, body {
+        width: 100%; height: 100%;
+        overflow: hidden;
+        background: #030303;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+        color: #f0f0f0;
+    }
 
-        /* --- Базовые стили и Reset (FROM 3-2) --- */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-        }
+    .spark-widget {
+        --accent: #00ffd5;
+        --accent-dim: rgba(0,255,213,0.08);
+        --accent-border: rgba(0,255,213,0.2);
+        --text-main: #f0f0f0;
+        --text-muted: #666;
+        --border-thin: rgba(255,255,255,0.06);
+        --bg-chart: rgba(0,0,0,0.4);
+        --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+        --up: #00ffc8;
+        --down: #a855f7;
+        width: 100%; height: 100%;
+        display: flex; flex-direction: column;
+        padding: 14px;
+        position: relative;
+        overflow: hidden;
+    }
 
-        body {
-            background: var(--color-bg-deep);
-            color: var(--color-text-main);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-            overflow: hidden; 
-        }
+    /* ── HEADER ── */
+    .sp-header {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 10px;
+        flex-shrink: 0;
+    }
+    .sp-title {
+        display: flex; align-items: center; gap: 7px;
+        min-width: 0;
+    }
+    .sp-bolt { width: 14px; height: 14px; color: var(--accent); flex-shrink: 0; }
+    .sp-input {
+        background: transparent;
+        color: var(--text-main);
+        border: none;
+        border-bottom: 1px dashed var(--border-thin);
+        padding: 0 0 1px;
+        font-size: 12px;
+        font-weight: 800;
+        font-family: var(--font-mono);
+        width: 90px;
+        text-transform: uppercase;
+        outline: none;
+        transition: border-color 0.25s ease;
+    }
+    .sp-input:focus { border-color: var(--accent); }
+    .sp-live {
+        display: flex; align-items: center; gap: 4px;
+        font-family: var(--font-mono);
+        font-size: 8px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        color: var(--accent);
+        background: var(--accent-dim);
+        border: 1px solid var(--accent-border);
+        padding: 2px 6px;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+    .sp-live-dot {
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 5px var(--accent);
+        animation: sp-pulse 1.5s infinite;
+    }
+    @keyframes sp-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.5; transform: scale(0.85); }
+    }
 
-        /* --- Фоны с градиентами (FROM 3-2) --- */
-        body::before {
-            content: '';
-            position: fixed;
-            top: -50vh;
-            left: -50vw;
-            width: 200vw;
-            height: 200vh;
-            background: radial-gradient(circle at 10% 90%, rgba(58, 134, 255, 0.08) 0%, transparent 50%),
-                        radial-gradient(circle at 90% 10%, rgba(131, 56, 236, 0.08) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: -1;
-        }
+    /* ── PRICE ── */
+    .sp-price-row {
+        display: flex; justify-content: flex-end; align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 10px;
+        flex-shrink: 0;
+    }
+    .sp-price {
+        font-family: var(--font-mono);
+        font-size: clamp(18px, 5.5vw, 28px);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -1px;
+        text-shadow: 0 0 20px rgba(255,255,255,0.08);
+        transition: color 0.3s ease;
+    }
+    .sp-change {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 5px;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
 
-        /* --- Основной контейнер виджета (FROM 3-2) --- */
-        .aetherstream-core {
-            width: 90%;
-            max-width: 480px;
-            min-width: 320px;
-            
-            background: var(--color-bg-glass);
-            border-radius: 20px;
-            border: 1px solid var(--color-border-neon);
-            
-            /* Glassmorphism Effect */
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            
-            box-shadow: 
-                0 0 30px rgba(58, 134, 255, 0.2), 
-                0 4px 60px rgba(0, 0, 0, 0.5); 
-                
-            padding: 25px;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.3s ease-in-out;
-        }
-        
-  /* .aetherstream-core:hover {
-       
-         transform: translateY(-5px);
-         box-shadow: 0 0 40px var(--color-accent-neon), 0 4px 60px rgba(0, 0, 0, 0.6);
-       
-      }*/
+    /* ── CHART ── */
+    .sp-chart-wrap {
+        flex: 1;
+        position: relative;
+        background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.4) 100%);
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.03);
+        overflow: hidden;
+        margin-bottom: 10px;
+        min-height: 60px;
+    }
+    #chartCanvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+    .sp-loading, .sp-error {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 2px;
+        font-weight: 700;
+        text-align: center;
+        pointer-events: none;
+        z-index: 5;
+    }
+    .sp-loading { color: var(--accent); text-shadow: 0 0 10px var(--accent); display: none; }
+    .sp-error   { color: #ff2a5f; text-shadow: 0 0 10px rgba(255,42,95,0.5); display: none; }
+    .sp-tooltip {
+        position: absolute;
+        background: rgba(10,10,12,0.95);
+        color: var(--text-main);
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-family: var(--font-mono);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.1s ease;
+        transform: translate(-50%, -100%);
+        border: 1px solid var(--accent-dim);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        z-index: 20;
+        white-space: nowrap;
+        text-align: center;
+    }
 
-        /* --- Шапка: Цена и Переключатель (FROM 3-2) --- */
-        .header-dynamic {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-        }
+    /* ── FOOTER ── */
+    .sp-footer {
+        display: flex; justify-content: space-between; align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+    }
+    .sp-hl { display: flex; gap: 10px; font-size: 9px; color: var(--text-muted); font-family: var(--font-mono); }
+    .sp-hl strong { color: var(--text-main); }
+    .sp-tfs { display: flex; gap: 4px; }
+    .sp-tab {
+        background: transparent;
+        border: 1px solid var(--border-thin);
+        color: var(--text-muted);
+        padding: 4px 8px;
+        font-size: 9px;
+        font-weight: 700;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: var(--font-mono);
+        letter-spacing: 0.4px;
+        transition: all 0.2s ease;
+    }
+    .sp-tab:hover { color: var(--text-main); border-color: rgba(255,255,255,0.15); }
+    .sp-tab.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
 
-        .price-display {
-            line-height: 1;
-        }
-        
-        .current-price {
-            font-family: var(--font-digital);
-            font-size: 2.5em;
-            font-weight: 700;
-            color: var(--color-text-main);
-            text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
-            margin-bottom: 5px;
-            transition: color 0.3s ease, text-shadow 0.3s ease;
-        }
-
-        .price-change {
-            font-size: 0.9em;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 6px;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-        }
-
-        /* --- Coin Selector (FROM 3-2) --- */
-        .coin-selector-container {
-            position: relative;
-            display: inline-block;
-        }
-        
-        #coinSelect {
-            appearance: none; 
-            background: var(--color-bg-glass);
-            color: var(--color-text-main);
-            font-family: var(--font-digital);
-            font-size: 1.1em;
-            font-weight: 600;
-            padding: 8px 30px 8px 15px;
-            border-radius: 10px;
-            border: 1px solid var(--color-border-neon);
-            cursor: pointer;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-        
-        #coinSelect:hover {
-            border-color: var(--color-accent-neon);
-            box-shadow: 0 0 15px rgba(58, 134, 255, 0.5);
-        }
-
-        .coin-selector-container::after {
-            content: '▼';
-            font-size: 0.7em;
-            color: var(--color-accent-neon);
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            pointer-events: none;
-        }
-
-        /* --- Chart Area & Metrics (FROM 3-2) --- */
-        .chart-area {
-            position: relative;
-            height: 320px; 
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 16px;
-            padding: 10px; 
-            overflow: hidden;
-            margin: 20px 0; 
-            border: 1px solid rgba(100, 150, 200, 0.1);
-            /* Убеждаемся, что touch-события обрабатываются внутри */
-            touch-action: none; 
-        }
-        
-        #sparklineChart {
-            width: 100%;
-            height: 100%;
-            display: block; 
-        }
-
-        .loading {
-            font-family: var(--font-digital);
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: var(--color-accent-neon);
-            text-shadow: 0 0 8px var(--color-accent-neon);
-            font-size: 1.1em;
-            z-index: 10;
-        }
-
-        .chart-metrics {
-            display: flex;
-              
-            justify-content: space-between;
-            margin-top: 10px;
-            margin-bottom: 4.5px;
-            gap: 19px;
-            font-size: 13px;
-          
-            color: var(--color-text-dim);
-            text-transform: uppercase;
-        }
-
-        .metric-item strong {
-            color: var(--color-text-main);
-            font-weight: 700;
-            margin-left: 5px;
-            font-family: var(--font-digital);
-            text-shadow: 0 0 3px rgba(255, 255, 255, 0.2);
-        }
-        
-        /* --- Timeframe Selector (FROM 3-2) --- */
-        .timeframe-selector {
-            display: flex;
-            justify-content: space-between; 
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 10px;
-            padding: 3px;
-            width: 100%;
-            position: relative;
-            z-index: 5; 
-            border: 1px solid rgba(58, 134, 255, 0.2);
-        }
-        
-        .timeframe {
-            flex-grow: 1;
-            text-align: center;
-            padding: 8px 0;
-            color: var(--color-text-dim);
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            position: relative;
-        }
-        
-        .timeframe:hover {
-            color: var(--color-text-main);
-        }
-        
-        .timeframe.active {
-            background: var(--color-accent-neon);
-            color: var(--color-bg-deep); 
-            font-weight: 700;
-            box-shadow: 0 0 15px rgba(58, 134, 255, 0.6);
-            transform: scale(1.03);
-        }
-        
-        /* --- Tooltip (FROM 3-2) --- */
-        #hoverTooltip {
-            position: absolute;
-            background: rgba(18, 26, 45, 0.95);
-            color: var(--color-text-main);
-            padding: 10px 15px;
-            border-radius: 12px;
-            font-size: 14px;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.1s ease, transform 0.1s ease;
-            transform: translate(-50%, calc(-100% - 15px)); 
-            border: 1px solid var(--color-accent-neon);
-            box-shadow: 0 0 10px rgba(58, 134, 255, 0.5);
-            z-index: 100;
-            font-family: var(--font-digital);
-        }
-
-        #hoverTooltip .price {
-            font-weight: 700;
-            color: var(--color-gain); 
-            margin-right: 5px;
-            text-shadow: var(--glow-gain);
-        }
-        
-        #hoverTooltip .time {
-            color: var(--color-text-dim);
-            font-size: 12px;
-            margin-top: 3px;
-            display: block;
-        }
-
-        .data-source {
-            position: absolute;
-            bottom: 1px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: rgba(160, 180, 220, 0.4);
-            font-size: 11px;
-            text-transform: uppercase;
-            font-family: var(--font-digital);
-            letter-spacing: 1px;
-        }
-
-        /* --- Media Queries (FROM 3-2) --- */
-        @media (max-width: 480px) {
-            .aetherstream-core {
-                width: 100%;
-                max-width: none;
-                padding: 15px; 
-                border-radius: 0; 
-                min-height: 100vh;
-                border-left: none;
-                border-right: none;
-            }
-            .current-price { font-size: 2em; }
-            .timeframe { font-size: 13px; padding: 6px 0; }
-            .chart-area { height: 250px; }
-        }
-    </style>
+    @media (max-width: 260px) {
+        .spark-widget { padding: 10px; }
+        .sp-price { font-size: 16px; }
+        .sp-hl { display: none; }
+    }
+</style>
 </head>
 <body>
-    <div class="aetherstream-core">
-        
-        <div class="header-dynamic">
-            <div class="price-display">
-                <div class="current-price">Loading...</div>
-                <div class="price-change">-.-%</div>
-            </div>
-            
-            <div class="coin-selector-container">
-                <select id="coinSelect" title="Select Cryptocurrency"></select>
-            </div>
+<div class="spark-widget" id="root">
+    <div class="sp-header">
+        <div class="sp-title">
+            <svg class="sp-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            <input type="text" id="coinInput" class="sp-input" value="BTCUSDT" list="coinList" spellcheck="false" autocomplete="off" autocapitalize="characters">
+            <datalist id="coinList"></datalist>
         </div>
-
-        <div class="chart-area">
-            <div class="loading" id="loadingState">AetherStream Loading...</div>
-            <canvas id="sparklineChart"></canvas>
-            <div id="hoverTooltip"></div>
-            <div class="data-source">Source: Binance</div>
-        </div>
-
-        <div class="chart-metrics">
-            <div class="metric-item">High: <strong id="highPrice">--.--</strong></div>
-            <div class="metric-item">Low: <strong id="lowPrice">--.--</strong></div>
-        </div>
-        
-        <div class="timeframe-selector">
-            <div class="timeframe active" data-interval="1h" data-limit="24">24H</div>
-            <div class="timeframe" data-interval="4h" data-limit="42">7D</div>
-            <div class="timeframe" data-interval="1d" data-limit="30">1M</div>
-            <div class="timeframe" data-interval="1w" data-limit="52">1Y</div>
-        </div>
-      
+        <div class="sp-live"><span class="sp-live-dot"></span> LIVE</div>
     </div>
 
-    <script>
-        // --- Константы и глобальные переменные ---
-        const API_BASE = 'https://api.binance.com/api/v3';
-        const DPI = window.devicePixelRatio || 1; 
-        const MARKET_DATA_REFRESH_INTERVAL = 15000; 
-        
-        const COLOR_GAIN_HEX = '#00ff88'; // Cyber Green
-        const COLOR_LOSS_HEX = '#ff3366'; // Neon Pink
-        
-        let currentCoinId = 'BTCUSDT'; 
-        let priceData = []; 
-        let rawPrices = []; 
-        let animationFrameId = null; 
-        let lastMouseX = -1;
-        let marketDataIntervalId = null;
-        
-        let pulseAnimationFrameId = null;
-        let pulseTimeStart = null;
-        const PULSE_DURATION = 1500; 
+    <div class="sp-price-row">
+        <div class="sp-price" id="priceEl">--</div>
+        <div class="sp-change" id="changeEl">--</div>
+    </div>
 
+    <div class="sp-chart-wrap" id="chartWrap">
+        <div class="sp-loading" id="loadingEl">SYNCING...</div>
+        <div class="sp-error" id="errorEl">⚠ API UNREACHABLE</div>
+        <canvas id="chartCanvas"></canvas>
+        <div class="sp-tooltip" id="tooltipEl"></div>
+    </div>
 
-    // ==================== URL PARAMETERS HANDLING ====================
-function getUrlParam(name) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(name);
-}
+    <div class="sp-footer">
+        <div class="sp-hl">
+            <span>H: <strong id="highEl">--</strong></span>
+            <span>L: <strong id="lowEl">--</strong></span>
+        </div>
+        <div class="sp-tfs" id="tfSelector">
+            <button class="sp-tab active" data-interval="1h" data-limit="24">24H</button>
+            <button class="sp-tab" data-interval="4h" data-limit="42">7D</button>
+            <button class="sp-tab" data-interval="1d" data-limit="30">1M</button>
+        </div>
+    </div>
+</div>
 
-function applyUrlParams() {
-    const urlSymbol = getUrlParam('symbol');
-    
-    if (urlSymbol) {
-        const symbolValue = urlSymbol.toUpperCase();
-        
-        // Check if symbol exists in SYMBOL_NAMES
-        if (SYMBOL_NAMES[symbolValue]) {
-            currentCoinId = symbolValue;
-            console.log(`✅ Symbol set from URL: ${symbolValue}`);
-            return true;
-        } else {
-            console.warn(`⚠️ Symbol not found: ${symbolValue}`);
+<script>
+(function() {
+    'use strict';
+
+    /* ═══════════════════════════════════════════════════════
+       CONFIG
+       ═══════════════════════════════════════════════════════ */
+    const API_BASE = 'https://api.binance.com/api/v3';
+    const DPI = window.devicePixelRatio || 1;
+    const PULSE_DURATION = 2000;
+    const DEFAULT_SYMBOL = 'BTCUSDT';
+    const DEFAULT_INTERVAL = '1h';
+    const DEFAULT_LIMIT = 24;
+    const REFRESH_MS = 30000;
+
+    const SYMBOL_NAMES = {
+        'BTCUSDT': 'BITCOIN', 'ETHUSDT': 'ETHEREUM', 'SOLUSDT': 'SOLANA',
+        'BNBUSDT': 'BNB', 'XRPUSDT': 'RIPPLE', 'DOGEUSDT': 'DOGECOIN',
+        'ADAUSDT': 'CARDANO', 'AVAXUSDT': 'AVALANCHE', 'LINKUSDT': 'CHAINLINK'
+    };
+
+    /* ═══════════════════════════════════════════════════════
+       URL PARSING — /miniwidget/BTCUSDT  |  ?symbol=  |  #hash
+       ═══════════════════════════════════════════════════════ */
+    function parseUrl() {
+        const params = new URLSearchParams(location.search);
+        const hash = location.hash.replace(/^#\/?/, '').trim();
+        const pathParts = location.pathname.split('/').filter(Boolean);
+        const lastPath = (pathParts[pathParts.length - 1] || '').trim();
+
+        const IGNORE = ['miniwidget', 'tickername', 'sparkline', 'widget', 'index', ''];
+        const isSymbolLike = /^[A-Za-z0-9]{2,12}$/.test(lastPath) &&
+                             !IGNORE.includes(lastPath.toLowerCase());
+
+        let symbol = '';
+        let explicit = false;
+
+        if (params.get('symbol'))      { symbol = params.get('symbol'); explicit = true; }
+        else if (params.get('s'))      { symbol = params.get('s');      explicit = true; }
+        else if (hash)                 { symbol = hash;                 explicit = true; }
+        else if (isSymbolLike)         { symbol = lastPath;             explicit = true; }
+
+        symbol = symbol.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (symbol && !symbol.includes('USDT') && !symbol.includes('USD')) symbol += 'USDT';
+        if (!symbol) symbol = DEFAULT_SYMBOL;
+
+        return {
+            symbol,
+            interval: params.get('interval') || params.get('tf') || DEFAULT_INTERVAL,
+            limit: parseInt(params.get('limit')) || DEFAULT_LIMIT,
+            explicit
+        };
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       DOM
+       ═══════════════════════════════════════════════════════ */
+    const $ = (s) => document.querySelector(s);
+    const els = {
+        input:     $('#coinInput'),
+        datalist:  $('#coinList'),
+        price:     $('#priceEl'),
+        change:    $('#changeEl'),
+        high:      $('#highEl'),
+        low:       $('#lowEl'),
+        loading:   $('#loadingEl'),
+        error:     $('#errorEl'),
+        canvas:    $('#chartCanvas'),
+        chartWrap: $('#chartWrap'),
+        tooltip:   $('#tooltipEl'),
+        tfs:       document.querySelectorAll('#tfSelector .sp-tab')
+    };
+    const ctx = els.canvas.getContext('2d');
+
+    /* ═══════════════════════════════════════════════════════
+       STATE
+       ═══════════════════════════════════════════════════════ */
+    const url = parseUrl();
+    const state = {
+        symbol: url.symbol,
+        interval: url.interval,
+        limit: url.limit,
+        destroyed: false
+    };
+
+    let priceData = [];
+    let rawPrices = [];
+    let animId = null;
+    let pulseId = null;
+    let pulseStart = null;
+    let lastMouseX = -1;
+    let refreshTimer = null;
+    const dataCache = new Map();   // cacheKey → { marketData, chartData }
+
+    const config = {
+        padding: { top: 15, right: 10, bottom: 10, left: 10 },
+        hoverLineColor: 'rgba(255,255,255,0.15)'
+    };
+
+    /* ═══════════════════════════════════════════════════════
+       HELPERS
+       ═══════════════════════════════════════════════════════ */
+    function formatPrice(price) {
+        const num = parseFloat(price);
+        if (!isFinite(num)) return '--';
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency', currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: num > 100 ? 2 : 6
+        }).format(num);
+    }
+    const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} };
+    const lsGet = (k)    => { try { return localStorage.getItem(k); } catch(e) { return null; } };
+
+    function notifyParent(type, data) {
+        try {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage(Object.assign({ type }, data || {}), '*');
+            }
+        } catch (e) {}
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       FETCH
+       ═══════════════════════════════════════════════════════ */
+    async function fetchChartData(symbol, interval, limit) {
+        const url = `${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+        const data = await fetch(url, { cache: 'no-store' }).then(r => r.json());
+        if (!Array.isArray(data)) return [];
+        return data.map(k => [parseInt(k[0]), parseFloat(k[4])]);
+    }
+
+    function applyMarketData(d) {
+        if (!d || d.code) return;
+        const chg = parseFloat(d.priceChangePercent);
+        els.price.textContent = formatPrice(d.lastPrice);
+        const isUp = chg >= 0;
+        const upCol = '#00ffc8', dnCol = '#a855f7';
+        els.price.style.color = isUp ? upCol : dnCol;
+        els.change.textContent = `${isUp ? '+' : ''}${chg.toFixed(2)}%`;
+        els.change.style.color = isUp ? upCol : dnCol;
+        els.change.style.background = isUp ? 'rgba(0,255,200,0.1)' : 'rgba(168,85,247,0.1)';
+        els.change.style.border = isUp ? '1px solid rgba(0,255,200,0.2)' : '1px solid rgba(168,85,247,0.2)';
+        els.high.textContent = formatPrice(d.highPrice);
+        els.low.textContent  = formatPrice(d.lowPrice);
+    }
+
+    async function updateWidget(symbol) {
+        if (state.destroyed) return;
+
+        const cacheKey = `${symbol}:${state.interval}:${state.limit}`;
+        const cached = dataCache.get(cacheKey);
+
+        // ⚡ Instant paint from cache (եթե կա)
+        if (cached) {
+            applyMarketData(cached.marketData);
+            priceData = cached.chartData;
+            rawPrices = priceData.map(p => p[1]);
+            els.loading.style.display = 'none';
+            if (!pulseId) pulseId = requestAnimationFrame(animatePulse);
+        } else if (!rawPrices.length) {
+            els.loading.style.display = 'block';
+        }
+
+        els.error.style.display = 'none';
+
+        try {
+            const [marketData, chartData] = await Promise.all([
+                fetch(`${API_BASE}/ticker/24hr?symbol=${symbol}`, { cache: 'no-store' }).then(r => r.json()),
+                fetchChartData(symbol, state.interval, state.limit)
+            ]);
+            if (state.destroyed) return;
+
+            if (!marketData || marketData.code) {
+                if (!cached) showError();
+                return;
+            }
+
+            dataCache.set(cacheKey, { marketData, chartData });
+
+            applyMarketData(marketData);
+            priceData = chartData;
+            rawPrices = priceData.map(p => p[1]);
+            els.loading.style.display = 'none';
+
+            if (!pulseId) pulseId = requestAnimationFrame(animatePulse);
+        } catch (e) {
+            if (state.destroyed) return;
+            if (!cached) showError();
         }
     }
-    
-    return false;
-}
 
-
-
-        // Расширенный список символов 
-        const SYMBOL_NAMES = {
-            'BTCUSDT': 'BITCOIN', 'ETHUSDT': 'ETHEREUM', 'BNBUSDT': 'BNB', 
-            'XRPUSDT': 'RIPPLE', 'ADAUSDT': 'CARDANO', 'SOLUSDT': 'SOLANA', 
-            'DOGEUSDT': 'DOGECOIN', 'MATICUSDT': 'POLYGON', 'DOTUSDT': 'POLKADOT', 
-            'TRXUSDT': 'TRON', 'LINKUSDT': 'CHAINLINK', 'LTCUSDT': 'LITECOIN', 
-            'BCHUSDT': 'BITCOIN CASH', 'AVAXUSDT': 'AVALANCHE', 'UNIUSDT': 'UNISWAP',
-            'PEPEUSDT': 'PEPE', 'BONKUSDT': 'BONK', 'INJUSDT': 'INJECTIVE', 
-            'APTUSDT': 'APTOS', 'ATOMUSDT': 'COSMOS', 'FILUSDT': 'FILECOIN', 
-            'ETCUSDT': 'ETHEREUM CLASSIC', 'XLMUSDT': 'STELLAR', 'ARBUSDT': 'ARBITRUM',
-            'TONUSDT': 'TON', 
-        };
-
-        const elements = {
-            widgetTitle: document.getElementById('widgetTitle'),
-            currentPrice: document.querySelector('.current-price'),
-            priceChange: document.querySelector('.price-change'),
-            highPrice: document.getElementById('highPrice'),
-            lowPrice: document.getElementById('lowPrice'),
-            timeframes: document.querySelectorAll('.timeframe'),
-            loadingState: document.getElementById('loadingState'),
-            coinSelect: document.getElementById('coinSelect'),
-            canvas: document.getElementById('sparklineChart'),
-            tooltip: document.getElementById('hoverTooltip'),
-        };
-        const ctx = elements.canvas.getContext('2d');
-        
-        let config = {
-            interval: '1h', 
-            limit: 24,      
-            padding: { top: 10, right: 10, bottom: 10, left: 10 }, 
-            hoverLineColor: 'rgba(58, 134, 255, 0.7)' 
-        };
-        
-        let lastTrendPositive = false; 
-
-        // --- Utility Functions ---
-        function formatPrice(price) {
-             const numPrice = parseFloat(price);
-            if (isNaN(numPrice)) return '--.--';
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD', 
-                minimumFractionDigits: 2,
-                maximumFractionDigits: numPrice > 100 ? 2 : (numPrice > 1 ? 4 : 8)
-            }).format(numPrice).replace('$', ''); 
+    function showError() {
+        els.loading.style.display = 'none';
+        els.error.style.display = 'block';
+        if (!rawPrices.length) {
+            els.price.textContent = '--';
+            els.change.textContent = '--';
         }
-        
-        function formatDate(timestamp) {
-            return new Date(timestamp).toLocaleString('en-US', {
-                hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric'
-            });
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       DRAW
+       ═══════════════════════════════════════════════════════ */
+    function drawSparkline(hoverX, pulseScale) {
+        if (state.destroyed || !rawPrices.length) return;
+        hoverX = (hoverX === undefined) ? -1 : hoverX;
+        pulseScale = (pulseScale === undefined) ? 1 : pulseScale;
+
+        const rect = els.chartWrap.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+
+        els.canvas.width  = rect.width  * DPI;
+        els.canvas.height = rect.height * DPI;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(DPI, DPI);
+
+        ctx.clearRect(0, 0, rect.width, rect.height);
+        if (rawPrices.length < 2) return;
+
+        const width  = rect.width  - config.padding.left - config.padding.right;
+        const height = rect.height - config.padding.top  - config.padding.bottom;
+        if (width <= 0 || height <= 0) return;
+
+        const max = Math.max(...rawPrices);
+        const min = Math.min(...rawPrices);
+        const range = max - min;
+        if (range <= 0) return;
+
+        const isUp = rawPrices[rawPrices.length - 1] >= rawPrices[0];
+        const lineColor = isUp ? '#00ffc8' : '#a855f7';
+
+        const xScale = width / (rawPrices.length - 1);
+        const yScale = height / range;
+        const getX = i => config.padding.left + i * xScale;
+        const getY = p => config.padding.top + height - (p - min) * yScale;
+
+        // fill
+        ctx.beginPath();
+        ctx.moveTo(config.padding.left, rect.height);
+        ctx.lineTo(getX(0), getY(rawPrices[0]));
+        for (let i = 0; i < rawPrices.length - 1; i++) {
+            ctx.quadraticCurveTo((getX(i)+getX(i+1))/2, getY(rawPrices[i]), getX(i+1), getY(rawPrices[i+1]));
         }
-        
-        function setLoading(isLoading) {
-            elements.loadingState.style.display = isLoading ? 'block' : 'none';
+        ctx.lineTo(config.padding.left + width, rect.height);
+        ctx.closePath();
+        const grad = ctx.createLinearGradient(0, config.padding.top, 0, rect.height);
+        grad.addColorStop(0, lineColor + '60');
+        grad.addColorStop(1, lineColor + '00');
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // stroke
+        ctx.beginPath();
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = lineColor;
+        ctx.shadowBlur = 8;
+        ctx.moveTo(getX(0), getY(rawPrices[0]));
+        for (let i = 0; i < rawPrices.length - 1; i++) {
+            ctx.quadraticCurveTo((getX(i)+getX(i+1))/2, getY(rawPrices[i]), getX(i+1), getY(rawPrices[i+1]));
         }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
 
-        function stopPulseAnimation() {
-            if (pulseAnimationFrameId) {
-                window.cancelAnimationFrame(pulseAnimationFrameId);
-                pulseAnimationFrameId = null;
-                pulseTimeStart = null;
-            }
-        }
-
-        function startPulseAnimation() {
-            if (lastMouseX === -1 && !pulseAnimationFrameId && rawPrices.length > 0) {
-                 pulseTimeStart = null;
-                 pulseAnimationFrameId = window.requestAnimationFrame(animatePulse);
-            }
-        }
-        
-        function getSupportedSymbols() {
-             return Object.keys(SYMBOL_NAMES).map(symbol => ({
-                id: symbol,
-                name: SYMBOL_NAMES[symbol]
-            }));
-        }
-
-        // --- API Calls (Binance) ---
-        async function fetchChartData(symbol, interval, limit) {
-             setLoading(true);
-             try {
-                 const url = `${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-                 const response = await fetch(url);
-                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                 const data = await response.json();
-                 setLoading(false);
-                 if (data.code) throw new Error(`Binance API error: ${data.msg}`);
-                 return data.map(kline => [parseInt(kline[0]), parseFloat(kline[4]), parseFloat(kline[1])]); 
-             } catch (error) {
-                 console.error("Error fetching chart data from Binance:", error);
-                 setLoading(false);
-                 return [];
-             }
-        }
-
-        async function fetchMarketData(symbol) {
-             try {
-                const url = `${API_BASE}/ticker/24hr?symbol=${symbol}`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const data = await response.json();
-                 if (data.code) throw new Error(`Binance API error: ${data.msg}`);
-                return data;
-            } catch (error) {
-                console.error("Error fetching market data from Binance:", error);
-                return null;
-            }
-        }
-        
-        // --- Custom Update Logic (Glitch Effect & Neon Colors - FROM 3-2) ---
-        function updatePriceDisplay(marketData) {
-            if (!marketData || marketData.code) { 
-                elements.currentPrice.textContent = 'N/A';
-                elements.priceChange.textContent = '--';
-                elements.highPrice.textContent = '--';
-                elements.lowPrice.textContent = '--';
-                return;
-            }
-
-            const price = parseFloat(marketData.lastPrice);
-            const change24h = parseFloat(marketData.priceChangePercent);
-            const high24h = parseFloat(marketData.highPrice);
-            const low24h = parseFloat(marketData.lowPrice);
-            
-            const isUptrend = change24h >= 0;
-            const trendColor = isUptrend ? 'var(--color-gain)' : 'var(--color-loss)';
-            const bgColor = isUptrend ? 'rgba(0, 255, 136, 0.15)' : 'rgba(255, 51, 102, 0.15)';
-            const glow = isUptrend ? 'var(--glow-gain)' : 'var(--glow-loss)';
-            
-            const priceText = formatPrice(price);
-            
-            if (isUptrend !== lastTrendPositive) {
-                 // Animation here
-            }
-            
-            elements.currentPrice.textContent = priceText;
-            elements.currentPrice.style.color = trendColor;
-            elements.currentPrice.style.textShadow = glow;
-            
-            const changeText = `${isUptrend ? '▲ ' : '▼ '}${Math.abs(change24h).toFixed(2)}% (24H)`;
-            
-            elements.priceChange.textContent = changeText;
-            elements.priceChange.style.color = trendColor;
-            elements.priceChange.style.background = bgColor;
-            elements.priceChange.style.boxShadow = `0 0 5px ${trendColor}55`;
-
-            elements.highPrice.textContent = formatPrice(high24h);
-            elements.lowPrice.textContent = formatPrice(low24h);
-            
-            lastTrendPositive = isUptrend;
-        }
-        
-        /**
-         * Основная функция рисования графика.
-         */
-        function drawSparkline(hoverX = -1, pulseScale = 1) {
-            const prices = rawPrices;
-            if (prices.length < 2) {
-                ctx.clearRect(0, 0, elements.canvas.width, elements.canvas.height);
-                return;
-            }
-
-            const rect = elements.canvas.parentElement.getBoundingClientRect();
-            const cssWidth = rect.width;
-            const cssHeight = rect.height;
-            
-            elements.canvas.width = cssWidth * DPI;
-            elements.canvas.height = cssHeight * DPI;
-            ctx.scale(DPI, DPI);
-
-            const width = cssWidth - config.padding.left - config.padding.right;
-            const height = cssHeight - config.padding.top - config.padding.bottom;
-            
-            const allValues = priceData.map(p => p[1]); // Только Close Prices
-            const max = Math.max(...allValues);
-            const min = Math.min(...allValues);
-            let range = max - min;
-            
-            const isUptrend = prices[prices.length - 1] >= prices[0];
-            const lineColorHex = isUptrend ? COLOR_GAIN_HEX : COLOR_LOSS_HEX;
-
-            if (range <= 0.00000001) { 
-                range = 1; 
-            }
-
-            ctx.clearRect(0, 0, cssWidth * DPI, cssHeight * DPI);
-            
-            const xScale = width / (prices.length - 1);
-            const yScale = height / range;
-
-            const offset = range === 1 ? (height / 2) - (max - min) * yScale / 2 : 0; 
-
-            const getCanvasY = (price) => config.padding.top + height - (price - min) * yScale + offset;
-            const getCanvasX = (index) => config.padding.left + index * xScale;
-            
-            // --- 0. Рисование Horizon Line (Начальная цена периода) ---
-            const startingPrice = priceData[0][2]; 
-            const horizonY = getCanvasY(startingPrice);
-            
+        // pulse tip
+        const lastX = getX(rawPrices.length - 1);
+        const lastY = getY(rawPrices[rawPrices.length - 1]);
+        if (pulseScale > 1) {
             ctx.beginPath();
-            ctx.setLineDash([5, 5]); 
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; 
-            ctx.lineWidth = 1;
-            ctx.moveTo(config.padding.left, horizonY);
-            ctx.lineTo(cssWidth - config.padding.right, horizonY);
+            ctx.arc(lastX, lastY, 12 * pulseScale, 0, Math.PI * 2);
+            const alpha = Math.round((0.8 / pulseScale) * 255).toString(16).padStart(2, '0');
+            ctx.strokeStyle = lineColor + alpha;
+            ctx.lineWidth = Math.max(0.5, 2 * (2 - pulseScale));
             ctx.stroke();
-            ctx.setLineDash([]); 
-            
-            // 1. Рисование области под линией (Area - Holographic Gradient)
-            ctx.beginPath();
-            ctx.moveTo(config.padding.left, cssHeight - config.padding.bottom);
-            ctx.lineTo(getCanvasX(0), getCanvasY(prices[0]));
+        }
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
 
-            for (let i = 0; i < prices.length - 1; i++) {
-                const p1 = { x: getCanvasX(i), y: getCanvasY(prices[i]) };
-                const p2 = { x: getCanvasX(i + 1), y: getCanvasY(prices[i + 1]) };
-                const cpX1 = p1.x + (p2.x - p1.x) / 2;
-                const cpX2 = p2.x - (p2.x - p1.x) / 2;
-                ctx.bezierCurveTo(cpX1, p1.y, cpX2, p2.y, p2.x, p2.y);
-            }
-            
-            ctx.lineTo(config.padding.left + width, cssHeight - config.padding.bottom);
-            ctx.closePath();
-            
-            const areaGradient = ctx.createLinearGradient(0, config.padding.top, 0, cssHeight - config.padding.bottom);
-            areaGradient.addColorStop(0, lineColorHex + '60'); 
-            areaGradient.addColorStop(0.5, lineColorHex + '15');
-            areaGradient.addColorStop(1, lineColorHex + '05');
-            
-            ctx.fillStyle = areaGradient;
-            ctx.fill();
-
-            // 2. Рисование линии графика (Line - Neon Glow)
-            ctx.beginPath();
-            ctx.strokeStyle = lineColorHex; 
-            ctx.lineWidth = 2.5; 
-            ctx.shadowColor = lineColorHex; 
-            ctx.shadowBlur = 12; 
-            
-            ctx.moveTo(getCanvasX(0), getCanvasY(prices[0]));
-            for (let i = 0; i < prices.length - 1; i++) {
-                const p1 = { x: getCanvasX(i), y: getCanvasY(prices[i]) };
-                const p2 = { x: getCanvasX(i + 1), y: getCanvasY(prices[i + 1]) };
-                const cpX1 = p1.x + (p2.x - p1.x) / 2;
-                const cpX2 = p2.x - (p2.x - p1.x) / 2;
-                ctx.bezierCurveTo(cpX1, p1.y, cpX2, p2.y, p2.x, p2.y);
-            }
-            ctx.stroke();
-            ctx.shadowBlur = 0; 
-
-            // 3. Координаты последней точки
-            const lastX = getCanvasX(prices.length - 1);
-            const lastY = getCanvasY(prices[prices.length - 1]);
-            
-            // 4. Рисование анимированной пульсации (Pulse)
-            if (pulseScale > 1 && hoverX === -1) { // Пульсация только при отсутствии ховера
-                 ctx.beginPath();
-                 const outerRadius = 18 * pulseScale;
-                 const opacity = 0.8 / pulseScale; 
-                 ctx.arc(lastX, lastY, outerRadius, 0, Math.PI * 2);
-                 ctx.strokeStyle = lineColorHex + Math.round(opacity * 255).toString(16).padStart(2, '0'); 
-                 ctx.lineWidth = 3 * (1.8 - pulseScale); 
-                 ctx.stroke();
-            }
-            
-            // 5. Рисование точки (Core)
-            ctx.beginPath();
-            ctx.arc(lastX, lastY, 6, 0, Math.PI * 2);
-            ctx.fillStyle = lineColorHex; 
-            ctx.shadowColor = lineColorHex; 
-            ctx.shadowBlur = 10;
-            ctx.fill();
-            
-            // 6. Рисование внутреннего кольца (Dark Center)
-            ctx.beginPath();
-            ctx.arc(lastX, lastY, 3, 0, Math.PI * 2);
-            ctx.fillStyle = 'var(--color-bg-deep)';
-            ctx.shadowBlur = 0;
-            ctx.fill();
-
-
-            // 7. Рисование курсора наведения (Hover Projection)
-            if (hoverX > -1) {
-                const graphMouseX = hoverX - config.padding.left;
-                
-                const index = Math.min(
-                    Math.round(graphMouseX / xScale), 
-                    prices.length - 1
-                );
-                const price = prices[index];
-                const timestamp = priceData[index][0];
-
-                const pointX = getCanvasX(index);
-                const pointY = getCanvasY(price);
-                
-                // Вертикальная линия (Neon)
+        // hover
+        if (hoverX > -1) {
+            const idx = Math.min(Math.round((hoverX - config.padding.left) / xScale), rawPrices.length - 1);
+            if (idx >= 0) {
+                const px = getX(idx), py = getY(rawPrices[idx]);
                 ctx.beginPath();
                 ctx.strokeStyle = config.hoverLineColor;
-                ctx.lineWidth = 1;
-                ctx.moveTo(pointX, config.padding.top);
-                ctx.lineTo(pointX, cssHeight - config.padding.bottom);
+                ctx.setLineDash([3, 3]);
+                ctx.moveTo(px, config.padding.top);
+                ctx.lineTo(px, rect.height - config.padding.bottom);
                 ctx.stroke();
-                
-                // Точка на линии (Highlight)
+                ctx.setLineDash([]);
                 ctx.beginPath();
-                ctx.arc(pointX, pointY, 6, 0, Math.PI * 2);
-                ctx.fillStyle = 'var(--color-accent-neon)';
-                ctx.shadowColor = 'var(--color-accent-neon)';
-                ctx.shadowBlur = 8;
+                ctx.arc(px, py, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#fff';
+                ctx.shadowColor = '#fff';
+                ctx.shadowBlur = 10;
                 ctx.fill();
                 ctx.shadowBlur = 0;
-
-                return { pointX, pointY, price, timestamp };
+                return { x: px, y: py, price: rawPrices[idx], time: priceData[idx][0] };
             }
         }
-        
-        // --- Animation & Hover Logic ---
-        function animatePulse(timestamp) {
-            if (!pulseTimeStart) {
-                pulseTimeStart = timestamp;
-            }
-
-        
-
-            const elapsed = timestamp - pulseTimeStart;
-            let progress = elapsed / PULSE_DURATION; 
-            
-            if (progress >= 1.8) {
-                pulseTimeStart = null; 
-                pulseAnimationFrameId = window.requestAnimationFrame(animatePulse);
-                return;
-            }
-
-            
-            
-            const minScale = 0.5;
-            const maxScale = 1.5; 
-            let pulseScale = minScale + (maxScale - minScale) * Math.sin(progress * Math.PI);
-            
-            drawSparkline(lastMouseX, pulseScale);
-
-            pulseAnimationFrameId = window.requestAnimationFrame(animatePulse);
-        }
-
-        
-
-        function handleMouseMove(e) {
-            const rect = elements.canvas.getBoundingClientRect();
-            lastMouseX = e.clientX - rect.left; 
-            
-            if (lastMouseX < 0 || lastMouseX > rect.width) {
-                 handleMouseOut();
-                 return;
-            }
-            
-            stopPulseAnimation();
-
-            if (!animationFrameId) {
-                animationFrameId = window.requestAnimationFrame(processHover);
-            }
-        }
-
-        
-        
-        // --- 💡 ФИКС: Touch Handlers для мобильных ---
-        function handleTouchStart(e) {
-            e.preventDefault(); // Предотвращает скролл страницы
-            handleTouchMove(e);
-        }
-
-        function handleTouchMove(e) {
-            // Берем первое касание
-            const touch = e.touches[0];
-            const rect = elements.canvas.getBoundingClientRect();
-            // Расчет координаты X относительно Canvas
-            lastMouseX = touch.clientX - rect.left; 
-            
-            if (lastMouseX < 0 || lastMouseX > rect.width) {
-                 handleMouseOut();
-                 return;
-            }
-
-            stopPulseAnimation();
-
-            if (!animationFrameId) {
-                // Используем ту же логику рендеринга, что и для мыши
-                animationFrameId = window.requestAnimationFrame(processHover);
-            }
-        }
-        
-        function handleTouchEnd(e) {
-            // После завершения касания, убираем тултип и запускаем пульс
-            handleMouseOut();
-        }
-
-
-        function processHover() {
-            animationFrameId = null;
-
-            if (rawPrices.length === 0 || lastMouseX === -1) return;
-            
-            const hoverData = drawSparkline(lastMouseX, 1); 
-            
-            if (hoverData) {
-                const { pointX, pointY, price, timestamp } = hoverData;
-                
-                const priceHtml = `<span class="price">${formatPrice(price)}</span>`;
-                const timeHtml = `<span class="time">${formatDate(timestamp)}</span>`;
-                
-                elements.tooltip.innerHTML = `${priceHtml} ${timeHtml}`;
-                
-                const canvasOffsetTop = elements.canvas.offsetTop;
-                const canvasOffsetLeft = elements.canvas.offsetLeft;
-                
-                // Располагаем тултип
-                elements.tooltip.style.left = `${pointX + canvasOffsetLeft}px`;
-                elements.tooltip.style.top = `${pointY + canvasOffsetTop}px`;
-                elements.tooltip.style.opacity = '1';
-            } else {
-                handleMouseOut();
-            }
-            
-            // Продолжаем рендерить, пока lastMouseX активен (т.е. палец касается экрана)
-            if (lastMouseX !== -1) {
-                 animationFrameId = window.requestAnimationFrame(processHover);
-            }
-        }
-
-        function handleMouseOut() {
-            if (animationFrameId) {
-                window.cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
-            elements.tooltip.style.opacity = '0';
-            lastMouseX = -1;
-            
-            drawSparkline(-1, 1);
-            startPulseAnimation();
-        }
-
-
-        // --- Initialization Logic ---
-        async function updateMarketData() {
-             const marketData = await fetchMarketData(currentCoinId);
-             updatePriceDisplay(marketData);
-        }
-
-        async function updateWidget(symbol) {
-            stopPulseAnimation();
-            
-            currentCoinId = symbol;
-            
-            elements.widgetTitle.textContent = `AetherStream Core: ${SYMBOL_NAMES[symbol] || symbol}`;
-
-            await updateMarketData();
-            
-            if (marketDataIntervalId) {
-                 clearInterval(marketDataIntervalId);
-            }
-            marketDataIntervalId = setInterval(updateMarketData, MARKET_DATA_REFRESH_INTERVAL);
-
-            priceData = await fetchChartData(symbol, config.interval, config.limit);
-            rawPrices = priceData.map(p => p[1]); 
-
-            drawSparkline();
-            startPulseAnimation();
-        }
-
-        // ==================== MODIFIED INITIALIZATION ====================
-function populateCoinSelect() {
-    const symbols = getSupportedSymbols();
-    elements.coinSelect.innerHTML = '';
-    
-    // Apply URL parameters before populating
-    applyUrlParams();
-    
-    symbols.forEach(coin => {
-        const option = document.createElement('option');
-        option.value = coin.id;
-        option.textContent = coin.id; 
-        elements.coinSelect.appendChild(option);
-    });
-    
-    const defaultOption = elements.coinSelect.querySelector(`option[value="${currentCoinId}"]`);
-    if (defaultOption) {
-         defaultOption.selected = true;
     }
-    
-    elements.coinSelect.style.textShadow = SYMBOL_NAMES[currentCoinId].includes('COIN') || currentCoinId === 'BTCUSDT' ? '0 0 5px #ffcc00' : '0 0 5px var(--color-accent-neon)';
-    
-    updateWidget(currentCoinId);
-}
 
+    function animatePulse(t) {
+        if (state.destroyed) return;
+        if (!pulseStart) pulseStart = t;
+        let progress = (t - pulseStart) / PULSE_DURATION;
+        if (progress >= 1) {
+            drawSparkline(lastMouseX, 1);
+            pulseId = null;
+            return;
+        }
+        drawSparkline(lastMouseX, 1 + 0.6 * Math.sin(progress * Math.PI));
+        pulseId = requestAnimationFrame(animatePulse);
+    }
 
-
-
-        // --- Event Listeners ---
-        elements.timeframes.forEach(timeframe => {
-            timeframe.addEventListener('click', function() {
-                elements.timeframes.forEach(tf => tf.classList.remove('active'));
-                this.classList.add('active');
-                
-                config.interval = this.getAttribute('data-interval');
-                config.limit = parseInt(this.getAttribute('data-limit'));
-                
-                updateWidget(currentCoinId); 
-            });
+    /* ═══════════════════════════════════════════════════════
+       INTERACTION
+       ═══════════════════════════════════════════════════════ */
+    function showTooltip(hx) {
+        const h = drawSparkline(hx, 1);
+        if (!h) return;
+        const trendColor = h.price >= rawPrices[0] ? '#00ffc8' : '#a855f7';
+        const timeStr = new Date(h.time).toLocaleTimeString('en-US', {
+            hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric'
         });
+        els.tooltip.innerHTML =
+            `<span style="font-weight:800;font-size:12px;color:${trendColor};">${formatPrice(h.price)}</span>` +
+            `<br><span style="color:var(--text-muted);opacity:0.8;">${timeStr}</span>`;
 
-        elements.coinSelect.addEventListener('change', (e) => {
-            currentCoinId = e.target.value;
-            e.target.style.textShadow = SYMBOL_NAMES[currentCoinId].includes('COIN') || currentCoinId === 'BTCUSDT' ? '0 0 5px #ffcc00' : '0 0 5px var(--color-accent-neon)';
-            updateWidget(currentCoinId); 
-        });
+        let tipX = h.x + els.canvas.offsetLeft;
+        let tipY = h.y + els.canvas.offsetTop - 15;
+        const tipW = els.tooltip.offsetWidth || 80;
+        if (tipY < 40) {
+            tipY = h.y + els.canvas.offsetTop + 20;
+            els.tooltip.style.transform = 'translate(-50%, 0)';
+        } else {
+            els.tooltip.style.transform = 'translate(-50%, -100%)';
+        }
+        if (tipX < tipW / 2 + 5) tipX = tipW / 2 + 5;
+        if (tipX > els.canvas.offsetWidth - tipW / 2 - 5) tipX = els.canvas.offsetWidth - tipW / 2 - 5;
+        els.tooltip.style.left = tipX + 'px';
+        els.tooltip.style.top  = tipY + 'px';
+        els.tooltip.style.opacity = '1';
+    }
 
-        // --- 💡 ФИКС: Mouse & Touch Events ---
-        elements.canvas.addEventListener('mousemove', handleMouseMove);
-        elements.canvas.addEventListener('mouseout', handleMouseOut);
-        elements.canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-        elements.canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-        elements.canvas.addEventListener('touchend', handleTouchEnd);
-        
-        window.addEventListener('resize', () => {
-             clearTimeout(window.resizeTimer);
-             window.resizeTimer = setTimeout(() => {
-                 drawSparkline(lastMouseX, pulseAnimationFrameId ? 1.0 : 1.0);
-             }, 100);
-        });
+    function onMove(clientX) {
+        lastMouseX = clientX - els.canvas.getBoundingClientRect().left;
+        if (pulseId) { cancelAnimationFrame(pulseId); pulseId = null; pulseStart = null; }
+        if (!animId) {
+            animId = requestAnimationFrame(() => { animId = null; showTooltip(lastMouseX); });
+        }
+    }
+    function onLeave() {
+        if (animId) { cancelAnimationFrame(animId); animId = null; }
+        els.tooltip.style.opacity = '0';
+        lastMouseX = -1;
+        if (!pulseId) pulseId = requestAnimationFrame(animatePulse);
+    }
 
+    els.canvas.addEventListener('mousemove', e => onMove(e.clientX));
+    els.canvas.addEventListener('mouseleave', onLeave);
+    els.canvas.addEventListener('touchstart', e => { if (e.touches.length) onMove(e.touches[0].clientX); }, { passive: true });
+    els.canvas.addEventListener('touchmove',  e => { if (e.touches.length) onMove(e.touches[0].clientX); }, { passive: true });
+    els.canvas.addEventListener('touchend', onLeave);
 
-        // --- Инициализация ---
-        document.addEventListener('DOMContentLoaded', populateCoinSelect);
-    </script>
+    /* ═══════════════════════════════════════════════════════
+       PUBLIC API
+       ═══════════════════════════════════════════════════════ */
+    function setSymbol(symbol) {
+        let val = String(symbol || '').toUpperCase().trim();
+        if (!val) return false;
+        if (val.length > 2 && !val.includes('USDT') && !val.includes('USD')) val += 'USDT';
+        state.symbol = val;
+        els.input.value = val;
+        lsSet('spark_last_symbol', val);
+        updateWidget(val);
+        notifyParent('spark:symbolChanged', { symbol: val });
+        return true;
+    }
+
+    function setTimeframe(interval, limit) {
+        if (!interval) return false;
+        state.interval = interval;
+        state.limit = parseInt(limit) || state.limit;
+        els.tfs.forEach(b => b.classList.toggle('active',
+            b.dataset.interval === interval && parseInt(b.dataset.limit) === state.limit));
+        updateWidget(state.symbol);
+        notifyParent('spark:timeframeChanged', { interval: state.interval, limit: state.limit });
+        return true;
+    }
+
+    window.SparklineWidget = {
+        setSymbol, setTimeframe,
+        refresh: () => updateWidget(state.symbol),
+        getSymbol: () => state.symbol,
+        getState:  () => ({ ...state }),
+        destroy: () => {
+            state.destroyed = true;
+            if (pulseId) cancelAnimationFrame(pulseId);
+            if (animId) cancelAnimationFrame(animId);
+            if (refreshTimer) clearInterval(refreshTimer);
+        }
+    };
+
+    // postMessage listener (parent → iframe)
+    window.addEventListener('message', e => {
+        const d = e.data;
+        if (!d || typeof d !== 'object' || !d.type) return;
+        switch (d.type) {
+            case 'spark:setSymbol':    if (d.symbol) setSymbol(d.symbol); break;
+            case 'spark:setTimeframe': if (d.interval) setTimeframe(d.interval, d.limit); break;
+            case 'spark:refresh':      updateWidget(state.symbol); break;
+            case 'spark:setTheme':
+                if (d.accent)    document.documentElement.style.setProperty('--accent', d.accent);
+                if (d.accentDim) document.documentElement.style.setProperty('--accent-dim', d.accentDim);
+                break;
+        }
+    });
+
+    /* ═══════════════════════════════════════════════════════
+       INPUT & TABS
+       ═══════════════════════════════════════════════════════ */
+    let debounce;
+    els.input.addEventListener('input', e => {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => {
+            let val = e.target.value.trim().toUpperCase();
+            if (val.length > 2 && !val.includes('USDT') && !val.includes('USD')) val += 'USDT';
+            if (val) setSymbol(val);
+        }, 500);
+    });
+
+    els.tfs.forEach(btn => btn.addEventListener('click', e => {
+        e.stopPropagation();
+        els.tfs.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        setTimeframe(btn.dataset.interval, btn.dataset.limit);
+    }));
+
+    // datalist
+    Object.keys(SYMBOL_NAMES).forEach(id => {
+        const o = document.createElement('option');
+        o.value = id; o.textContent = SYMBOL_NAMES[id];
+        els.datalist.appendChild(o);
+    });
+
+    // resize
+    const ro = new ResizeObserver(() => { if (!state.destroyed) drawSparkline(lastMouseX, 1); });
+    ro.observe(els.chartWrap);
+
+    /* ═══════════════════════════════════════════════════════
+       BOOT
+       ═══════════════════════════════════════════════════════ */
+    if (!url.explicit) {
+        const saved = lsGet('spark_last_symbol');
+        if (saved) state.symbol = saved.toUpperCase();
+    }
+    els.input.value = state.symbol;
+    els.tfs.forEach(b => b.classList.toggle('active',
+        b.dataset.interval === state.interval && parseInt(b.dataset.limit) === state.limit));
+
+    updateWidget(state.symbol);                          // ⚡ անմիջապես
+    refreshTimer = setInterval(() => {
+        if (!state.destroyed && document.visibilityState === 'visible') updateWidget(state.symbol);
+    }, REFRESH_MS);
+
+    notifyParent('spark:ready', { symbol: state.symbol });
+    console.log('%c✦ Sparkline MiniWidget · ' + state.symbol, 'color:#00ffd5;font-family:monospace;');
+})();
+</script>
 </body>
 </html>
