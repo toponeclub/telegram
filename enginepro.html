@@ -151,9 +151,9 @@ margin-bottom:2px;
 }
 
 #cursor-lbl,#alert-lbl{position:absolute;display:none;align-items:center;background:rgba(13,16,23,.96);border-radius:4px;padding:3px 8px;font-family:var(--mono);font-size:10px;font-weight:700;color:#eaeaea;pointer-events:none;white-space:nowrap;transform:translateY(-50%);line-height:1.2;z-index:6;box-shadow:0 2px 14px rgba(0,0,0,.5)}
-#cursor-lbl{border:1px solid rgba(255,255,255,.15)}
+#cursor-lbl{border:1px solid rgba(255,255,255,.15);min-width:52px;justify-content:center;padding:3px 9px}
 #alert-lbl{border:1px solid rgba(0,255,213,.5);z-index:7}
-#cursor-lbl .sep,#alert-lbl .sep{color:#3a3f47;margin:0 6px}
+
 #alert-lbl .tag{color:var(--ac);font-size:8px;letter-spacing:1px;font-weight:800;margin-right:6px}
 .pct.pos{color:var(--up)}.pct.neg{color:var(--dn)}.pct.zero{color:var(--t3)}
 
@@ -292,6 +292,124 @@ margin-bottom:2px;
   background: var(--acD);
   border-color: var(--ac);
 }
+
+#stack:fullscreen {
+  background-color: var(--bg);
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+}
+#stack:-webkit-full-screen {
+  background-color: var(--bg);
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ═══════════════ LIQUIDATION SWITCH ═══════════════ */
+.lb-hd.liq .liq-switch{
+margin-left:auto;
+width:26px;
+height:14px;
+background:rgba(255,255,255,.06);
+border:1px solid rgba(255,255,255,.12);
+border-radius:8px;
+cursor:pointer;
+position:relative;
+transition:all .22s cubic-bezier(.16,1,.3,1);
+padding:0;
+flex-shrink:0;
+outline:none;
+}
+.lb-hd.liq .liq-switch::after{
+content:'';
+position:absolute;
+top:1px;
+left:1px;
+width:10px;
+height:10px;
+background:var(--t3);
+border-radius:50%;
+transition:all .22s cubic-bezier(.16,1,.3,1);
+}
+.lb-hd.liq .liq-switch:hover{
+border-color:rgba(0,255,213,.4);
+background:rgba(0,255,213,.05);
+}
+.lb-hd.liq .liq-switch.on{
+background:rgba(0,255,213,.18);
+border-color:rgba(0,255,213,.55);
+box-shadow:0 0 10px rgba(0,255,213,.25);
+}
+.lb-hd.liq .liq-switch.on::after{
+background:var(--ac);
+left:13px;
+box-shadow:0 0 6px var(--ac);
+}
+/* Count — հետ բերել նեղ margin, որ switch-ից հետո չշարժվի */
+.lb-hd.liq .cnt{margin-left:6px}
+
+/* ═══════════════ MULTI ALERT LIST ═══════════════ */
+.lb-hd.alert .cnt{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--ac);font-weight:700}
+.lb-alerts{display:flex;flex-direction:column;gap:3px;max-height:150px;overflow-y:auto;margin-top:2px;scrollbar-width:thin}
+.lb-alerts::-webkit-scrollbar{width:3px}
+.lb-alerts::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+.lb-alerts:empty{display:none}
+.pa-item{display:flex;align-items:center;gap:5px;padding:4px 6px;background:rgba(0,0,0,.3);border:1px solid var(--bd);border-radius:4px;font-family:var(--mono);font-size:9px;transition:var(--tr);animation:liqIn .25s ease-out}
+.pa-item.active{border-color:rgba(0,255,213,.25)}
+.pa-item.sent{border-color:rgba(0,255,200,.4);background:rgba(0,255,200,.06);opacity:.8}
+.pa-item .p{flex:1;min-width:0;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pa-item.sent .p{color:var(--up)}
+.pa-item .st{font-size:8px;color:var(--t3);letter-spacing:.3px;flex-shrink:0}
+.pa-item.sent .st{color:var(--up)}
+.pa-item .ok{color:var(--up);font-weight:800;font-size:10px;width:10px;text-align:center;flex-shrink:0}
+.pa-item .x{background:transparent;border:none;color:var(--t3);cursor:pointer;padding:1px 3px;font-size:10px;transition:var(--tr);border-radius:2px;flex-shrink:0}
+.pa-item .x:hover{color:var(--dn);background:rgba(168,85,247,.15)}
+
+/* ═══════════════ MULTI ALERT LABELS ═══════════════ */
+#alert-labels{
+position:absolute;
+inset:0;
+pointer-events:none;
+z-index:7;
+}
+.alert-lbl-item{
+position:absolute;
+display:none;
+align-items:center;
+background:rgba(13,16,23,.96);
+border:1px solid rgba(0,255,213,.5);
+border-radius:4px;
+padding:3px 8px;
+font-family:var(--mono);
+font-size:10px;
+font-weight:700;
+color:#eaeaea;
+pointer-events:none;
+white-space:nowrap;
+transform:translateY(-50%);
+line-height:1.2;
+box-shadow:0 2px 14px rgba(0,0,0,.5);
+transition:border-color .2s, background .2s;
+}
+.alert-lbl-item.sent{
+border-color:rgba(0,255,200,.55);
+background:rgba(0,255,200,.06);
+}
+.alert-lbl-item .tag{
+color:var(--ac);
+font-size:8px;
+letter-spacing:1px;
+font-weight:800;
+margin-right:6px;
+}
+.alert-lbl-item.sent .tag{color:var(--up)}
+.alert-lbl-item .p{color:#eaeaea}
+.alert-lbl-item.sent .p{color:var(--up)}
+.alert-lbl-item .sep{color:#3a3f47;margin:0 6px}
+.alert-lbl-item .pct.pos{color:var(--up)}
+.alert-lbl-item .pct.neg{color:var(--dn)}
+.alert-lbl-item .pct.zero{color:var(--t3)}
 </style>
 </head>
 <body>
@@ -319,8 +437,12 @@ margin-bottom:2px;
     
 <div class="sp"></div>
 
+<button class="ib" id="bd" title="Draw (freehand)"><i class="fa-solid fa-pen"></i></button>
+
+
     
     <!-- 4. Icons -->
+     
 <button class="ib" id="bi" title="Indicators"><i class="fa-solid fa-chart-simple"></i></button>
 <button class="ib" id="bs" title="Chart Style"><i class="fa-solid fa-chart-line"></i></button>
 </header>
@@ -339,8 +461,8 @@ margin-bottom:2px;
 <div class="pnl-body">
 <div class="lw" id="c-main"></div>
 <canvas id="vpc"></canvas>
-<div id="cursor-lbl"><span class="price">--</span><span class="sep">│</span><span class="pct zero">0.00%</span></div>
-<div id="alert-lbl"><span class="tag">ALERT</span><span class="price">--</span><span class="sep">│</span><span class="pct zero">0.00%</span></div>
+<div id="cursor-lbl"><span class="pct zero">0.00%</span></div>
+<div id="alert-labels"></div>
 <div id="mr"></div>
 <div id="mc"></div>
 <div id="ml"></div>
@@ -363,12 +485,13 @@ margin-bottom:2px;
       <div class="ctrl-rz-x" id="ctrl-resizer"></div>
 
 <div class="lb">
-<div class="lb-hd alert"><i class="fa-solid fa-bell"></i><span>Price Alert</span></div>
+<div class="lb-hd alert"><i class="fa-solid fa-bell"></i><span>Price Alerts</span><span class="cnt" id="pa-count">0</span></div>
 <div class="lb-row"><input type="number" id="pa" class="lb-in" placeholder="price" step="any"></div>
 <div class="lb-row">
 <button class="lb-btn set" id="pa-set">Set</button>
-<button class="lb-btn clr" id="pa-clr">Clear</button>
+<button class="lb-btn clr" id="pa-clr">Clear All</button>
 </div>
+<div class="lb-alerts" id="pa-list"></div>
 <div class="lb-st" id="pa-st"></div>
 </div>
 
@@ -379,8 +502,13 @@ margin-bottom:2px;
 </div>
 
 <div class="lb lb-liq">
-<div class="lb-hd liq"><i class="fa-solid fa-droplet"></i><span>Liq Tracker</span><span class="cnt" id="lq-cnt">0</span></div>
-<div class="lb-row"><span class="lb-lbl">MIN $</span><input type="number" id="lq" class="lb-in" value="50000" step="10000"></div>
+<div class="lb-hd liq">
+<i class="fa-solid fa-droplet"></i>
+<span>Liq Tracker</span>
+<button class="liq-switch" id="lq-switch" title="Toggle liquidation feed"></button>
+<span class="cnt" id="lq-cnt">0</span>
+</div>
+<div class="lb-row"><span class="lb-lbl">MIN $</span><input type="number" id="lq" class="lb-in" value="500000" step="10000"></div>
 <div class="liq-feed" id="lq-feed"><div class="liq-empty">Waiting for liquidations...</div></div>
 </div>
 
@@ -453,6 +581,8 @@ CROSS:'rgba(255,255,255,0.22)'
 const LK = 'eng_v7_layout_1';
 const SK = 'eng_v7_settings_1';
 
+
+
 const S = {
 symbol:'BTCUSDT', tf:'5m', style:'candles', tz:'auto',
 charts:{}, series:{}, panels:{}, order:[],
@@ -461,14 +591,20 @@ rawBars:new Map(), oldestTime:null, loadingHist:false, noMore:false,
 oiRaw:[], lsrRaw:[], wsK:null, wsL:null,
 liqRaw:[], liqMarkers:[],
 vp:{ en:true, cv:null, ctx:null, w:80, offR:66, lastKey:'' },
-alert:{ price:null, line:null, last:null },
+alerts: [],   // multi price alerts
 tg:{ token:'', chat:'' },
-thr:{ liq:50000, vol:0 },
+thr:{ liq:500000, vol:0 },
 livePrice:0, volHit:0,
 /* Flag that suppresses timescale propagation during programmatic setData.
       Prevents the B/S-scatter bug when history loads. */
 _syncing:false,
-_ready:false, _restoreVP:true
+_autoArea: false,        // true = հիմա area-ն ա ցուցադրվում
+_autoS: null,            // auto area series-ի reference
+_autoT: 0,        // 0 = candles, 1 = area (current progress)
+_ready:false, _restoreVP:true,
+liqEnabled: false
+
+
 };
 
 const $  = (s,r=document) => r.querySelector(s);
@@ -519,6 +655,8 @@ const load = on => $('#ld').classList.toggle('on', !!on);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const tfSec = tf => ({'1m':60,'5m':300,'15m':900,'1h':3600,'4h':14400,'1d':86400})[tf]||300;
 const oiPer = tf => ({'1m':'5m','5m':'5m','15m':'15m','1h':'1h','4h':'4h','1d':'1d'})[tf]||'5m';
+
+
 
 async function get(url){
 const s = url.includes('?')?'&':'?';
@@ -605,6 +743,8 @@ ch.subscribeCrosshairMove(param => this.fromChart(param, chartId));
 }
 };
 
+
+
 /* ═══════════════ TIME-SCALE SYNC ═══════════════ */
 /* Guard against feedback loops and against propagating ranges that were
     set programmatically during setData (which is what caused the B/S scatter). */
@@ -646,6 +786,8 @@ S._syncing = false;
 }
 }
 
+
+
 /* ═══════════════ CHART BUILDER ═══════════════ */
 function mkChart(container, opts={}){
 return LWC.createChart(container, {
@@ -670,11 +812,12 @@ fixLeftEdge:false, lockVisibleTimeRangeOnResize:true,
 visible: opts.timeAxis !== false
 },
 rightPriceScale:{
-borderColor: C.LINE,
-scaleMargins: opts.margins || { top:0.1, bottom:0.1 },
-autoScale: true,
-minimumWidth: 68,
-entireTextOnly: false
+  mode: 1, // <--- ՍԱ ԱՎԵԼԱՑՐՈՒ
+  borderColor: C.LINE,
+  scaleMargins: opts.margins || { top:0.1, bottom:0.1 },
+  autoScale: true,
+  minimumWidth: 68,
+  entireTextOnly: false
 },
 handleScroll:{ mouseWheel:true, pressedMouseMove:true, horzTouchDrag:true, vertTouchDrag:false },
 handleScale:{ axisPressedMouseMove:true, mouseWheel:true, pinch:true }
@@ -691,7 +834,11 @@ S.charts.main = ch;
 S.series.candle = ch.addCandlestickSeries({
 upColor: C.UP, downColor: C.DN, borderVisible:false,
 wickUpColor: C.UP, wickDownColor: C.DN,
-priceFormat:{ type:'custom', formatter: fmtP, minMove: 1e-8 }
+priceFormat:{ type:'custom', formatter: fmtP, minMove: 1e-8 },
+lastValueVisible:true,
+priceLineVisible:true,
+priceLineColor: C.UP,
+crosshairMarkerVisible:true
 });
 
 S.series.volume = ch.addHistogramSeries({
@@ -713,91 +860,157 @@ S._mainRO = ro;
 
 ch.timeScale().subscribeVisibleLogicalRangeChange(r => {
 if(!r) return;
-if(r.from < 25 && !S.loadingHist && S.oldestTime && S._ready) loadHistory();
+const visibleBars = r.to - r.from;
+const leftRemaining = r.from;
+/* Ավելի վաղ trigger — եթե user-ը մոտենում է ձախ եզրին */
+const threshold = Math.max(150, visibleBars * 1.5);
+if(leftRemaining < threshold && !S.loadingHist && S.oldestTime && S._ready){
+  loadHistory(3);
+}
+scheduleAutoCheck();
 });
+
+
 
 hookTimeScale(ch);
 XH.hook(ch, 'main');
 setupCursorTracker(ch);
 
-    import('https://esm.sh/lightweight-charts-drawing').then(({ DrawingManager, getToolRegistry }) => {
-    S.dm = new DrawingManager();
-    S.dm.attach(ch, S.series.candle, container);
-    const registry = getToolRegistry();
-
-    let tool = 'cross', anchors = [], prevId = 'preview', isDrawing = false;
-    const clearPrev = () => { try { S.dm.removeDrawing(prevId); } catch(e){} };
-
-    container.addEventListener('mousedown', e => {
-      if(!tool || tool === 'cross') return;
-      const rc = container.getBoundingClientRect();
-      const time = ch.timeScale().coordinateToTime(e.clientX - rc.left);
-      const price = S.series.candle.coordinateToPrice(e.clientY - rc.top);
-      if(!time || !price) return;
-
-      if (tool === 'brush') {
-        isDrawing = true;
-        anchors = [{time, price}];
-      } else {
-        anchors.push({time, price});
-        const req = registry.get(tool)?.requiredAnchors || 2;
-        if(anchors.length >= req) {
-          clearPrev();
-          const d = registry.createDrawing(tool, 'd-'+Date.now(), [...anchors], { lineColor:'#00ffd5', lineWidth:2, fillColor:'rgba(0,255,213,0.1)' });
-          if(d) S.dm.addDrawing(d);
-          anchors = [];
+/* ═══ NATIVE BRUSH PLUGIN LWC V4 (SELECT, DELETE, UNDO) ═══ */
+class BrushPlugin {
+  constructor(chart, series) {
+    this.chart = chart; this.series = series;
+    this.lines = []; this.cur = null; this.isDraw = false;
+  }
+  paneViews() {
+    return [{
+      update: () => {},
+      renderer: () => ({
+        zOrder: 'top',
+        draw: (target) => {
+          target.useMediaCoordinateSpace(({ context: ctx }) => {
+            ctx.save(); 
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            this.lines.forEach(l => {
+              if (l.points.length < 2) return;
+              ctx.lineWidth = l.selected ? 3 : 2; 
+              ctx.strokeStyle = l.selected ? '#fff' : '#00ffd5'; 
+              ctx.beginPath();
+              let moved = false;
+              l.points.forEach(pt => {
+                const x = this.chart.timeScale().logicalToCoordinate(pt.logical);
+                const y = this.series.priceToCoordinate(pt.price);
+                if (x === null || y === null) return;
+                if (!moved) { ctx.moveTo(x, y); moved = true; } else { ctx.lineTo(x, y); }
+              });
+              ctx.stroke();
+            });
+            ctx.restore();
+          });
         }
+      })
+    }];
+  }
+  updateAllViews() { if (this.requestUpdate) this.requestUpdate(); }
+  attached({requestUpdate}) { this.requestUpdate = requestUpdate; }
+  detached() { this.requestUpdate = null; }
+  
+  start(l, p) { this.deselectAll(); this.cur = { points: [{logical: l, price: p}], selected: false }; this.lines.push(this.cur); this.isDraw = true; }
+  add(l, p) { if (this.isDraw && this.cur) { this.cur.points.push({logical: l, price: p}); this.updateAllViews(); } }
+  stop() { this.isDraw = false; this.cur = null; }
+  clear() { this.lines = []; this.updateAllViews(); }
+  undo() { this.lines.pop(); this.updateAllViews(); }
+  deleteSelected() { this.lines = this.lines.filter(l => !l.selected); this.updateAllViews(); }
+  deselectAll() { this.lines.forEach(l => l.selected = false); this.updateAllViews(); }
+  
+  checkHit(x, y) {
+    let hit = null;
+    for (let i = this.lines.length - 1; i >= 0; i--) {
+      const l = this.lines[i];
+      if (l.points.length < 2) continue;
+      for (let j = 0; j < l.points.length - 1; j++) {
+        const x1 = this.chart.timeScale().logicalToCoordinate(l.points[j].logical);
+        const y1 = this.series.priceToCoordinate(l.points[j].price);
+        const x2 = this.chart.timeScale().logicalToCoordinate(l.points[j+1].logical);
+        const y2 = this.series.priceToCoordinate(l.points[j+1].price);
+        if (x1 === null || y1 === null || x2 === null || y2 === null) continue;
+        
+        const l2 = (x2 - x1)**2 + (y2 - y1)**2;
+        let t = l2 === 0 ? 0 : ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        const dist = Math.hypot(x - (x1 + t * (x2 - x1)), y - (y1 + t * (y2 - y1)));
+        
+        if (dist < 6) { hit = l; break; }
       }
-    });
-
-    container.addEventListener('mousemove', e => {
-      if(!tool || tool === 'cross' || !anchors.length) return;
-      const rc = container.getBoundingClientRect();
-      const time = ch.timeScale().coordinateToTime(e.clientX - rc.left);
-      const price = S.series.candle.coordinateToPrice(e.clientY - rc.top);
-      if(!time || !price) return;
-
-      if (tool === 'brush' && isDrawing) {
-        anchors.push({time, price});
-        clearPrev();
-        const d = registry.createDrawing(tool, prevId, [...anchors], { lineColor:'#00ffd5', lineWidth:2 });
-        if(d) S.dm.addDrawing(d);
-      } else if (tool !== 'brush') {
-        clearPrev();
-        const pts = [...anchors];
-        const req = registry.get(tool)?.requiredAnchors || 2;
-        while(pts.length < req) pts.push({time, price});
-        const d = registry.createDrawing(tool, prevId, pts, { lineColor:'#00ffd5', lineWidth:2, fillColor:'rgba(0,255,213,0.1)' });
-        if(d) S.dm.addDrawing(d);
-      }
-    });
-
-    container.addEventListener('mouseup', () => {
-      if (tool === 'brush' && isDrawing) {
-        isDrawing = false;
-        clearPrev();
-        if(anchors.length > 1) {
-          const d = registry.createDrawing(tool, 'd-'+Date.now(), [...anchors], { lineColor:'#00ffd5', lineWidth:2 });
-          if(d) S.dm.addDrawing(d);
-        }
-        anchors = [];
-      }
-    });
-
-    document.querySelectorAll('#left-bar .tb-btn[data-tool]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#left-bar .tb-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        tool = btn.dataset.tool;
-        anchors = []; clearPrev();
-        ch.applyOptions({ handleScroll: tool==='cross', handleScale: tool==='cross' });
-        container.style.cursor = tool==='cross' ? 'default' : 'crosshair';
-      });
-    });
-
-    document.getElementById('tb-del-all').addEventListener('click', () => S.dm.clearAll());
-  }).catch(() => console.warn('Drawing UI failed'));
+      if (hit) break;
+    }
+    this.deselectAll();
+    if (hit) { hit.selected = true; this.updateAllViews(); return true; }
+    return false;
+  }
 }
+
+const brush = new BrushPlugin(ch, S.series.candle);
+S.series.candle.attachPrimitive(brush);
+
+const _drawBtn = document.getElementById('bd');
+let _drawOn = false;
+
+S._setDrawMode = function(on) {
+  _drawOn = !!on;
+  try { ch.applyOptions({ handleScroll: !_drawOn, handleScale: !_drawOn }); } catch(e){}
+  container.style.cursor = _drawOn ? 'crosshair' : '';
+  if(_drawBtn) _drawBtn.classList.toggle('active', _drawOn);
+};
+
+if(_drawBtn) {
+  _drawBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    S._setDrawMode(!_drawOn);
+  });
+}
+
+const getCoord = (e) => {
+  const rc = container.getBoundingClientRect();
+  const t_ev = (e.touches && e.touches.length) ? e.touches[0] : e;
+  const x = t_ev.clientX - rc.left, y = t_ev.clientY - rc.top;
+  return { 
+    x, y,
+    l: ch.timeScale().coordinateToLogical(x), 
+    p: S.series.candle.coordinateToPrice(y) 
+  };
+};
+
+container.addEventListener('pointerdown', e => {
+  if (e.button !== undefined && e.button > 0) return;
+  const {x, y, l, p} = getCoord(e);
+  
+  if (!_drawOn) {
+    if (brush.checkHit(x, y)) e.stopPropagation();
+    return;
+  }
+  
+  if (l !== null && p !== null) { brush.start(l, p); e.stopPropagation(); }
+}, true); 
+
+container.addEventListener('pointermove', e => {
+  if(!_drawOn || !brush.isDraw) return;
+  const {l, p} = getCoord(e);
+  if(l !== null && p !== null) { brush.add(l, p); e.stopPropagation(); }
+}, true);
+
+window.addEventListener('pointerup', () => { if(_drawOn) brush.stop(); }, true);
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && _drawOn) S._setDrawMode(false);
+  if (e.key === 'Delete' || e.key === 'Backspace') brush.deleteSelected();
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') brush.undo();
+});
+
+S.dmClear = () => brush.clear();
+}
+
+
 
 function setupCursorTracker(ch){
 const lbl = $('#cursor-lbl');
@@ -807,38 +1020,111 @@ if(!param || !param.point || param.time === undefined){ lbl.style.display='none'
 let price;
 try{ price = S.series.candle.coordinateToPrice(param.point.y); }catch(e){ price=null; }
 if(price == null || !isFinite(price)){ lbl.style.display='none'; return; }
+
 const live = S.livePrice || (S.prices.length ? S.prices[S.prices.length-1].close : price);
 const pct = live ? ((price-live)/live)*100 : 0;
 const cls = pct>0.005?'pos':pct<-0.005?'neg':'zero';
-lbl.querySelector('.price').textContent = fmtP(price);
+
 const pctEl = lbl.querySelector('.pct');
 pctEl.textContent = (pct>0?'+':'')+pct.toFixed(2)+'%';
 pctEl.className = 'pct '+cls;
+
 lbl.style.right = (XH.scaleWidth+6)+'px';
 lbl.style.top = param.point.y+'px';
 lbl.style.display='flex';
 });
 }
 
-function updateAlertLabel(){
-const lbl = $('#alert-lbl');
-if(!lbl) return;
-if(!S.alert.price || !S.charts.main || !S.series.candle){ lbl.style.display='none'; return; }
-let y;
-try{ y = S.series.candle.priceToCoordinate(S.alert.price); }catch(e){ y=null; }
-const ct = $('#c-main');
-if(y == null || y<0 || y>ct.clientHeight){ lbl.style.display='none'; return; }
-const live = S.livePrice || 0;
-const pct = live ? ((S.alert.price-live)/live)*100 : 0;
-const cls = pct>0.005?'pos':pct<-0.005?'neg':'zero';
-lbl.querySelector('.price').textContent = fmtP(S.alert.price);
-const pctEl = lbl.querySelector('.pct');
-pctEl.textContent = (pct>0?'+':'')+pct.toFixed(2)+'%';
-pctEl.className = 'pct '+cls;
-lbl.style.right = (XH.scaleWidth+6)+'px';
-lbl.style.top = y+'px';
-lbl.style.display='flex';
+
+
+/* ═══════════════ MULTI ALERT LABELS ═══════════════ */
+function _ensureAlertLabel(a){
+  if(a.labelEl && a.labelEl.isConnected) return a.labelEl;
+  const cont = document.getElementById('alert-labels');
+  if(!cont) return null;
+  const el = document.createElement('div');
+  el.className = 'alert-lbl-item';
+  el.dataset.aid = a.id;
+  cont.appendChild(el);
+  a.labelEl = el;
+  return el;
 }
+
+function _removeAlertLabel(a){
+  if(a.labelEl){
+    try{ a.labelEl.remove(); }catch(e){}
+    a.labelEl = null;
+  }
+}
+
+function updateAlertLabels(){
+  const cont = document.getElementById('alert-labels');
+  if(!cont || !S.charts.main || !S.series.candle) return;
+
+  const live = S.livePrice || 0;
+  const ct = document.getElementById('c-main');
+  if(!ct) return;
+  const H = ct.clientHeight;
+  const W = XH.scaleWidth || 68;
+
+  /* ՄԻԱՅՆ active alert-ները chart-ի վրա */
+  const activeAlerts = S.alerts.filter(a => a.symbol === S.symbol && a.status === 'active');
+  const activeIds = new Set(activeAlerts.map(a => a.id));
+
+  /* Remove stale labels (alerts deleted or wrong symbol) */
+  cont.querySelectorAll('.alert-lbl-item').forEach(el => {
+    if(!el.dataset.aid || !activeIds.has(el.dataset.aid)){
+      el.remove();
+    }
+  });
+
+  /* Ensure label exists for each active alert */
+  activeAlerts.forEach(a => { _ensureAlertLabel(a); });
+
+  /* Compute Y + text, then collision-adjust */
+  const visible = [];
+  activeAlerts.forEach(a => {
+    const el = a.labelEl;
+    if(!el) return;
+
+    let y;
+    try{ y = S.series.candle.priceToCoordinate(a.price); }catch(e){ y = null; }
+    if(y == null || y < -10 || y > H + 10){
+      el.style.display = 'none';
+      return;
+    }
+
+    const pct = live ? ((a.price - live)/live)*100 : 0;
+    const cls = pct > 0.005 ? 'pos' : pct < -0.005 ? 'neg' : 'zero';
+
+    el.className = 'alert-lbl-item';
+    el.innerHTML =
+      `<span class="tag">ALERT</span>` +
+      `<span class="p">${fmtP(a.price)}</span>` +
+      `<span class="sep">│</span>` +
+      `<span class="pct ${cls}">${pct>0?'+':''}${pct.toFixed(2)}%</span>`;
+
+    el.style.right = (W + 6) + 'px';
+    visible.push({ el, y });
+  });
+
+  /* Collision avoidance — sort by Y, push down if overlapping */
+  visible.sort((a, b) => a.y - b.y);
+  const LABEL_H = 20;
+  let lastY = -Infinity;
+  visible.forEach(v => {
+    let ty = v.y;
+    if(ty - lastY < LABEL_H) ty = lastY + LABEL_H;
+    if(ty < 10) ty = 10;
+    if(ty > H - 10) ty = H - 10;
+    lastY = ty;
+    v.el.style.top = ty + 'px';
+    v.el.style.display = 'flex';
+  });
+}
+
+/* Բոլոր հին կանչերը աշխատացնենք նոր ֆունկցիան */
+function updateAlertLabel(){ updateAlertLabels(); }
 
 /* ═══════════════ PANEL DEFS ═══════════════ */
 const PDEF = {
@@ -879,7 +1165,7 @@ render(o,d){ o.fut.setData(d.bsdFut); o.spot.setData(d.bsdSpot); }
 },
 lsr:{ t:'L/S RATIO', i:'fa-balance-scale', c:C.ACCENT,
 build(ch){ return { s: ch.addLineSeries({
-color:C.ACCENT, lineWidth:2, lastValueVisible:true, priceLineVisible:false,
+color:C.ACCENT, lineWidth:2, lastValueVisible:true, priceLineVisible:true, priceLineColor: C.UP,
 priceFormat:{ type:'price', precision:3, minMove:0.001 }
 }) }; },
 render(o,d){ o.s.setData(d.lsr); }
@@ -887,7 +1173,7 @@ render(o,d){ o.s.setData(d.lsr); }
 rsi:{ t:'RSI (14)', i:'fa-wave-square', c:C.RSI,
 build(ch){
 const s = ch.addLineSeries({
-color:C.RSI, lineWidth:2, lastValueVisible:true, priceLineVisible:false,
+color:C.RSI, lastValueVisible:true, priceLineVisible:true, priceLineColor: C.UP,
 priceFormat:{ type:'price', precision:2, minMove:0.01 }
 });
 s.createPriceLine({ price:70, color:'rgba(99,102,241,0.22)', lineStyle:2, axisLabelVisible:false });
@@ -982,6 +1268,8 @@ function togglePanel(type){
 if(S.panels[type]) removePanel(type);
 else addPanel(type);
 }
+
+
 
 function movePanel(type, dir){
 const i = S.order.indexOf(type);
@@ -1332,8 +1620,9 @@ S._syncing = true;
 try{ S.charts.main.timeScale().setVisibleLogicalRange({ from: Math.max(0, n-150), to: n+3 }); }catch(e){}
 S._syncing = false;
 updateHUD(last.close, tk ? parseFloat(tk.priceChangePercent) : null);
+scheduleAutoCheck();   // ← NEW
 }
-if(S.alert.price) drawAlertLine();
+/* alerts will be rebuilt by rebuild() → rebuildAlertLines() */
 updateAlertLabel();
 S.vp.lastKey = '';
 S._ready = true;
@@ -1344,6 +1633,13 @@ syncAllPanelsToMain();
 console.error(e);
 toast('Fetch error: '+e.message, 'e');
 }finally{ load(false); }
+
+/* ★ Silent prefetch — 3 chunk (1500 bar) հետո, առանց user-ին խանգարելու */
+if(S._ready){
+  setTimeout(() => {
+    if(!S.loadingHist && !S.noMore && S._ready) loadHistory(4);   // 2000 bar
+  }, 400);
+}
 }
 
 async function fetchAllOI(tf, targetMs){
@@ -1382,37 +1678,86 @@ return all;
 }
 
 /* ───── loadHistory — the critical part ───── */
-async function loadHistory(){
+async function loadHistory(chunks = 2){
 if(S.loadingHist || S.noMore || !S.oldestTime || !S._ready) return;
-S.loadingHist = true;
-const sym = S.symbol, tf = S.tf;
-try{
-/* 1. capture current visible range BEFORE anything changes */
-let vr = null;
-try { vr = S.charts.main.timeScale().getVisibleLogicalRange(); } catch(e){}
-const oldLen = S.prices.length;
 
-/* 2. fetch new bars */
+S.loadingHist = true;
+_cancelAutoAnim();
+
+/* ★ 1. CAPTURE RANGE — ԱՌԱՋԻՆԸ, նախքան որևէ setData */
+let timeRange = null;
+try {
+  timeRange = S.charts.main.timeScale().getVisibleRange();
+}catch(e){}
+
+/* ★ 2. SNAP — setData ա անում, ուստի range-ը կարող ա shift լինել */
+if(S._autoT > 0.5){
+  S._autoT = 1;
+  S._autoArea = true;
+  if(!S._autoS && !_ensureAutoSeries()){ S.loadingHist = false; return; }
+  try{
+    S.series.candle.setData(S.prices.map(p => ({
+      time:p.time, open:p.open, high:p.high, low:p.low, close:p.close
+    })));
+    S.series.candle.applyOptions({
+      upColor:'rgba(0,0,0,0)', downColor:'rgba(0,0,0,0)',
+      borderUpColor:'rgba(0,0,0,0)', borderDownColor:'rgba(0,0,0,0)',
+      wickUpColor:'rgba(0,0,0,0)', wickDownColor:'rgba(0,0,0,0)',
+      borderVisible:false, visible:true,
+      lastValueVisible:true, priceLineVisible:true, priceLineColor: C.UP
+    });
+  }catch(e){}
+  try{ S.series.volume.applyOptions({ visible:true }); }catch(e){}
+  if(S._autoS){
+    try{
+      S._autoS.applyOptions({
+        lineColor: _rgba(_AREA_COLOR, 1),
+        topColor: _rgba(_AREA_COLOR, 0.28),
+        bottomColor: _rgba(_AREA_COLOR, 0.01)
+      });
+    }catch(e){}
+  }
+} else {
+  S._autoT = 0;
+  S._autoArea = false;
+  if(S._autoS){
+    try{ S.charts.main.removeSeries(S._autoS); }catch(e){}
+    S._autoS = null;
+  }
+  _restoreCandleStyle();
+}
+
+/* ★ 3. RESTORE RANGE — snap-ից հետո, նախքան fetch */
+if(timeRange){
+  try { S.charts.main.timeScale().setVisibleRange(timeRange); }catch(e){}
+}
+
+const sym = S.symbol, tf = S.tf;
+
+try{
+/* 4. FETCH */
+const batchBars = Math.min(chunks * 500, 1500);
 const end = S.oldestTime - 1;
 const [kl, spot] = await Promise.all([
-get(`${CFG.rest}/klines?symbol=${sym}&interval=${tf}&limit=500&endTime=${end}`),
-fetchSpot(tf, 500, end).catch(()=>[])
+  get(`${CFG.rest}/klines?symbol=${sym}&interval=${tf}&limit=${batchBars}&endTime=${end}`),
+  fetchSpot(tf, Math.min(batchBars, 500), end).catch(()=>[])
 ]);
-if(sym !== S.symbol || tf !== S.tf) return;
-if(!Array.isArray(kl) || !kl.length){ S.noMore = true; return; }
+if(sym !== S.symbol || tf !== S.tf){ S.loadingHist = false; return; }
+if(!Array.isArray(kl) || !kl.length){ S.noMore = true; S.loadingHist = false; return; }
+
 const bars = kl.map(k => {
-const vol = parseFloat(k[5]), tb = parseFloat(k[9]);
-return { time: Math.floor(k[0]/1000), open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:vol, takerBuy:tb, takerSell:vol-tb };
+  const vol = parseFloat(k[5]), tb = parseFloat(k[9]);
+  return { time: Math.floor(k[0]/1000), open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:vol, takerBuy:tb, takerSell:vol-tb };
 });
 bars.forEach(b => S.rawBars.set(b.time, b));
 (spot||[]).forEach(b => S.spotBars.set(b.time, b));
 S.oldestTime = kl[0][0];
 
 const [oi, lsr] = await Promise.all([
-fetchAllOI(tf, kl[0][0]).catch(()=>[]),
-fetchAllLSR(tf, kl[0][0]).catch(()=>[])
+  fetchAllOI(tf, kl[0][0]).catch(()=>[]),
+  fetchAllLSR(tf, kl[0][0]).catch(()=>[])
 ]);
-if(sym !== S.symbol || tf !== S.tf) return;
+if(sym !== S.symbol || tf !== S.tf){ S.loadingHist = false; return; }
 const om = new Map(S.oiRaw.map(o => [o.timestamp, o]));
 oi.forEach(o => om.set(o.timestamp, o));
 S.oiRaw = [...om.values()].sort((a,b)=>a.timestamp-b.timestamp);
@@ -1420,29 +1765,57 @@ const lm = new Map(S.lsrRaw.map(o => [o.timestamp, o]));
 lsr.forEach(o => lm.set(o.timestamp, o));
 S.lsrRaw = [...lm.values()].sort((a,b)=>a.timestamp-b.timestamp);
 
-/* 3. rebuild main chart data (suppress timescale events) */
+/* 5. REBUILD + RESTORE — synchronous, no paint between */
 S._syncing = true;
-try { rebuild(); } finally { S._syncing = false; }
-
-/* 4. restore main visible range with shift, keeping user view locked */
-const newLen = S.prices.length;
-if(vr && newLen > oldLen){
-const shift = newLen - oldLen;
-const nr = { from: vr.from + shift, to: vr.to + shift };
-S._syncing = true;
-try { S.charts.main.timeScale().setVisibleLogicalRange(nr); } catch(e){}
-S._syncing = false;
+try{
+  rebuild();
+  if(timeRange){
+    try { S.charts.main.timeScale().setVisibleRange(timeRange); }catch(e){}
+  }
+}finally{
+  S._syncing = false;
 }
 
-/* 5. Now rebuild all panel data (still suppressed) */
-renderAllPanels();
+/* 6. PANELS — synchronous */
+S._syncing = true;
+try{
+  S.order.forEach(renderPanel);
+  syncAllPanelsToMain();
+}finally{
+  S._syncing = false;
+}
 
-/* 6. Force every panel to match main range */
-syncAllPanelsToMain();
+/* ★ 7. SAFETY NET — վերականգնիր range-ը հաջորդ 2 frame-ում */
+/* LWC-ն երբեմն հետաձգում ա internal render, այս 2-ը բռնում են այդ */
+if(timeRange){
+  requestAnimationFrame(() => {
+    try { S.charts.main.timeScale().setVisibleRange(timeRange); }catch(e){}
+    requestAnimationFrame(() => {
+      try { S.charts.main.timeScale().setVisibleRange(timeRange); }catch(e){}
+    });
+  });
+}
 
 S.vp.lastKey = '';
-}catch(e){ console.warn(e); }
+}catch(e){ console.warn('loadHistory:', e); }
+
 S.loadingHist = false;
+
+/* Chain — եթե դեռ մոտ ա ձախ եզրին */
+if(S._ready && !S.noMore){
+  try {
+    const r = S.charts.main.timeScale().getVisibleLogicalRange();
+    if(r){
+      const visibleBars = r.to - r.from;
+      const threshold = Math.max(150, visibleBars * 1.5);
+      if(r.from < threshold){
+        setTimeout(() => {
+          if(!S.loadingHist && !S.noMore && S._ready) loadHistory(2);
+        }, 80);
+      }
+    }
+  } catch(e){}
+}
 }
 
 function rebuild(){
@@ -1451,8 +1824,64 @@ S.prices = raw.map(b => ({...b}));
 if(S.prices.length) S.livePrice = S.prices[S.prices.length-1].close;
 if(S.series.candle) S.series.candle.setData(S.prices);
 if(S.series.volume) S.series.volume.setData(S.prices.map(p => ({ time:p.time, value:p.volume, color:C.VOL })));
+if(S._autoS){ try{ S._autoS.setData(S.prices.map(p => ({ time:p.time, value:p.close }))); }catch(e){} }  // ← NEW
+rebuildAlertLines();   // ← NEW
 S.vp.lastKey = '';
 }
+
+function setupPriceLineWheelZoom() {
+const ct = $('#c-main');
+if(!ct) return;
+
+ct.addEventListener('wheel', e => {
+const rc = ct.getBoundingClientRect();
+const scaleW = (typeof XH !== 'undefined' && XH.scaleWidth) ? XH.scaleWidth : 68;
+
+if(e.clientX < rc.right - scaleW) return;
+
+e.preventDefault();
+e.stopPropagation();
+
+if(window._isFakeDrag) return;
+window._isFakeDrag = true;
+
+const target = document.elementFromPoint(e.clientX, e.clientY) || ct;
+const dy = e.deltaY > 0 ? -25 : 25; 
+
+const oCap = target.setPointerCapture;
+const oRel = target.releasePointerCapture;
+target.setPointerCapture = function(){};
+target.releasePointerCapture = function(){};
+
+try {
+  const ev = { clientX: e.clientX, clientY: e.clientY, bubbles: true, pointerId: 9999, isPrimary: true, button: 0, buttons: 1 };
+  target.dispatchEvent(new PointerEvent('pointerdown', ev));
+  ev.clientY += dy;
+  target.dispatchEvent(new PointerEvent('pointermove', ev));
+  ev.buttons = 0;
+  target.dispatchEvent(new PointerEvent('pointerup', ev));
+} catch(err){} 
+finally {
+  if(oCap !== undefined) target.setPointerCapture = oCap; else delete target.setPointerCapture;
+  if(oRel !== undefined) target.releasePointerCapture = oRel; else delete target.releasePointerCapture;
+  window._isFakeDrag = false;
+}
+}, { passive: false, capture: true });
+
+ct.addEventListener('dblclick', e => {
+const rc = ct.getBoundingClientRect();
+const scaleW = (typeof XH !== 'undefined' && XH.scaleWidth) ? XH.scaleWidth : 68;
+
+if(e.clientX < rc.right - scaleW) return;
+
+e.preventDefault(); 
+e.stopPropagation();
+
+try { S.charts.main.priceScale('right').applyOptions({ autoScale: true }); } catch(err){}
+}, { capture: true });
+}
+
+
 
 /* ═══════════════ LIQ FEED ═══════════════ */
 function pushLiqToFeed(side, usd, price, ts){
@@ -1479,7 +1908,6 @@ if(cnt) cnt.textContent = S.liqRaw.length;
 /* ═══════════════ WS ═══════════════ */
 function startWS(){
 if(S.wsK){ try{ S.wsK.close(); }catch(e){} }
-if(S.wsL){ try{ S.wsL.close(); }catch(e){} }
 try{
 S.wsK = new WebSocket(`${CFG.ws}${S.symbol.toLowerCase()}@kline_${S.tf}`);
 S.wsK.onmessage = e => {
@@ -1493,9 +1921,41 @@ upsert(bar);
 };
 S.wsK.onclose = ()=>setTimeout(()=>{ if(S.wsK && S.wsK.readyState === WebSocket.CLOSED) startWS(); }, 3000);
 }catch(e){}
+
+/* Liquidation WS — անջատ, կառավարվում է առանձին */
+startLiqWS();
+}
+
+/* ═══════════════ LIQUIDATION WS · on demand ═══════════════ */
+function startWS(){
+if(S.wsK){ try{ S.wsK.close(); }catch(e){} }
+try{
+S.wsK = new WebSocket(`${CFG.ws}${S.symbol.toLowerCase()}@kline_${S.tf}`);
+S.wsK.onmessage = e => {
+try{
+const k = JSON.parse(e.data).k;
+const t = Math.floor(k.t/1000);
+const bar = { time:t, open:+k.o, high:+k.h, low:+k.l, close:+k.c, volume:+k.v, takerBuy:+k.V, takerSell:+k.v - +k.V };
+S.rawBars.set(t, bar);
+upsert(bar);
+}catch(err){}
+};
+S.wsK.onclose = ()=>setTimeout(()=>{ if(S.wsK && S.wsK.readyState === WebSocket.CLOSED) startWS(); }, 3000);
+}catch(e){}
+
+/* Liquidation WS — անջատ, կառավարվում է առանձին */
+startLiqWS();
+}
+
+/* ═══════════════ LIQUIDATION WS · on demand ═══════════════ */
+function startLiqWS(){
+if(S.wsL){ try{ S.wsL.close(); }catch(e){} S.wsL = null; }
+if(!S.liqEnabled) return;
+
 try{
 S.wsL = new WebSocket('wss://fstream.binance.com/market/ws/!forceOrder@arr');
 S.wsL.onmessage = e => {
+if(!S.liqEnabled) return;
 try{
 const m = JSON.parse(e.data).o;
 if(!m || m.s !== S.symbol) return;
@@ -1524,11 +1984,83 @@ try{ S.series.candle.setMarkers(S.liqMarkers); }catch(e){}
 pushLiqToFeed(side, usd, px, time);
 beep(isL ? 880 : 440);
 if(usd >= 200000) toast(`${isL?'🟢 LONG':'🟣 SHORT'} LIQ: ${fmtU(usd)}`, 'w');
-if(S.tg.token && S.tg.chat) sendTg(`🩸 <b>${side} LIQ</b>\n${S.symbol}\nSize: ${fmtU(usd)}\nPrice: ${fmtP(px)}`);
+if(S.tg.token && S.tg.chat) sendTgWithScreenshot(`🩸 <b>${side} LIQ</b>\n${S.symbol}\nSize: ${fmtU(usd)}\nPrice: ${fmtP(px)}`);
 }catch(err){}
 };
-S.wsL.onclose = ()=>setTimeout(()=>{ if(S.wsL && S.wsL.readyState === WebSocket.CLOSED) startWS(); }, 3000);
+S.wsL.onclose = ()=>{
+if(!S.liqEnabled) return;
+setTimeout(()=>{
+if(!S.liqEnabled) return;
+if(S.wsL && S.wsL.readyState === WebSocket.OPEN) return;
+startLiqWS();
+}, 3000);
+};
 }catch(e){}
+}
+
+function stopLiqWS(){
+if(S.wsL){ try{ S.wsL.close(); }catch(e){} S.wsL = null; }
+}
+
+function toggleLiq(){
+  S.liqEnabled = !S.liqEnabled;
+
+  const sw = document.getElementById('lq-switch');
+  if(sw) sw.classList.toggle('on', S.liqEnabled);
+
+  if(S.liqEnabled){
+    toast('Liquidation feed ON');
+    const feed = document.getElementById('lq-feed');
+    if(feed) feed.innerHTML = '<div class="liq-empty">Waiting for liquidations...</div>';
+    const cnt = document.getElementById('lq-cnt');
+    if(cnt) cnt.textContent = '0';
+    startLiqWS();
+  } else {
+    toast('Liquidation feed OFF');
+    stopLiqWS();
+    S.liqRaw = [];
+    S.liqMarkers = [];
+    try{ if(S.series.candle) S.series.candle.setMarkers([]); }catch(e){}
+    const feed = document.getElementById('lq-feed');
+    if(feed) feed.innerHTML = '<div class="liq-empty">Feed is off · toggle to enable</div>';
+    const cnt = document.getElementById('lq-cnt');
+    if(cnt) cnt.textContent = '0';
+  }
+
+
+saveSettings();
+}
+
+function stopLiqWS(){
+if(S.wsL){ try{ S.wsL.close(); }catch(e){} S.wsL = null; }
+}
+
+function toggleLiq(){
+S.liqEnabled = !S.liqEnabled;
+
+const sw = document.getElementById('lq-switch');
+if(sw) sw.classList.toggle('on', S.liqEnabled);
+
+if(S.liqEnabled){
+toast('Liquidation feed ON');
+const feed = document.getElementById('lq-feed');
+if(feed) feed.innerHTML = '<div class="liq-empty">Waiting for liquidations...</div>';
+const cnt = document.getElementById('lq-cnt');
+if(cnt) cnt.textContent = '0';
+startLiqWS();
+} else {
+toast('Liquidation feed OFF');
+stopLiqWS();
+S.liqRaw = [];
+S.liqMarkers = [];
+try{ if(S.series.candle) S.series.candle.setMarkers([]); }catch(e){}
+const feed = document.getElementById('lq-feed');
+if(feed) feed.innerHTML = '<div class="liq-empty">Feed is off · toggle to enable</div>';
+const cnt = document.getElementById('lq-cnt');
+if(cnt) cnt.textContent = '0';
+}
+
+saveSettings();
 }
 
 function upsert(bar){
@@ -1543,12 +2075,13 @@ S._syncing = true;
 try {
 try{ S.series.candle.update(bar); }catch(e){}
 try{ S.series.volume.update({ time:bar.time, value:bar.volume, color:C.VOL }); }catch(e){}
+if(S._autoS){ try{ S._autoS.update({ time:bar.time, value:bar.close }); }catch(e){} } 
 } finally {
 S._syncing = false;
 }
 
 updateHUD(bar.close, null);
-checkAlert(bar.close);
+checkAlerts(bar.close);
 updateAlertLabel();
 
 /* Panels — full setData rebuild (avoids any partial-update desync) */
@@ -1575,49 +2108,164 @@ if(ce){ ce.textContent = (ch>0?'+':'')+ch.toFixed(2)+'%'; ce.style.color = ch>=0
 }
 }
 
-function drawAlertLine(){
-if(!S.alert.price || !S.series.candle) return;
-if(S.alert.line){ try{ S.series.candle.removePriceLine(S.alert.line); }catch(e){} }
-S.alert.line = S.series.candle.createPriceLine({
-price: S.alert.price, color: C.ACCENT, lineWidth: 2, lineStyle: 2,
-axisLabelVisible: false, title: ''
-});
-updateAlertLabel();
+/* ═══════════════ MULTI PRICE ALERTS ═══════════════ */
+let _alertSeq = 0;
+function _nextAlertId(){ return 'a_' + Date.now().toString(36) + '_' + (++_alertSeq); }
+
+function _createAlertLine(a){
+  if(!S.series.candle || a.symbol !== S.symbol) return;
+  /* Միայն ACTIVE alert-ները line են ստանում */
+  if(a.status !== 'active') return;
+  try{
+    a.line = S.series.candle.createPriceLine({
+      price: a.price,
+      color: C.ACCENT,
+      lineWidth: 2,
+      lineStyle: 2,
+      axisLabelVisible: false,
+      title: ''
+    });
+  }catch(e){ a.line = null; }
 }
+
+function addAlert(price){
+  if(!isFinite(price) || price <= 0) return null;
+  const a = {
+    id: _nextAlertId(),
+    price,
+    line: null,
+    last: S.livePrice || null,
+    status: 'active',
+    createdAt: Date.now(),
+    triggeredAt: null,
+    symbol: S.symbol
+  };
+  S.alerts.push(a);
+  _createAlertLine(a);
+  _ensureAlertLabel(a);   // ← NEW
+  renderAlertList();
+  updateAlertLabels();
+  return a;
+}
+
+function removeAlert(id){
+  const i = S.alerts.findIndex(a => a.id === id);
+  if(i < 0) return;
+  const a = S.alerts[i];
+  if(a.line && S.series.candle){
+    try{ S.series.candle.removePriceLine(a.line); }catch(e){}
+  }
+  _removeAlertLabel(a);   // ← NEW
+  S.alerts.splice(i, 1);
+  renderAlertList();
+  updateAlertLabels();
+}
+
+function clearAllAlerts(){
+  S.alerts.forEach(a => {
+    if(a.line && S.series.candle){
+      try{ S.series.candle.removePriceLine(a.line); }catch(e){}
+    }
+    _removeAlertLabel(a);   // ← NEW
+  });
+  S.alerts = [];
+  renderAlertList();
+  updateAlertLabels();
+}
+
+function rebuildAlertLines(){
+  if(!S.series.candle) return;
+  S.alerts.forEach(a => {
+    if(a.line){
+      try{ S.series.candle.removePriceLine(a.line); }catch(e){}
+      a.line = null;
+    }
+  });
+  S.alerts.forEach(a => {
+    if(a.symbol !== S.symbol) return;
+    _createAlertLine(a);
+  });
+}
+
+function renderAlertList(){
+  const list = $('#pa-list');
+  if(!list) return;
+
+  const mine = S.alerts.filter(a => a.symbol === S.symbol);
+  const cnt = $('#pa-count');
+  if(cnt) cnt.textContent = mine.length;
+
+  if(!mine.length){ list.innerHTML = ''; return; }
+
+  list.innerHTML = mine.map(a => {
+    const isSent = a.status === 'sent';
+    const t = new Date(a.createdAt).toTimeString().slice(0,5);
+    return `
+      <div class="pa-item ${a.status}" data-aid="${a.id}">
+        <span class="p">${fmtP(a.price)}</span>
+        <span class="st">${t}</span>
+        <span class="ok">${isSent ? '✓' : ''}</span>
+        <button class="x" data-aid="${a.id}" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('.x').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      removeAlert(btn.dataset.aid);
+    });
+  });
+}
+
 function setAlert(){
-const v = parseFloat($('#pa').value);
-if(!isFinite(v) || v<=0){ toast('Invalid price','e'); return; }
-S.alert.price = v; S.alert.last = null;
-drawAlertLine();
-const st = $('#pa-st');
-st.textContent = 'set @ '+fmtP(v);
-st.classList.add('warn'); st.classList.remove('ok');
+  const input = $('#pa');
+  if(!input) return;
+  const v = parseFloat(input.value);
+  if(!isFinite(v) || v <= 0){ toast('Invalid price','e'); return; }
+  const a = addAlert(v);
+  if(!a) return;
+  input.value = '';
+  input.focus();
+  const st = $('#pa-st');
+  if(st){
+    st.textContent = 'added @ ' + fmtP(v);
+    st.classList.add('warn'); st.classList.remove('ok');
+  }
 }
-function clearAlert(){
-if(S.alert.line && S.series.candle){ try{ S.series.candle.removePriceLine(S.alert.line); }catch(e){} }
-S.alert.line = null; S.alert.price = null; S.alert.last = null;
-const st = $('#pa-st');
-st.textContent = 'cleared'; st.classList.remove('warn','ok');
-const lbl = $('#alert-lbl'); if(lbl) lbl.style.display='none';
-}
-function checkAlert(p){
-const t = S.alert.price;
-if(!t){ S.alert.last = p; return; }
-const prev = S.alert.last;
-S.alert.last = p;
-if(prev == null) return;
-const crossed = (prev<t && p>=t) || (prev>t && p<=t);
-if(crossed){
-beep(1200);
-toast('🔔 Alert: '+fmtP(p), 'w');
-sendTg(`🔔 PRICE ALERT\n${S.symbol} crossed ${fmtP(t)}\nNow: ${fmtP(p)}`);
-const st = $('#pa-st');
-st.textContent = 'hit @ '+fmtP(p);
-st.classList.add('ok'); st.classList.remove('warn');
-if(S.alert.line && S.series.candle){ try{ S.series.candle.removePriceLine(S.alert.line); }catch(e){} S.alert.line = null; }
-S.alert.price = null;
-const lbl = $('#alert-lbl'); if(lbl) lbl.style.display='none';
-}
+
+function checkAlerts(p){
+  if(!S.alerts.length) return;
+  let changed = false;
+  S.alerts.forEach(a => {
+    if(a.status !== 'active') return;
+    if(a.symbol !== S.symbol) return;
+    const prev = a.last;
+    a.last = p;
+    if(prev == null) return;
+    const crossed = (prev < a.price && p >= a.price) || (prev > a.price && p <= a.price);
+    if(!crossed) return;
+
+    a.status = 'sent';
+    a.triggeredAt = Date.now();
+
+    /* Line-ը ջնջվում է, նորը ՉԻ ստեղծվում */
+    if(a.line && S.series.candle){
+      try{ S.series.candle.removePriceLine(a.line); }catch(e){}
+      a.line = null;
+    }
+    /* Label-ը DOM-ից ջնջվում է */
+    _removeAlertLabel(a);
+
+    beep(1200);
+    toast('🔔 Alert: ' + fmtP(p), 'w');
+    if(S.tg.token && S.tg.chat){
+      sendTgWithScreenshot(`🔔 <b>PRICE ALERT</b>\n${S.symbol} crossed ${fmtP(a.price)}\nNow: ${fmtP(p)}`);
+    }
+    changed = true;
+  });
+  if(changed) renderAlertList();
+  updateAlertLabels();   // ← NEW (ամեն tick-ի pct-ը թարմանա)
 }
 
 async function sendTg(msg, verbose){
@@ -1704,6 +2352,98 @@ if(!e.shiftKey && !shift) lock(false);
 e.preventDefault(); e.stopPropagation();
 }, true);
 }
+
+
+async function sendTgWithScreenshot(caption){
+  if(!S.tg.token || !S.tg.chat) return false;
+  
+  // Taqcnum enq cursor-nern u avelord elementnery nkaric
+  const el = $('#stack');
+  const m = ['#mr','#ml','#mc','#cursor-lbl','#alert-labels','#xh-label'].map(s => $(s));
+  m.forEach(x => x && (x.style.display='none'));
+  
+  try {
+    const cv = await html2canvas(el, { backgroundColor:'#0d1017', scale:2, logging:false, useCORS:true });
+    cv.toBlob(blob => {
+      const formData = new FormData();
+      formData.append('chat_id', S.tg.chat);
+      formData.append('photo', blob, 'chart.png');
+      if (caption) formData.append('caption', caption);
+      formData.append('parse_mode', 'HTML');
+      
+      // Ugharkum enq aranc Content-Type nshelu (fetch-y inqn e dnum multipart/form-data)
+      fetch(`https://api.telegram.org/bot${S.tg.token}/sendPhoto`, {
+        method: 'POST',
+        body: formData
+      }).catch(err => console.error('TG Send Error:', err));
+    }, 'image/png');
+  } catch(e) {
+    console.error('Screenshot error:', e);
+  } finally {
+    // Het enq berum elementnery
+    m.forEach(x => x && (x.style.display='')); 
+    updateAlertLabel();
+  }
+}
+
+
+/* ═══════════════ PRICE-LINE WHEEL ZOOM ═══════════════
+   Երբ mouse-ը alert price line-ի մոտ է (±24px), wheel-ը անում է
+   ՄԻԱՅՆ ուղղահայաց (price) zoom: Anchor = S.alert.price,
+   time axis-ը մնում է անփոփոխ:
+*/
+function setupPriceScaleCustomZoom() {
+  const ct = document.getElementById('c-main');
+  if (!ct) return;
+
+  ct.addEventListener('wheel', (e) => {
+    const rect = ct.getBoundingClientRect();
+    if ((e.clientX - rect.left) <= (rect.width - 70)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const target = document.elementFromPoint(e.clientX, e.clientY);
+    if (!target || target.tagName !== 'CANVAS') return;
+
+    // e.deltaY > 0 (ներքև սքրոլ) = zoom out (քաշում ենք վերև՝ -25)
+    // e.deltaY < 0 (վերև սքրոլ) = zoom in (քաշում ենք ներքև՝ +25)
+    const dy = e.deltaY > 0 ? -25 : 25;
+
+    // Լոկալ անջատում ենք միայն այս event-ի պաշտպանությունը, որպեսզի օրիգինալ քաշելը չվնասվի
+    const origSet = target.setPointerCapture;
+    const origRel = target.releasePointerCapture;
+    target.setPointerCapture = function() {};
+    target.releasePointerCapture = function() {};
+
+        try {
+      const evInit = {
+        bubbles: true, cancelable: true, pointerId: 9999,
+        isPrimary: true, button: 0, buttons: 1,
+        clientX: e.clientX, clientY: e.clientY
+      };
+      
+      target.dispatchEvent(new PointerEvent('pointerdown', evInit));
+      evInit.clientY += dy;
+      target.dispatchEvent(new PointerEvent('pointermove', evInit));
+      evInit.buttons = 0;
+      target.dispatchEvent(new PointerEvent('pointerup', evInit));
+    } catch(err) {} 
+    finally {
+      if (origSet !== undefined) target.setPointerCapture = origSet; else delete target.setPointerCapture;
+      if (origRel !== undefined) target.releasePointerCapture = origRel; else delete target.releasePointerCapture;
+    }
+  }, { passive: false, capture: true });
+
+  ct.addEventListener('dblclick', (e) => {
+    const rect = ct.getBoundingClientRect();
+    if ((e.clientX - rect.left) <= (rect.width - 70)) return;
+    e.preventDefault(); e.stopPropagation();
+    const ps = S.charts.main?.priceScale('right');
+    if (ps) ps.applyOptions({ autoScale: true });
+  }, { capture: true });
+}
+
 
 /* ═══════════════ CONTEXT MENU ═══════════════ */
 function setupCtx(){
@@ -1803,6 +2543,8 @@ document.querySelectorAll('.ib.active').forEach(b => b.classList.remove('active'
 }
 }
 
+
+
 /* ═══════════════ STYLE ═══════════════ */
 function setStyle(st){
 S.style = st;
@@ -1848,8 +2590,336 @@ try{ c.applyOptions({ visible:true }); c.setData(S.prices); }catch(e){}
 }
 $$('#ms .ddi').forEach(el => el.classList.toggle('on', el.dataset.st === st));
 S.vp.lastKey = '';
+$$('#ms .ddi').forEach(el => el.classList.toggle('on', el.dataset.st === st));
+S.vp.lastKey = '';
+
+// Cancel any running auto-area animation & reset
+if(_autoAnim){ cancelAnimationFrame(_autoAnim); _autoAnim = 0; }
+if(S._autoS){
+  try{ S.charts.main.removeSeries(S._autoS); }catch(e){}
+  S._autoS = null;
+}
+S._autoT = 0;
+S._autoArea = false;
+setTimeout(scheduleAutoCheck, 80);
+rebuildAlertLines();   // ← NEW
+
 saveLayout();
 }
+
+/* ═══════════════ AUTO AREA (zoom-out) ═══════════════ */
+/* ═══════════════ AUTO AREA (zoom-out) ═══════════════ */
+/* ═══════════════ AUTO AREA (smooth crossfade) ═══════════════ */
+/* ═══════════════ AUTO AREA · pure crossfade ═══════════════ */
+const _C_UP = [0, 255, 200];
+const _C_DN = [168, 85, 247];
+const _AREA_COLOR = [46, 127, 208];   // #2E7FD0
+
+let _autoAnim = 0;
+
+function _rgba(c, a){
+  a = Math.max(0, Math.min(1, a));
+  return `rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(3)})`;
+}
+
+/* easeInOutCubic — smooth, no "snap" at endpoints */
+function _ease(t){
+  return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+}
+
+function _ensureAutoSeries(){
+  if(S._autoS) return true;
+  if(!S.charts.main || !S.prices.length) return false;
+  try{
+    S._autoS = S.charts.main.addAreaSeries({
+  lineColor:'rgba(59,130,246,0)',
+  topColor:'rgba(59,130,246,0)',
+  bottomColor:'rgba(59,130,246,0)',
+      lineWidth:2,
+      priceFormat:{ type:'custom', formatter:fmtP, minMove:1e-8 },
+      lastValueVisible:false,
+      priceLineVisible:false,
+      crosshairMarkerVisible:true
+    });
+    S._autoS.setData(S.prices.map(p => ({ time:p.time, value:p.close })));
+    return true;
+  }catch(e){ S._autoS = null; return false; }
+}
+
+/* heiken source data — preserve transformed OHLC during transition */
+function _candleSourceData(){
+  if(S.style !== 'heiken') return S.prices;
+  const ha = [];
+  S.prices.forEach((p,i)=>{
+    if(i===0){ ha.push({ time:p.time, open:p.open, high:p.high, low:p.low, close:p.close }); return; }
+    const prev = ha[i-1];
+    const o = (prev.open + prev.close) / 2;
+    const cl = (p.open + p.high + p.low + p.close) / 4;
+    ha.push({ time:p.time, open:o, high:Math.max(p.high,o,cl), low:Math.min(p.low,o,cl), close:cl });
+  });
+  return ha;
+}
+
+/* Precompute all keyframes once — no GC churn mid-animation */
+function _buildFrames(startT, targetT, N_FRAMES){
+  const src = _candleSourceData();
+  const N = src.length;
+  const isHollow = S.style === 'hollow';
+  const goingUp = targetT > startT;
+  const frames = [];
+
+  for(let f = 0; f <= N_FRAMES; f++){
+    const rawP = f / N_FRAMES;
+    const t = startT + (targetT - startT) * _ease(rawP);
+
+    let candleA, areaA;
+    if(goingUp){
+      // FORWARD (candle → area): անփոփոխ, ինչպես հավանել ես
+      candleA = Math.max(0, 1 - t);
+      areaA   = Math.max(0, t);
+    } else {
+      // REVERSE (area → candle):
+      //   area:   pow(t, 0.35)  — fade-out-ը ~40% ավելի դանդաղ (նախ 0.5 էր)
+      //   candle: pow(1-t, 0.625) — fade-in-ը ~25% ավելի դանդաղ (նախ 0.5 էր)
+      // Երկուսն էլ mid-ում 0.6–0.8-ի սահմաններում → ոչ մի դատարկ պահ
+      
+  // REVERSE (area → candle):
+  //   area:   pow(t, 0.30)    — fade-out ~15% դանդաղ (նախ 0.35 էր)
+  //   candle: pow(1-t, 0.75)  — fade-in ~25% դանդաղ (նախ 0.625 էր)
+  candleA = Math.pow(Math.max(0, 1 - t), 0.75);
+  areaA   = Math.pow(Math.max(0, t),     0.30);
+}
+    
+
+    const candleData = new Array(N);
+    for(let i = 0; i < N; i++){
+      const bar = src[i];
+      const isUp = bar.close >= bar.open;
+      const col = isUp ? _C_UP : _C_DN;
+      const colorStr = _rgba(col, candleA);
+      candleData[i] = {
+        time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close,
+        color:       isHollow ? 'rgba(0,0,0,0)' : colorStr,
+        borderColor: colorStr,
+        wickColor:   colorStr
+      };
+    }
+
+    /* Volume is CONSTANT — no fade, always visible */
+const volData = S.prices.map(p => ({
+  time: p.time, value: p.volume,
+  color: C.VOL
+}));
+
+    frames.push({ rawP, candleData, volData, areaA });
+  }
+  return frames;
+}
+
+function _restoreCandleStyle(){
+  if(!S.series.candle) return;
+  try{ S.series.volume.applyOptions({ visible:true }); }catch(e){}
+
+  if(S.style === 'hollow'){
+    try{
+      S.series.candle.applyOptions({
+        upColor:'transparent', borderUpColor:C.UP, wickUpColor:C.UP,
+        downColor:'transparent', borderDownColor:C.DN, wickDownColor:C.DN,
+        borderVisible:true, visible:true,
+lastValueVisible:true, priceLineVisible:true, priceLineColor: C.UP
+      });
+      S.series.candle.setData(S.prices);
+    }catch(e){}
+  } else if(S.style === 'heiken'){
+    try{
+      S.series.candle.applyOptions({
+        upColor:C.UP, downColor:C.DN,
+        wickUpColor:C.UP, wickDownColor:C.DN,
+        borderVisible:false, visible:true,
+        lastValueVisible:true, priceLineVisible:true, priceLineColor: C.UP
+      });
+      S.series.candle.setData(_candleSourceData());
+    }catch(e){}
+  } else {
+    try{
+      S.series.candle.applyOptions({
+        upColor:C.UP, downColor:C.DN,
+        wickUpColor:C.UP, wickDownColor:C.DN,
+        borderVisible:false, visible:true,
+       lastValueVisible:true, priceLineVisible:true, priceLineColor: C.UP
+      });
+      S.series.candle.setData(S.prices);
+    }catch(e){}
+  }
+  if(S.series.volume){
+    try{ S.series.volume.setData(S.prices.map(p => ({ time:p.time, value:p.volume, color:C.VOL }))); }catch(e){}
+  }
+}
+
+function _finalize(target){
+  if(target >= 0.5){
+    /* ═ AREA mode ═
+       - Data-ն reset անում ենք մաքուր OHLC-ի (առանց per-bar գույների)
+       - Series-ի գույները դարձնում ենք transparent applyOptions-ով
+       - visible / lastValueVisible / priceLineVisible = true ՄՆՈՒՄ ԵՆ
+       - Price line, label, alerts-ները → ամբողջովին անփոփոխ */
+
+    try{
+      S.series.candle.setData(S.prices.map(p => ({
+        time:p.time, open:p.open, high:p.high, low:p.low, close:p.close
+      })));
+      S.series.candle.applyOptions({
+        upColor:'rgba(0,0,0,0)',
+        downColor:'rgba(0,0,0,0)',
+        borderUpColor:'rgba(0,0,0,0)',
+        borderDownColor:'rgba(0,0,0,0)',
+        wickUpColor:'rgba(0,0,0,0)',
+        wickDownColor:'rgba(0,0,0,0)',
+        borderVisible:false,
+        visible:true,
+        lastValueVisible:true,
+        priceLineVisible:true,
+        priceLineColor: C.UP
+      });
+    }catch(e){}
+    try{ S.series.volume.applyOptions({ visible:true }); }catch(e){}
+    if(S._autoS){
+      try{
+        S._autoS.applyOptions({
+          lineColor: _rgba(_AREA_COLOR, 1),
+          topColor: _rgba(_AREA_COLOR, 0.28),
+          bottomColor: _rgba(_AREA_COLOR, 0.01)
+        });
+      }catch(e){}
+    }
+    S._autoArea = true;
+  } else {
+    if(S._autoS){
+      try{ S.charts.main.removeSeries(S._autoS); }catch(e){}
+      S._autoS = null;
+    }
+    _restoreCandleStyle();
+    S._autoArea = false;
+  }
+
+}
+
+function _cancelAutoAnim(){
+  if(_autoAnim){ cancelAnimationFrame(_autoAnim); _autoAnim = 0; }
+}
+
+function _animTo(target, dur = 550){
+  if(!S.charts.main || !S.series.candle || !S.prices.length) return;
+  if(target > 0 && !_ensureAutoSeries()) return;
+
+  _cancelAutoAnim();
+
+  const startT = S._autoT || 0;
+  const dist = Math.abs(target - startT);
+  if(dist < 0.02){ _finalize(target); S._autoT = target; return; }
+
+  const actualDur = Math.max(260, dur * dist);
+  const N_FRAMES = 30;
+  const frames = _buildFrames(startT, target, N_FRAMES);
+
+  /* *** BUG FIX ***  Երկու layer-ներն էլ պետք է VISIBLE լինեն անիմացիայի
+     ընթացքում։ setData()-ն hidden series-ի վրա ոչինչ չի ռենդերում,
+     անկախ alpha-ից։ Ահա թե ինչու էր առաջանում «դատարկ պատուհան»։ */
+  /* Մոմիկների series-ը մնում է ամբողջովին կենդանի.
+   Մենք միայն գույներով ենք fade անում setData-ով։ */
+/* Մոմիկների series-ը մնում է ամբողջովին կենդանի.
+   Մենք միայն գույներով ենք fade անում setData-ով։ */
+try{
+  S.series.candle.applyOptions({
+    visible:true,
+    lastValueVisible:true,
+    priceLineVisible:true,
+    priceLineColor: C.UP
+  });
+}catch(e){}
+
+  try{ S.series.volume.applyOptions({ visible:true }); }catch(e){}
+  if(S._autoS){ try{ S._autoS.applyOptions({ lastValueVisible:false }); }catch(e){} }
+
+  const t0 = performance.now();
+  let lastIdx = -1;
+
+  const step = (now) => {
+    const rawP = Math.min(1, (now - t0) / actualDur);
+    const idx = Math.min(N_FRAMES, Math.floor(rawP * N_FRAMES));
+
+    if(idx !== lastIdx){
+      lastIdx = idx;
+      const f = frames[idx];
+      S._autoT = startT + (target - startT) * _ease(f.rawP);
+
+      try{ S.series.candle.setData(f.candleData); }catch(e){}
+      try{ S.series.volume.setData(f.volData); }catch(e){}
+
+    if(S._autoS){
+  try{
+    S._autoS.applyOptions({
+      lineColor:   _rgba(_AREA_COLOR, f.areaA),
+      topColor:    _rgba(_AREA_COLOR, f.areaA * 0.28),
+      bottomColor: _rgba(_AREA_COLOR, f.areaA * 0.01)
+    });
+  }catch(e){}
+}
+    }
+
+    if(rawP < 1){
+      _autoAnim = requestAnimationFrame(step);
+    } else {
+      _autoAnim = 0;
+      S._autoT = target;
+      _finalize(target);
+    }
+  };
+  _autoAnim = requestAnimationFrame(step);
+}
+
+function applyAutoArea(){   _animTo(1, 1050); }   // fade-in · 3.3x դանդաղ
+function removeAutoArea(){  _animTo(0, 800); }   // fade-out · ՆՈՒՅՆ տևողություն
+
+function checkAutoStyle(){
+  if(!S.charts.main || !S.series.candle) return;
+
+  if(S.style === 'line' || S.style === 'area'){
+    if(S._autoS || S._autoArea){ removeAutoArea(); }
+    return;
+  }
+
+  let range;
+  try{ range = S.charts.main.timeScale().getVisibleLogicalRange(); }catch(e){ return; }
+  if(!range) return;
+
+  const cw = ($('#c-main')?.clientWidth) || 800;
+  const visibleBars = range.to - range.from;
+  if(visibleBars <= 0) return;
+
+  const barSpacing = cw / visibleBars;
+  const TO_AREA   = 1.8;
+  const TO_CANDLE = 2.8;
+
+  if(!S._autoArea && barSpacing < TO_AREA){
+    S._autoArea = true;
+    applyAutoArea();
+  } else if(S._autoArea && barSpacing > TO_CANDLE){
+    S._autoArea = false;
+    removeAutoArea();
+  }
+}
+
+let _autoRaf = 0;
+function scheduleAutoCheck(){
+  if(_autoRaf) return;
+  _autoRaf = requestAnimationFrame(() => {
+    _autoRaf = 0;
+    checkAutoStyle();
+  });
+}
+
+
 
 function saveLayout(){
 try{
@@ -1867,6 +2937,7 @@ order:S.order, panels, vp:S.vp.en
 function loadLayout(){
 try{ const r = localStorage.getItem(LK); return r ? JSON.parse(r) : null; } catch(e){ return null; }
 }
+
 function saveSettings(){
 try{ localStorage.setItem(SK, JSON.stringify({ tg:S.tg, tz:S.tz, thr:S.thr })); }catch(e){}
 }
@@ -1880,6 +2951,40 @@ if(o.tz) S.tz = o.tz;
 if(o.thr) S.thr = { ...S.thr, ...o.thr };
 }catch(e){}
 }
+
+function loadSettings(){
+try{
+const r = localStorage.getItem(SK);
+if(!r) return;
+const o = JSON.parse(r);
+if(o.tg) S.tg = o.tg;
+if(o.tz) S.tz = o.tz;
+if(o.thr) S.thr = { ...S.thr, ...o.thr };
+/* ★ liqEnabled-ը localStorage-ից ՉԵՆՔ restore անում —
+   ամեն page load սկսվում է OFF-ից */
+}catch(e){}
+}
+
+function toggleFullScreen() {
+  const container = document.getElementById('stack');
+  if (!document.fullscreenElement) {
+    if (container.requestFullscreen) container.requestFullscreen();
+    else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+}
+
+// Shift + F shortcut
+window.addEventListener('keydown', (e) => {
+  if (e.shiftKey && (e.key === 'F' || e.key === 'f')) {
+    e.preventDefault();
+    toggleFullScreen();
+  }
+});
+
+
 
 function bindUI(){
 const ci = $('#ci');
@@ -1999,7 +3104,17 @@ $('#tg-chat').addEventListener('change', tgSave);
 $('#tg-test').addEventListener('click', ()=>{ tgSave(); sendTg('✅ Engine connected · '+S.symbol, true); });
 
 $('#pa-set').addEventListener('click', setAlert);
-$('#pa-clr').addEventListener('click', clearAlert);
+$('#pa-clr').addEventListener('click', () => {
+  clearAllAlerts();
+  const st = $('#pa-st');
+  if(st){ st.textContent = 'all cleared'; st.classList.remove('warn','ok'); }
+});
+const paInput = $('#pa');
+if(paInput){
+  paInput.addEventListener('keypress', e => {
+    if(e.key === 'Enter'){ e.preventDefault(); setAlert(); }
+  });
+}
 $('#vt').addEventListener('change', e => {
 S.thr.vol = +e.target.value || 0;
 const st = $('#vt-st');
@@ -2008,6 +3123,11 @@ st.classList.toggle('warn', S.thr.vol > 0);
 saveSettings();
 });
 $('#lq').addEventListener('change', e => { S.thr.liq = +e.target.value || 0; saveSettings(); });
+const lqSw = $('#lq-switch');
+if(lqSw){
+  lqSw.addEventListener('click', (e) => { e.stopPropagation(); toggleLiq(); });
+  lqSw.classList.toggle('on', S.liqEnabled);
+}
 
 window.addEventListener('message', e => {
 const d = e.data;
@@ -2031,12 +3151,17 @@ if(ct) try{ c.applyOptions({ width: Math.max(1, ct.clientWidth), height: Math.ma
 try{ XH.scaleWidth = S.charts.main.priceScale('right').width() || 68; }catch(e){}
 S.vp.lastKey = '';
 closeDropdown();
+renderAlertList();          // ← NEW
 updateAlertLabel();
+scheduleAutoCheck();   // ← NEW
 });
 }
 
+
+
 async function reload(){
 document.title = S.symbol;
+try { S.charts.main.priceScale('right').applyOptions({ autoScale: true }); } catch(e){}
 try{ S.wsK && S.wsK.close(); }catch(e){}
 try{ S.wsL && S.wsL.close(); }catch(e){}
 S.liqMarkers = [];
@@ -2049,17 +3174,33 @@ S._ready = false;
 S.noMore = false;
 if(S.series.candle){ try{ S.series.candle.setMarkers([]); }catch(e){} }
 S.vp.lastKey = '';
-clearAlert();
+
+/* ★ Մաքրել brush-ի գծագրերը symbol/TF փոփոխության ժամանակ */
+if(S.charts.main && S.charts.main.removeAllLineTools) {
+  try { S.charts.main.removeAllLineTools(); } catch(e){}
+}
+S._setDrawMode?.(false);
+
 $('#pa-st').textContent = '';
 const feed = $('#lq-feed');
-if(feed) feed.innerHTML = '<div class="liq-empty">Waiting for liquidations...</div>';
+if(feed) feed.innerHTML = S.liqEnabled
+  ? '<div class="liq-empty">Waiting for liquidations...</div>'
+  : '<div class="liq-empty">Feed is off · toggle to enable</div>';
+const lqSw = $('#lq-switch');
+if(lqSw) lqSw.classList.toggle('on', S.liqEnabled);
 const cnt = $('#lq-cnt'); if(cnt) cnt.textContent = '0';
+
+/* ★ Drawings-ները պատկանում են հին symbol/TF-ին */
+if(S.setDrawMode) S.setDrawMode(false);
+if(S.dmClear) S.dmClear();
 
 await fetchInit();
 renderAllPanels();
 syncAllPanelsToMain();
 startWS();
 }
+
+
 
 async function init(){
 try{ if(window.self !== window.top) document.body.classList.add('emb'); }catch(e){}
@@ -2075,6 +3216,17 @@ setupCtx();
 bindUI();
 loadSettings();
 
+/* ★ Liquidation feed — միշտ OFF page load-ից հետո */
+S.liqEnabled = false;
+{
+  const lqSw = $('#lq-switch');
+  if(lqSw) lqSw.classList.remove('on');
+  const feed = $('#lq-feed');
+  if(feed) feed.innerHTML = '<div class="liq-empty">Feed is off · toggle to enable</div>';
+  const cnt = $('#lq-cnt');
+  if(cnt) cnt.textContent = '0';
+}
+
 $('#vt').value = S.thr.vol;
 $('#lq').value = S.thr.liq;
 $('#tg-tok').value = S.tg.token || '';
@@ -2089,6 +3241,8 @@ const st = $('#vt-st');
 st.textContent = S.thr.vol > 0 ? 'vol ≥ '+S.thr.vol : 'off';
 st.classList.toggle('warn', S.thr.vol > 0);
 }
+
+
 
 const L = loadLayout();
 let panelsToAdd = [];
@@ -2157,17 +3311,30 @@ console.log('  ✓ Post-rebuild force sync to main range');
 }
 
 return {
-        init: () => {
-            XH.init();
-            buildMain();
-            setupMeasure();
-            setupCtx();
-            bindUI();
-            initVP();
-            fetchInit();
-            startWS();
+    init: () => {
+        XH.init();
+        buildMain();
+        setupMeasure();
+        setupPriceScaleCustomZoom();
+        setupCtx();
+        bindUI();
+        initVP();
+
+        /* ★ Force liq OFF — 2-րդ պաշտպանություն */
+        S.liqEnabled = false;
+        {
+            const lqSw = $('#lq-switch');
+            if(lqSw) lqSw.classList.remove('on');
+            const feed = $('#lq-feed');
+            if(feed) feed.innerHTML = '<div class="liq-empty">Feed is off · toggle to enable</div>';
+            const cnt = $('#lq-cnt');
+            if(cnt) cnt.textContent = '0';
         }
-    };
+
+        fetchInit();
+        startWS();
+    }
+};
 })();
 
 ENGINE.init();
