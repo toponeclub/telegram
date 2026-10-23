@@ -812,7 +812,7 @@ fixLeftEdge:false, lockVisibleTimeRangeOnResize:true,
 visible: opts.timeAxis !== false
 },
 rightPriceScale:{
-  mode: 1, // <--- ՍԱ ԱՎԵԼԱՑՐՈՒ
+  mode: opts.priceMode !== undefined ? opts.priceMode : 0,
   borderColor: C.LINE,
   scaleMargins: opts.margins || { top:0.1, bottom:0.1 },
   autoScale: true,
@@ -859,7 +859,7 @@ ro.observe(container);
 S._mainRO = ro;
 
 ch.timeScale().subscribeVisibleLogicalRangeChange(r => {
-if(!r) return;
+if(!r || S._syncing) return; 
 const visibleBars = r.to - r.from;
 const leftRemaining = r.from;
 /* Ավելի վաղ trigger — եթե user-ը մոտենում է ձախ եզրին */
@@ -1633,13 +1633,6 @@ syncAllPanelsToMain();
 console.error(e);
 toast('Fetch error: '+e.message, 'e');
 }finally{ load(false); }
-
-/* ★ Silent prefetch — 3 chunk (1500 bar) հետո, առանց user-ին խանգարելու */
-if(S._ready){
-  setTimeout(() => {
-    if(!S.loadingHist && !S.noMore && S._ready) loadHistory(4);   // 2000 bar
-  }, 400);
-}
 }
 
 async function fetchAllOI(tf, targetMs){
@@ -1684,58 +1677,8 @@ if(S.loadingHist || S.noMore || !S.oldestTime || !S._ready) return;
 S.loadingHist = true;
 _cancelAutoAnim();
 
-/* ★ 1. CAPTURE RANGE — ԱՌԱՋԻՆԸ, նախքան որևէ setData */
-let timeRange = null;
-try {
-  timeRange = S.charts.main.timeScale().getVisibleRange();
-}catch(e){}
-
-/* ★ 2. SNAP — setData ա անում, ուստի range-ը կարող ա shift լինել */
-if(S._autoT > 0.5){
-  S._autoT = 1;
-  S._autoArea = true;
-  if(!S._autoS && !_ensureAutoSeries()){ S.loadingHist = false; return; }
-  try{
-    S.series.candle.setData(S.prices.map(p => ({
-      time:p.time, open:p.open, high:p.high, low:p.low, close:p.close
-    })));
-    S.series.candle.applyOptions({
-      upColor:'rgba(0,0,0,0)', downColor:'rgba(0,0,0,0)',
-      borderUpColor:'rgba(0,0,0,0)', borderDownColor:'rgba(0,0,0,0)',
-      wickUpColor:'rgba(0,0,0,0)', wickDownColor:'rgba(0,0,0,0)',
-      borderVisible:false, visible:true,
-      lastValueVisible:true, priceLineVisible:true, priceLineColor: C.UP
-    });
-  }catch(e){}
-  try{ S.series.volume.applyOptions({ visible:true }); }catch(e){}
-  if(S._autoS){
-    try{
-      S._autoS.applyOptions({
-        lineColor: _rgba(_AREA_COLOR, 1),
-        topColor: _rgba(_AREA_COLOR, 0.28),
-        bottomColor: _rgba(_AREA_COLOR, 0.01)
-      });
-    }catch(e){}
-  }
-} else {
-  S._autoT = 0;
-  S._autoArea = false;
-  if(S._autoS){
-    try{ S.charts.main.removeSeries(S._autoS); }catch(e){}
-    S._autoS = null;
-  }
-  _restoreCandleStyle();
-}
-
-/* ★ 3. RESTORE RANGE — snap-ից հետո, նախքան fetch */
-if(timeRange){
-  try { S.charts.main.timeScale().setVisibleRange(timeRange); }catch(e){}
-}
-
 const sym = S.symbol, tf = S.tf;
-
 try{
-/* 4. FETCH */
 const batchBars = Math.min(chunks * 500, 1500);
 const end = S.oldestTime - 1;
 const [kl, spot] = await Promise.all([
@@ -1764,19 +1707,47 @@ S.oiRaw = [...om.values()].sort((a,b)=>a.timestamp-b.timestamp);
 const lm = new Map(S.lsrRaw.map(o => [o.timestamp, o]));
 lsr.forEach(o => lm.set(o.timestamp, o));
 S.lsrRaw = [...lm.values()].sort((a,b)=>a.timestamp-b.timestamp);
+}catch(e){
+  console.warn('loadHistory fetch:', e);
+  S.loadingHist = false;
+  return;
+}
 
-/* 5. REBUILD + RESTORE — synchronous, no paint between */
+/* ★ RECAPTURE — fetch-ի ընթացքում user-ը կարող էր scroll անել,
+   ուստի capture-ը պետք ա ԼԻՆԻ ՀԵՆՑ ՀԻՄԱ, ոչ թե fetch-ից առաջ */
+const origLogical = S.charts.main.timeScale().getVisibleLogicalRange();
+const oldLen = S.prices.length;
+
+/* ★ ՄԵԿ synchronous block — setData + restore, առանց paint-ի միջև */
 S._syncing = true;
 try{
-  rebuild();
-  if(timeRange){
-    try { S.charts.main.timeScale().setVisibleRange(timeRange); }catch(e){}
+  /* Rebuild S.prices */
+  const raw = Array.from(S.rawBars.values()).sort((a,b)=>a.time-b.time);
+  S.prices = raw.map(b => ({...b}));
+  if(S.prices.length) S.livePrice = S.prices[S.prices.length-1].close;
+
+  /* setData — այստեղ ա LWC-ն shift անում (աջ-եզր anchor) */
+  if(S.series.candle) S.series.candle.setData(S.prices);
+  if(S.series.volume) S.series.volume.setData(S.prices.map(p => ({ time:p.time, value:p.volume, color:C.VOL })));
+  if(S._autoS) S._autoS.setData(S.prices.map(p => ({ time:p.time, value:p.close })));
+  rebuildAlertLines();
+
+  /* ★ RESTORE — ՆՈՒՅՆ block-ում, LWC-ն դեռ չի paint արել */
+  const newLen = S.prices.length;
+  const shift = newLen - oldLen;
+  if(origLogical && shift > 0){
+    try{
+      S.charts.main.timeScale().setVisibleLogicalRange({
+        from: origLogical.from + shift,
+        to: origLogical.to + shift
+      });
+    }catch(e){}
   }
 }finally{
   S._syncing = false;
 }
 
-/* 6. PANELS — synchronous */
+/* Panels — առանձին block, չեն ազդում main chart-ի վրա */
 S._syncing = true;
 try{
   S.order.forEach(renderPanel);
@@ -1785,37 +1756,8 @@ try{
   S._syncing = false;
 }
 
-/* ★ 7. SAFETY NET — վերականգնիր range-ը հաջորդ 2 frame-ում */
-/* LWC-ն երբեմն հետաձգում ա internal render, այս 2-ը բռնում են այդ */
-if(timeRange){
-  requestAnimationFrame(() => {
-    try { S.charts.main.timeScale().setVisibleRange(timeRange); }catch(e){}
-    requestAnimationFrame(() => {
-      try { S.charts.main.timeScale().setVisibleRange(timeRange); }catch(e){}
-    });
-  });
-}
-
 S.vp.lastKey = '';
-}catch(e){ console.warn('loadHistory:', e); }
-
 S.loadingHist = false;
-
-/* Chain — եթե դեռ մոտ ա ձախ եզրին */
-if(S._ready && !S.noMore){
-  try {
-    const r = S.charts.main.timeScale().getVisibleLogicalRange();
-    if(r){
-      const visibleBars = r.to - r.from;
-      const threshold = Math.max(150, visibleBars * 1.5);
-      if(r.from < threshold){
-        setTimeout(() => {
-          if(!S.loadingHist && !S.noMore && S._ready) loadHistory(2);
-        }, 80);
-      }
-    }
-  } catch(e){}
-}
 }
 
 function rebuild(){
