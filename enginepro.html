@@ -3345,16 +3345,17 @@ async function applySnapPreset(opts = {}) {
     const wantPanels = opts.panels || ['oi', 'oid', 'bsd'];
     const panelHeight = opts.panelHeight || 100;
 
-    const stack   = document.getElementById('stack');
+    const app     = document.getElementById('app');
     const ctrl    = document.getElementById('ctrl');
     const leftBar = document.getElementById('left-bar');
-    if (!stack) throw new Error('applySnapPreset: #stack missing');
+    if (!app) throw new Error('applySnapPreset: #app missing');
 
-    /* ── 1. Պահիր ընթացիկ վիճակը ── */
+    /* ── 1. Save state ── */
     const saved = {
-        stackStyle: stack.style.cssText,
-        ctrlCollapsed:    ctrl    ? ctrl.classList.contains('collapsed')    : true,
-        leftBarCollapsed: leftBar ? leftBar.classList.contains('collapsed') : false,
+        appStyle: app.style.cssText,
+        bodyStyle: document.body.style.cssText,
+        ctrlDisplay: ctrl ? ctrl.style.display : '',
+        leftBarDisplay: leftBar ? leftBar.style.display : '',
         vpEnabled: S.vp.en,
         panelOrder: S.order.slice(),
         panelHeights: {},
@@ -3365,17 +3366,18 @@ async function applySnapPreset(opts = {}) {
         }
     });
 
-    /* ── 2. Փակիր բոլոր ընթացիկ panels ── */
+    /* ── 2. Close all panels ── */
     Object.keys(S.panels).forEach(t => {
         try { removePanel(t); } catch(e){}
     });
 
-    /* ── 3. Ծալիր sidebar & ctrl panel ── */
-    if (ctrl)    ctrl.classList.add('collapsed');
-    if (leftBar) leftBar.classList.add('collapsed');
+    /* ── 3. Hide ctrl + leftBar completely (display:none) ── */
+    if (ctrl) ctrl.style.display = 'none';
+    if (leftBar) leftBar.style.display = 'none';
 
-    /* ── 4. Fix #stack չափսը ── */
-    stack.style.cssText = `
+    /* ── 4. Fix #app ITSELF (not #stack!) ── */
+    document.body.style.overflow = 'hidden';
+    app.style.cssText = `
         position: fixed;
         top: 0; left: 0;
         width: ${width}px;
@@ -3383,36 +3385,70 @@ async function applySnapPreset(opts = {}) {
         z-index: 99999;
         background: var(--bg);
         overflow: hidden;
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-rows: 44px 1fr;
     `;
 
-    /* ── 5. VP-ն ապահով միացրու ── */
-    if (!S.vp.en) {
-        try { toggleVP(); } catch(e){}
-    }
+    /* ── 5. VP ── */
+    if (!S.vp.en) { try { toggleVP(); } catch(e){} }
 
-    /* ── 6. Թող layout-ը settle լինի ── */
-    await new Promise(r => setTimeout(r, 400));
+    /* ── 6. Settle ── */
+    await new Promise(r => setTimeout(r, 300));
 
-    /* ── 7. Բացիր միայն snap panels ── */
+    /* ── 7. Open snap panels ── */
     wantPanels.forEach(t => {
         if (PDEF[t]) {
             try { addPanel(t, { silent: true, height: panelHeight }); } catch(e){}
         }
     });
 
-    /* ── 8. Թող panels-ը + charts-ը render լինեն ── */
-    await new Promise(r => setTimeout(r, 1500));
+    /* ── 8. Wait for addPanel's internal setTimeout(30) + render ── */
+    await new Promise(r => setTimeout(r, 400));
 
-    /* ── 9. Restore function ── */
+    /* ── 9. Force-resize helper ── */
+    const forceAll = () => {
+        Object.keys(S.charts).forEach(id => {
+            const ch = S.charts[id];
+            const ct = id === 'main' ? document.getElementById('c-main') : S.panels[id]?.container;
+            if (ch && ct && ct.clientWidth > 0 && ct.clientHeight > 0) {
+                try { ch.applyOptions({ width: ct.clientWidth, height: ct.clientHeight }); } catch(e){}
+            }
+        });
+        const cMain = document.getElementById('c-main');
+        if (cMain && S.vp.cv && S.vp.ctx) {
+            const dpr = window.devicePixelRatio || 1;
+            S.vp.cv.width = Math.round(cMain.clientWidth * dpr);
+            S.vp.cv.height = Math.round(cMain.clientHeight * dpr);
+            S.vp.cv.style.width = cMain.clientWidth + 'px';
+            S.vp.cv.style.height = cMain.clientHeight + 'px';
+            S.vp.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            S.vp.lastKey = '';
+        }
+    };
+
+    await new Promise(r => setTimeout(r, 300));
+    window.dispatchEvent(new Event('resize'));
+    forceAll();
+
+    await new Promise(r => setTimeout(r, 300));
+    forceAll();
+
+    /* ── 10. Re-render panels after resize ── */
+    S.order.forEach(t => { try { renderPanel(t); } catch(e){} });
+    try { syncAllPanelsToMain(); } catch(e){}
+
+    await new Promise(r => setTimeout(r, 500));
+    forceAll();
+
+    /* ── 11. Restore ── */
     return {
         restore: async () => {
             try { Object.keys(S.panels).forEach(t => { try { removePanel(t); } catch(e){} }); } catch(e){}
 
-            stack.style.cssText = saved.stackStyle;
-            if (ctrl)    ctrl.classList.toggle('collapsed', saved.ctrlCollapsed);
-            if (leftBar) leftBar.classList.toggle('collapsed', saved.leftBarCollapsed);
+            app.style.cssText = saved.appStyle;
+            document.body.style.cssText = saved.bodyStyle;
+            if (ctrl) ctrl.style.display = saved.ctrlDisplay;
+            if (leftBar) leftBar.style.display = saved.leftBarDisplay;
 
             if (!saved.vpEnabled && S.vp.en) {
                 try { toggleVP(); } catch(e){}
@@ -3426,8 +3462,16 @@ async function applySnapPreset(opts = {}) {
             S.order = saved.panelOrder.filter(t => PDEF[t]);
             try { saveLayout(); } catch(e){}
 
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 500));
             window.dispatchEvent(new Event('resize'));
+
+            Object.keys(S.charts).forEach(id => {
+                const ch = S.charts[id];
+                const ct = id === 'main' ? document.getElementById('c-main') : S.panels[id]?.container;
+                if (ch && ct) {
+                    try { ch.applyOptions({ width: ct.clientWidth, height: ct.clientHeight }); } catch(e){}
+                }
+            });
             S.vp.lastKey = '';
         }
     };
