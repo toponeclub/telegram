@@ -1958,12 +1958,11 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
 /* ─── WIDGET REGISTRY ─── */
 const WIDGET_REGISTRY = { 
-    btc_chart:    { id:'btc_chart',    name:'BTC Chart',         desc:'Live BTC candles · TF switch', icon:'fa-chart-line',         size:'full', category:'Trading',      render: renderBTCChartWidget, init: initBTCChartWidget },
     liquidations: { id:'liquidations', name:'Live Liquidations', desc:'Whale liq feed · real-time',   icon:'fa-water',              size:'1x2',  category:'Trading',      render: renderLiquidationsWidget, init: initLiquidationsWidget },
     screener:     { id:'screener',     name:'Market Screener',   desc:'Multi-filter + search',        icon:'fa-radar',              size:'full', category:'Trading',      render: renderScreenerWidget, init: initScreenerWidget },
-    signals:      { id:'signals',      name:'Intel Signals',     desc:'Live trading alerts',          icon:'fa-satellite',          size:'2x2',  category:'Trading',      premium:true, render: renderSignalsWidget },
-    terminal:     { id:'terminal',     name:'Pro Terminal',      desc:'DCA · Grid · Risk',            icon:'fa-chart-candlestick',  size:'1x1',  category:'Trading',      premium:true, render: renderTerminalWidget },
-    heatmap:      { id:'heatmap',      name:'365 Consistency',   desc:'Yearly habit matrix',          icon:'fa-fire',               size:'full', category:'Trading',      render: renderHeatmapWidget },
+    
+
+    
     goals:        { id:'goals',        name:'Active Goals',      desc:'Long-term objectives',         icon:'fa-bullseye',           size:'1x1',  category:'Productivity', render: renderGoalsWidget },
     biohacking:   { id:'biohacking',   name:'Bio-Sync Stack',    desc:'Supplement builder',           icon:'fa-dna',                size:'1x1',  category:'Productivity', render: renderBiohackingWidget },
     tasks:        { id:'tasks',        name:'Today Tasks',       desc:'Daily checklist',              icon:'fa-list-check',         size:'1x1',  category:'Productivity', render: renderTasksWidget },
@@ -1971,8 +1970,7 @@ const WIDGET_REGISTRY = {
     clock: { id:'clock', name:'Alarm · Timer', desc:'Alarm & countdown', icon:'fa-bell', size:'1x1', category:'Productivity', render: renderClockWidget, init: initClockWidget },
     quote:        { id:'quote',        name:'Quote',             desc:'Daily doctrine',               icon:'fa-quote-left',         size:'1x1',  category:'Productivity', render: renderQuoteWidget },
     notes:        { id:'notes',        name:'Notes',             desc:'Quick scratchpad',             icon:'fa-note-sticky',        size:'1x1',  category:'Productivity', render: renderNotesWidget },
-    community:    { id:'community',    name:'Community',         desc:'Live feed',                    icon:'fa-users',              size:'1x1',  category:'Social',       render: renderCommunityWidget },
-    affiliate:    { id:'affiliate',    name:'Affiliate',         desc:'Referrals & earnings',         icon:'fa-share-nodes',        size:'1x1',  category:'Social',       render: renderAffiliateWidget },
+    
     clock: { id:'clock', name:'Desk Clock', desc:'Alarm & timer', icon:'fa-clock', size:'1x1', category:'Productivity', render: renderClockWidget, init: initClockWidget },
     engine: {
     id: 'engine',
@@ -1984,25 +1982,7 @@ const WIDGET_REGISTRY = {
     render: renderEngineWidget,
     init: initEngineWidget
 },
-tv_others: {
-        id: 'tv_others',
-        name: 'TV Others',
-        desc: 'TradingView Custom Chart',
-        icon: 'fa-chart-line',
-        size: '2x2',
-        category: 'Trading',
-        render: renderTvOthersWidget
-    },
-coinglass: {
-    id: 'coinglass',
-    name: 'CoinGlass',
-    desc: 'TV chart · OI · Liq · Heatmaps',
-    icon: 'fa-solid fa-gem',
-    size: '2x2',
-    category: 'Trading',
-    render: renderCoinglassWidget,
-    init: initCoinglassWidget
-},
+
     crypto_sparkline: { 
         id:'crypto_sparkline', 
         name:'Crypto Sparkline', 
