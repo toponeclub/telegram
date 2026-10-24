@@ -3252,7 +3252,104 @@ console.log('  ✓ Time-scale propagation suppressed during setData');
 console.log('  ✓ Post-rebuild force sync to main range');
 }
 
-return {
+  /* ══════════════════════════════════════════════════════════════════
+   SNAP PRESET — միայն snapTest-ի համար
+   ══════════════════════════════════════════════════════════════════ */
+async function applySnapPreset(opts = {}) {
+    const width  = opts.width  || 1280;
+    const height = opts.height || 720;
+    const wantPanels = opts.panels || ['oi', 'oid', 'bsd'];
+    const panelHeight = opts.panelHeight || 100;
+
+    const stack   = document.getElementById('stack');
+    const ctrl    = document.getElementById('ctrl');
+    const leftBar = document.getElementById('left-bar');
+    if (!stack) throw new Error('applySnapPreset: #stack missing');
+
+    /* ── 1. Պահիր ընթացիկ վիճակը ── */
+    const saved = {
+        stackStyle: stack.style.cssText,
+        ctrlCollapsed:    ctrl    ? ctrl.classList.contains('collapsed')    : true,
+        leftBarCollapsed: leftBar ? leftBar.classList.contains('collapsed') : false,
+        vpEnabled: S.vp.en,
+        panelOrder: S.order.slice(),
+        panelHeights: {},
+    };
+    S.order.forEach(t => {
+        if (S.panels[t] && S.panels[t].el) {
+            saved.panelHeights[t] = S.panels[t].el.style.height || '';
+        }
+    });
+
+    /* ── 2. Փակիր բոլոր ընթացիկ panels ── */
+    Object.keys(S.panels).forEach(t => {
+        try { removePanel(t); } catch(e){}
+    });
+
+    /* ── 3. Ծալիր sidebar & ctrl panel ── */
+    if (ctrl)    ctrl.classList.add('collapsed');
+    if (leftBar) leftBar.classList.add('collapsed');
+
+    /* ── 4. Fix #stack չափսը ── */
+    stack.style.cssText = `
+        position: fixed;
+        top: 0; left: 0;
+        width: ${width}px;
+        height: ${height}px;
+        z-index: 99999;
+        background: var(--bg);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    `;
+
+    /* ── 5. VP-ն ապահով միացրու ── */
+    if (!S.vp.en) {
+        try { toggleVP(); } catch(e){}
+    }
+
+    /* ── 6. Թող layout-ը settle լինի ── */
+    await new Promise(r => setTimeout(r, 400));
+
+    /* ── 7. Բացիր միայն snap panels ── */
+    wantPanels.forEach(t => {
+        if (PDEF[t]) {
+            try { addPanel(t, { silent: true, height: panelHeight }); } catch(e){}
+        }
+    });
+
+    /* ── 8. Թող panels-ը + charts-ը render լինեն ── */
+    await new Promise(r => setTimeout(r, 1500));
+
+    /* ── 9. Restore function ── */
+    return {
+        restore: async () => {
+            try { Object.keys(S.panels).forEach(t => { try { removePanel(t); } catch(e){} }); } catch(e){}
+
+            stack.style.cssText = saved.stackStyle;
+            if (ctrl)    ctrl.classList.toggle('collapsed', saved.ctrlCollapsed);
+            if (leftBar) leftBar.classList.toggle('collapsed', saved.leftBarCollapsed);
+
+            if (!saved.vpEnabled && S.vp.en) {
+                try { toggleVP(); } catch(e){}
+            }
+
+            saved.panelOrder.forEach(t => {
+                if (!PDEF[t]) return;
+                const h = saved.panelHeights[t] ? parseInt(saved.panelHeights[t], 10) : undefined;
+                try { addPanel(t, { silent: true, height: h }); } catch(e){}
+            });
+            S.order = saved.panelOrder.filter(t => PDEF[t]);
+            try { saveLayout(); } catch(e){}
+
+            await new Promise(r => setTimeout(r, 300));
+            window.dispatchEvent(new Event('resize'));
+            S.vp.lastKey = '';
+        }
+    };
+}
+
+  return {
     init: () => {
         XH.init();
         buildMain();
@@ -3284,7 +3381,17 @@ return {
         const tgChat  = opts.tgChat  || S.tg.chat  || '';
         const caption = opts.caption || '🧪 Test snap';
 
-        console.log('[snapTest] START', { symbol, tf, tgChat: tgChat ? '***' : 'MISSING' });
+        /* Snap preset — default 1280×720 + OI/OID/BS */
+        const usePreset   = opts.preset !== false;
+        const snapWidth   = opts.width  || 1280;
+        const snapHeight  = opts.height || 720;
+        const snapPanels  = opts.panels || ['oi', 'oid', 'bsd'];
+
+        console.log('[snapTest] START', {
+            symbol, tf,
+            tgChat: tgChat ? '***' : 'MISSING',
+            preset: usePreset ? `${snapWidth}×${snapHeight} + [${snapPanels.join(',')}]` : 'off'
+        });
 
         const waitReady = async (ms) => {
             const t0 = Date.now();
@@ -3294,9 +3401,12 @@ return {
             return S._ready && S.prices.length > 0;
         };
 
+        let preset = null;
         try {
+            /* 1) Սպասիր initial load-ին */
             if (!(await waitReady(25000))) throw new Error('initial load timeout');
 
+            /* 2) Symbol/TF switch */
             if (symbol + 'USDT' !== S.symbol) {
                 S.symbol = symbol + 'USDT';
                 const ci = document.getElementById('ci');
@@ -3311,9 +3421,21 @@ return {
             }
             if (!(await waitReady(25000))) throw new Error('post-switch timeout');
 
-            await new Promise(r => setTimeout(r, 600));
-            console.log('[snapTest] chart ready, screenshot...');
+            /* 3) 🔒 Snap Preset — force 1280×720 + OI/OID/BS */
+            if (usePreset) {
+                preset = await applySnapPreset({
+                    width: snapWidth,
+                    height: snapHeight,
+                    panels: snapPanels,
+                    panelHeight: 100,
+                });
+            }
 
+            /* 4) Թող paint-ը ավարտվի */
+            await new Promise(r => setTimeout(r, 800));
+            console.log('[snapTest] chart ready, taking screenshot...');
+
+            /* 5) Screenshot */
             const el = document.getElementById('stack');
             const hide = ['#mr','#ml','#mc','#cursor-lbl','#alert-labels','#xh-label']
                 .map(s => document.querySelector(s));
@@ -3322,7 +3444,12 @@ return {
             let blob;
             try {
                 const cv = await html2canvas(el, {
-                    backgroundColor: '#0d1017', scale: 2, logging: false, useCORS: true
+                    backgroundColor: '#0d1017',
+                    scale: 2,
+                    logging: false,
+                    useCORS: true,
+                    width:  el.clientWidth,
+                    height: el.clientHeight,
                 });
                 blob = await new Promise(r => cv.toBlob(r, 'image/png'));
             } finally {
@@ -3330,8 +3457,10 @@ return {
                 updateAlertLabel();
             }
             if (!blob) throw new Error('blob null');
-            console.log('[snapTest] bytes:', blob.size);
+            console.log('[snapTest] bytes:', blob.size,
+                        '· dims:', el.clientWidth, '×', el.clientHeight);
 
+            /* 6) TG ուղարկում */
             let tgOk = null, tgError = null;
             if (tgToken && tgChat) {
                 try {
@@ -3362,10 +3491,24 @@ return {
                 a.click();
             }
 
-            return { ok: true, bytes: blob.size, tgOk, tgError, symbol: S.symbol, tf: S.tf };
+            return {
+                ok: true,
+                bytes: blob.size,
+                tgOk,
+                tgError,
+                symbol: S.symbol,
+                tf: S.tf,
+                dims: `${el.clientWidth}×${el.clientHeight}`,
+                panels: usePreset ? snapPanels : null,
+            };
         } catch (err) {
             console.error('[snapTest] FAILED:', err);
             return { ok: false, error: String(err) };
+        } finally {
+            /* ♻️ Restore user-ի layout */
+            if (preset) {
+                try { await preset.restore(); } catch(e) { console.warn('[snapTest] restore:', e); }
+            }
         }
     }
 };
