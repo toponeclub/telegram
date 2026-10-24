@@ -3280,6 +3280,117 @@ return {
 })();
 
 ENGINE.init();
+
+/* ═══════════════════════════════════════════════════════
+   QUICK TEST — URL-triggered screenshot
+   ═══════════════════════════════════════════════════════ */
+window.testSnap = async function(opts = {}) {
+  const symbol = (opts.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const tf = opts.tf || '5m';
+  const tgToken = opts.tgToken || '';
+  const tgChat  = opts.tgChat  || '';
+  const caption = opts.caption || '🧪 Test snap';
+
+  console.log('[testSnap] START', { symbol, tf, tgChat: tgChat ? '***' : 'MISSING' });
+
+  try {
+    // 1) Switch symbol if different
+    if (symbol + 'USDT' !== S.symbol) {
+      S.symbol = symbol + 'USDT';
+      const ci = document.getElementById('ci');
+      if (ci) ci.value = symbol;
+      await reload();
+    }
+    // 2) Switch TF if different
+    if (tf !== S.tf) {
+      S.tf = tf;
+      document.querySelectorAll('#tfs .tf')
+        .forEach(b => b.classList.toggle('active', b.dataset.tf === tf));
+      await reload();
+    }
+
+    // 3) Wait until chart ready
+    const t0 = Date.now();
+    while ((!S._ready || !S.prices.length) && Date.now() - t0 < 25000) {
+      await new Promise(r => setTimeout(r, 200));
+    }
+    if (!S._ready) throw new Error('chart never ready');
+    await new Promise(r => setTimeout(r, 500));
+    console.log('[testSnap] chart ready, taking screenshot...');
+
+    // 4) Screenshot
+    const el = document.getElementById('stack');
+    const hide = ['#mr','#ml','#mc','#cursor-lbl','#alert-labels','#xh-label']
+      .map(s => document.querySelector(s));
+    hide.forEach(x => x && (x.style.display = 'none'));
+
+    let blob;
+    try {
+      const cv = await html2canvas(el, {
+        backgroundColor: '#0d1017',
+        scale: 2, logging: false, useCORS: true
+      });
+      blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+    } finally {
+      hide.forEach(x => x && (x.style.display = ''));
+      if (typeof updateAlertLabel === 'function') updateAlertLabel();
+    }
+
+    console.log('[testSnap] screenshot size:', blob.size, 'bytes');
+
+    // 5) Send to TG
+    if (tgToken && tgChat) {
+      const fd = new FormData();
+      fd.append('chat_id', tgChat);
+      fd.append('photo', blob, 'chart.png');
+      fd.append('caption', caption);
+      fd.append('parse_mode', 'HTML');
+      const r = await fetch(`https://api.telegram.org/bot${tgToken}/sendPhoto`, {
+        method: 'POST', body: fd
+      });
+      const j = await r.json();
+      console.log('[testSnap] TG response:', j);
+      if (!j.ok) throw new Error('TG: ' + j.description);
+      return { ok: true, bytes: blob.size, tgOk: true };
+    }
+
+    // No TG creds — download locally as fallback
+    const a = document.createElement('a');
+    a.download = `snap_${symbol}_${tf}_${Date.now()}.png`;
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    console.log('[testSnap] downloaded locally (no TG creds)');
+    return { ok: true, bytes: blob.size, tgOk: false };
+  } catch (err) {
+    console.error('[testSnap] FAILED:', err);
+    return { ok: false, error: String(err) };
+  }
+};
+
+// URL auto-trigger: ?mode=snap&symbol=ETH&tf=15m&tg_token=...&tg_chat=...
+(function() {
+  const p = new URLSearchParams(location.search);
+  if (p.get('mode') !== 'snap') return;
+  window._autoSnapParams = {
+    symbol:  p.get('symbol') || 'BTC',
+    tf:      p.get('tf') || '5m',
+    tgToken: p.get('tg_token') || '',
+    tgChat:  p.get('tg_chat') || '',
+    caption: p.get('caption') || '',
+  };
+  console.log('[autoSnap] URL detected, will run after init');
+})();
+
+ENGINE.init();
+
+// Fire the auto-snap AFTER init finishes
+setTimeout(async () => {
+  if (window._autoSnapParams) {
+    const res = await window.testSnap(window._autoSnapParams);
+    document.title = res.ok ? '✅ SNAP OK' : '❌ SNAP FAILED';
+    console.log('[autoSnap] result:', res);
+  }
+}, 1500);
 </script>
 </body>
 </html>
