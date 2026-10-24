@@ -701,6 +701,116 @@ td.c-change, td.c-vol, td.c-fund { transition: color 0.4s ease; }
     .module[data-widget-type="tv_others"] { min-height: 65vh; }
 }
 
+/* ════════════════════════════════════════════════════════════
+   MINI WIDGET POPUP
+   ════════════════════════════════════════════════════════════ */
+
+/* ════════════════════════════════════════════════════════════
+   MINI SPARKLINE · floating tooltip (near cursor / touch)
+   ════════════════════════════════════════════════════════════ */
+.mini-spark {
+    position: fixed;
+    top: 0; left: 0;
+    width: 280px;
+    background: rgba(14, 18, 26, 0.96);
+    border: 1px solid var(--border-hi);
+    border-radius: 10px;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(-9999px, -9999px, 0) scale(0.96);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    box-shadow:
+        0 18px 44px rgba(0, 0, 0, 0.75),
+        0 0 0 1px rgba(0, 255, 213, 0.08),
+        0 0 40px rgba(0, 255, 213, 0.06);
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    will-change: transform, opacity;
+}
+.mini-spark.show {
+    opacity: 1;
+    pointer-events: auto;
+    /* transform-ը կառավարվում է JS-ով, այստեղ միայն scale-ի համար */
+}
+
+.mini-spark-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 11px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+}
+.mini-spark-sym {
+    color: var(--text);
+    letter-spacing: 0.5px;
+    font-weight: 800;
+}
+.mini-spark-price {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    color: var(--text);
+    transition: color 0.2s ease;
+}
+.mini-spark-chg {
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.2px;
+    transition: all 0.2s ease;
+}
+
+.mini-spark-body {
+    width: 100%;
+    height: 110px;
+    background: #0d1017;
+    position: relative;
+}
+.mini-spark-body svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.mini-spark-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ac);
+    font-size: 10px;
+    letter-spacing: 3px;
+    font-weight: 800;
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+@media (max-width: 780px) {
+    .mini-spark { width: 230px; }
+    .mini-spark-body { height: 88px; }
+    .mini-spark-head { font-size: 9px; padding: 7px 9px; }
+    .mini-spark-price { font-size: 11px; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   Prevent native long-press context menu on tickers
+   ════════════════════════════════════════════════════════════ */
+.clickable-ticker {
+    -webkit-touch-callout: none;      /* iOS */
+    -webkit-user-select: none;         /* Safari */
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+}
 
 </style>
 </head>
@@ -766,6 +876,19 @@ td.c-change, td.c-vol, td.c-fund { transition: color 0.4s ease; }
 </div>
 
 <div class="toasts" id="toasts"></div>
+
+<!-- ═══════ MINI WIDGET POPUP ═══════ -->
+<!-- ═══════ MINI SPARKLINE POPUP ═══════ -->
+<!-- ═══════ MINI SPARKLINE · floating tooltip ═══════ -->
+<div class="mini-spark" id="miniSpark">
+    <div class="mini-spark-head">
+        <span class="mini-spark-sym" id="miniSparkSym">--</span>
+        <span class="mini-spark-price" id="miniSparkPrice">--</span>
+        <span class="mini-spark-chg" id="miniSparkChg">--</span>
+    </div>
+    <div class="mini-spark-body" id="miniSparkBody"></div>
+</div>
+</div>
 
 <script>
 /* ════════════════════════════════════════════════════════════
@@ -1007,11 +1130,11 @@ function createScreenerRow(t) {
     tr.innerHTML = `
         <td class="c-rank" style="color:var(--muted); font-size:10px;">1</td>
         <td>
-            <div class="screener-sym">
-                <span class="clickable-ticker" onclick="window.open('https://www.coinglass.com/tv/Binance_${t.symbol}', '_blank')">${t.base}</span>
-                <i class="fas fa-chart-line chart-icon-btn" onclick="selectCoinForEngine('${t.symbol}')" title="Open in Engine"></i>
-                <span class="perp">PERP</span>
-            </div>
+           <div class="screener-sym">
+    <span class="clickable-ticker" data-symbol="${t.symbol}">${t.base}</span>
+    <i class="fas fa-chart-line chart-icon-btn" onclick="selectCoinForEngine('${t.symbol}')" title="Open in Engine"></i>
+    <span class="perp">PERP</span>
+</div>
         </td>
         <td>
             <div class="dex-links">
@@ -1025,7 +1148,76 @@ function createScreenerRow(t) {
         <td class="num c-vol" style="color:#ccc;">${fmtUSD(t.volume)}</td>
         <td class="num c-fund"></td>`;
     fetchSparkline(t.symbol, tr.querySelector('[data-spark]'), t.change);
+        /* ▶ Long-press on ticker → Mini Widget popup */
+    const tickerEl = tr.querySelector('.clickable-ticker');
+    if (tickerEl) attachLongPress(tickerEl, t.symbol);
     return tr;
+}
+
+/* ─── Long-press · Desktop (mousedown 600ms) + Mobile (touchstart 500ms) ─── */
+/* ─── Ticker · click = CoinGlass · long-press = Mini Widget ─── */
+/* ─── Long-press · Desktop (mousedown 500ms) + Mobile (touchstart 500ms) ─── */
+/* ─── Ticker · click = CoinGlass · long-press = Mini Widget ─── */
+/* ─── Ticker · Desktop hover → mini spark · Mobile long-press → mini spark ─── */
+function attachLongPress(el, symbol) {
+    let timer = null;
+    let startX = 0, startY = 0;
+    let longPressed = false;
+    const isTouchOnly = () => matchMedia('(hover: none)').matches;
+
+    const clearPress = () => { if (timer) { clearTimeout(timer); timer = null; } };
+
+    /* ═══════════════ DESKTOP · hover triggers ═══════════════ */
+    el.addEventListener('mouseenter', (e) => {
+        if (isTouchOnly()) return;
+        miniWidget.open(symbol, e.clientX, e.clientY, false);
+    });
+    el.addEventListener('mousemove', (e) => {
+        if (isTouchOnly()) return;
+        if (miniWidget.isOpen()) miniWidget.open(symbol, e.clientX, e.clientY, false);
+    });
+    el.addEventListener('mouseleave', () => {
+        if (isTouchOnly()) return;
+        miniWidget.scheduleHide(120);
+    });
+    /* Desktop click → CoinGlass */
+    el.addEventListener('click', () => {
+        if (isTouchOnly()) return;
+        window.open(`https://www.coinglass.com/tv/Binance_${symbol}`, '_blank');
+    });
+
+    /* ═══════════════ MOBILE · long-press only ═══════════════ */
+    el.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        longPressed = false;
+        const t = e.touches[0];
+        startX = t.clientX;
+        startY = t.clientY;
+        clearPress();
+        timer = setTimeout(() => {
+            longPressed = true;
+            try { if (navigator.vibrate) navigator.vibrate(15); } catch (_) {}
+            miniWidget.open(symbol, startX, startY, true);
+        }, 500);
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+        if (!timer || e.touches.length !== 1) return;
+        const t = e.touches[0];
+        if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) clearPress();
+    }, { passive: true });
+
+    el.addEventListener('touchend', (e) => {
+        clearPress();
+        const wasLong = longPressed;
+        longPressed = false;
+        e.preventDefault();                 // kill ghost-click
+        if (!wasLong) {
+            window.open(`https://www.coinglass.com/tv/Binance_${symbol}`, '_blank');
+        }
+    });
+
+    el.addEventListener('touchcancel', () => { clearPress(); longPressed = false; });
 }
 
 async function fetchSparkline(symbol, el, change) {
@@ -2298,10 +2490,196 @@ function bindTopbarUI() {
 }
 
 /* ════════════════════════════════════════════════════════════
+   MINI WIDGET POPUP
+   ════════════════════════════════════════════════════════════ */
+
+
+/* ════════════════════════════════════════════════════════════
+   MINI SPARKLINE POPUP · տեղական · առանց iframe
+   ════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════
+   MINI SPARKLINE POPUP · տեղական · առանց iframe
+   ════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════
+   MINI SPARKLINE · floating tooltip · near cursor / touch
+   ════════════════════════════════════════════════════════════ */
+const miniWidget = (() => {
+    let el, symEl, priceEl, chgEl, bodyEl;
+    let currentSym = null;
+    let fetchToken = 0;
+    let hideTimer = null;
+    let opened = false;
+    let mobileMode = false;
+
+    function init() {
+        el      = document.getElementById('miniSpark');
+        symEl   = document.getElementById('miniSparkSym');
+        priceEl = document.getElementById('miniSparkPrice');
+        chgEl   = document.getElementById('miniSparkChg');
+        bodyEl  = document.getElementById('miniSparkBody');
+        if (!el) return;
+
+        /* Desktop · keep alive while hovering over the mini widget itself */
+        el.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+        el.addEventListener('mouseleave', () => { if (!mobileMode) scheduleHide(90); });
+
+        /* Mobile · tap outside closes */
+        document.addEventListener('touchstart', (e) => {
+            if (!mobileMode || !opened) return;
+            if (el.contains(e.target)) return;
+            if (e.target.closest && e.target.closest('.clickable-ticker')) return;
+            hide();
+        }, { passive: true });
+    }
+
+    function scheduleHide(ms) {
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => hide(), ms || 120);
+    }
+
+    /* Keep the tooltip inside viewport, offset from cursor */
+    function place(x, y) {
+        if (!el) return;
+        const w = el.offsetWidth  || 280;
+        const h = el.offsetHeight || 150;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const OFF = 14;
+
+        let px = x + OFF;
+        let py = y + OFF;
+        if (px + w + 8 > vw) px = x - w - OFF;
+        if (px < 8)          px = 8;
+        if (py + h + 8 > vh) py = y - h - OFF;
+        if (py < 8)          py = 8;
+
+        el.style.transform = `translate3d(${px}px, ${py}px, 0) scale(${opened ? 1 : 0.96})`;
+    }
+
+    function hide() {
+        if (!el) return;
+        clearTimeout(hideTimer);
+        el.classList.remove('show');
+        opened = false;
+        currentSym = null;
+        fetchToken++;
+    }
+
+    async function open(symbol, x, y, mobile) {
+        if (!el) return;
+
+        let sym = String(symbol || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (!sym) return;
+        if (!sym.endsWith('USDT')) sym += 'USDT';
+
+        mobileMode = !!mobile;
+
+        /* Same symbol already visible → just move it */
+        if (opened && currentSym === sym) {
+            place(x, y);
+            return;
+        }
+
+        /* New symbol → reset & fetch */
+        const token = ++fetchToken;
+        currentSym = sym;
+
+        if (symEl)   symEl.textContent = sym.replace('USDT', '');
+        if (priceEl) { priceEl.textContent = '--'; priceEl.style.color = 'var(--muted)'; }
+        if (chgEl) {
+            chgEl.textContent = '--';
+            chgEl.style.color = 'var(--muted)';
+            chgEl.style.background = 'transparent';
+            chgEl.style.border = '1px solid var(--border)';
+        }
+        if (bodyEl) bodyEl.innerHTML = '<div class="mini-spark-loading">…</div>';
+
+        /* Position first, then reveal */
+        place(x, y);
+        el.classList.add('show');
+        opened = true;
+
+        let mkt = null, klines = null;
+        try {
+            [mkt, klines] = await Promise.all([
+                fetch(`${API.binance}/fapi/v1/ticker/24hr?symbol=${sym}`)
+                    .then(r => r.json()).catch(() => null),
+                fetch(`${API.binance}/fapi/v1/klines?symbol=${sym}&interval=1h&limit=48`)
+                    .then(r => r.json()).catch(() => null)
+            ]);
+        } catch (_) {}
+
+        if (token !== fetchToken) return;   // user moved to another ticker
+
+        /* Header */
+        if (mkt && !mkt.code) {
+            const price = parseFloat(mkt.lastPrice);
+            const chg   = parseFloat(mkt.priceChangePercent);
+            const isUp  = chg >= 0;
+            if (priceEl) {
+                priceEl.textContent = '$' + fmtPrice(price);
+                priceEl.style.color = isUp ? 'var(--up)' : 'var(--dn)';
+            }
+            if (chgEl) {
+                chgEl.textContent = (isUp ? '+' : '') + chg.toFixed(2) + '%';
+                chgEl.style.color      = isUp ? 'var(--up)' : 'var(--dn)';
+                chgEl.style.background = isUp ? 'rgba(0,255,200,0.10)' : 'rgba(168,85,247,0.10)';
+                chgEl.style.border     = isUp ? '1px solid rgba(0,255,200,0.25)' : '1px solid rgba(168,85,247,0.25)';
+            }
+        }
+
+        /* Body */
+        if (!Array.isArray(klines) || klines.length < 2) {
+            if (bodyEl) bodyEl.innerHTML = '<div class="mini-spark-loading">NO DATA</div>';
+            return;
+        }
+
+        const closes = klines.map(k => parseFloat(k[4]));
+        const isUp   = closes[closes.length - 1] >= closes[0];
+        const color  = isUp ? '#00ffc8' : '#a855f7';
+        const gradId = 'msg_' + token;
+
+        const W = 280, H = 110, pad = 6;
+        const min = Math.min(...closes), max = Math.max(...closes);
+        const range = max - min || 1;
+        const step  = (W - pad * 2) / (closes.length - 1);
+        const pts = closes.map((v, i) => [
+            pad + i * step,
+            H - pad - ((v - min) / range) * (H - pad * 2)
+        ]);
+        const line = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+        const area = line + ` L${pts[pts.length-1][0].toFixed(1)} ${H-pad} L${pts[0][0].toFixed(1)} ${H-pad} Z`;
+
+        if (bodyEl) bodyEl.innerHTML = `
+            <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%"   stop-color="${color}" stop-opacity="0.30"/>
+                        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+                    </linearGradient>
+                </defs>
+                <path d="${area}" fill="url(#${gradId})" />
+                <path d="${line}" fill="none" stroke="${color}" stroke-width="1.6"
+                      stroke-linejoin="round" stroke-linecap="round" />
+                <circle cx="${pts[pts.length-1][0].toFixed(1)}"
+                        cy="${pts[pts.length-1][1].toFixed(1)}"
+                        r="3" fill="${color}" stroke="#fff" stroke-width="1.2"/>
+            </svg>`;
+    }
+
+    return {
+        init, open, hide, scheduleHide,
+        isOpen: () => opened
+    };
+})();
+
+/* ════════════════════════════════════════════════════════════
    BOOT
    ════════════════════════════════════════════════════════════ */
 (async function boot() {
+     miniWidget.init();
     console.log('%c v1.0 ', 'background:linear-gradient(90deg,#00ffd5,#0099ff);color:#000;padding:5px 12px;border-radius:5px;font-weight:900;letter-spacing:2px;');
+       
 
     const loaded = loadState();
     if (!loaded || !state.widgets.length) {
