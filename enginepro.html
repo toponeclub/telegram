@@ -2432,7 +2432,7 @@ else if(a === 'save') saveShot();
 }
 
 function copyShot(){
-const el = $('#stack');
+const el = $('#app');  /* ← #stack → #app */
 const m = ['#mr','#ml','#mc','#cursor-lbl','#alert-lbl','#xh-label'].map(s => $(s));
 m.forEach(x => x && (x.style.display='none'));
 html2canvas(el, { backgroundColor:'#0d1017', scale:2, logging:false, useCORS:true })
@@ -2446,7 +2446,7 @@ navigator.clipboard.write([new ClipboardItem({ [b.type]:b })])
 .finally(()=>{ m.forEach(x => x && (x.style.display='')); updateAlertLabel(); });
 }
 function saveShot(){
-const el = $('#stack');
+const el = $('#app');  /* ← #stack → #app */
 const m = ['#mr','#ml','#mc','#cursor-lbl','#alert-lbl','#xh-label'].map(s => $(s));
 m.forEach(x => x && (x.style.display='none'));
 html2canvas(el, { backgroundColor:'#0d1017', scale:2, logging:false, useCORS:true })
@@ -2555,7 +2555,9 @@ saveLayout();
 /* ═══════════════ AUTO AREA · pure crossfade ═══════════════ */
 const _C_UP = [0, 255, 200];
 const _C_DN = [168, 85, 247];
-const _AREA_COLOR = [46, 127, 208];   // #2E7FD0
+/* const _AREA_COLOR = [46, 127, 208]; */  // #2E7FD0.  
+/*const _AREA_COLOR = [51, 102, 255]; */  // #3366FF · Royal Blue
+const _AREA_COLOR = [41, 98, 255];   // #2962FF
 
 let _autoAnim = 0;
 
@@ -3252,6 +3254,7 @@ console.log('  ✓ Time-scale propagation suppressed during setData');
 console.log('  ✓ Post-rebuild force sync to main range');
 }
 
+
   /* ══════════════════════════════════════════════════════════════════
    SNAP PRESET — միայն snapTest-ի համար
    ══════════════════════════════════════════════════════════════════ */
@@ -3436,7 +3439,7 @@ async function applySnapPreset(opts = {}) {
             console.log('[snapTest] chart ready, taking screenshot...');
 
             /* 5) Screenshot */
-            const el = document.getElementById('stack');
+           const el = document.getElementById('app');   /* ← #stack → #app */
             const hide = ['#mr','#ml','#mc','#cursor-lbl','#alert-labels','#xh-label']
                 .map(s => document.querySelector(s));
             hide.forEach(x => x && (x.style.display = 'none'));
@@ -3536,8 +3539,6 @@ ENGINE.init();
         console.log('[autoSnap] FINAL:', res);
     }, 800);
 })();
-
-
 
 </script>
 </body>
