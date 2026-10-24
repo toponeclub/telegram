@@ -2637,7 +2637,9 @@ const _C_DN = [168, 85, 247];
 /* const _AREA_COLOR = [46, 127, 208]; */  // #2E7FD0.  
 /* const _AREA_COLOR = [51, 102, 255]; */  // #3366FF · Royal Blue
 /* const _AREA_COLOR = [41, 98, 255]; */   // #2962FF
-const _AREA_COLOR = [0, 136, 255];   // #0088FF
+// const _AREA_COLOR = [0, 136, 255];   // #0088FF
+const _AREA_COLOR = [94, 92, 230];   // #0088FF
+
 
 
 let _autoAnim = 0;
@@ -3340,20 +3342,13 @@ console.log('  ✓ Post-rebuild force sync to main range');
    SNAP PRESET — միայն snapTest-ի համար
    ══════════════════════════════════════════════════════════════════ */
 async function applySnapPreset(opts = {}) {
-    const width  = opts.width  || 1280;
-    const height = opts.height || 720;
     const wantPanels = opts.panels || ['oi', 'oid', 'bsd'];
     const panelHeight = opts.panelHeight || 100;
 
-    const app     = document.getElementById('app');
     const ctrl    = document.getElementById('ctrl');
     const leftBar = document.getElementById('left-bar');
-    if (!app) throw new Error('applySnapPreset: #app missing');
 
-    /* ── 1. Save state ── */
     const saved = {
-        appStyle: app.style.cssText,
-        bodyStyle: document.body.style.cssText,
         ctrlDisplay: ctrl ? ctrl.style.display : '',
         leftBarDisplay: leftBar ? leftBar.style.display : '',
         vpEnabled: S.vp.en,
@@ -3366,46 +3361,30 @@ async function applySnapPreset(opts = {}) {
         }
     });
 
-    /* ── 2. Close all panels ── */
+    /* Close all panels */
     Object.keys(S.panels).forEach(t => {
         try { removePanel(t); } catch(e){}
     });
 
-    /* ── 3. Hide ctrl + leftBar completely (display:none) ── */
+    /* Hide ctrl + leftBar */
     if (ctrl) ctrl.style.display = 'none';
     if (leftBar) leftBar.style.display = 'none';
 
-    /* ── 4. Fix #app ITSELF (not #stack!) ── */
-    document.body.style.overflow = 'hidden';
-    app.style.cssText = `
-        position: fixed;
-        top: 0; left: 0;
-        width: ${width}px;
-        height: ${height}px;
-        z-index: 99999;
-        background: var(--bg);
-        overflow: hidden;
-        display: grid;
-        grid-template-rows: 44px 1fr;
-    `;
-
-    /* ── 5. VP ── */
+    /* VP */
     if (!S.vp.en) { try { toggleVP(); } catch(e){} }
 
-    /* ── 6. Settle ── */
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 200));
 
-    /* ── 7. Open snap panels ── */
+    /* Open snap panels */
     wantPanels.forEach(t => {
         if (PDEF[t]) {
             try { addPanel(t, { silent: true, height: panelHeight }); } catch(e){}
         }
     });
 
-    /* ── 8. Wait for addPanel's internal setTimeout(30) + render ── */
     await new Promise(r => setTimeout(r, 400));
 
-    /* ── 9. Force-resize helper ── */
+    /* Force-resize charts to container's natural size */
     const forceAll = () => {
         Object.keys(S.charts).forEach(id => {
             const ch = S.charts[id];
@@ -3433,20 +3412,16 @@ async function applySnapPreset(opts = {}) {
     await new Promise(r => setTimeout(r, 300));
     forceAll();
 
-    /* ── 10. Re-render panels after resize ── */
     S.order.forEach(t => { try { renderPanel(t); } catch(e){} });
     try { syncAllPanelsToMain(); } catch(e){}
 
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 400));
     forceAll();
 
-    /* ── 11. Restore ── */
     return {
         restore: async () => {
             try { Object.keys(S.panels).forEach(t => { try { removePanel(t); } catch(e){} }); } catch(e){}
 
-            app.style.cssText = saved.appStyle;
-            document.body.style.cssText = saved.bodyStyle;
             if (ctrl) ctrl.style.display = saved.ctrlDisplay;
             if (leftBar) leftBar.style.display = saved.leftBarDisplay;
 
@@ -3462,7 +3437,7 @@ async function applySnapPreset(opts = {}) {
             S.order = saved.panelOrder.filter(t => PDEF[t]);
             try { saveLayout(); } catch(e){}
 
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise(r => setTimeout(r, 300));
             window.dispatchEvent(new Event('resize'));
 
             Object.keys(S.charts).forEach(id => {
