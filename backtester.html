@@ -579,29 +579,95 @@ input{font-family:inherit}
 }
 #empty .em b{color:var(--ac);font-weight:700}
 
-@media (max-width:820px){
-  .hud-it:nth-child(n+3){display:none}
-  .brand span{display:none}
-  .sym-badge .s2{display:none}
-  .tfs .tf{padding:3px 5px;font-size:9px}
+/* ══════════════ RESPONSIVE & MOBILE OPTIMIZATION ══════════════ */
+@media (max-width: 768px) {
+  #app {
+    height: 100dvh;
+    grid-template-rows: auto 1fr;
+  }
+
+  /* Top Header responsive layout */
+  #top {
+    padding: 6px 8px;
+    gap: 6px;
+    height: auto;
+    min-height: 48px;
+  }
+
+  .brand { font-size: 11px; padding-right: 6px; }
+  .sym-badge { min-width: 0; padding: 3px 6px; }
+  .sym-badge .s1 { font-size: 10px; }
+  
+  .hud { gap: 8px; }
+  .hud-it { min-width: auto; }
+  .hud-lb { font-size: 6px; }
+  .hud-vl { font-size: 10px; }
+
+  .playback { padding: 2px 4px; }
+  .pb-btn { width: 30px; height: 30px; font-size: 11px; }
+  .pb-btn.main { width: 34px; height: 34px; font-size: 12px; }
+  .speed input[type=range] { width: 45px; }
+
+  /* Stack Chart & Controls vertically */
+  #main {
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #stack {
+    height: 52vh;
+    min-height: 300px;
+    flex: none;
+    border-bottom: 1px solid var(--bd);
+  }
+
+  #ctrl {
+    width: 100%;
+    flex: 1;
+    overflow-y: visible;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  /* Touch-friendly input & button sizes */
+  .lb-in, .tpsl-in-wrap input {
+    font-size: 13px !important; /* iOS auto-zoom prevention */
+    padding: 8px 10px;
+  }
+
+  .dir-btn {
+    padding: 12px 6px;
+  }
+  .dir-btn .d-line1 { font-size: 13px; }
+
+  .quick-row button {
+    padding: 8px 0;
+    font-size: 10px;
+  }
+
+  .timeline {
+    height: 44px;
+    padding: 0 8px;
+    gap: 8px;
+  }
+  .tl-info { min-width: 85px; }
+  .tl-idx { font-size: 10px; }
+  .tl-date { font-size: 8px; }
 }
-@media (max-width:640px){
-  #top{gap:6px;padding:0 8px}
-  .hud-it:nth-child(n+2){display:none}
-  .speed input[type=range]{width:40px}
-  .timeline{padding:0 8px;gap:8px}
-  .tl-info{min-width:80px}
-  #ctrl{width:210px}
-  .tfs .tf:nth-child(n+5){display:none}
-}
-@media (max-width:480px){
-  .brand{font-size:11px}
-  #ctrl{width:180px;padding:6px}
-  .lb{padding:7px}
-  .lb-in{font-size:11px;padding:4px 7px}
-  .dir-btn{padding:10px 4px}
-  .dir-btn .d-line1{font-size:11px}
-  .dir-btn .d-line2{font-size:8px}
+
+@media (max-width: 480px) {
+  #stack {
+    height: 48vh;
+    min-height: 260px;
+  }
+
+  .hud-it:nth-child(n+3) { display: none; } /* Hide balance/equity details on tiny screens */
+  .tfs .tf { padding: 4px 5px; font-size: 9px; }
+  
+  .tpsl-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* ══════════════ SPEED DROPDOWN ══════════════ */
@@ -632,6 +698,27 @@ input{font-family:inherit}
 }
 .speed-dd-item:hover{background:var(--acD);color:var(--ac)}
 .speed-dd-item.active{background:var(--acD);color:var(--ac)}
+
+/* ══ TP / SL ══ */
+.tpsl-toggle{width:100%;padding:8px;background:rgba(255,214,10,.06);border:1px dashed rgba(255,214,10,.35);color:var(--yel);border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:6px;transition:var(--tr);cursor:pointer;margin-top:4px}
+.tpsl-toggle:hover,.tpsl-toggle.open{background:rgba(255,214,10,.12);border-style:solid}
+.tpsl-toggle .badge{font-family:var(--mono);font-size:9px;color:var(--ac)}
+.tpsl-toggle .chev{font-size:8px;transition:transform .2s}
+.tpsl-toggle.open .chev{transform:rotate(180deg)}
+.tpsl-dd{display:none;flex-direction:column;gap:6px;padding:8px;background:rgba(0,0,0,.3);border:1px solid var(--bd);border-radius:5px}
+.tpsl-dd.open{display:flex;animation:ddIn .18s ease}
+@keyframes ddIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.tpsl-hd,.tpsl-row{display:grid;grid-template-columns:22px 1fr 1fr;gap:4px;align-items:center}
+.tpsl-hd span{font-size:8px;color:var(--t3);letter-spacing:.8px;text-align:right;font-weight:700}
+.tpsl-row b{font-size:9px;font-weight:800;font-family:var(--mono)}
+.tpsl-row.tp b{color:var(--up)}
+.tpsl-row.sl b{color:var(--dn)}
+.tpsl-row .lb-in{width:100%;padding:5px 6px;font-size:11px}
+.tpsl-acts{display:flex;gap:5px;margin-top:2px}
+.tpsl-acts button{flex:1;padding:7px;border-radius:4px;border:1px solid var(--bd);font-size:10px;font-weight:800;letter-spacing:.6px;color:var(--t2);font-family:var(--mono)}
+.tpsl-acts button:hover{border-color:var(--ac);color:var(--ac)}
+.tpsl-acts .tpsl-set{background:var(--ac);color:#000;border-color:var(--ac)}
+.tpsl-acts .tpsl-set.dirty{background:var(--yel);border-color:var(--yel);box-shadow:0 0 12px rgba(255,214,10,.4)}
 
 
 </style>
@@ -690,8 +777,8 @@ input{font-family:inherit}
     </button>
     <button class="pb-btn" id="pb-fwd" title="Step forward (→)"><i class="fas fa-forward"></i></button>
     <div class="speed">
-      <input type="range" id="sp-range" min="0.5" max="50" value="10" step="0.1">
-      <span class="sp-val" id="sp-val">10x</span>
+      <input type="range" id="sp-range" min="0.5" max="50" value="3" step="0.1">
+      <span class="sp-val" id="sp-val">3x</span>
       <div class="speed-dd-wrap">
         <button class="speed-dd-btn" id="sp-dd-btn" type="button" title="Quick speed">
           <i class="fas fa-chevron-down"></i>
@@ -700,9 +787,9 @@ input{font-family:inherit}
           <div class="speed-dd-item" data-v="0.5">0.5×</div>
           <div class="speed-dd-item" data-v="1">1×</div>
           <div class="speed-dd-item" data-v="2">2×</div>
-          <div class="speed-dd-item" data-v="3">3×</div>
+          <div class="speed-dd-item active" data-v="3">3×</div>
           <div class="speed-dd-item" data-v="5">5×</div>
-          <div class="speed-dd-item active" data-v="10">10×</div>
+          <div class="speed-dd-item" data-v="10">10×</div>
           <div class="speed-dd-item" data-v="15">15×</div>
           <div class="speed-dd-item" data-v="25">25×</div>
           <div class="speed-dd-item" data-v="50">50×</div>
@@ -718,13 +805,7 @@ input{font-family:inherit}
 
 <div id="main">
 
-  <aside id="left-bar">
-    <button class="tb-btn" id="tb-fullscreen" title="Fullscreen (Shift+F)"><i class="fas fa-expand"></i></button>
-    <button class="tb-btn" id="tb-fit" title="Fit all data on screen"><i class="fas fa-magnifying-glass"></i></button>
-    <div class="tb-sep"></div>
-    <button class="tb-btn" id="tb-center" title="Scroll to playhead"><i class="fas fa-crosshairs"></i></button>
-    <button class="tb-btn" id="tb-shot" title="Copy screenshot"><i class="fas fa-camera"></i></button>
-  </aside>
+
 
   <div id="stack">
     <div class="pnl main">
@@ -806,9 +887,27 @@ input{font-family:inherit}
 
       <div class="lb-row" style="margin-top:2px;">
         <span class="lb-lbl">LEVERAGE</span>
-        <input type="number" class="lb-in" id="in-lev" value="100" min="1" max="200">
+        <input type="number" class="lb-in" id="in-lev" value="10" min="1" max="200">
       </div>
-      <input type="range" class="lev-range" id="lev-range" min="1" max="200" value="100" step="1">
+      <input type="range" class="lev-range" id="lev-range" min="1" max="200" value="10" step="1">
+      <button class="tpsl-toggle" id="tpsl-toggle" type="button">
+        <i class="fas fa-plus" id="tpsl-ico"></i> TP / SL <span class="badge" id="tpsl-badge"></span>
+        <i class="fas fa-chevron-down chev"></i>
+      </button>
+      <div class="tpsl-dd" id="tpsl-dd">
+        <div class="tpsl-hd"><span></span><span>PRICE</span><span>ROI %</span></div>
+        <div class="tpsl-row tp"><b>TP</b>
+          <input type="number" class="lb-in" id="tp-px" placeholder="—" step="any">
+          <input type="number" class="lb-in" id="tp-pct" placeholder="—" step="any"></div>
+        <div class="tpsl-row sl"><b>SL</b>
+          <input type="number" class="lb-in" id="sl-px" placeholder="—" step="any">
+          <input type="number" class="lb-in" id="sl-pct" placeholder="—" step="any"></div>
+        <div class="tpsl-acts">
+          <button type="button" id="tpsl-clear">CLEAR</button>
+          <button type="button" class="tpsl-set" id="tpsl-set" style="display:none">SET</button>
+        </div>
+      </div>
+      
     </div>
 
     <div class="lb">
@@ -929,6 +1028,7 @@ const S = {
   volumeSeries: null,
   entryLine: null,
   liqLine: null,
+  tp: null, sl: null, tpLine: null, slLine: null,
   markers: [],
 
   vp: {
@@ -940,14 +1040,14 @@ const S = {
 
   balance: 1000,
   initialBalance: 1000,
-  leverage: 100,
+  leverage: 10,
   takerFee: 0.0005,
   mmr: 0.005,
 
   position: null,
   closedTrades: [],
 
-  speed: 10,
+  speed: 3,
   timer: null,
 
   _histSig: '',
@@ -1205,6 +1305,8 @@ function switchTF(newTf){
   }
 
   pause();
+
+  S.tp = null; S.sl = null;
   S.displayInterval = newTf;
   S.candles = aggregated;
   S.interval = newTf;
@@ -1504,24 +1606,27 @@ function updateCrossLiq(){
 }
 
 function clearPriceLines(){
-  if(S.entryLine){ try{ S.candleSeries.removePriceLine(S.entryLine); }catch(e){} S.entryLine=null; }
-  if(S.liqLine){ try{ S.candleSeries.removePriceLine(S.liqLine); }catch(e){} S.liqLine=null; }
+  ['entryLine','liqLine','tpLine','slLine'].forEach(n => {
+    if(S[n]){ try{ S.candleSeries.removePriceLine(S[n]); }catch(e){} S[n] = null; }
+  });
 }
 function updatePriceLines(){
   clearPriceLines();
-  if(!S.position) return;
-  const p = S.position;
-  S.entryLine = S.candleSeries.createPriceLine({
-    price:p.avgEntry,
-    color: p.side==='long'?'#00ffc8':'#ff2a5f',
-    lineWidth:1, lineStyle:0, axisLabelVisible:true,
-    title:'ENTRY',
-  });
-  S.liqLine = S.candleSeries.createPriceLine({
-    price:p.liqPrice,
-    color:'#ff00ff', lineWidth:2, lineStyle:2, axisLabelVisible:true,
-    title:'LIQ',
-  });
+  if(S.position){
+    const p = S.position;
+    const upnl = unrealizedPnL();
+    S.entryLine = S.candleSeries.createPriceLine({
+      price: p.avgEntry,
+      color: p.side === 'long' ? '#00ffc8' : '#ff2a5f',
+      lineWidth: 1, lineStyle: 0, axisLabelVisible: true,
+      title: 'PNL ' + (upnl >= 0 ? '+' : '') + upnl.toFixed(2),
+    });
+    S.liqLine = S.candleSeries.createPriceLine({
+      price: p.liqPrice, color: '#ff00ff', lineWidth: 2, lineStyle: 2,
+      axisLabelVisible: true, title: 'LIQ',
+    });
+  }
+  drawTPSL();
 }
 function updateMarkers(){
   let all = [...S.markers];
@@ -1561,14 +1666,19 @@ function computeCrossLiq(side, avgEntry, size, freeBalance){
 }
 
 function openPosition(side){
-  if(S.position){ toast('Close current position first','yellow'); return; }
   if(!S.candles.length){ toast('Load data first','red'); return; }
+  if(S.position){
+    if(S.position.side === side){ addMarginToPosition(); return; }
+    toast('Close current position first','yellow'); return;
+  }
 
   const sizeInput = parseFloat($('in-size').value);
   if(!isFinite(sizeInput) || sizeInput <= 0){ toast('Invalid size','red'); return; }
 
   const price = currentPrice();
   if(!price){ toast('No market data','red'); return; }
+  const tpsl = resolveForOpen(side, price, S.leverage);
+  if(!tpsl) return;
 
   const lev = S.leverage;
   const maxNotional = S.balance * lev;
@@ -1597,14 +1707,18 @@ function openPosition(side){
     liqPrice,
     openedTime: S.candles[S.currentIndex].time,
     feesPaid: openFee,
+    tp: tpsl.tp,
+    sl: tpsl.sl,
   };
+  S.tp = tpsl.tp == null ? null : {t:'px', v: tpsl.tp};
+  S.sl = tpsl.sl == null ? null : {t:'px', v: tpsl.sl};
 
   S.markers.push({
     time: S.candles[S.currentIndex].time,
     position: side==='long'?'belowBar':'aboveBar',
     color: side==='long'?'#00ffc8':'#ff2a5f',
     shape: side==='long'?'arrowUp':'arrowDown',
-    text: (side==='long'?'L ':'S ')+fmtPrice(price),
+    text: (side==='long'?'L ':'S ')+fmtUSDShort(notional),
   });
 
   toast(`${side.toUpperCase()} ${fmtSize(size)} @ ${fmtPrice(price)}`, side==='long'?'':'red');
@@ -1635,15 +1749,24 @@ function addMarginToPosition(){
   p.feesPaid += addFee;
   p.liqPrice = computeCrossLiq(p.side, newAvg, newSize, S.balance);
 
+  S.markers.push({
+    time: S.candles[S.currentIndex].time,
+    position: p.side==='long'?'belowBar':'aboveBar',
+    color: p.side==='long'?'#00ffc8':'#ff2a5f',
+    shape: p.side==='long'?'arrowUp':'arrowDown',
+    text: 'ADD '+fmtUSDShort(add),
+  });
+
   toast(`Added ${fmtUSDShort(add)} · avg ${fmtPrice(newAvg)}`, 'blue');
+  updatePriceLines();
   refreshAll();
 }
 
-function closePosition(percent){
+function closePosition(percent, execPrice, reason){
   if(!S.position) return;
   percent = Math.min(100, Math.max(1, percent));
 
-  const price = currentPrice();
+  const price = execPrice != null ? execPrice : currentPrice();
   const p = S.position;
   const closeSize = p.size * (percent / 100);
   const notional = closeSize * price;
@@ -1669,7 +1792,7 @@ function closePosition(percent){
     margin: marginEq,
     openedTime: p.openedTime,
     closedTime: S.candles[S.currentIndex].time,
-    reason: percent >= 100 ? 'manual' : 'partial',
+    reason: reason || (percent >= 100 ? 'manual' : 'partial'),
   });
 
   S.markers.push({
@@ -1677,17 +1800,19 @@ function closePosition(percent){
     position: p.side==='long'?'aboveBar':'belowBar',
     color: pnl >= 0 ? '#00ffc8' : '#ff2a5f',
     shape: 'circle',
-    text: (percent>=100?'CLOSE ':`${percent}% `)+(pnl>=0?'+':'')+pnl.toFixed(2),
+    text: (reason==='tp'?'TP ':reason==='sl'?'SL ':percent>=100?'CLOSE ':`${percent}% `)+(pnl>=0?'+':'')+pnl.toFixed(2),
   });
 
   if(percent >= 100){
     S.position = null;
+    S.tp = null; S.sl = null;
   } else {
     p.size -= closeSize;
     p.liqPrice = computeCrossLiq(p.side, p.avgEntry, p.size, S.balance);
   }
 
-  toast(`Closed ${percent}% · PnL ${fmtUSD(pnl)}`, pnl>=0?'':'red');
+  toast(`${reason ? reason.toUpperCase()+' hit' : 'Closed '+percent+'%'} · PnL ${fmtUSD(pnl)}`, pnl>=0?'':'red');
+  updatePriceLines();
   refreshAll();
 }
 
@@ -1737,6 +1862,7 @@ function checkLiquidation(){
       text: `LIQ ${fmtPrice(exitPrice)}`,
     });
 
+    S.tp = null; S.sl = null;
     S.position = null;
     toast(`💀 LIQUIDATED @ ${fmtPrice(exitPrice)} · -${fmtUSD(lostAmount)}`, 'red');
     refreshAll();
@@ -1753,6 +1879,235 @@ function unrealizedPnL(){
 }
 function totalEquity(){
   return S.balance + unrealizedPnL();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TP / SL LOGIC (Automatic Direction & Dynamic PnL USD)
+   ═══════════════════════════════════════════════════════════════════════ */
+function tpslTxt(p){
+  return (p.tp!=null ? fmtPrice(p.tp) : '—') + ' / ' + (p.sl!=null ? fmtPrice(p.sl) : '—');
+}
+
+function tpslLive(){
+  if(S.position) return {tp: S.position.tp, sl: S.position.sl};
+  return {tp: drPx('tp'), sl: drPx('sl')};
+}
+
+function drPx(k){
+  const d = S[k]; if(!d) return null;
+  if(d.t === 'px') return d.v;
+  const p = S.position; if(!p) return null;
+  return roiToPx(d.v, k, p.side, p.avgEntry, p.leverage);
+}
+
+function roiToPx(roi, k, side, ref, lev){
+  const r = k==='tp' ? Math.abs(roi) : -Math.abs(roi);
+  const d = side==='long' ? 1 : -1;
+  return Math.max(ref * 1e-6, ref * (1 + (d * r / 100 / lev)));
+}
+
+function signedRoi(k, px){
+  if(px == null) return null;
+  let side, ref, lev;
+  if(S.position){
+    const p = S.position; side = p.side; ref = p.avgEntry; lev = p.leverage;
+  } else {
+    ref = currentPrice(); lev = S.leverage;
+    side = ((px > ref) === (k === 'tp')) ? 'long' : 'short';
+  }
+  if(!ref) return null;
+  return (px - ref) / ref * (side === 'long' ? 1 : -1) * lev * 100;
+}
+
+function tpslMargin(){
+  if(S.position){
+    const p = S.position; return p.avgEntry * p.size / p.leverage;
+  }
+  return (parseFloat($('in-size').value) || 0) / S.leverage;
+}
+
+function tpslOk(side, k, px){
+  if(px == null) return true;
+  const m = currentPrice();
+  if(!m) return true;
+  return (side === 'long') === (k === 'tp') ? px > m : px < m;
+}
+
+function resolveForOpen(side, price, lev){
+  const out = {tp: null, sl: null};
+  for(const k of ['tp','sl']){
+    const d = S[k]; if(!d) continue;
+    const px = d.t === 'px' ? d.v : roiToPx(d.v, k, side, price, lev);
+    if(!tpslOk(side, k, px)){
+      toast(`${k.toUpperCase()} price fits ${side==='long'?'SHORT':'LONG'} · position is ${side.toUpperCase()}`,'red');
+      return null;
+    }
+    out[k] = px;
+  }
+  return out;
+}
+
+function setTPSLDraft(k, t, v){
+  if(t == null || !isFinite(v) || v <= 0){
+    S[k] = null;
+  } else if(t === 'roi'){
+    S[k] = {t:'roi', v: Math.abs(v)};
+  } else {
+    if(S.position && !tpslOk(S.position.side, k, v)){
+      toast(k.toUpperCase() + ' is on wrong side for ' + S.position.side.toUpperCase(), 'yellow');
+      refreshTPSL(true); return;
+    }
+    S[k] = {t:'px', v};
+  }
+  refreshTPSL(true); updatePriceLines();
+}
+
+function dragTPSL(k, px){
+  if(S.position){
+    if(!tpslOk(S.position.side, k, px)) return;
+    S.position[k] = px;
+  }
+  S[k] = {t:'px', v: px};
+  refreshTPSL(true); updatePriceLines();
+  if(S.position) refreshPositionPanel();
+}
+
+function applyTPSL(){
+  const p = S.position; if(!p) return;
+  const tp = drPx('tp'), sl = drPx('sl');
+  if(!tpslOk(p.side, 'tp', tp) || !tpslOk(p.side, 'sl', sl)){
+    toast('TP/SL on wrong side of price', 'red'); return;
+  }
+  p.tp = tp; p.sl = sl;
+  S.tp = tp == null ? null : {t:'px', v: tp};
+  S.sl = sl == null ? null : {t:'px', v: sl};
+  updatePriceLines(); refreshAll();
+  toast('TP/SL set ✓', 'blue');
+}
+
+function clearTPSL(){
+  S.tp = null; S.sl = null;
+  if(S.position){ S.position.tp = null; S.position.sl = null; }
+  updatePriceLines(); refreshAll();
+}
+
+function checkTPSL(){
+  const p = S.position; if(!p) return;
+  const b = currentBar(); if(!b) return;
+  const L = p.side === 'long';
+  const slHit = p.sl != null && (L ? b.low <= p.sl  : b.high >= p.sl);
+  const tpHit = p.tp != null && (L ? b.high >= p.tp : b.low <= p.tp);
+  if(slHit){
+    closePosition(100, L ? Math.min(p.sl, b.open) : Math.max(p.sl, b.open), 'sl');
+  } else if(tpHit){
+    closePosition(100, L ? Math.max(p.tp, b.open) : Math.min(p.tp, b.open), 'tp');
+  }
+}
+
+function drawTPSL(){
+  const L = tpslLive();
+  const margin = tpslMargin();
+  const mk = (k, px, color) => {
+    if(px == null) return null;
+    const s = signedRoi(k, px); if(s == null) return null;
+    const usd = (s / 100) * margin;
+    const sign = usd >= 0 ? '+' : '';
+    return S.candleSeries.createPriceLine({
+      price: px, color, lineWidth: 1, lineStyle: 2, axisLabelVisible: true,
+      title: k.toUpperCase() + ' ' + (s >= 0 ? '+' : '') + s.toFixed(1) + '% (' + sign + fmtUSD(usd) + ')',
+    });
+  };
+  S.tpLine = mk('tp', L.tp, '#00ffc8');
+  S.slLine = mk('sl', L.sl, '#ff2a5f');
+}
+
+function refreshTPSL(force){
+  const act = document.activeElement;
+  const put = (id, v) => { const el = $(id); if(el && (force || act !== el)) el.value = v; };
+  ['tp','sl'].forEach(k => {
+    const d = S[k];
+    let px = null, roi = null;
+    if(d){
+      if(d.t === 'px'){
+        px = d.v; const s = signedRoi(k, px);
+        roi = s == null ? null : (k === 'tp' ? s : -s);
+      } else {
+        roi = d.v; px = drPx(k);
+      }
+    }
+    put(k + '-px', px == null ? '' : +px.toPrecision(7));
+    put(k + '-pct', roi == null ? '' : (+roi).toFixed(2));
+    const pxEl = $(k + '-px');
+    if(pxEl) pxEl.placeholder = (!S.position && d && d.t === 'roi') ? 'on open' : '—';
+  });
+  const p = S.position, L = tpslLive();
+  const n = (L.tp != null) + (L.sl != null);
+  const badgeEl = $('tpsl-badge'); if(badgeEl) badgeEl.textContent = n ? n + ' ON' : '';
+  const icoEl = $('tpsl-ico'); if(icoEl) icoEl.className = n ? 'fas fa-check' : 'fas fa-plus';
+  const setEl = $('tpsl-set');
+  if(setEl){
+    setEl.style.display = p ? '' : 'none';
+    setEl.classList.toggle('dirty', !!p && ((drPx('tp') ?? null) !== (p.tp ?? null) || (drPx('sl') ?? null) !== (p.sl ?? null)));
+  }
+}
+
+function bindTPSL(){
+  const tog = $('tpsl-toggle');
+  if(tog){
+    tog.addEventListener('click', () => {
+      const o = $('tpsl-dd').classList.toggle('open');
+      tog.classList.toggle('open', o);
+    });
+  }
+  ['tp','sl'].forEach(k => {
+    const pxEl = $(k + '-px');
+    if(pxEl) pxEl.addEventListener('change', e => setTPSLDraft(k, 'px', parseFloat(e.target.value)));
+    const pctEl = $(k + '-pct');
+    if(pctEl) pctEl.addEventListener('change', e => setTPSLDraft(k, 'roi', parseFloat(e.target.value)));
+  });
+  const setBtn = $('tpsl-set'); if(setBtn) setBtn.addEventListener('click', applyTPSL);
+  const clrBtn = $('tpsl-clear'); if(clrBtn) clrBtn.addEventListener('click', clearTPSL);
+}
+
+function initTPSLDrag(){
+  const host = $('pnl-body');
+  if(!host) return;
+  let drag = null;
+  const hit = clientY => {
+    if(!S.candles.length) return null;
+    const y = clientY - host.getBoundingClientRect().top;
+    const L = tpslLive();
+    let best = 10, kind = null;
+    for(const k of ['tp','sl']){
+      if(L[k] == null) continue;
+      let ly; try { ly = S.candleSeries.priceToCoordinate(L[k]); } catch(e){ ly = null; }
+      if(ly != null && Math.abs(ly - y) < best){ best = Math.abs(ly - y); kind = k; }
+    }
+    return kind;
+  };
+  host.addEventListener('pointerdown', e => {
+    const k = hit(e.clientY); if(!k) return;
+    drag = k;
+    S.chart.applyOptions({handleScroll: false, handleScale: false});
+    host.style.cursor = 'ns-resize';
+    e.preventDefault();
+  }, true);
+  window.addEventListener('pointermove', e => {
+    if(!drag){ host.style.cursor = hit(e.clientY) ? 'ns-resize' : ''; return; }
+    let px; try { px = S.candleSeries.coordinateToPrice(e.clientY - host.getBoundingClientRect().top); } catch(err){ return; }
+    if(px == null || !isFinite(px) || px <= 0) return;
+    dragTPSL(drag, px);
+  });
+  const end = () => {
+    if(!drag) return;
+    drag = null; host.style.cursor = '';
+    S.chart.applyOptions({
+      handleScroll: {mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false},
+      handleScale: {axisPressedMouseMove: true, mouseWheel: true, pinch: true},
+    });
+  };
+  window.addEventListener('pointerup', end);
+  window.addEventListener('pointercancel', end);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -1791,6 +2146,7 @@ function refreshMarginInfo(){
 
   $('margin-used').textContent = fmtUSD(margin);
   $('max-size').textContent = fmtUSDShort(maxSize);
+  if(!S.position) updatePriceLines();
 }
 
 function refreshPositionPanel(){
@@ -1825,7 +2181,7 @@ function refreshPositionPanel(){
     const roiPct = marginEq > 0 ? (pnl / marginEq) * 100 : 0;
     const pnlPct = entryNotional > 0 ? (pnl / entryNotional) * 100 : 0;
     const g = pnl >= 0;
-    const sizeForBtn = parseFloat($('in-size').value) || 0;
+
 
     box.innerHTML = `
       <div class="pos-card ${p.side}" data-pos-id="${p.id}">
@@ -1842,24 +2198,20 @@ function refreshPositionPanel(){
           <div class="pos-row"><span class="k">NOTIONAL</span><span class="v" data-field="notional">${fmtUSD(entryNotional)}</span></div>
           <div class="pos-row"><span class="k">MARGIN EQ</span><span class="v" data-field="margin">${fmtUSD(marginEq)}</span></div>
           <div class="pos-row"><span class="k">LIQ PRICE</span><span class="v red" data-field="liq">${fmtPrice(p.liqPrice)}</span></div>
+          <div class="pos-row"><span class="k">FEES</span><span class="v yellow" data-field="fees">${fmtUSD(p.feesPaid)}</span></div>
+          <div class="pos-row"><span class="k">TP / SL</span><span class="v" data-field="tpsl">${tpslTxt(p)}</span></div>
         </div>
         <div class="close-btns">
           <button class="close-btn" data-pct="25">25%</button>
           <button class="close-btn" data-pct="50">50%</button>
           <button class="close-btn all" data-pct="100">CLOSE</button>
         </div>
-        <button class="add-margin-btn" id="btn-add-margin">
-          <i class="fas fa-plus"></i> ADD ${fmtUSDShort(sizeForBtn)} POSITION
-        </button>
       </div>
     `;
     box.querySelectorAll('.close-btn').forEach(b=>{
       b.addEventListener('click', ()=>closePosition(parseFloat(b.dataset.pct)));
     });
-    box.querySelector('#btn-add-margin').addEventListener('click', addMarginToPosition);
 
-    $('btn-long').disabled = true;
-    $('btn-short').disabled = true;
     return;
   }
 
@@ -1892,13 +2244,10 @@ function refreshPositionPanel(){
   setField('notional', fmtUSD(entryNotional));
   setField('margin', fmtUSD(marginEq));
   setField('liq', fmtPrice(p.liqPrice));
+  setField('fees', fmtUSD(p.feesPaid));
+  setField('tpsl', tpslTxt(p));
 
-  const addBtn = card.querySelector('#btn-add-margin');
-  if(addBtn){
-    const sizeForBtn = parseFloat($('in-size').value) || 0;
-    const html = `<i class="fas fa-plus"></i> ADD ${fmtUSDShort(sizeForBtn)} POSITION`;
-    if(addBtn.innerHTML !== html) addBtn.innerHTML = html;
-  }
+
 
   const sizeInput = parseFloat($('in-size').value) || 0;
   const sizeForSub = price > 0 ? sizeInput / price : 0;
@@ -1958,7 +2307,7 @@ function refreshHistory(){
     const win = t.pnl >= 0;
     const cls = t.reason==='liquidated' ? 'liquidated' : win ? 'win' : 'loss';
     const sign = t.pnl >= 0 ? '+' : '';
-    const tag = t.reason==='liquidated' ? ' LIQ' : '';
+    const tag = t.reason==='liquidated' ? ' LIQ' : t.reason==='tp' ? ' TP' : t.reason==='sl' ? ' SL' : '';
     const sideLabel = t.side.toUpperCase() + tag;
     return `
       <div class="hist-item ${cls}">
@@ -2040,6 +2389,7 @@ function refreshAll(){
   refreshStats();
   refreshHistory();
   refreshTimeline();
+  refreshTPSL();
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -2074,6 +2424,7 @@ function play(){
     if(S.currentIndex >= S.candles.length - 1){ pause(); return; }
     S.currentIndex++;
     renderIncremental();
+    checkTPSL();
     checkLiquidation();
     refreshAll();
   }, delay);
@@ -2118,6 +2469,7 @@ function stepForward(){
   }
   S.currentIndex++;
   renderIncremental();
+  checkTPSL();
   checkLiquidation();
   refreshAll();
 }
@@ -2207,6 +2559,8 @@ async function handleFile(file){
     if(!interval) interval = detectIntervalFromCandles(candles);
     if(!interval) interval = '5m'; // fallback
 
+    S.tp = null; S.sl = null;
+
     S.rawCandles = candles;
     S.sourceInterval = interval;
     S.displayInterval = interval;
@@ -2219,7 +2573,8 @@ async function handleFile(file){
     S.viewEnd = candles.length - 1;
     S.sessionStarted = false;
 
-    S.balance = S.initialBalance;
+    S.balance = S.initialBalance; 
+    
     S.position = null;
     S.closedTrades = [];
     S.markers = [];
@@ -2251,6 +2606,7 @@ async function handleFile(file){
 function resetSession(silent){
   pause();
   S.balance = S.initialBalance;
+  S.tp = null; S.sl = null;
   S.position = null;
   S.closedTrades = [];
   S.markers = [];
@@ -2495,6 +2851,7 @@ function bindUI(){
     S.sessionStarted = false;
 
     if(hadTrades){
+      S.tp = null; S.sl = null;
       S.balance = S.initialBalance;
       S.closedTrades = [];
       S.markers = [];
@@ -2522,32 +2879,7 @@ function bindUI(){
   document.addEventListener('pointerup', ()=>{ endDrag(); });
   document.addEventListener('pointercancel', ()=>{ endDrag(); });
 
-  $('tb-fullscreen').addEventListener('click', toggleFullscreen);
-  $('tb-fit').addEventListener('click', ()=>{
-    if(!S.loaded) return;
-    try{ S.chart.timeScale().fitContent(); }catch(e){}
-  });
-  $('tb-center').addEventListener('click', ()=>{
-    if(!S.loaded) return;
-    const from = Math.max(0, S.currentIndex - 60);
-    const to = Math.min(S.candles.length, S.currentIndex + 20);
-    try{ S.chart.timeScale().setVisibleLogicalRange({from, to}); }catch(e){}
-  });
-  $('tb-shot').addEventListener('click', ()=>{
-    const el = $('pnl-body');
-    if(!el) return;
-    const hidden = ['#cursor-lbl'].map(s=>$(s));
-    hidden.forEach(x => x && (x.style.display='none'));
-    html2canvas(el, { backgroundColor:'#0d1017', scale:2, logging:false, useCORS:true })
-      .then(cv => cv.toBlob(b => {
-        try{
-          navigator.clipboard.write([new ClipboardItem({[b.type]:b})])
-            .then(()=>toast('Screenshot copied ✓'))
-            .catch(()=>toast('Copy failed','red'));
-        }catch(e){ toast('Copy not supported','red'); }
-      }))
-      .finally(()=>{ hidden.forEach(x => x && (x.style.display='')); });
-  });
+  
 
   /* ─── DOWNLOAD MODAL ─── */
   const dl = $('dl-modal');
@@ -2676,9 +3008,13 @@ function init(){
   initChart();
   initVP();
   bindUI();
+  bindTPSL();
+  initTPSLDrag();
   refreshAll();
   updatePlayBtn();
   updateTFButtons();
+
+  
 }
 init();
 </script>
