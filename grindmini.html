@@ -127,9 +127,10 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
   border: 1px solid var(--card-border, rgba(0,245,184,.2));
   border-radius: 16px; padding: 16px; text-align: left;
   box-shadow: 0 35px 90px rgba(0,0,0,.9), 0 0 35px var(--card-glow, rgba(0,245,184,.08));
-transition: transform .55s var(--ease), box-shadow .5s var(--ease), border-color .35s ease, opacity .45s ease, filter .45s ease;
+  transition: transform .5s var(--ease), opacity .4s ease, box-shadow .35s ease;
   display: flex; flex-direction: column; overflow: hidden; cursor: pointer; outline: none;
   will-change: transform;
+  contain: layout paint;
   animation: deal 1s var(--ease) backwards;
 }
 @keyframes deal {
@@ -250,16 +251,13 @@ transition: transform .55s var(--ease), box-shadow .5s var(--ease), border-color
 }
 
 @media (hover: hover) and (min-width: 901px) {
-  /* ── minimal landing's sibling dimming ── */
+  /* opacity-only dimming — 0.35 × brightness(.65) ≈ 0.23, so .24 looks identical, without the filter layer */
   .bundle-matrix:hover .bundle-card:not(:hover):not(:focus-visible) {
-    opacity: 0.35;
-    filter: brightness(0.65);
+    opacity: 0.24;
   }
-  /* ── hovered card: full opacity, reduced rotation, scaled up ── */
   .bundle-card:hover, .bundle-card:focus-visible {
     z-index: 20;
     opacity: 1;
-    filter: none;
     transform: translate3d(var(--x), calc(var(--y) + var(--lift, -28px)), 0) rotate(var(--hover-r, 0deg)) scale(var(--hover-s, 1.1));
     border-color: var(--hc);
     box-shadow: 0 60px 130px rgba(0,0,0,.95), 0 0 80px var(--hg);
