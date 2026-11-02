@@ -46,7 +46,7 @@ body {
   display: flex; flex-direction: column; align-items: center; justify-content: space-between;
 }
 
-/* ════════ BACKGROUND — exact copy of toplanding ════════ */
+/* ════════ BACKGROUND ════════ */
 html { background: var(--bg); }
 body {
   min-height: 100vh; min-height: 100dvh;
@@ -57,7 +57,6 @@ body {
     linear-gradient(180deg, #030709 0%, #050b0f 48%, #030709 100%);
   position: relative;
 }
-/* Subtle star dust */
 body::before {
   content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.26;
   background-image:
@@ -105,33 +104,39 @@ h1.hero-title .line-2 { background: linear-gradient(110deg, #fff 0%, #c8fff0 22%
 
 @keyframes sheen { from { background-position: 0% 0; } to { background-position: 100% 0; } }
 @keyframes rise { from { opacity: 0; transform: translateY(22px); } }
-@keyframes deal { from { opacity: 0; transform: translate(0, 80px) rotate(0deg) scale(.6); } }
 h1.hero-title { animation: rise .9s var(--ease) backwards; }
 .hero-description { animation: rise .9s var(--ease) .7s backwards; }
 .cta-wrapper { animation: rise .9s var(--ease) .85s backwards; }
 
-/* ════════ CARD FAN (7 SLOTS) — WIDER CARDS & +15% HOVER SCALE ════════ */
+/* ════════ CARD FAN — minimal-style uniform step ════════ */
 .bundle-matrix {
-  --cw: clamp(260px, 22.5vw, 330px);
-  --step: clamp(130px, 14vw, 205px);
-  position: relative; width: 100%; max-width: 1680px; height: 380px; margin: 0 auto;
+  --cw: clamp(220px, 19vw, 340px);
+  --step: clamp(85px, 10vw, 175px);
+  position: relative; width: 100%; max-width: 1720px; height: 380px; margin: 0 auto;
 }
-.fan-wrap { position: relative; width: 100%; max-width: 1680px; margin: 0 auto 26px; }
+.fan-wrap { position: relative; width: 100%; max-width: 1720px; margin: 0 auto 26px; }
 
-/* Card base */
 .bundle-card {
-  position: absolute; top: 0; left: 50%; margin-left: calc(var(--cw) / -2); width: var(--cw); height: 288px;
-  transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(var(--s));
+  position: absolute; top: 0; left: 50%; margin-left: calc(var(--cw) / -2);
+  width: var(--cw); height: 288px;
+  transform: translate3d(var(--x, 0px), var(--y, 0px), 0) rotate(var(--r, 0deg)) scale(var(--s, 1));
+  transform-origin: center bottom;
   background:
     radial-gradient(ellipse at 86% 0%, rgba(0,245,184,.08), transparent 48%),
     linear-gradient(148deg, rgba(11,25,29,.96), rgba(4,10,13,.98));
   border: 1px solid var(--card-border, rgba(0,245,184,.2));
   border-radius: 16px; padding: 16px; text-align: left;
   box-shadow: 0 35px 90px rgba(0,0,0,.9), 0 0 35px var(--card-glow, rgba(0,245,184,.08));
-  transition: transform .45s var(--ease), opacity .45s var(--ease), box-shadow .45s var(--ease), border-color .45s var(--ease), filter .45s var(--ease);
-  display: flex; flex-direction: column; overflow: hidden; cursor: pointer; transform-origin: center bottom; outline: none; animation: deal 1s var(--ease) backwards;
+transition: transform .55s var(--ease), box-shadow .5s var(--ease), border-color .35s ease, opacity .45s ease, filter .45s ease;
+  display: flex; flex-direction: column; overflow: hidden; cursor: pointer; outline: none;
+  will-change: transform;
+  animation: deal 1s var(--ease) backwards;
 }
-.bundle-card::before { content: ''; position: absolute; top: 0; left: 21%; right: 21%; height: 1px; background: linear-gradient(90deg, transparent, var(--hc, rgba(0,245,184,.8)), transparent); opacity: 0; transition: opacity .22s var(--ease); }
+@keyframes deal {
+  from { opacity: 0; transform: translate3d(0, 80px, 0) rotate(0deg) scale(.6); }
+}
+
+.bundle-card::before { content: ''; position: absolute; top: 0; left: 21%; right: 21%; height: 1px; background: linear-gradient(90deg, transparent, var(--hc, rgba(0,245,184,.8)), transparent); opacity: 0; transition: opacity .25s ease; }
 .bundle-card:hover::before { opacity: 1; }
 
 .mod-head { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; }
@@ -143,7 +148,7 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
 .mod-preview { flex: 1; min-height: 0; border-radius: 10px; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.07); padding: 10px; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: center; font-family: var(--mono); font-variant-numeric: tabular-nums; transition: border-color .2s var(--ease), background .2s var(--ease); }
 .bundle-card:hover .mod-preview { border-color: rgba(0,245,184,.28); background: rgba(0,12,14,.58); }
 
-/* ─── CARD 1: MODULAR WIDGETS (Miniature 4-Widget Layout) ─── */
+/* Widget styles (unchanged from grindindex) */
 .hub-mini-quad { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; height: 100%; width: 100%; }
 .hub-mini-w { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 6px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
 .hub-mini-w-title { font-size: 8px; font-weight: 800; color: #6b7280; letter-spacing: .5px; text-transform: uppercase; display: flex; justify-content: space-between; }
@@ -154,31 +159,19 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
 .hub-mini-bio-chips { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 2px; }
 .hub-mini-chip { font-size: 7px; padding: 1px 4px; border-radius: 3px; background: rgba(0,245,184,.1); color: var(--accent); }
 
-/* ─── CARD 2: TELEGRAM INTEL (Pure Messages / Alerts Only) ─── */
 .tg-shell { display: flex; flex-direction: column; gap: 6px; height: 100%; justify-content: center; font-size: 9.5px; }
 .tg-alert-box { background: rgba(4,18,25,.85); border-left: 2px solid var(--blue); padding: 7px 9px; border-radius: 5px; line-height: 1.4; animation: slideMsg .28s var(--ease); }
 .tg-alert-tag { color: var(--red); font-weight: 800; font-size: 9px; letter-spacing: .5px; display: block; margin-bottom: 2px; }
 
-/* ─── CARD 4: TRADING ENGINE IFRAME WRAPPER (+10% Zoom / Scale 0.55) ─── */
-.iframe-preview-wrap {
-  width: 100%; height: 100%; position: relative; overflow: hidden; border-radius: 6px;
-  background: #0d1017;
-}
-.iframe-preview-wrap iframe {
-  width: 181.8%; height: 181.8%; border: none;
-  transform: scale(0.55); transform-origin: top left;
-  pointer-events: none; /* User clicks card to open full app */
-  display: block; background: #050608;
-}
+.iframe-preview-wrap { width: 100%; height: 100%; position: relative; overflow: hidden; border-radius: 6px; background: #0d1017; }
+.iframe-preview-wrap iframe { width: 181.8%; height: 181.8%; border: none; transform: scale(0.55); transform-origin: top left; pointer-events: none; display: block; background: #050608; }
 
-/* ─── CARD 7: IMCHAT P2P RANDOM NON-TRADING CONVERSATION ─── */
 .chat-shell { display: flex; flex-direction: column; gap: 6px; height: 100%; justify-content: flex-end; font-size: 10px; font-family: var(--ui); }
 .chat-bubble-p2p { padding: 5px 9px; border-radius: 8px; max-width: 88%; line-height: 1.38; animation: slideMsg .28s var(--ease); word-break: break-word; }
 .chat-bubble-p2p.them { align-self: flex-start; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); color: #d1d5db; }
 .chat-bubble-p2p.me { align-self: flex-end; background: rgba(0,255,213,.12); border: 1px solid rgba(0,255,213,.28); color: var(--accent); }
 @keyframes slideMsg { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-/* Micro-UIs (Canvases, Screeners, Watchlist) */
 .mini-chart { width: 100%; flex: 1; height: 100%; min-height: 120px; position: relative; }
 .mini-chart canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .bt-buttons-row { display: flex; gap: 6px; margin-top: 8px; }
@@ -199,38 +192,90 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
 .mini-wl-metric .val { text-align: right; font-weight: 700; color: #6b7488; }
 .mini-wl-metric .val.hot { color: var(--accent); }
 
+/* ════════ 7-CARD FAN GEOMETRY (uniform step, clean hover) ════════ */
+.card-1 {
+  --x: calc(var(--step) * -3); --y: 48px; --r: -13deg; --s: 0.83;
+  --hover-s: 1.08; --hover-r: -6deg; --lift: -34px;
+  --hc: var(--accent); --hg: rgba(0,245,184,.5);
+  --card-border: rgba(0,245,184,.28); --card-glow: rgba(0,245,184,.08);
+  z-index: 1; animation-delay: .5s;
+}
+.card-2 {
+  --x: calc(var(--step) * -2); --y: 32px; --r: -8deg; --s: 0.89;
+  --hover-s: 1.10; --hover-r: -4deg; --lift: -32px;
+  --hc: var(--blue); --hg: rgba(56,189,248,.5);
+  --card-border: rgba(56,189,248,.32); --card-glow: rgba(56,189,248,.08);
+  z-index: 2; animation-delay: .4s;
+}
+.card-3 {
+  --x: calc(var(--step) * -1); --y: 16px; --r: -4deg; --s: 0.94;
+  --hover-s: 1.12; --hover-r: -2deg; --lift: -28px;
+  --hc: var(--purple); --hg: rgba(168,85,247,.5);
+  --card-border: rgba(168,85,247,.35); --card-glow: rgba(168,85,247,.08);
+  z-index: 3; animation-delay: .25s;
+}
+.card-4 {
+  --x: 0px; --y: 4px; --r: 0deg; --s: 1.04;
+  --hover-s: 1.15; --hover-r: 0deg; --lift: -18px;
+  --hc: var(--gold); --hg: rgba(0,245,184,.6);
+  --card-border: rgba(0,245,184,.6); --card-glow: rgba(0,245,184,.22);
+  z-index: 5; animation-delay: .1s;
+  box-shadow: 0 45px 100px rgba(0,0,0,.95), 0 0 55px rgba(0,245,184,.22);
+}
+.card-5 {
+  --x: var(--step); --y: 16px; --r: 4deg; --s: 0.94;
+  --hover-s: 1.12; --hover-r: 2deg; --lift: -28px;
+  --hc: var(--amber); --hg: rgba(255,214,10,.5);
+  --card-border: rgba(255,214,10,.35); --card-glow: rgba(255,214,10,.08);
+  z-index: 3; animation-delay: .25s;
+}
+.card-6 {
+  --x: calc(var(--step) * 2); --y: 32px; --r: 8deg; --s: 0.89;
+  --hover-s: 1.10; --hover-r: 4deg; --lift: -32px;
+  --hc: var(--red); --hg: rgba(255,51,95,.5);
+  --card-border: rgba(255,51,95,.32); --card-glow: rgba(255,51,95,.08);
+  z-index: 2; animation-delay: .4s;
+}
+.card-7 {
+  --x: calc(var(--step) * 3); --y: 48px; --r: 13deg; --s: 0.83;
+  --hover-s: 1.08; --hover-r: 6deg; --lift: -34px;
+  --hc: #00ffd5; --hg: rgba(0,255,213,.5);
+  --card-border: rgba(0,255,213,.32); --card-glow: rgba(0,255,213,.08);
+  z-index: 1; animation-delay: .5s;
+}
+
+.bundle-card:focus-visible {
+  border-color: var(--hc, var(--gold));
+  box-shadow: 0 0 0 3px rgba(0,245,184,.35), 0 40px 90px rgba(0,0,0,.9);
+}
+
+@media (hover: hover) and (min-width: 901px) {
+  /* ── minimal landing's sibling dimming ── */
+  .bundle-matrix:hover .bundle-card:not(:hover):not(:focus-visible) {
+    opacity: 0.35;
+    filter: brightness(0.65);
+  }
+  /* ── hovered card: full opacity, reduced rotation, scaled up ── */
+  .bundle-card:hover, .bundle-card:focus-visible {
+    z-index: 20;
+    opacity: 1;
+    filter: none;
+    transform: translate3d(var(--x), calc(var(--y) + var(--lift, -28px)), 0) rotate(var(--hover-r, 0deg)) scale(var(--hover-s, 1.1));
+    border-color: var(--hc);
+    box-shadow: 0 60px 130px rgba(0,0,0,.95), 0 0 80px var(--hg);
+  }
+}
+
 /* Live caption */
 .cap { position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); width: min(660px, 92%); min-height: 44px; font: 500 14px/1.55 var(--ui); color: #9db6b0; text-align: center; transition: opacity .25s ease; z-index: 6; }
 .cap b { color: var(--gold); font: 700 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; display: block; margin-bottom: 2px; }
 .cap.swap { opacity: 0; }
 
-/* ════════ 7 CARD FAN GEOMETRY + 15% HOVER SCALE ════════ */
-.card-1 { --x: calc(var(--step) * -3); --y: 56px; --r: -8.5deg; --s: .86; --hover-s: 1.01; --hc: var(--accent); --card-border: rgba(0,245,184,.28); --card-glow: rgba(0,245,184,.08); --hg: rgba(0,245,184,.4); z-index: 1; animation-delay: .5s; }
-.card-2 { --x: calc(var(--step) * -2); --y: 36px; --r: -5.5deg; --s: .90; --hover-s: 1.05; --hc: var(--blue);   --card-border: rgba(56,189,248,.32); --card-glow: rgba(56,189,248,.08); --hg: rgba(56,189,248,.4); z-index: 2; animation-delay: .4s; }
-.card-3 { --x: calc(var(--step) * -1); --y: 18px; --r: -2.8deg; --s: .95; --hover-s: 1.09; --hc: var(--purple); --card-border: rgba(168,85,247,.35); --card-glow: rgba(168,85,247,.08); --hg: rgba(168,85,247,.4); z-index: 3; animation-delay: .25s; }
-.card-4 { --x: 0px;                    --y: 10px; --lift: -4px;  --hs: .15; --r: 0deg;   --s: 1.02; --hover-s: 1.17; --hc: var(--gold);   --card-border: rgba(0,245,184,.65); --card-glow: rgba(0,245,184,.25); --hg: rgba(0,245,184,.55); z-index: 5; animation-delay: .1s; box-shadow: 0 40px 100px rgba(0,0,0,.95), 0 0 50px rgba(0,245,184,.25); }
-.card-5 { --x: var(--step);            --y: 18px; --r: 2.8deg;  --s: .95; --hover-s: 1.09; --hc: var(--amber);  --card-border: rgba(255,214,10,.35); --card-glow: rgba(255,214,10,.08); --hg: rgba(255,214,10,.4); z-index: 3; animation-delay: .25s; }
-.card-6 { --x: calc(var(--step) * 2);  --y: 36px; --r: 5.5deg;  --s: .90; --hover-s: 1.05; --hc: var(--red);    --card-border: rgba(255,51,95,.32);  --card-glow: rgba(255,51,95,.08);  --hg: rgba(255,51,95,.4);  z-index: 2; animation-delay: .4s; }
-.card-7 { --x: calc(var(--step) * 3);  --y: 56px; --r: 8.5deg;  --s: .86; --hover-s: 1.01; --hc: #00ffd5;       --card-border: rgba(0,255,213,.32);  --card-glow: rgba(0,255,213,.08);  --hg: rgba(0,255,213,.4);  z-index: 1; animation-delay: .5s; }
-
-.bundle-card:focus-visible { border-color: var(--hc, var(--gold)); box-shadow: 0 0 0 3px rgba(0,245,184,.35), 0 40px 90px rgba(0,0,0,.9); }
-
-@media (hover: hover) and (min-width: 901px) {
-  .bundle-card:hover, .bundle-card:focus-visible, .bundle-card.spot {
-    z-index: 20; transform: translate(var(--x), calc(var(--y) + var(--lift, -22px))) rotate(0deg) scale(var(--hover-s, 1.15));
-    border-color: var(--hc); box-shadow: 0 55px 120px rgba(0,0,0,.95), 0 0 70px var(--hg);
-  }
-  .bundle-matrix:hover .bundle-card:not(:hover) { opacity: .55; filter: brightness(.72); }
-  .bundle-card.spot .mod-preview { border-color: rgba(0,245,184,.32); }
-  .bundle-card.spot::before { opacity: 1; }
-}
-
-/* Module list */
+/* Description & CTA */
 .hero-description { font-size: clamp(14px, 1.6vw, 18px); color: var(--platinum-muted); max-width: 860px; margin: 0 auto 36px; line-height: 1.8; font-weight: 500; }
 .hero-description b { color: #fff; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,.5); }
 .hero-description .hl { color: var(--gold); font-weight: 700; text-shadow: 0 0 15px rgba(0,245,184,.4); }
 
-/* CTA */
 .cta-wrapper { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 20px; }
 .btn-im-in {
   background: linear-gradient(135deg, #42ffd0, var(--gold) 45%, #00c795); color: #080703;
@@ -247,7 +292,6 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
 .btn-im-in i { transition: transform .3s var(--ease); } .btn-im-in:hover i { transform: translateX(5px); }
 .cta-subtext { font: 800 10px var(--mono); letter-spacing: .2em; color: var(--platinum-muted); text-transform: uppercase; opacity: .9; }
 
-/* Overlay */
 #overlay { position: fixed; inset: 0; background: #020204; z-index: 9999; transform: translateY(100%); transition: transform .65s var(--ease); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 18px; }
 #overlay.active { transform: translateY(0); }
 .loader-txt { font: 800 11.5px var(--mono); color: var(--gold); letter-spacing: .32em; text-transform: uppercase; }
@@ -257,10 +301,9 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
   .hero { padding-left: 0; padding-right: 0; }
   h1.hero-title, .hero-description, .cta-wrapper { padding: 0 20px; }
   h1.hero-title { margin-bottom: 22px; }
-  /* swipeable carousel on mobile */
   .bundle-matrix { height: auto; display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding: 8px 20px 18px; margin: 0 0 14px; scrollbar-width: none; }
   .bundle-matrix::-webkit-scrollbar { display: none; }
-  .bundle-card { position: relative; left: 0; margin-left: 0; flex: 0 0 min(78vw, 330px); width: auto; height: 278px; transform: none; opacity: 1; filter: none; scroll-snap-align: center; z-index: 1; }
+  .bundle-card { position: relative; left: 0; margin-left: 0; flex: 0 0 min(78vw, 330px); width: auto; height: 278px; transform: none; animation: none; opacity: 1; scroll-snap-align: center; z-index: 1; }
   .card-4 { box-shadow: 0 25px 60px rgba(0,0,0,.9), 0 0 36px rgba(0,245,184,.2); }
   .cap { position: static; transform: none; width: auto; padding: 0 24px; margin: 0 0 16px; min-height: 5.4em; font-size: 13.5px; }
   .hero-description { font-size: 14px; line-height: 1.7; margin-bottom: 24px; }
@@ -269,7 +312,6 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
   nav.top-bar { padding-left: 14px; padding-right: 14px; }
 }
 @media (min-width: 1700px) {
-  .bundle-matrix { --cw: 350px; --step: 235px; height: 395px; }
   h1.hero-title { font-size: 104px; margin-bottom: 46px; }
   .hero-description { font-size: 19px; max-width: 960px; }
   .cap { font-size: 15px; }
@@ -286,8 +328,7 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
 }
 @media (max-width: 400px) { h1.hero-title { font-size: min(clamp(42px, min(7vw, 9.6vh), 88px), 13.2vw); } }
 @media (max-width: 320px) { .status-badge { display: none; } .hero-description { font-size: 13px; } }
-@media (prefers-reduced-motion: reduce) { .pulse-dot { animation: none; } .bundle-card, .btn-im-in { transition: none; } }
-</style>
+@media (prefers-reduced-motion: reduce) { .pulse-dot { animation: none; } .bundle-card, .btn-im-in { transition: none; } .bundle-card { animation: none; } }</style>
 </head>
 <body>
 
@@ -439,15 +480,15 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
     <div class="bundle-card card-7" onclick="launchApp()">
       <div class="mod-head">
         <div class="mod-icon" style="color:#00ffd5;border-color:rgba(0,255,213,.3);background:rgba(0,255,213,.1)"><i class="fa-solid fa-comments"></i></div>
-        <div class="mod-title">ImChat P2P</div>
+        <div class="mod-title">Chat P2P</div>
         <div class="mod-cat">Encrypted</div>
       </div>
       <div class="mod-preview">
-        <div class="chat-shell" id="chatThread">
-          <div class="chat-bubble-p2p them">Ara, inchi es aysor aydqan ushacel?</div>
-          <div class="chat-bubble-p2p me">Bratch, пробник-ի մեջ էի, մի քիչ ձգձգվեց</div>
-          <div class="chat-bubble-p2p them">Lav, arden inchpes vor e, gnanq ճաշելու՞</div>
-        </div>
+      <div class="chat-shell" id="chatThread">
+  <div class="chat-bubble-p2p them">yo are you alive? i've been staring at this blank doc for 20 mins 😩</div>
+  <div class="chat-bubble-p2p me">bro i fell into a youtube rabbit hole about ancient aliens, i'm cooked</div>
+  <div class="chat-bubble-p2p them">LMAOO okay but seriously — we meeting tonight or what</div>
+</div>
       </div>
     </div>
 
@@ -460,7 +501,7 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
 
   <!-- 4. CTA -->
   <div class="cta-wrapper">
-    <button class="btn-im-in" onclick="launchApp()">ENTER THE WORKSPACE <i class="fa-solid fa-arrow-right"></i></button>
+    <button class="btn-im-in" onclick="launchApp()">ENTER GRIND // OS <i class="fa-solid fa-arrow-right"></i></button>
     <div class="cta-subtext">[Web3 Login · Instant Access · 3-Min Free Trial]</div>
   </div>
 
@@ -522,16 +563,17 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
   draw(); new ResizeObserver(draw).observe(cv.parentElement);
 })();
 
-/* ════════ IMCHAT P2P LIVE ANIMATION (RANDOM EVERYDAY CHAT) ════════ */
+/* ════════ CHAT P2P LIVE ANIMATION (RANDOM EVERYDAY CHAT) ════════ */
 (function(){
   const thread = document.getElementById('chatThread'); if(!thread) renderRandomChat();
   const casualPool = [
-    { sender: 'them', text: 'Inchex anum, kgnanq surtch xmelu?' },
-    { sender: 'me',   text: 'Spasum em vor draxayin zhamy ga, mi 15 ropeic azat em' },
-    { sender: 'them', text: 'Lav,es kyntrem ayn hin texy, mi moraci lac-topd berel' },
-    { sender: 'me',   text: 'Chem morana, arden portfelis mej a' },
-    { sender: 'them', text: 'Barevner tany mnacoxnerin :D' }
-  ];
+  { sender: 'them', text: "my landlord just texted 'we need to talk' — this is either rent or the plant i murdered" },
+  { sender: 'me',   text: "not the plant 😭 which one, the window one or the tragic shelf one" },
+  { sender: 'them', text: "the shelf one. it never stood a chance with my 'watering schedule'" },
+  { sender: 'me',   text: "you watered it twice in six months and you know it" },
+  { sender: 'them', text: "that's a generous estimate honestly. anyway — coffee tonight? i need to debrief everything" },
+  { sender: 'me',   text: "yes. 8pm. i have a new story about my neighbor and a shopping cart, it's unhinged" }
+];
   let idx = 0;
   setInterval(()=>{
     const item = casualPool[idx % casualPool.length]; idx++;
@@ -574,7 +616,7 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
   centre(); addEventListener('load', centre);
 })();
 
-/* ════════ SPOTLIGHT · LIVE CAPTION · PARALLAX (7 CARDS) ════════ */
+/* ════════ CAPTION (hover/focus only — no auto-cycle) · PARALLAX ════════ */
 (function(){
   const m = document.querySelector('.bundle-matrix'), cap = document.getElementById('cap');
   const cards = [...document.querySelectorAll('.bundle-card')];
@@ -585,42 +627,50 @@ h1.hero-title { animation: rise .9s var(--ease) backwards; }
     ['Trading Engine','Live charting tape with volume profile, real-time liquidation pins ($4.8M / $480K), and multi-timeframe synchronization.'],
     ['500+ Screener','500+ futures pairs. Six filters. Live funding rates. Everything happening on Binance Futures — one screen.'],
     ['Watchlist','4 metrics per coin: price, volume, OI, liquidations. Multi-condition alarms pinged when 2+ fire together.'],
-    ['ImChat P2P','Sovereign peer-to-peer encrypted communications. Your Web3 wallet address is your ID. Zero centralized servers, zero leaks.']
+    ['Chat P2P','Web3 peer-to-peer encrypted communications. Zero centralized servers, zero leaks.']
   ];
   const mobile = () => innerWidth <= 900, reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let cur = -1, timer = null, order = [3,2,4,1,5,0,6], k = 0;
+  let cur = -1;
   function set(i){
-    if(i === cur || !info[i]) return; cur = i;
-    cards.forEach((c,j)=>c.classList.toggle('spot', !mobile() && j===i));
+    if(i === cur || !info[i]) return;
+    cur = i;
     cap.classList.add('swap');
     setTimeout(()=>{ cap.innerHTML = '<b>'+info[i][0]+'</b>'+info[i][1]; cap.classList.remove('swap'); }, 160);
   }
-  function play(){ stop(); if(reduce || mobile()) return; timer = setInterval(()=>{ k = (k+1)%order.length; set(order[k]); }, 3600); }
-  function stop(){ if(timer){ clearInterval(timer); timer = null; } }
   cards.forEach((c,i)=>{
-    c.addEventListener('mouseenter',()=>{ stop(); set(i); });
-    c.addEventListener('focus',()=>{ stop(); set(i); });
-    c.addEventListener('mouseleave',()=>{ k = order.indexOf(i); play(); });
-    c.addEventListener('blur',play);
+    c.addEventListener('mouseenter', ()=> set(i));
+    c.addEventListener('focus', ()=> set(i));
   });
-  /* mobile: caption follows nearest center card */
+  /* mobile: caption follows nearest centered card */
   let raf = 0;
-  m.addEventListener('scroll',()=>{ if(!mobile()||raf) return; raf = requestAnimationFrame(()=>{ raf = 0;
-    const mid = m.scrollLeft + m.clientWidth/2; let best = 0, d = 1e9;
-    cards.forEach((c,i)=>{ const dd = Math.abs(c.offsetLeft + c.offsetWidth/2 - mid); if(dd<d){ d = dd; best = i; } }); set(best); }); },{passive:true});
+  m.addEventListener('scroll', ()=>{
+    if(!mobile() || raf) return;
+    raf = requestAnimationFrame(()=>{
+      raf = 0;
+      const mid = m.scrollLeft + m.clientWidth/2;
+      let best = 0, d = 1e9;
+      cards.forEach((c,i)=>{ const dd = Math.abs(c.offsetLeft + c.offsetWidth/2 - mid); if(dd < d){ d = dd; best = i; } });
+      set(best);
+    });
+  }, { passive: true });
+  /* default caption */
+  set(3);
   /* subtle planet parallax */
   const orb = document.querySelector('.cosmic-orb');
   if(orb && !reduce && matchMedia('(hover: hover)').matches)
-    addEventListener('pointermove',e=>{ orb.style.setProperty('--px',((e.clientX/innerWidth-.5)*-26)+'px'); orb.style.setProperty('--py',((e.clientY/innerHeight-.5)*-18)+'px'); },{passive:true});
-  addEventListener('resize',()=>{ cur = -1; set(mobile()?3:order[k]); play(); });
-  set(3); play();
+    addEventListener('pointermove', e=>{
+      orb.style.setProperty('--px', ((e.clientX/innerWidth - .5) * -26) + 'px');
+      orb.style.setProperty('--py', ((e.clientY/innerHeight - .5) * -18) + 'px');
+    }, { passive: true });
+  /* reset on resize */
+  addEventListener('resize', ()=>{ cur = -1; set(3); });
 })();
 
 /* ════════ GA4 & NAVIGATION ════════ */
 function launchApp(){
   if(typeof gtag === 'function') gtag('event','im_in_clicked',{event_category:'engagement'});
   document.getElementById('overlay').classList.add('active');
-  setTimeout(()=>{ window.location.href = '/hub.html'; }, 900);
+  setTimeout(()=>{ window.location.href = 'file:///Users/alishants/Downloads/HUBDl.html'; }, 900);
 }
 </script>
 </body>
