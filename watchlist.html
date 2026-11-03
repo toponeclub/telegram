@@ -497,6 +497,26 @@ body.is-resizing-cards .coin-card{ transition: none !important; animation: none 
   box-shadow: 0 0 24px rgba(0,255,213,.08), 0 8px 24px rgba(0,0,0,.6);
   white-space: nowrap;
 }
+
+/* ▶ Static EnginePro chart (between cards and alert log) */
+.engine-static{
+  margin:14px 0; border:1px solid var(--bd); border-radius:12px;
+  background:var(--bg, #0d1017); overflow:hidden; position:relative;
+}
+.engine-static iframe{display:block; width:100%; height:560px; border:0; background:var(--bg, #0d1017)}
+
+
+/* ▶ Active card · engine is showing this symbol */
+.coin-card.active-chart{
+  border-color: var(--ac);
+  box-shadow: 0 0 0 1px rgba(0,255,213,.25), 0 0 30px rgba(0,255,213,.06), 0 12px 40px rgba(0,0,0,.35);
+}
+.coin-card.active-chart::before{
+  content:''; position:absolute; top:-1px; left:20%; right:20%; height:1px;
+  background:linear-gradient(90deg,transparent,var(--ac),transparent);
+}
+
+
 </style>
 </head>
 <body>
@@ -558,6 +578,10 @@ body.is-resizing-cards .coin-card{ transition: none !important; animation: none 
       Idea: <b style="color:var(--ac);">ОИ + Объём + Цена + Ликвидации</b>.
       Направление не важно — важно <b style="color:var(--ac);">изменение</b>.
     </div>
+  </div>
+
+  <div class="engine-static" id="engine-static">
+    <iframe id="engine-frame" src="https://www.t1prime.com/enginepro?tf=15m" allow="clipboard-write; clipboard-read" allowfullscreen></iframe>
   </div>
 
   <div class="alert-log">
@@ -979,10 +1003,10 @@ function load() {
     if (!raw) return;
     const s = JSON.parse(raw);
     if (Array.isArray(s.coins)) STATE.coins = s.coins.map(c => ({
-      ...c,
-      viewMode: c.viewMode || 'metrics',
-      enabled: c.enabled || { price: true, vol: true, oi: true, liq: true }
-    }));
+  ...c,
+  viewMode: 'metrics',   /* ← force metrics · mini iframe այլեւս չի օգտագործվում */
+  enabled: c.enabled || { price: true, vol: true, oi: true, liq: true }
+}));
     if (s.tg) STATE.tg = { token: s.tg.token || '', chat: s.tg.chat || '' };
     if (s.windowMin) STATE.windowMin = +s.windowMin;
     if (s.minTriggers) STATE.minTriggers = +s.minTriggers;
@@ -1387,54 +1411,19 @@ function attachGridHandlers(grid) {
 
 /* ▶ NEW · toggleView — switch between metrics and chart */
 function toggleView(sym) {
-  const coin = STATE.coins.find(c => c.sym === sym);
-  if (!coin) return;
-  const isChartNow = (coin.viewMode === 'chart');
-  coin.viewMode = isChartNow ? 'metrics' : 'chart';
-  save();
+  /* ▶ Switch the main engine iframe to this symbol (postMessage SET_SYMBOL) */
+  setChartTicker(sym);
 
-  const el = document.querySelector(`.coin-card[data-sym="${sym}"]`);
-  if (!el) return;
-
-  const metricsEl = el.querySelector('.metrics');
-  const chartEl   = el.querySelector('.mini-chart-wrap');
-
-  if (coin.viewMode === 'chart') {
-    /* ▶ Lazy-create the iframe · only on first ever switch */
-    if (chartEl && !chartEl.querySelector('iframe')) {
-      chartEl.innerHTML = `
-        <iframe
-          class="mini-engine-iframe"
-          data-eng-sym="${sym}"
-          src="${ENGINE_BASE}?symbol=${sym}&tf=5m"
-          allow="clipboard-write; clipboard-read"
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-        ></iframe>`;
-      initMiniChart(chartEl);
-    }
-
-    if (metricsEl) metricsEl.style.display = 'none';
-    if (chartEl)   chartEl.style.display   = 'flex';
-    el.classList.add('chart-mode');
-  } else {
-    /* ▶ Hide iframe but NEVER remove it — stays alive */
-    if (metricsEl) metricsEl.style.display = 'flex';
-    if (chartEl)   chartEl.style.display   = 'none';
-    el.classList.remove('chart-mode');
+  /* ▶ Smooth scroll to engine */
+  const engine = document.getElementById('engine-static');
+  if (engine) {
+    engine.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
-  el.dataset.view = coin.viewMode;
-
-  /* ▶ Update switch button */
-  const btn = el.querySelector('[data-view]');
-  if (btn) {
-    btn.classList.toggle('on', coin.viewMode === 'chart');
-    btn.innerHTML = coin.viewMode === 'chart'
-      ? '<i class="fas fa-list-ul"></i>'
-      : '<i class="fas fa-chart-line"></i>';
-    btn.title = coin.viewMode === 'chart' ? 'Show metrics' : 'Show chart';
-  }
+  /* ▶ Visual feedback · highlight the active card */
+  document.querySelectorAll('.coin-card').forEach(c => c.classList.remove('active-chart'));
+  const card = document.querySelector(`.coin-card[data-sym="${sym}"]`);
+  if (card) card.classList.add('active-chart');
 }
 
 function bindGridInputEvents() {
@@ -1627,36 +1616,74 @@ function updateCardInPlace(sym, data) {
   if (rz) rz.addEventListener('pointerdown', e => startCardResize(e, fresh));
 }
 
+/* ▶ 1) Change ticker on the static chart · same as screenerpro (SET_SYMBOL) */
+const alertQueue = [];
+let isProcessingAlerts = false;
+
+function setChartTicker(sym) {
+  const fr = document.getElementById('engine-frame');
+  let s = String(sym).toUpperCase();
+  if (!s.endsWith('USDT')) s += 'USDT';
+  try { fr.contentWindow.postMessage({ type: 'SET_SYMBOL', symbol: s }, '*'); } catch (e) {}
+}
+
+async function processAlerts() {
+  if (isProcessingAlerts) return;
+  isProcessingAlerts = true;
+
+  while (alertQueue.length > 0) {
+    const task = alertQueue.shift();
+    
+    // Փոխում ենք տեսանելի iframe-ի ticker-ը trigger եղածով
+    setChartTicker(task.sym);
+
+    if (STATE.tg.token && STATE.tg.chat) {
+      await new Promise(resolve => {
+        const base = String(task.sym).toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/USDT$/, '');
+        const params = new URLSearchParams({
+          mode: 'snap', symbol: base, tf: '15m',
+          tg_token: STATE.tg.token, tg_chat: String(STATE.tg.chat), caption: task.caption
+        });
+        
+        // Ստեղծում ենք screenerpro-ի նման background iframe՝ նկարելու համար
+        const iframe = document.createElement('iframe');
+        iframe.src = `${ENGINE_BASE}?${params}`;
+        iframe.style.cssText = 'position:fixed;top:0;left:0;width:1400px;height:900px;opacity:0.01;pointer-events:none;border:0;z-index:-1';
+        document.body.appendChild(iframe);
+        
+        // Սպասում ենք 12 վայրկյան՝ համոզվելու համար, որ chart-ը լրիվ load է եղել և snap արել
+        setTimeout(() => {
+  try { iframe.remove(); } catch (e) {}
+  resolve();
+}, 20000);
+      });
+    }
+  }
+  isProcessingAlerts = false;
+}
+
 function fireAlert(coin, data, ev) {
   const last = STATE.lastAlerts[coin.sym] || 0;
   const cd = STATE.cooldownMin * 60 * 1000;
   if (now() - last < cd) return;
   STATE.lastAlerts[coin.sym] = now();
 
-  const icon = ev.dir === 'up' ? '🟢' : ev.dir === 'down' ? '🔴' : '🟡';
-  const dirTag = ev.dir === 'up' ? 'BULLISH' : ev.dir === 'down' ? 'BEARISH' : 'MIXED';
+  const sgn = (v, d) => (v >= 0 ? '+' : '') + v.toFixed(d);
+  const dirStr = ev.dir === 'up' ? 'BULLISH' : ev.dir === 'down' ? 'BEARISH' : 'MIXED';
 
-  const activeTags = [];
-  if (coin.enabled?.price !== false) activeTags.push('P');
-  if (coin.enabled?.vol   !== false) activeTags.push('V');
-  if (coin.enabled?.oi    !== false) activeTags.push('O');
-  if (coin.enabled?.liq   !== false) activeTags.push('L');
+  // Կազմում ենք տեքստը միայն trigger եղած մետրիկաներով
+  const lines = [`${coin.sym.replace('USDT','')} - ${dirStr}`];
+  if (ev.pPrice) lines.push(`✅ Price ${sgn(data.pricePct, 2)}%`);
+  if (ev.pVol)   lines.push(`✅ Vol ${sgn(data.volPct, 0)}%`);
+  if (ev.pOI)    lines.push(`✅ OI ${sgn(data.oiPct, 2)}%`);
+  if (ev.pLiq)   lines.push(`✅ Liq ${fmtUSD(data.liqUsd)}`);
 
-  const msg =
-    `${icon} <b>${coin.sym.replace('USDT','')}</b> · ${dirTag}\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `Price:  <b>${data.pricePct>=0?'+':''}${data.pricePct.toFixed(2)}%</b> (thr ${coin.thr.price}%)\n` +
-    `Vol:    <b>${data.volPct>=0?'+':''}${data.volPct.toFixed(0)}%</b> (thr ${coin.thr.vol}%)\n` +
-    `OI:     <b>${data.oiPct>=0?'+':''}${data.oiPct.toFixed(2)}%</b> (thr ${coin.thr.oi}%)\n` +
-    `Liq:    <b>${fmtUSD(data.liqUsd)}</b> (thr ${fmtUSD(coin.thr.liq)})\n` +
-    `L/L:    L ${fmtUSD(data.liqLong)} / S ${fmtUSD(data.liqShort)}\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n` +
-    `Triggered: <b>${ev.triggered}/${ev.activeCount}</b> · active: ${activeTags.join('')} · window ${STATE.windowMin}m`;
+  const caption = lines.join('\n');
 
-  sendTG(msg, false).then(ok => {
-    if (ok) toast(`📡 Alert sent: ${coin.sym.replace('USDT','')} ${ev.triggered}/${ev.activeCount}`, '');
-    else    toast(`⚡ Local alert: ${coin.sym.replace('USDT','')} ${ev.triggered}/${ev.activeCount}`);
-  });
+  alertQueue.push({ sym: coin.sym, caption: caption });
+  toast(`⚡ Alert Queued: ${coin.sym.replace('USDT','')} ${ev.triggered}/${ev.activeCount}`);
+  
+  processAlerts();
 
   STATE.log.unshift({
     ts: now(),
