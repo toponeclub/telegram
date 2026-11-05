@@ -702,6 +702,53 @@ td.c-change, td.c-vol, td.c-fund { transition: color 0.4s ease; }
 }
 
 /* ════════════════════════════════════════════════════════════
+   SIGNAL MONITOR
+   ════════════════════════════════════════════════════════════ */
+.mon-wrap { display:flex; flex-direction:column; height:100%; overflow:hidden; }
+.mon-toolbar { padding:8px 14px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; border-bottom:1px solid var(--border); flex-shrink:0; background:rgba(0,0,0,.2); }
+.mon-toggles { display:flex; gap:4px; flex-wrap:wrap; }
+.mon-toggle { display:inline-flex; align-items:center; gap:5px; padding:5px 10px; background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:6px; font-size:10px; font-weight:700; letter-spacing:.5px; color:var(--muted); cursor:pointer; transition:var(--tr); user-select:none; font-family:var(--font-mono); }
+.mon-toggle:hover { border-color:var(--border-hi); color:var(--text); }
+.mon-toggle.on { color:#000; background:var(--ac); border-color:var(--ac); }
+.mon-toggle i { font-size:10px; }
+.mon-thresh-group { display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap; }
+.mon-thresh { display:inline-flex; align-items:center; gap:3px; font-size:9.5px; color:var(--muted); letter-spacing:.3px; font-weight:700; }
+.mon-thresh input { width:46px; padding:4px 6px; background:rgba(0,0,0,.4); border:1px solid var(--border); border-radius:4px; color:var(--text); font-size:10px; font-family:var(--font-mono); text-align:center; outline:none; }
+.mon-thresh input:focus { border-color:var(--ac); }
+.mon-scan-btn { padding:6px 14px; background:var(--ac); color:#000; border:none; border-radius:6px; font-size:10px; font-weight:800; letter-spacing:1px; cursor:pointer; transition:var(--tr); font-family:var(--font-mono); text-transform:uppercase; }
+.mon-scan-btn:hover { filter:brightness(1.15); }
+.mon-scan-btn.scanning { opacity:.6; cursor:wait; }
+.mon-status { font-size:9px; color:var(--muted); letter-spacing:.5px; padding:0 4px; }
+.mon-progress { height:2px; background:rgba(255,255,255,.05); overflow:hidden; flex-shrink:0; }
+.mon-progress-bar { height:100%; width:0%; background:var(--ac); transition:width .3s ease; }
+
+.mon-movers { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:8px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.mon-movers-col { display:flex; flex-direction:column; gap:3px; }
+.mon-movers-title { font-size:9px; letter-spacing:1.5px; font-weight:800; text-transform:uppercase; color:var(--muted); padding-bottom:2px; }
+.mon-movers-title.pos { color:var(--green); }
+.mon-movers-title.neg { color:var(--red); }
+.mon-mover { display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:3px 6px; border-radius:4px; background:rgba(255,255,255,.02); cursor:pointer; }
+.mon-mover:hover { background:rgba(255,255,255,.05); }
+.mon-mover .sym { font-weight:700; color:var(--text); letter-spacing:.3px; }
+.mon-mover .val { font-weight:800; font-variant-numeric:tabular-nums; }
+
+.mon-feed { flex:1; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:6px; min-height:0; }
+.mon-signal { display:grid; grid-template-columns:32px 1fr auto; gap:10px; padding:10px 12px; background:rgba(255,255,255,.02); border:1px solid var(--border); border-left-width:3px; border-radius:8px; align-items:center; animation:sigIn .4s cubic-bezier(.16,1,.3,1); transition:var(--tr); cursor:pointer; }
+.mon-signal:hover { background:rgba(255,255,255,.05); border-color:var(--border-hi); }
+@keyframes sigIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
+.mon-signal.sev-high { box-shadow:0 0 20px rgba(255,190,11,.15); }
+.mon-sig-icon { width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:13px; background:rgba(255,255,255,.04); }
+.mon-sig-body { min-width:0; }
+.mon-sig-head { display:flex; align-items:center; gap:8px; font-size:11px; margin-bottom:3px; flex-wrap:wrap; }
+.mon-sig-sym { font-weight:800; letter-spacing:.5px; color:var(--text); }
+.mon-sig-type { font-size:9px; font-weight:800; letter-spacing:1px; padding:1px 6px; border-radius:3px; text-transform:uppercase; }
+.mon-sig-meta { font-size:10px; color:var(--muted); line-height:1.5; display:flex; flex-wrap:wrap; gap:10px; }
+.mon-sig-meta b { color:var(--text); font-weight:700; }
+.mon-sig-time { font-size:9px; color:var(--muted-2); text-align:right; white-space:nowrap; letter-spacing:.5px; }
+.mon-empty { padding:40px 20px; text-align:center; color:var(--muted); font-size:11px; line-height:1.6; }
+.mon-empty i { display:block; font-size:24px; margin-bottom:12px; opacity:.4; }
+
+/* ════════════════════════════════════════════════════════════
    MINI WIDGET POPUP
    ════════════════════════════════════════════════════════════ */
 
@@ -909,6 +956,13 @@ const CORR_SYMBOLS = ['BTC','ETH','SOL','BNB','XRP','DOGE','ADA','AVAX'];
 const STORAGE_KEY = 'bitdash_layout_v4';
 
 /* ════════════════════════════════════════════════════════════
+   LAYOUT MIGRATION · ավտոմատ ավելացնում է նոր widget-ները
+   ════════════════════════════════════════════════════════════ */
+const LAYOUT_VERSION = 2;              // ← ամեն նոր widget-ի հետ bump արա
+const LAYOUT_VERSION_KEY = 'bitdash_layout_ver';
+const REQUIRED_WIDGETS = ['signal_monitor'];   // ← պարտադիր widget-ների ցանկը
+
+/* ════════════════════════════════════════════════════════════
    STATE
    ════════════════════════════════════════════════════════════ */
 const state = {
@@ -917,7 +971,20 @@ const state = {
     screenerMode: 'volume', screenerSearch: '',
     liqTotalCount: 0,
     refreshMs: 30000, refreshTimer: null, lastUpdateAt: null,
-    _prevPrices: new Map()
+    _prevPrices: new Map(),
+    monitor: {
+        enabled: { oi: true, pump: true, dump: true, vol: true, div: true },
+        thresholds: { oi: 3, pump: 3, dump: 3, vol: 5, div: 2 },
+        topN: 500,
+        intervalMs: 180000,
+        signals: [],
+        lastScan: null,
+        scanning: false,
+        scanProgress: { i: 0, total: 0 },
+        scanTimer: null,
+        lastSignalByKey: {},
+        topMovers: { pumps: [], dumps: [] }
+    }
 };
 const sparkCache = new Map();
 const widgetCleanup = {};
@@ -974,8 +1041,60 @@ function sparkSVG(values, opts = {}) {
     const line = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
     const area = line + ` L${(pad + (values.length-1)*step).toFixed(1)} ${h-pad} L${pad} ${h-pad} Z`;
     const color = opts.color || 'var(--green)';
-    const fill = opts.fill || (color === 'var(--green)' ? 'rgba(0,255,157,0.15)' : 'rgba(255,0,85,0.15)');
-    return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%; height:100%; display:block;"><path d="${area}" fill="${fill}" /><path d="${line}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" /></svg>`;
+    const colorHex = color === 'var(--green)' ? '#00ff9d'
+                   : color === 'var(--red)'   ? '#ff0055'
+                   : color;
+
+    const vols = opts.volumes;
+    const useVolume = Array.isArray(vols) && vols.length === values.length && vols.some(v => v > 0);
+
+    let fillAttr = opts.fill || (color === 'var(--green)' ? 'rgba(0,255,157,0.15)' : 'rgba(255,0,85,0.15)');
+    let defs = '';
+    let maskAttr = '';
+
+    if (useVolume) {
+        const maxV = Math.max(...vols), minV = Math.min(...vols);
+        const logMax = Math.log(1 + maxV), logMin = Math.log(1 + minV);
+        const logRange = logMax - logMin || 1;
+        const N = vols.length;
+        const uid = 'g' + Math.random().toString(36).slice(2, 8);
+        const precise = !!opts.precise;
+
+        /* ★ STOPS · precise=1 per candle (HubDL-ի պես) · default=5 buckets */
+        const STOPS = precise ? N : 5;
+
+        let stops = '';
+        for (let b = 0; b < STOPS; b++) {
+            const idx = precise ? b : Math.round(b * (N - 1) / (STOPS - 1));
+            const nv = (Math.log(1 + vols[idx]) - logMin) / logRange;   // ← SAME FORMULA
+            const alpha = (0.05 + nv * 0.7).toFixed(3);                 // ← SAME FORMULA
+            const p = precise ? (b / (N - 1)) * 100 : (b / (STOPS - 1)) * 100;
+            stops += `<stop offset="${p.toFixed(2)}%" stop-color="${colorHex}" stop-opacity="${alpha}"/>`;
+        }
+
+        defs = `<defs><linearGradient id="vg_${uid}" x1="0" y1="0" x2="1" y2="0">${stops}</linearGradient>`;
+
+        /* ★ Vertical fade — HubDL-ի destination-out-ի SVG համարժեքը */
+        if (precise) {
+            defs += `
+                <linearGradient id="fg_${uid}" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="white" stop-opacity="1"/>
+                    <stop offset="100%" stop-color="white" stop-opacity="0"/>
+                </linearGradient>
+                <mask id="mk_${uid}" maskUnits="userSpaceOnUse" x="0" y="0" width="${w}" height="${h}">
+                    <rect x="0" y="0" width="${w}" height="${h}" fill="url(#fg_${uid})"/>
+                </mask>`;
+            maskAttr = ` mask="url(#mk_${uid})"`;
+        }
+        defs += `</defs>`;
+        fillAttr = `url(#vg_${uid})`;
+    }
+
+    const dot = opts.dot && pts.length
+        ? `<circle cx="${pts[pts.length-1][0].toFixed(1)}" cy="${pts[pts.length-1][1].toFixed(1)}" r="3" fill="${color}" stroke="#fff" stroke-width="1.2"/>`
+        : '';
+
+    return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;">${defs}<path d="${area}" fill="${fillAttr}"${maskAttr}/><path d="${line}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>${dot}</svg>`;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -1023,6 +1142,49 @@ async function sendTg(msg, verbose) {
 }
 
 /* ════════════════════════════════════════════════════════════
+   TG PERSISTENCE · թող token/chat refresh-ից հետո մնա
+   ════════════════════════════════════════════════════════════ */
+const TG_CFG_KEY = 'bitdash_tg_cfg_v1';
+function loadTg() {
+    try {
+        const c = JSON.parse(localStorage.getItem(TG_CFG_KEY) || '{}');
+        if (c.token) TG.token = c.token;
+        if (c.chat) TG.chat = c.chat;
+        if (c.threshold) TG.threshold = c.threshold;
+        TG.enabled = !!(TG.token && TG.chat);
+    } catch(e) {}
+}
+function saveTg() {
+    try {
+        localStorage.setItem(TG_CFG_KEY, JSON.stringify({
+            token: TG.token, chat: TG.chat, threshold: TG.threshold
+        }));
+    } catch(e) {}
+}
+
+/* ════════════════════════════════════════════════════════════
+   UNIVERSAL · EnginePro chart snapshot → Telegram
+   Կանչիր ցանկացած տեղից։ Fire-and-forget։
+   ════════════════════════════════════════════════════════════ */
+function sendChartSnap({ symbol, tf = '15m', caption = '' }) {
+    if (!TG.token || !TG.chat || !symbol) return false;
+    const sym = String(symbol).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const cleanSym = sym.endsWith('USDT') ? sym : sym + 'USDT';
+    const params = new URLSearchParams({
+        mode: 'snap', symbol: cleanSym, tf,
+        tg_token: TG.token, tg_chat: String(TG.chat), caption
+    });
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.t1prime.com/enginepro?${params}`;
+    iframe.style.cssText = 'position:fixed;top:-3000px;left:-3000px;width:1400px;height:900px;opacity:0.01;pointer-events:none;border:0;z-index:-1';
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.setAttribute('tabindex', '-1');
+    document.body.appendChild(iframe);
+    setTimeout(() => { try { iframe.remove(); } catch(e){} }, 30000);
+    return true;
+}
+
+/* ════════════════════════════════════════════════════════════
    RENDER FUNCTIONS · data → DOM
    ════════════════════════════════════════════════════════════ */
 function updateBTCHeroFast() {
@@ -1041,7 +1203,14 @@ async function refreshBTCSparkline() {
         const t = state.tickersMap['BTCUSDT']; if (!t) return;
         const k = await fetchKlines('BTCUSDT', '1h', 24);
         const el = $('btc-spark');
-        if (el) el.innerHTML = sparkSVG(k.map(c => parseFloat(c[4])), { color: t.change >= 0 ? 'var(--green)' : 'var(--red)', width: 300, height: 50 });
+        if (el) el.innerHTML = sparkSVG(
+            k.map(c => parseFloat(c[4])),
+            {
+                color: t.change >= 0 ? 'var(--green)' : 'var(--red)',
+                width: 300, height: 50,
+                volumes: k.map(c => parseFloat(c[7]))     // ★ volume feature ON
+            }
+        );
     } catch(e){}
 }
 
@@ -1147,11 +1316,37 @@ function createScreenerRow(t) {
         <td style="text-align:center;"><div class="spark sk" data-spark="${t.symbol}"></div></td>
         <td class="num c-vol" style="color:#ccc;">${fmtUSD(t.volume)}</td>
         <td class="num c-fund"></td>`;
-    fetchSparkline(t.symbol, tr.querySelector('[data-spark]'), t.change);
-        /* ▶ Long-press on ticker → Mini Widget popup */
+        /* ★ Lazy sparkline · fetch միայն երբ row-ը տեսանելի ա */
+    const sparkEl = tr.querySelector('[data-spark]');
+    if (sparkEl) {
+        sparkEl.dataset.pendingSym    = t.symbol;
+        sparkEl.dataset.pendingChange = t.change;
+        getSparkObserver().observe(sparkEl);
+    }
+
     const tickerEl = tr.querySelector('.clickable-ticker');
     if (tickerEl) attachLongPress(tickerEl, t.symbol);
     return tr;
+}
+
+/* ★ Singleton IntersectionObserver · 500 fetch-ի փոխարեն միայն visible-ները */
+let _sparkObserver = null;
+function getSparkObserver() {
+    if (_sparkObserver) return _sparkObserver;
+    _sparkObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting) return;
+            const el = entry.target;
+            const sym = el.dataset.pendingSym;
+            if (!sym) return;
+            const change = parseFloat(el.dataset.pendingChange) || 0;
+            delete el.dataset.pendingSym;
+            delete el.dataset.pendingChange;
+            _sparkObserver.unobserve(el);
+            fetchSparkline(sym, el, change);
+        });
+    }, { rootMargin: '150px' });   // 150px նախօրոք → scroll-ի ժամանակ պատրաստ ա
+    return _sparkObserver;
 }
 
 /* ─── Long-press · Desktop (mousedown 600ms) + Mobile (touchstart 500ms) ─── */
@@ -1233,7 +1428,11 @@ async function fetchSparkline(symbol, el, change) {
     if (!el.isConnected) return;
     if (closes && closes.length > 1) {
         el.classList.remove('sk');
-        el.innerHTML = sparkSVG(closes, { width: 60, height: 20, color: change >= 0 ? 'var(--green)' : 'var(--red)' });
+        el.innerHTML = sparkSVG(closes, {
+            width: 60, height: 20,
+            color: change >= 0 ? 'var(--green)' : 'var(--red)'
+        });
+        /* ↑ VOLUME ՉԿԱ — sparkSVG-ն առանց opts.volumes → flat fill */
     }
 }
 
@@ -1282,7 +1481,7 @@ function computeScreenerList() {
     else if (state.screenerMode === 'volatile') list = list.filter(t => t.volume > 5e6).sort((a,b) => Math.abs(b.change) - Math.abs(a.change));
     else if (state.screenerMode === 'funding_pos') list.sort((a,b) => (state.funding[b.symbol]||0) - (state.funding[a.symbol]||0));
     else if (state.screenerMode === 'funding_neg') list.sort((a,b) => (state.funding[a.symbol]||0) - (state.funding[b.symbol]||0));
-    return list.slice(0, 200);
+    return list.slice(0, 500);
 }
 
 function patchScreener() {
@@ -1381,11 +1580,14 @@ async function buildCorrelation() {
         grid.innerHTML = html;
     } catch(e) {}
 }
+const _liqSnapCooldown = new Map();
+
 
 /* ════════════════════════════════════════════════════════════
    LIQUIDATIONS WS
    ════════════════════════════════════════════════════════════ */
 function startScreenerLiqWS() {
+    
     const ws = new WebSocket('wss://fstream.binance.com/market/ws/!forceOrder@arr');
     ws.onmessage = async (e) => {
         try {
@@ -1404,17 +1606,22 @@ function startScreenerLiqWS() {
                 else feed.insertAdjacentHTML('afterbegin', html);
             }
             if (TG.enabled && TG.token && TG.chat && usd >= TG.threshold) {
-    const icon = isLong ? '🔴' : '🟢';
-    const amt  = fmtUSD(usd, 0);
-
-    const msg =
-        `🩸 <b>REKT SCREENER</b>\n` +
-        `${icon} <b>${base}</b> · ${amt}`;
-
-    sendTg(msg, false);
+    const nowTs = Date.now();
+    const lastSnap = _liqSnapCooldown.get(base) || 0;
+    if (nowTs - lastSnap > 60000) {
+        _liqSnapCooldown.set(base, nowTs);
+        const icon = isLong ? '🔴' : '🟢';
+        const amt  = fmtUSD(usd, 0);
+        sendChartSnap({
+            symbol: base,
+            tf: '5m',
+            caption: `${icon} REKT · ${base} · ${amt}\n${isLong ? 'LONG' : 'SHORT'} liq @ $${fmtPrice(parseFloat(o.p))}`
+        });
+    }
 }
         } catch(e) {}
     };
+    
     ws.onerror = () => setTimeout(startScreenerLiqWS, 3000);
 }
 
@@ -1543,6 +1750,7 @@ const WIDGET_REGISTRY = {
                 const ok = !!(TG.token && TG.chat);
                 TG.enabled = ok;
                 if (ok) {
+                     saveTg();   // ★ persist
                     st.textContent = `on · $${(TG.threshold/1000).toFixed(0)}k+`;
                     st.classList.add('on');
                     await sendTg(
@@ -1558,6 +1766,72 @@ const WIDGET_REGISTRY = {
             });
         }
     },
+
+        signal_monitor: {
+        id: 'signal_monitor', name: 'Signal Monitor', desc: 'OI · Pumper · Dumper · Volume · Divergence', icon: 'fa-satellite-dish',
+        size: 'hero', category: 'Flow',
+        render: () => {
+            const M = state.monitor;
+            const types = [
+                ['oi',   'OI Spike',    'fa-arrow-up-right-dots'],
+                ['pump', 'Pumper',      'fa-rocket'],
+                ['dump', 'Dumper',      'fa-arrow-trend-down'],
+                ['vol',  'Volume',      'fa-bolt'],
+                ['div',  'P/OI Div',    'fa-code-branch']
+            ];
+            return `
+            <div class="card-title">
+                <i class="fas fa-satellite-dish" style="color:var(--ac);"></i>
+                SIGNAL MONITOR
+                <span class="badge" id="mon-count">0</span>
+                <span class="mon-status" id="mon-status" style="margin-left:auto;padding-right:0;">IDLE</span>
+            </div>
+            <div class="mon-wrap">
+                <div class="mon-toolbar">
+                    <div class="mon-toggles">
+                        ${types.map(([k,l,ic]) => `
+                            <label class="mon-toggle ${M.enabled[k] ? 'on' : ''}" data-mon-toggle="${k}">
+                                <i class="fas ${ic}"></i> ${l}
+                            </label>`).join('')}
+                    </div>
+                    <div class="mon-thresh-group">
+                        <span class="mon-thresh">OI<input type="number" step="0.5" min="0.5" value="${M.thresholds.oi}" data-mon-th="${'oi'}">%</span>
+                        <span class="mon-thresh">P<input type="number" step="0.5" min="0.5" value="${M.thresholds.pump}" data-mon-th="pump">%</span>
+                        <span class="mon-thresh">D<input type="number" step="0.5" min="0.5" value="${M.thresholds.dump}" data-mon-th="dump">%</span>
+                        <span class="mon-thresh">V<input type="number" step="0.5" min="1" value="${M.thresholds.vol}" data-mon-th="vol">x</span>
+                        <span class="mon-thresh">Div<input type="number" step="0.5" min="0.5" value="${M.thresholds.div}" data-mon-th="div">%</span>
+                        <button class="mon-scan-btn" id="mon-scan">SCAN</button>
+                    </div>
+                </div>
+                                <div style="display:flex;gap:5px;align-items:center;padding:6px 14px;border-bottom:1px solid var(--border);background:rgba(41,182,246,.03);font-size:9px;">
+                    <i class="fab fa-telegram" style="color:#29b6f6;font-size:12px;"></i>
+                    <input id="mon-tg-tok" placeholder="token" value="${TG.token || ''}" autocomplete="off" style="flex:1;min-width:80px;padding:3px 6px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:9px;outline:none;font-family:var(--font-mono);">
+                    <input id="mon-tg-chat" placeholder="chat id" value="${TG.chat || ''}" autocomplete="off" style="width:90px;padding:3px 6px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:9px;outline:none;font-family:var(--font-mono);">
+                    <button id="mon-tg-save" style="padding:3px 10px;background:#29b6f6;color:#000;border:none;border-radius:4px;font-size:9px;font-weight:800;cursor:pointer;letter-spacing:.5px;">SAVE</button>
+                    <span id="mon-tg-status" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px;background:${TG.enabled ? 'rgba(0,255,157,.1)' : 'rgba(255,255,255,.05)'};color:${TG.enabled ? 'var(--green)' : 'var(--muted)'};">${TG.enabled ? 'ON' : 'OFF'}</span>
+                </div>
+                <div class="mon-progress"><div class="mon-progress-bar" id="mon-progress-bar"></div></div>
+                <div class="mon-movers">
+                    <div class="mon-movers-col">
+                        <div class="mon-movers-title pos">▲ TOP PUMPS · 15M</div>
+                        <div id="mon-top-pumps"><div class="mon-empty" style="padding:8px; font-size:9px;">—</div></div>
+                    </div>
+                    <div class="mon-movers-col">
+                        <div class="mon-movers-title neg">▼ TOP DUMPS · 15M</div>
+                        <div id="mon-top-dumps"><div class="mon-empty" style="padding:8px; font-size:9px;">—</div></div>
+                    </div>
+                </div>
+                <div class="mon-feed" id="mon-feed">
+                    <div class="mon-empty">
+                        <i class="fas fa-satellite-dish"></i>
+                        Press <b>SCAN</b> or wait for the auto-scan (every 3 min).
+                        Signals will appear here as the market moves.
+                    </div>
+                </div>
+            </div>`;
+        },
+        init: (w, el) => { initSignalMonitor(w, el); }
+    },
     screener: {
         id: 'screener', name: 'Mega Screener', desc: 'Top 200 pairs · smooth refresh', icon: 'fa-radar',
         size: 'full', category: 'Market',
@@ -1567,7 +1841,7 @@ const WIDGET_REGISTRY = {
                 ['volatile','Volatility'],['funding_pos','Funding +'],['funding_neg','Funding −']
             ];
             return `
-                <div class="card-title"><i class="fas fa-radar" style="color:var(--green);"></i> SCREENER - Top 200 pairs <span class="badge" id="scr-count">--</span></div>
+                <div class="card-title"><i class="fas fa-radar" style="color:var(--green);"></i> SCREENER - Top 500 pairs <span class="badge" id="scr-count">--</span></div>
                 <div class="screener-controls">
                     ${tabs.map(([k,l]) => `<button class="tab ${state.screenerMode===k?'active':''}" data-scr="${k}">${l}</button>`).join('')}
                     <input type="text" class="screener-search" id="scr-search" value="${(state.screenerSearch||'').replace(/"/g,'&quot;')}" placeholder="Search symbol...">
@@ -1691,6 +1965,8 @@ const WIDGET_REGISTRY = {
 
             host.appendChild(container);
 
+
+
             widgetCleanup[w.id] = () => { try { host.innerHTML = ''; } catch(e){} };
         }
     }
@@ -1723,6 +1999,7 @@ const SIZE_CATALOG = [
    ════════════════════════════════════════════════════════════ */
 function getDefaultLayout() {
     return [
+        { id: uid(), type: 'signal_monitor', size: 'hero' },   // ← ՆՈՐ
         { id: uid(), type: 'btc_hero',     size: '1x1'    },   // S
         { id: uid(), type: 'fng',          size: '1x1'    },   // S
         { id: uid(), type: 'mcap',         size: '1x1'    },   // S
@@ -1748,6 +2025,36 @@ function loadState() {
         state.widgets = (s.widgets || []).filter(w => WIDGET_REGISTRY[w.type]);
         return true;
     } catch(e) { return false; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   LAYOUT MIGRATION
+   ════════════════════════════════════════════════════════════ */
+function migrateLayout() {
+    let changed = false;
+    let savedVer = 0;
+    try {
+        savedVer = parseInt(localStorage.getItem(LAYOUT_VERSION_KEY) || '0', 10);
+    } catch (e) {}
+
+    /* Եթե արդեն ընթացիկ version-ն ա → ոչինչ անել */
+    if (savedVer >= LAYOUT_VERSION) return false;
+
+    /* Ավելացնել պարտադիր widget-ները (եթե բացակայում են) */
+    REQUIRED_WIDGETS.forEach(type => {
+        const reg = WIDGET_REGISTRY[type];
+        if (!reg) return;
+        if (!state.widgets.some(w => w.type === type)) {
+            state.widgets.unshift({ id: uid(), type, size: reg.size });
+            changed = true;
+        }
+    });
+
+    try {
+        localStorage.setItem(LAYOUT_VERSION_KEY, String(LAYOUT_VERSION));
+    } catch (e) {}
+
+    return changed;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -2434,6 +2741,391 @@ function refreshSparkCacheLoop() {
     setTimeout(refreshSparkCacheLoop, 300000);
 }
 
+
+/* ════════════════════════════════════════════════════════════
+   SIGNAL MONITOR · detection engine
+   ════════════════════════════════════════════════════════════ */
+const MON_CFG_KEY = 'bitdash_monitor_cfg_v1';
+const monCache = new Map();  // key → { data, ts }
+
+async function cachedFetch(key, url, ttlMs = 240000) {
+    const hit = monCache.get(key);
+    const now = Date.now();
+    if (hit && (now - hit.ts) < ttlMs) return hit.data;
+    try {
+        const data = await fetch(url).then(r => r.json());
+        monCache.set(key, { data, ts: now });
+        return data;
+    } catch(e) { return null; }
+}
+
+const SIG_DEF = {
+    oi_up: { icon:'fa-arrow-up-from-bracket',   label:'OI ↑',  color:'#00d4ff', short:'OI' },
+    oi_dn: { icon:'fa-arrow-down-to-bracket',   label:'OI ↓',  color:'#a855f7', short:'OI' },
+    pump:  { icon:'fa-rocket',                   label:'PUMP',  color:'#00ff9d', short:'PUMP' },
+    dump:  { icon:'fa-arrow-trend-down',         label:'DUMP',  color:'#ff0055', short:'DUMP' },
+    vol:   { icon:'fa-bolt',                     label:'VOL',   color:'#ffbe0b', short:'VOL' },
+    div:   { icon:'fa-code-branch',              label:'DIV',   color:'#ff8f1f', short:'DIV' }
+};
+
+function loadMonitorCfg() {
+    try {
+        const raw = localStorage.getItem(MON_CFG_KEY); if (!raw) return;
+        const c = JSON.parse(raw);
+        if (c.enabled) Object.assign(state.monitor.enabled, c.enabled);
+        if (c.thresholds) Object.assign(state.monitor.thresholds, c.thresholds);
+        if (c.topN) state.monitor.topN = c.topN;
+        if (c.intervalMs) state.monitor.intervalMs = c.intervalMs;
+        if (c.lastSignalByKey) state.monitor.lastSignalByKey = c.lastSignalByKey;
+    } catch(e) {}
+}
+function saveMonitorCfg() {
+    try {
+        localStorage.setItem(MON_CFG_KEY, JSON.stringify({
+            enabled: state.monitor.enabled,
+            thresholds: state.monitor.thresholds,
+            topN: state.monitor.topN,
+            intervalMs: state.monitor.intervalMs,
+            lastSignalByKey: state.monitor.lastSignalByKey
+        }));
+    } catch(e) {}
+}
+
+function initSignalMonitor(w, el) {
+    loadMonitorCfg();
+
+    /* toggle buttons */
+    el.querySelectorAll('[data-mon-toggle]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const k = btn.dataset.monToggle;
+            state.monitor.enabled[k] = !state.monitor.enabled[k];
+            btn.classList.toggle('on', state.monitor.enabled[k]);
+            saveMonitorCfg();
+        });
+    });
+
+    /* threshold inputs */
+    el.querySelectorAll('[data-mon-th]').forEach(inp => {
+        inp.addEventListener('change', () => {
+            const k = inp.dataset.monTh;
+            const v = parseFloat(inp.value);
+            if (isFinite(v) && v > 0) state.monitor.thresholds[k] = v;
+            saveMonitorCfg();
+        });
+    });
+
+    /* scan button */
+    el.querySelector('#mon-scan').addEventListener('click', () => runMonitorScan());
+
+    /* auto-scan */
+    if (!state.monitor.scanTimer) {
+        setTimeout(() => { if (state.tickers.length) runMonitorScan(); }, 8000);
+        state.monitor.scanTimer = setInterval(() => {
+            if (document.hidden) return;
+            if (!state.tickers.length) return;
+            runMonitorScan();
+        }, state.monitor.intervalMs);
+    }
+
+    /* re-render existing signals if persisted */
+    renderSignalFeed();
+
+        /* ★ TG bar wiring */
+    const tgSaveBtn = el.querySelector('#mon-tg-save');
+    if (tgSaveBtn) {
+        tgSaveBtn.addEventListener('click', () => {
+            TG.token = (el.querySelector('#mon-tg-tok').value || '').trim();
+            TG.chat  = (el.querySelector('#mon-tg-chat').value || '').trim();
+            TG.enabled = !!(TG.token && TG.chat);
+            saveTg();
+            const st = el.querySelector('#mon-tg-status');
+            if (st) {
+                st.textContent = TG.enabled ? 'ON' : 'OFF';
+                st.style.background = TG.enabled ? 'rgba(0,255,157,.1)' : 'rgba(255,255,255,.05)';
+                st.style.color = TG.enabled ? 'var(--green)' : 'var(--muted)';
+            }
+            toast(TG.enabled ? 'TG snapshots: ON ✓' : 'Լրացրու token + chat');
+        });
+    }
+
+    widgetCleanup[w.id] = () => { /* keep scanning even if widget hidden; other tabs may add it */ };
+}
+
+async function runMonitorScan() {
+    const M = state.monitor;
+    if (M.scanning) return;
+    if (!state.tickers.length) return;
+    M.scanning = true;
+
+    const scanBtn = document.getElementById('mon-scan');
+    if (scanBtn) { scanBtn.classList.add('scanning'); scanBtn.textContent = '…'; }
+
+    const top = [...state.tickers]
+        .filter(t => t.volume > 1e6)
+        .sort((a,b) => b.volume - a.volume)
+        .slice(0, M.topN);
+
+    M.scanProgress = { i: 0, total: top.length };
+    const allMovers = [];
+
+    const BATCH = 6;
+    let i = 0;
+    while (i < top.length) {
+        const batch = top.slice(i, i + BATCH);
+        i += BATCH;
+        const results = await Promise.all(batch.map(coin => analyzeCoinForSignals(coin)));
+        results.forEach(r => { if (r && r.mover) allMovers.push(r.mover); });
+        M.scanProgress.i = Math.min(i, top.length);
+        updateMonitorProgress();
+        await new Promise(r => setTimeout(r, 120));
+    }
+
+    /* top movers */
+    allMovers.sort((a,b) => b.chg - a.chg);
+    M.topMovers.pumps = allMovers.slice(0, 3);
+    M.topMovers.dumps = allMovers.slice(-3).reverse();
+
+    M.scanning = false;
+    M.lastScan = Date.now();
+    saveMonitorCfg();
+
+    renderSignalFeed();
+    renderTopMovers();
+    updateMonitorProgress();
+
+    if (scanBtn) { scanBtn.classList.remove('scanning'); scanBtn.textContent = 'SCAN'; }
+}
+
+function updateMonitorProgress() {
+    const M = state.monitor;
+    const bar = document.getElementById('mon-progress-bar');
+    if (bar) {
+        const pct = M.scanning && M.scanProgress.total
+            ? Math.round((M.scanProgress.i / M.scanProgress.total) * 100) : 0;
+        bar.style.width = pct + '%';
+    }
+    const st = document.getElementById('mon-status');
+    if (st) {
+        if (M.scanning) {
+            st.textContent = `SCANNING ${M.scanProgress.i}/${M.scanProgress.total}`;
+            st.style.color = 'var(--ac)';
+        } else if (M.lastScan) {
+            const ago = Math.round((Date.now() - M.lastScan) / 1000);
+            st.textContent = `LAST ${ago < 60 ? ago + 's' : Math.round(ago/60) + 'm'} AGO`;
+            st.style.color = 'var(--muted)';
+        }
+    }
+}
+
+async function analyzeCoinForSignals(coin) {
+    const M = state.monitor;
+    const sym = coin.symbol;
+    const base = coin.base;
+
+    const [oiData, klines] = await Promise.all([
+        cachedFetch(`oi_${sym}`, `${API.binance}/futures/data/openInterestHist?symbol=${sym}&period=5m&limit=12`),
+        cachedFetch(`kl_${sym}`, `${API.binance}/fapi/v1/klines?symbol=${sym}&interval=5m&limit=24`)
+    ]);
+
+    if (!klines || klines.length < 13) return null;
+
+    const closes = klines.map(k => parseFloat(k[4]));
+    const vols   = klines.map(k => parseFloat(k[5]));
+
+    const cur  = closes[closes.length - 1];
+    const p5m  = closes[closes.length - 2];
+    const p15m = closes[closes.length - 4];
+    const p1h  = closes[closes.length - 13];
+
+    const chg15m = p15m > 0 ? ((cur - p15m) / p15m) * 100 : 0;
+    const chg1h  = p1h  > 0 ? ((cur - p1h)  / p1h)  * 100 : 0;
+
+    const lastVol = vols[vols.length - 1];
+    const avgVol  = vols.slice(-13, -1).reduce((a,b)=>a+b,0) / 12;
+    const volRatio = avgVol > 0 ? lastVol / avgVol : 0;
+
+    let oi20m = 0, oi1h = 0, oiDelta = 0, curOI = 0;
+    if (Array.isArray(oiData) && oiData.length >= 4) {
+        const ois = oiData.map(o => parseFloat(o.sumOpenInterestValue));
+        curOI  = ois[ois.length - 1];
+        const o20 = ois[ois.length - 4];
+        const o1h = ois[0];
+        oi20m = o20 > 0 ? ((curOI - o20) / o20) * 100 : 0;
+        oi1h  = o1h > 0 ? ((curOI - o1h)  / o1h)  * 100 : 0;
+        oiDelta = curOI - o20;
+    }
+
+    /* ──── OI Spike ──── */
+    if (M.enabled.oi && Math.abs(oi20m) >= M.thresholds.oi) {
+        emitSignal({
+            type: oi20m > 0 ? 'oi_up' : 'oi_dn',
+            symbol: sym, base, price: cur,
+            headline: `OI ${oi20m >= 0 ? '+' : ''}${oi20m.toFixed(2)}%`,
+            metrics: {
+                oiChg: oi20m, oiDelta, oiValue: curOI,
+                priceChg: chg15m, volume: coin.volume, volRatio
+            },
+            sev: Math.abs(oi20m) >= M.thresholds.oi * 2 ? 'high' : 'med'
+        });
+    }
+
+    /* ──── Pumper ──── */
+    if (M.enabled.pump && chg15m >= M.thresholds.pump) {
+        emitSignal({
+            type: 'pump', symbol: sym, base, price: cur,
+            headline: `+${chg15m.toFixed(2)}% · 15m`,
+            metrics: { priceChg: chg15m, priceChg1h: chg1h, volRatio, volume: coin.volume },
+            sev: chg15m >= M.thresholds.pump * 2 ? 'high' : 'med'
+        });
+    }
+
+    /* ──── Dumper ──── */
+    if (M.enabled.dump && chg15m <= -M.thresholds.dump) {
+        emitSignal({
+            type: 'dump', symbol: sym, base, price: cur,
+            headline: `${chg15m.toFixed(2)}% · 15m`,
+            metrics: { priceChg: chg15m, priceChg1h: chg1h, volRatio, volume: coin.volume },
+            sev: chg15m <= -M.thresholds.dump * 2 ? 'high' : 'med'
+        });
+    }
+
+    /* ──── Volume Spike ──── */
+    if (M.enabled.vol && volRatio >= M.thresholds.vol && Math.abs(chg15m) > 0.4) {
+        emitSignal({
+            type: 'vol', symbol: sym, base, price: cur,
+            headline: `${volRatio.toFixed(1)}x vol`,
+            metrics: { volRatio, priceChg: chg15m, volume: coin.volume },
+            sev: volRatio >= M.thresholds.vol * 2 ? 'high' : 'med'
+        });
+    }
+
+    /* ──── Price/OI Divergence ──── */
+    if (M.enabled.div && oiData) {
+        const T = M.thresholds.div;
+        if (chg15m > T && oi20m < -T) {
+            emitSignal({
+                type: 'div', symbol: sym, base, price: cur,
+                headline: `⚠ Weak rally · P+${chg15m.toFixed(1)}% OI${oi20m.toFixed(1)}%`,
+                metrics: { priceChg: chg15m, oiChg: oi20m, volRatio },
+                sev: 'med'
+            });
+        } else if (chg15m < -T && oi20m > T) {
+            emitSignal({
+                type: 'div', symbol: sym, base, price: cur,
+                headline: `⚠ Short buildup · P${chg15m.toFixed(1)}% OI+${oi20m.toFixed(1)}%`,
+                metrics: { priceChg: chg15m, oiChg: oi20m, volRatio },
+                sev: 'med'
+            });
+        }
+    }
+
+    return { mover: { symbol: sym, base, chg: chg15m, price: cur, volume: coin.volume } };
+}
+
+function emitSignal(sig) {
+    const M = state.monitor;
+    const now = Date.now();
+    const key = `${sig.symbol}_${sig.type}`;
+    const last = M.lastSignalByKey[key] || 0;
+    if (now - last < 600000) return;   // 10 min dedup
+
+    M.lastSignalByKey[key] = now;
+    sig.id = 'sig_' + Math.random().toString(36).slice(2, 9);
+    sig.ts = now;
+    M.signals.unshift(sig);
+    if (M.signals.length > 200) M.signals.length = 200;
+    saveMonitorCfg();
+
+    /* ★ Snapshot → TG */
+    if (TG.enabled) {
+        const d = SIG_DEF[sig.type] || { label: sig.type };
+        const m = sig.metrics || {};
+        const parts = [sig.headline];
+        if (m.priceChg != null) parts.push(`P ${m.priceChg >= 0 ? '+' : ''}${m.priceChg.toFixed(2)}%`);
+        if (m.oiChg != null)    parts.push(`OI ${m.oiChg >= 0 ? '+' : ''}${m.oiChg.toFixed(2)}%`);
+        if (m.volRatio != null) parts.push(`V ${m.volRatio.toFixed(1)}x`);
+        sendChartSnap({
+            symbol: sig.symbol,
+            tf: '15m',
+            caption: `${sig.base} · ${d.label}\n${parts.join(' · ')}`
+        });
+    }
+}
+
+function renderSignalFeed() {
+    const M = state.monitor;
+    const feed = document.getElementById('mon-feed');
+    if (!feed) return;
+
+    if (!M.signals.length) {
+        feed.innerHTML = `<div class="mon-empty">
+            <i class="fas fa-satellite-dish"></i>
+            Press <b>SCAN</b> or wait for the auto-scan (every 3 min).
+            Signals will appear here as the market moves.</div>`;
+    } else {
+        feed.innerHTML = M.signals.slice(0, 80).map(sig => {
+            const def = SIG_DEF[sig.type] || SIG_DEF.pump;
+            const ago = Math.round((Date.now() - sig.ts) / 1000);
+            const agoStr = ago < 60 ? `${ago}s` : `${Math.round(ago/60)}m`;
+            const m = sig.metrics || {};
+            const meta = [];
+            if (m.priceChg != null) meta.push(`Price <b class="${pnlClass(m.priceChg)}">${m.priceChg >= 0 ? '+' : ''}${m.priceChg.toFixed(2)}%</b>`);
+            if (m.oiChg != null)    meta.push(`OI <b class="${pnlClass(m.oiChg)}">${m.oiChg >= 0 ? '+' : ''}${m.oiChg.toFixed(2)}%</b>`);
+            if (m.oiDelta != null && Math.abs(m.oiDelta) > 0) meta.push(`ΔOI <b>${fmtUSD(Math.abs(m.oiDelta), 1)}</b>`);
+            if (m.volRatio != null) meta.push(`Vol <b style="color:var(--gold);">${m.volRatio.toFixed(1)}x</b>`);
+            if (m.volume != null)   meta.push(`24h <b>${fmtUSD(m.volume, 1)}</b>`);
+            return `<div class="mon-signal ${sig.sev === 'high' ? 'sev-high' : ''}" style="border-left-color:${def.color};" onclick="window.open('https://www.coinglass.com/tv/Binance_${sig.symbol}','_blank')">
+                <div class="mon-sig-icon" style="color:${def.color}; background:${def.color}15;">
+                    <i class="fas ${def.icon}"></i>
+                </div>
+                <div class="mon-sig-body">
+                    <div class="mon-sig-head">
+                        <span class="mon-sig-sym">${sig.base}</span>
+                        <span class="mon-sig-type" style="color:${def.color}; background:${def.color}15; border:1px solid ${def.color}44;">${def.label}</span>
+                        <span style="font-size:10px; color:${def.color}; font-weight:800;">${sig.headline}</span>
+                    </div>
+                    <div class="mon-sig-meta">${meta.join(' · ')}</div>
+                </div>
+                <div class="mon-sig-time">${agoStr}<br>ago</div>
+            </div>`;
+        }).join('');
+    }
+
+    const cnt = document.getElementById('mon-count');
+    if (cnt) cnt.textContent = M.signals.length;
+}
+
+function renderTopMovers() {
+    const M = state.monitor;
+    const render = (id, arr, positive) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (!arr || !arr.length) {
+            el.innerHTML = '<div class="mon-empty" style="padding:8px; font-size:9px;">—</div>';
+            return;
+        }
+        el.innerHTML = arr.map(m => `
+            <div class="mon-mover" onclick="window.open('https://www.coinglass.com/tv/Binance_${m.symbol}','_blank')">
+                <span class="sym">${m.base}</span>
+                <span class="val" style="color:${positive ? 'var(--green)' : 'var(--red)'};">${m.chg >= 0 ? '+' : ''}${m.chg.toFixed(2)}%</span>
+            </div>`).join('');
+    };
+    render('mon-top-pumps', M.topMovers.pumps, true);
+    render('mon-top-dumps', M.topMovers.dumps, false);
+}
+
+/* periodic status refresh (aging of "Xs ago") */
+setInterval(() => {
+    if (document.getElementById('mon-status')) updateMonitorProgress();
+    if (state.monitor.signals.length && document.getElementById('mon-feed')) {
+        /* only re-render if a widget exists — light enough once every 15s */
+        renderSignalFeed();
+    }
+}, 15000);
+
+/* restore last monitor config early (before widget init) */
+loadMonitorCfg();
+
 /* ════════════════════════════════════════════════════════════
    BOOT BINDINGS
    ════════════════════════════════════════════════════════════ */
@@ -2634,37 +3326,18 @@ const miniWidget = (() => {
             return;
         }
 
-        const closes = klines.map(k => parseFloat(k[4]));
-        const isUp   = closes[closes.length - 1] >= closes[0];
-        const color  = isUp ? '#00ffc8' : '#a855f7';
-        const gradId = 'msg_' + token;
+        const closes  = klines.map(k => parseFloat(k[4]));
+        const volumes = klines.map(k => parseFloat(k[7]));   // ★ quote volume
+        const isUp    = closes[closes.length - 1] >= closes[0];
+        const color   = isUp ? '#00ffc8' : '#a855f7';
 
-        const W = 280, H = 110, pad = 6;
-        const min = Math.min(...closes), max = Math.max(...closes);
-        const range = max - min || 1;
-        const step  = (W - pad * 2) / (closes.length - 1);
-        const pts = closes.map((v, i) => [
-            pad + i * step,
-            H - pad - ((v - min) / range) * (H - pad * 2)
-        ]);
-        const line = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
-        const area = line + ` L${pts[pts.length-1][0].toFixed(1)} ${H-pad} L${pts[0][0].toFixed(1)} ${H-pad} Z`;
-
-        if (bodyEl) bodyEl.innerHTML = `
-            <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-                <defs>
-                    <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%"   stop-color="${color}" stop-opacity="0.30"/>
-                        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
-                    </linearGradient>
-                </defs>
-                <path d="${area}" fill="url(#${gradId})" />
-                <path d="${line}" fill="none" stroke="${color}" stroke-width="1.6"
-                      stroke-linejoin="round" stroke-linecap="round" />
-                <circle cx="${pts[pts.length-1][0].toFixed(1)}"
-                        cy="${pts[pts.length-1][1].toFixed(1)}"
-                        r="3" fill="${color}" stroke="#fff" stroke-width="1.2"/>
-            </svg>`;
+                if (bodyEl) bodyEl.innerHTML = sparkSVG(closes, {
+            width: 280, height: 110,
+            color: color,
+            volumes: volumes,
+            dot: true,
+            precise: true          // ★ HubDL-style · 1 stop per candle + vertical fade
+        });
     }
 
     return {
@@ -2678,19 +3351,29 @@ const miniWidget = (() => {
    ════════════════════════════════════════════════════════════ */
 (async function boot() {
      miniWidget.init();
+     loadTg();   // ★ TG config-ը load արա սկզբում
     console.log('%c v1.0 ', 'background:linear-gradient(90deg,#00ffd5,#0099ff);color:#000;padding:5px 12px;border-radius:5px;font-weight:900;letter-spacing:2px;');
        
 
     const loaded = loadState();
     if (!loaded || !state.widgets.length) {
+        /* Առաջին անգամ → default layout */
         state.widgets = getDefaultLayout();
         saveState();
+        try { localStorage.setItem(LAYOUT_VERSION_KEY, String(LAYOUT_VERSION)); } catch(e) {}
+    } else {
+        /* Բեռնված layout → migration ստուգում */
+        if (migrateLayout()) {
+            saveState();
+            console.log('%c Layout migrated · new widgets injected ', 'background:#00ffd5;color:#000;padding:3px 8px;border-radius:4px;font-weight:800;');
+        }
     }
 
     renderGrid();
     initDashboardDropZone();
     initTrashZone();
     bindTopbarUI();
+    
 
     startScreenerLiqWS();
     await loadInitial();
