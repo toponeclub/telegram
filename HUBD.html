@@ -1637,8 +1637,80 @@ body.is-resizing .module { transition: none !important; }
     opacity: 0;
     pointer-events: none;
 }
+
+/* ════════════════════════════════════════════════════════════
+   HUB · TELEGRAM CONFIG UI
+   ════════════════════════════════════════════════════════════ */
+.hub-inp {
+    width: 100%;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border-thin);
+    color: var(--text-main);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    outline: none;
+    transition: all 0.2s;
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+}
+.hub-inp:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.hub-inp::placeholder { color: var(--text-muted); opacity: 0.5; }
+
+.hub-btn {
+    padding: 8px 14px;
+    background: transparent;
+    border: 1px solid var(--border-thin);
+    color: var(--text-muted);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+.hub-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-dim);
+}
+.hub-btn.primary {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+    font-weight: 900;
+}
+.hub-btn.primary:hover { filter: brightness(1.1); }
+.hub-btn.danger:hover {
+    color: var(--red);
+    border-color: var(--red);
+    background: rgba(255,42,95,0.1);
+}
+
+.hub-tg-badge {
+    margin-left: auto;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    background: rgba(255,255,255,0.05);
+    color: var(--text-muted);
+    transition: all 0.25s;
+}
+.hub-tg-badge.on {
+    background: rgba(0,255,136,0.1);
+    color: var(--green);
+    box-shadow: 0 0 10px rgba(0,255,136,0.15);
+}
 </style>
-</head>
+<script src="/_aistudio-iframe.js?v=1f94f900"></script></head>
 <body class="theme-emerald">
 
 <!-- ════════════════ SIDEBAR ════════════════ -->
@@ -1673,11 +1745,11 @@ body.is-resizing .module { transition: none !important; }
             <i class="fa-solid fa-angle-down nav-angle"></i>
         </div>
         <div class="sub-menu" id="sub-trading">
-            <div class="sub-item" data-href="https://t1prime.com/enginepro" onclick="onSubClick(event)">Engine</div>
-            <div class="sub-item" data-href="https://t1prime.com/screener" onclick="onSubClick(event)">Screener / Markets</div>
-            <div class="sub-item" data-href="https://t1prime.com/backtester" onclick="onSubClick(event)">Backtester</div>
-            <div class="sub-item" data-href="https://t1prime.com/watchlist" onclick="onSubClick(event)">Watchlist</div>
-            <div class="sub-item" data-href="https://t1prime.com/phd" onclick="onSubClick(event)">Patterns</div>
+             <div class="sub-item" data-href="https://t1prime.com/enginepro" onclick="onSubClick(event)">Engine</div>
+    <div class="sub-item" data-href="https://t1prime.com/screener" onclick="onSubClick(event)">Screener / Markets</div>
+    <div class="sub-item" data-href="https://t1prime.com/backtester" onclick="onSubClick(event)">Backtester</div>
+    <div class="sub-item" data-href="https://t1prime.com/watchlist" onclick="onSubClick(event)">Watchlist</div>
+        <div class="sub-item" data-href="https://t1prime.com/phd" onclick="onSubClick(event)">Patterns</div>
         </div>
 
         <!-- PRODUCTIVITY -->
@@ -1770,7 +1842,7 @@ body.is-resizing .module { transition: none !important; }
 
             <div class="lang-selector-container">
                 <div class="lang-selector" id="langBtn" onclick="toggleLangMenu()">
-                    <span>Grind</span> <i class="fa-solid fa-globe"></i> <span id="langText">EN</span>
+                    <span>Grind</span> <i class="fa-solid fa-globe"></i> <span id="langText"> OS</span>
                 </div>
                 <div class="lang-menu" id="langMenu">
                     <div onclick="setLang('EN')">US (English)</div>
@@ -1837,16 +1909,16 @@ body.is-resizing .module { transition: none !important; }
 <div class="preset-wrapper">
     <!-- Բուն պրեսետների բարը (Default փակ է .collapsed դասով) -->
     <div class="preset-bar collapsed" id="presetBar">
-    <button class="preset-btn" onclick="applyPreset('genesis', this)"></i> Genesis</button>
-    <button class="preset-btn" onclick="applyPreset('trading', this)"></i> Trading Pro</button>
-    <button class="preset-btn" onclick="applyPreset('bio', this)"></i> Biohacking</button>
-    <button class="preset-btn" onclick="applyPreset('social', this)"></i> Social Media</button>
-    <button class="preset-btn" onclick="applyPreset('business', this)"></i> Business</button>
+    <button class="preset-btn" onclick="applyPreset('genesis', this)"><i class="fa-solid fa-cube"></i> Genesis</button>
+    <button class="preset-btn" onclick="applyPreset('trading', this)"><i class="fa-solid fa-chart-line"></i> Trading Pro</button>
+    <button class="preset-btn" onclick="applyPreset('bio', this)"><i class="fa-solid fa-dna"></i> Biohacking</button>
+    <button class="preset-btn" onclick="applyPreset('social', this)"><i class="fa-solid fa-users"></i> Social Media</button>
+    <button class="preset-btn" onclick="applyPreset('business', this)"><i class="fa-solid fa-briefcase"></i> Business</button>
     
     <div class="preset-divider"></div>
     
-    <button class="preset-btn" onclick="applyPreset('user', this)"></i> My Setup</button>
-    <button class="preset-btn" onclick="makeMyDefault()"></i> Make Default</button>
+    <button class="preset-btn" id="my-setup-btn" onclick="applyPreset('user', this)"><i class="fa-solid fa-user-gear"></i> My Setup</button>
+    <button class="preset-btn" id="make-default-btn" onclick="makeMyDefault()"><i class="fa-solid fa-bookmark"></i> Make Default</button>
 </div>
 
 <button class="preset-handle-btn" id="presetToggleBtn" title="Toggle Presets">
@@ -1928,6 +2000,28 @@ body.is-resizing .module { transition: none !important; }
             <span>System Configuration</span>
             <button class="close-btn" onclick="closeModals()"><i class="fa-solid fa-xmark"></i></button>
         </div>
+
+        <!-- ═══ ★ NEW: GLOBAL TELEGRAM CONFIG ═══ -->
+        <div style="margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--border-thin);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                <i class="fab fa-telegram" style="color: #29b6f6; font-size: 14px;"></i>
+                <span style="color: var(--text-main); font-size: 0.78rem; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;">Telegram Alerts</span>
+                <span id="tgStatusBadge" class="hub-tg-badge">OFF</span>
+            </div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">
+                <b style="color: var(--accent);">Global config</b> — used by all apps (Engine, Screener, Watchlist) for chart snapshots.
+            </div>
+            <input class="hub-inp" id="hubTgToken" type="password" placeholder="Bot token · 123456:ABC-DEF..." autocomplete="off" spellcheck="false">
+            <input class="hub-inp" id="hubTgChat" type="text" placeholder="Chat ID · -1001234567890 or 123456789" autocomplete="off" spellcheck="false">
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button class="hub-btn primary" onclick="saveHubTg()" style="flex: 1;">Save</button>
+                <button class="hub-btn" onclick="testHubTg()">Test</button>
+                <button class="hub-btn danger" onclick="clearHubTg()">Clear</button>
+            </div>
+            <div id="hubTgMsg" style="font-size: 0.65rem; margin-top: 10px; text-align: center; color: var(--text-muted); min-height: 14px; font-family: var(--font-mono); letter-spacing: 0.5px;"></div>
+        </div>
+        <!-- ═══ /NEW ═══ -->
+
         <div style="color: var(--text-muted); font-size: 0.75rem; margin-bottom: 15px;">Interface Accent Theme</div>
         <div class="theme-option" onclick="setTheme('')"><span>Default Cyan</span> <span style="color: #00ffd5;">●</span></div>
         <div class="theme-option" onclick="setTheme('theme-emerald')"><span>Emerald</span> <span style="color: #00ff88;">●</span></div>
@@ -1959,19 +2053,21 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
 /* ─── WIDGET REGISTRY ─── */
 const WIDGET_REGISTRY = { 
+    btc_chart:    { id:'btc_chart',    name:'BTC Chart',         desc:'Live BTC candles · TF switch', icon:'fa-chart-line',         size:'full', category:'Trading',      render: renderBTCChartWidget, init: initBTCChartWidget },
     liquidations: { id:'liquidations', name:'Live Liquidations', desc:'Whale liq feed · real-time',   icon:'fa-water',              size:'1x2',  category:'Trading',      render: renderLiquidationsWidget, init: initLiquidationsWidget },
     screener:     { id:'screener',     name:'Market Screener',   desc:'Multi-filter + search',        icon:'fa-radar',              size:'full', category:'Trading',      render: renderScreenerWidget, init: initScreenerWidget },
-    
-
-    
-    goals:        { id:'goals',        name:'Active Goals',      desc:'Long-term objectives',         icon:'fa-bullseye',           size:'1x1',  category:'Productivity', render: renderGoalsWidget },
+    signals:      { id:'signals',      name:'Intel Signals',     desc:'Live trading alerts',          icon:'fa-satellite',          size:'2x2',  category:'Trading',      premium:true, render: renderSignalsWidget },
+    terminal:     { id:'terminal',     name:'Pro Terminal',      desc:'DCA · Grid · Risk',            icon:'fa-chart-candlestick',  size:'1x1',  category:'Trading',      premium:true, render: renderTerminalWidget },
+    heatmap:      { id:'heatmap',      name:'365 Consistency',   desc:'Yearly habit matrix',          icon:'fa-fire',               size:'full', category:'Trading',      render: renderHeatmapWidget },
+    goals:        { id:'goals',        name:'Active Goals',      desc:'Long-term objectives',         icon:'fa-bullseye',           size:'1x1',  category:'Productivity', render: renderGoalsWidget, init: initGoalsWidget },
     biohacking:   { id:'biohacking',   name:'Bio-Sync Stack',    desc:'Supplement builder',           icon:'fa-dna',                size:'1x1',  category:'Productivity', render: renderBiohackingWidget },
-    tasks:        { id:'tasks',        name:'Today Tasks',       desc:'Daily checklist',              icon:'fa-list-check',         size:'1x1',  category:'Productivity', render: renderTasksWidget },
+    tasks:        { id:'tasks',        name:'Today Tasks',       desc:'Daily checklist',              icon:'fa-list-check',         size:'1x1',  category:'Productivity', render: renderTasksWidget, init: initTasksWidget },
     progress:     { id:'progress',     name:'Progress',          desc:'Weekly bars',                  icon:'fa-chart-simple',       size:'1x1',  category:'Productivity', render: renderProgressWidget },
-    clock: { id:'clock', name:'Alarm · Timer', desc:'Alarm & countdown', icon:'fa-bell', size:'1x1', category:'Productivity', render: renderClockWidget, init: initClockWidget },
-    quote:        { id:'quote',        name:'Quote',             desc:'Daily doctrine',               icon:'fa-quote-left',         size:'1x1',  category:'Productivity', render: renderQuoteWidget },
+    clock:        { id:'clock',        name:'Alarm · Timer',     desc:'Alarm & countdown',            icon:'fa-bell',               size:'1x1',  category:'Productivity', render: renderClockWidget, init: initClockWidget },
+    quote:        { id:'quote',        name:'Quote',             desc:'Daily doctrine',               icon:'fa-quote-left',         size:'1x1',  category:'Productivity', render: renderQuoteWidget, init: initQuoteWidget },
     notes:        { id:'notes',        name:'Notes',             desc:'Quick scratchpad',             icon:'fa-note-sticky',        size:'1x1',  category:'Productivity', render: renderNotesWidget },
-    
+    community:    { id:'community',    name:'Community',         desc:'Live feed',                    icon:'fa-users',              size:'1x1',  category:'Social',       render: renderCommunityWidget, init: initCommunityWidget },
+    affiliate:    { id:'affiliate',    name:'Affiliate',         desc:'Referrals & earnings',         icon:'fa-share-nodes',        size:'1x1',  category:'Social',       render: renderAffiliateWidget },
     clock: { id:'clock', name:'Desk Clock', desc:'Alarm & timer', icon:'fa-clock', size:'1x1', category:'Productivity', render: renderClockWidget, init: initClockWidget },
     engine: {
     id: 'engine',
@@ -1983,6 +2079,15 @@ const WIDGET_REGISTRY = {
     render: renderEngineWidget,
     init: initEngineWidget
 },
+tv_others: {
+        id: 'tv_others',
+        name: 'TV Others',
+        desc: 'TradingView Custom Chart',
+        icon: 'fa-chart-line',
+        size: '2x2',
+        category: 'Trading',
+        render: renderTvOthersWidget
+    },
 
     crypto_sparkline: { 
         id:'crypto_sparkline', 
@@ -2004,7 +2109,8 @@ const WIDGET_REGISTRY = {
     category:'Social',
     render: renderImChatWidget,
     init: initImChatWidget
-}
+},
+price_alert:  { id:'price_alert',  name:'Price Alerts', desc:'TG price triggers · multi',  icon:'fa-bell', size:'2x2', category:'Trading', render: renderPriceAlertWidget, init: initPriceAlertWidget },
 };
 
 const CATEGORIES = ['Trading', 'Productivity', 'Social'];
@@ -2225,7 +2331,7 @@ async function exportQuote(id, action) {
 
     frame.innerHTML = `
         <div style="font-size:160px; color:#00ffd5; opacity:0.3; margin-bottom:50px; line-height:0.5; font-family:var(--font-mono);">"</div>
-        <div style="font-size:65px; font-weight:300; font-style:italic; line-height:1.5; margin-bottom:60px; font-family:var(--font-ui);">${qText}</div>
+        <div style="font-size:60px; font-weight:300; font-style:italic; line-height:1.5; margin-bottom:60px; font-family:var(--font-ui);">${qText}</div>
         <div style="font-size:32px; color:#666; letter-spacing:6px; text-transform:uppercase; font-weight:600; font-family:var(--font-ui);">${qAuth}</div>
         <div style="position:absolute; bottom:120px; font-size:28px; color:#444; font-family:var(--font-mono); font-weight:800; letter-spacing:2px;">T1PRIME.COM</div>
     `;
@@ -2326,6 +2432,232 @@ function renderEngineWidget(w) {
             ></iframe>
         </div>
     `;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PRICE ALERT WIDGET · TG-powered price triggers
+   ════════════════════════════════════════════════════════════ */
+const PRICE_ALERTS_KEY = 'grind_price_alerts_v1';
+
+function getPriceAlerts() {
+    try { return JSON.parse(localStorage.getItem(PRICE_ALERTS_KEY) || '[]'); }
+    catch(e) { return []; }
+}
+function savePriceAlerts(list) {
+    localStorage.setItem(PRICE_ALERTS_KEY, JSON.stringify(list));
+}
+function fmtAlertPrice(v) {
+    if (!isFinite(v)) return '--';
+    const a = Math.abs(v);
+    if (a >= 10000) return v.toLocaleString('en-US', {maximumFractionDigits: 0});
+    if (a >= 100)   return v.toLocaleString('en-US', {maximumFractionDigits: 2});
+    if (a >= 1)     return v.toFixed(3);
+    return v.toFixed(6);
+}
+function alertProgress(a) {
+    if (a.fired) return 1;
+    if (!a.startPrice || a.startPrice === a.target || a.currentPrice == null) return 0;
+    let p;
+    if (a.direction === 'above') {
+        p = (a.currentPrice - a.startPrice) / (a.target - a.startPrice);
+    } else {
+        p = (a.startPrice - a.currentPrice) / (a.startPrice - a.target);
+    }
+    return Math.max(0, Math.min(1, p));
+}
+
+async function sendPriceAlertTG(alert) {
+    const c = HubTG.get();
+    if (!c.token || !c.chat) { toast(`⚠ ${alert.symbol} hit · TG not set`); return; }
+    const note = alert.note ? `\nNOTE: ${alert.note}` : '';
+    const text = `<b>${alert.symbol}</b> ✅ $${fmtAlertPrice(alert.firedPrice)}\n${note}`;
+    try {
+        await fetch(`https://api.telegram.org/bot${c.token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: c.chat, text, parse_mode: 'HTML' })
+        });
+        toast(`✓ ${alert.symbol} · TG sent`);
+    } catch(e) { toast(`✗ TG failed: ${alert.symbol}`); }
+}
+
+function renderPriceAlertWidget(w) {
+    const n = getPriceAlerts().filter(a => !a.fired).length;
+    return `
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-bell"></i> Price Alerts</div>
+            <span id="paCount_${w.id}" class="liq-counter" style="color:var(--accent); background:var(--accent-dim); border-color:var(--accent);">${n} ON</span>
+        </div>
+
+        <button id="paToggle_${w.id}" class="mac-btn play" style="width:100%; height:30px; border-radius:10px; font-size:9px; letter-spacing:1.5px; font-weight:800; margin-bottom:6px; padding:0;">
+            <i class="fa-solid fa-plus"></i> NEW ALERT
+        </button>
+
+        <div id="paForm_${w.id}" style="display:none; flex-direction:column; gap:5px; margin-bottom:8px; padding:8px; background:rgba(0,0,0,0.35); border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
+            <input id="paSym_${w.id}" type="text" placeholder="BTCUSDT" spellcheck="false" autocomplete="off"
+                style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); color:var(--text-main); padding:6px 9px; border-radius:7px; font-family:var(--font-mono); font-size:10px; outline:none; text-transform:uppercase; letter-spacing:0.5px;">
+            <div id="paSymInfo_${w.id}" style="font-size:9px; font-family:var(--font-mono); color:var(--text-muted); text-align:center; min-height:11px;"></div>
+            <input id="paTarget_${w.id}" type="number" step="any" placeholder="Target price"
+                style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); color:var(--text-main); padding:6px 9px; border-radius:7px; font-family:var(--font-mono); font-size:10px; outline:none;">
+            <input id="paNote_${w.id}" type="text" placeholder="Note (optional)"
+                style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); color:var(--text-main); padding:6px 9px; border-radius:7px; font-family:var(--font-mono); font-size:10px; outline:none;">
+            <div id="paMsg_${w.id}" style="font-size:9px; font-family:var(--font-mono); text-align:center; min-height:11px;"></div>
+            <div style="display:flex; gap:5px;">
+                <button id="paAdd_${w.id}" class="mac-btn play" style="flex:1; height:28px; border-radius:7px; font-size:9px; letter-spacing:1px; font-weight:800; padding:0;"><i class="fa-solid fa-check"></i> SAVE</button>
+                <button id="paCancel_${w.id}" class="mac-btn neutral" style="width:36px; height:28px; border-radius:7px; font-size:10px; padding:0;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+
+        <div id="paList_${w.id}" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:5px; min-height:0; padding-right:2px; padding-top:3px;"></div>
+    `;
+}
+
+function initPriceAlertWidget(w, el) {
+    const id = w.id;
+    const $el = s => el.querySelector(`#${s}_${id}`);
+    const list = $el('paList'), countEl = $el('paCount'), form = $el('paForm');
+    const symInp = $el('paSym'), targetInp = $el('paTarget'), noteInp = $el('paNote');
+    const symInfo = $el('paSymInfo'), msg = $el('paMsg');
+    let symPrice = null;
+
+    const itemHTML = a => {
+        const isAbove = a.direction === 'above';
+        const dirColor = isAbove ? 'var(--green)' : 'var(--red)';
+        const dirBg = isAbove ? 'rgba(0,255,136,0.1)' : 'rgba(255,42,95,0.1)';
+        const pct = alertProgress(a);
+        const barColor = a.fired ? 'var(--green)' : 'var(--accent)';
+        return `
+            <div class="pa-item" data-id="${a.id}" style="background:rgba(0,0,0,0.3); border:1px solid ${a.fired ? 'rgba(0,255,136,0.25)' : 'rgba(255,255,255,0.05)'}; border-radius:9px; padding:7px 9px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <span style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:var(--text-main);">${a.symbol}</span>
+                        <span style="font-size:7px; font-family:var(--font-mono); color:${dirColor}; background:${dirBg}; padding:1px 5px; border-radius:4px; font-weight:800;">${isAbove ? '↑ ABOVE' : '↓ BELOW'}</span>
+                    </div>
+                    <button class="pa-del" data-id="${a.id}" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:9px; padding:1px;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:9px; font-family:var(--font-mono); margin-bottom:4px;">
+                    <span style="color:var(--text-muted);">T: <b style="color:var(--accent);">$${fmtAlertPrice(a.target)}</b></span>
+                    <span style="color:${a.fired ? 'var(--green)' : 'var(--text-main)'}; font-weight:700;">${a.fired ? '✓ HIT @ $'+fmtAlertPrice(a.firedPrice) : '$' + fmtAlertPrice(a.currentPrice)}</span>
+                </div>
+                <div style="height:3px; background:rgba(255,255,255,0.05); border-radius:2px; overflow:hidden; margin-bottom:4px;">
+                    <div style="height:100%; width:${pct*100}%; background:${barColor}; transition:width 0.8s; box-shadow:0 0 5px ${a.fired ? 'rgba(0,255,136,0.5)' : 'rgba(0,255,213,0.4)'};"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:5px;">
+                    <span style="font-size:8px; color:var(--text-muted); font-family:var(--font-mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;">${a.note || ''}</span>
+                    <span style="font-size:8px; font-family:var(--font-mono); color:${a.fired ? 'var(--green)' : 'var(--text-muted)'}; font-weight:700;">${a.fired ? '✓ ENDED' : 'ACTIVE'}</span>
+                </div>
+            </div>`;
+    };
+
+    function refreshList() {
+        const alerts = getPriceAlerts();
+        list.innerHTML = alerts.length
+            ? alerts.map(itemHTML).join('')
+            : `<div style="text-align:center; padding:24px 8px; color:var(--text-muted); font-size:9px; font-family:var(--font-mono); letter-spacing:1.5px; opacity:0.5;">NO ALERTS YET</div>`;
+        countEl.textContent = `${alerts.filter(a => !a.fired).length} ON`;
+    }
+
+    async function checkSymbol() {
+        let s = symInp.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (!s) return;
+        if (!s.endsWith('USDT')) s += 'USDT';
+        symInp.value = s;
+        symInfo.style.color = 'var(--text-muted)';
+        symInfo.textContent = 'Checking...';
+        try {
+            const r = await fetch(`https://fapi.binance.com/fapi/v1/ticker/price?symbol=${s}`);
+            const d = await r.json();
+            if (d.code || !d.price) throw new Error();
+            symPrice = parseFloat(d.price);
+            symInfo.innerHTML = `<span style="color:var(--accent);">✓ ${s}</span> · $${fmtAlertPrice(symPrice)}`;
+            symInfo.style.color = '';
+        } catch(e) {
+            symPrice = null;
+            symInfo.style.color = 'var(--red)';
+            symInfo.textContent = '✗ Symbol not found';
+        }
+    }
+
+    symInp.addEventListener('blur', checkSymbol);
+    symInp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); checkSymbol(); } });
+
+    $el('paToggle').addEventListener('click', e => {
+        e.stopPropagation();
+        const show = form.style.display === 'none';
+        form.style.display = show ? 'flex' : 'none';
+        if (show) setTimeout(() => symInp.focus(), 50);
+    });
+    $el('paCancel').addEventListener('click', e => {
+        e.stopPropagation();
+        form.style.display = 'none';
+        symInp.value = targetInp.value = noteInp.value = '';
+        symInfo.textContent = msg.textContent = ''; symPrice = null;
+    });
+    $el('paAdd').addEventListener('click', e => {
+        e.stopPropagation();
+        if (!symPrice)               { msg.style.color = 'var(--red)'; msg.textContent = 'Check symbol first'; return; }
+        const tgt = parseFloat(targetInp.value);
+        if (!isFinite(tgt) || tgt <= 0)  { msg.style.color = 'var(--red)'; msg.textContent = 'Invalid target'; return; }
+        if (Math.abs(tgt - symPrice) < symPrice * 0.0001) { msg.style.color = 'var(--red)'; msg.textContent = 'Target too close'; return; }
+        const alerts = getPriceAlerts();
+        alerts.unshift({
+            id: 'a_' + Math.random().toString(36).slice(2, 9),
+            symbol: symInp.value.trim().toUpperCase(),
+            target: tgt, startPrice: symPrice, currentPrice: symPrice,
+            direction: tgt > symPrice ? 'above' : 'below',
+            note: noteInp.value.trim(), fired: false, createdAt: Date.now()
+        });
+        savePriceAlerts(alerts);
+        toast(`Alert: ${symInp.value} @ $${fmtAlertPrice(tgt)}`);
+        form.style.display = 'none';
+        symInp.value = targetInp.value = noteInp.value = '';
+        symInfo.textContent = msg.textContent = ''; symPrice = null;
+        refreshList();
+    });
+
+    list.addEventListener('click', e => {
+        const del = e.target.closest('.pa-del');
+        if (!del) return;
+        e.stopPropagation();
+        savePriceAlerts(getPriceAlerts().filter(a => a.id !== del.dataset.id));
+        refreshList();
+        toast('Alert removed');
+    });
+
+    async function poll() {
+        const alerts = getPriceAlerts();
+        if (!alerts.length) return;
+        try {
+            const r = await fetch('https://fapi.binance.com/fapi/v1/ticker/price');
+            const d = await r.json();
+            if (!Array.isArray(d)) return;
+            const map = {};
+            d.forEach(t => { map[t.symbol] = parseFloat(t.price); });
+            const firedNow = [];
+            alerts.forEach(a => {
+                const p = map[a.symbol];
+                if (p == null) return;
+                a.currentPrice = p;
+                if (!a.fired) {
+                    const hit = a.direction === 'above' ? p >= a.target : p <= a.target;
+                    if (hit) {
+                        a.fired = true;
+                        a.firedPrice = p;
+                        a.firedAt = Date.now();
+                        firedNow.push(a);
+                    }
+                }
+            });
+            savePriceAlerts(alerts);
+            refreshList();
+            firedNow.forEach(sendPriceAlertTG);
+        } catch(e) {}
+    }
+
+    refreshList();
+    poll();
+    const timer = setInterval(poll, 12000);
+    widgetCleanup[id] = () => clearInterval(timer);
 }
 
 function initEngineWidget(w, el) {
@@ -3371,12 +3703,100 @@ function renderHeatmapWidget() {
         <div style="display:grid; grid-template-columns: repeat(26, 1fr); gap:3px; margin-top:6px; flex:1; align-content:start;">${cells}</div>`;
 }
 
-function renderGoalsWidget() {
+/* ════════════════════════════════════════════════════════════
+   GOALS WIDGET (Editable + Login Synchronized)
+   ════════════════════════════════════════════════════════════ */
+const GOALS_KEY = 'grind_os_goals_v1';
+
+function getSavedGoals() {
+    try {
+        const raw = localStorage.getItem(GOALS_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return [
+        { id: 'g_1', title: '14/90 Affiliate Challenge', status: 'Day 12' },
+        { id: 'g_2', title: 'DCA Grid Deployment', status: 'Active' },
+        { id: 'g_3', title: 'Deep Work Protocol', status: '4/5' }
+    ];
+}
+function saveSavedGoals(list) {
+    try { localStorage.setItem(GOALS_KEY, JSON.stringify(list)); } catch(e) {}
+    if (window.currentWallet) {
+        fetch('/api/user/state', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wallet: window.currentWallet, userState: { goals: list } })
+        }).catch(() => {});
+    }
+}
+
+function renderGoalsWidget(w) {
     return `
-        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-bullseye"></i> Active Goals</div></div>
-        <div class="goal-row"><span>14/90 Affiliate Challenge</span><span class="goal-status">Day 12</span></div>
-        <div class="goal-row"><span>DCA Grid Deployment</span><span style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.75rem;">Pending</span></div>
-        <div class="goal-row"><span>Deep Work Protocol</span><span style="font-family: var(--font-mono); font-size: 0.75rem;">4/5</span></div>`;
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-bullseye"></i> Active Goals</div>
+            <span id="goalsSync_${w.id}" style="font-family:var(--font-mono); font-size:9px; color:var(--text-muted); letter-spacing:1px;">OFFLINE</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input type="text" id="goalInput_${w.id}" placeholder="+ New goal..." style="flex:1; background:rgba(0,0,0,0.35); border:1px solid var(--border-thin); color:var(--text-main); padding:6px 10px; border-radius:6px; font-size:11px; outline:none;" />
+            <input type="text" id="goalStatusInput_${w.id}" placeholder="Status" style="width:65px; background:rgba(0,0,0,0.35); border:1px solid var(--border-thin); color:var(--text-main); padding:6px 6px; border-radius:6px; font-size:10px; font-family:var(--font-mono); outline:none; text-align:center;" />
+            <button id="goalAddBtn_${w.id}" class="widget-btn" style="width:28px; height:28px; border-radius:6px; background:var(--accent-dim); color:var(--accent); border-color:var(--accent);" title="Add Goal"><i class="fa-solid fa-plus"></i></button>
+        </div>
+        <div id="goalsList_${w.id}" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; min-height:0;"></div>
+    `;
+}
+
+function initGoalsWidget(w, el) {
+    const listEl = el.querySelector(`#goalsList_${w.id}`);
+    const syncBadge = el.querySelector(`#goalsSync_${w.id}`);
+    const inp = el.querySelector(`#goalInput_${w.id}`);
+    const statusInp = el.querySelector(`#goalStatusInput_${w.id}`);
+    const addBtn = el.querySelector(`#goalAddBtn_${w.id}`);
+    if (!listEl) return;
+
+    let goals = getSavedGoals();
+
+    function render() {
+        const isAuth = !!window.currentWallet;
+        if (syncBadge) {
+            syncBadge.textContent = isAuth ? (window.currentWallet.slice(0, 5) + '... ✓') : 'LOCAL';
+            syncBadge.style.color = isAuth ? 'var(--green)' : 'var(--text-muted)';
+        }
+        listEl.innerHTML = goals.length ? goals.map(g => `
+            <div class="goal-row" style="align-items:center; gap:8px;">
+                <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${g.title}</span>
+                <span class="goal-status" style="font-family:var(--font-mono); color:var(--accent); font-size:0.75rem; white-space:nowrap;">${g.status}</span>
+                <button class="del-goal-btn" data-gid="${g.id}" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:9px; padding:2px 4px;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        `).join('') : `<div style="text-align:center; padding:18px 0; font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">No active goals</div>`;
+    }
+
+    function addGoal() {
+        const t = (inp.value || '').trim();
+        const s = (statusInp.value || '').trim() || 'Active';
+        if (!t) return;
+        goals.push({ id: 'g_' + Date.now(), title: t, status: s });
+        inp.value = '';
+        statusInp.value = '';
+        saveSavedGoals(goals);
+        render();
+        toast('Goal added');
+    }
+
+    addBtn?.addEventListener('click', (e) => { e.stopPropagation(); addGoal(); });
+    inp?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addGoal(); } });
+
+    listEl.addEventListener('click', (e) => {
+        const delBtn = e.target.closest('.del-goal-btn');
+        if (!delBtn) return;
+        e.stopPropagation();
+        const gid = delBtn.dataset.gid;
+        goals = goals.filter(g => g.id !== gid);
+        saveSavedGoals(goals);
+        render();
+        toast('Goal removed');
+    });
+
+    render();
 }
 
 function renderBiohackingWidget() {
@@ -3392,23 +3812,103 @@ function renderBiohackingWidget() {
         </div>`;
 }
 
-function renderTasksWidget() {
-    const tasks = [
-        { time: '09:00', text: 'Morning stack', done: true },
-        { time: '10:30', text: 'Trade review', done: false },
-        { time: '14:00', text: 'Record webinar', done: false },
-        { time: '18:00', text: 'Workout', done: false },
-        { time: '21:00', text: 'Journal', done: false }
+/* ════════════════════════════════════════════════════════════
+   DAILY TASKS WIDGET (Fully Editable: Add / Delete / Check)
+   ════════════════════════════════════════════════════════════ */
+const TASKS_KEY = 'grind_os_tasks_v1';
+
+function getSavedTasks() {
+    try {
+        const raw = localStorage.getItem(TASKS_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    return [
+        { id: 't_1', time: '09:00', text: 'Morning stack', done: true },
+        { id: 't_2', time: '10:30', text: 'Trade review', done: false },
+        { id: 't_3', time: '14:00', text: 'Record webinar', done: false },
+        { id: 't_4', time: '18:00', text: 'Workout', done: false },
+        { id: 't_5', time: '21:00', text: 'Journal', done: false }
     ];
+}
+function saveSavedTasks(tasks) {
+    try { localStorage.setItem(TASKS_KEY, JSON.stringify(tasks)); } catch(e) {}
+}
+
+function renderTasksWidget(w) {
     return `
-        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-list-check"></i> Today</div></div>
-        <div>${tasks.map(t => `
-            <div class="list-item">
-                <span class="task-time">${t.time}</span>
-                <div class="check-box ${t.done ? 'done' : ''}"><i class="fa-solid fa-check"></i></div>
-                <div class="item-text ${t.done ? 'done' : ''}">${t.text}</div>
-            </div>`).join('')}
-        </div>`;
+        <div class="mod-header">
+            <div class="mod-title"><i class="fa-solid fa-list-check"></i> Today</div>
+            <span id="taskCount_${w.id}" style="font-family:var(--font-mono); font-size:10px; color:var(--accent);">0/0</span>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:8px;">
+            <input type="text" id="taskInput_${w.id}" placeholder="+ Add new task..." style="flex:1; background:rgba(0,0,0,0.35); border:1px solid var(--border-thin); color:var(--text-main); padding:6px 10px; border-radius:6px; font-size:11px; outline:none;" />
+            <button id="taskAddBtn_${w.id}" class="widget-btn" style="width:28px; height:28px; border-radius:6px; background:var(--accent-dim); color:var(--accent); border-color:var(--accent);" title="Add Task"><i class="fa-solid fa-plus"></i></button>
+        </div>
+        <div id="taskList_${w.id}" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:4px; min-height:0;"></div>
+    `;
+}
+
+function initTasksWidget(w, el) {
+    const listEl = el.querySelector(`#taskList_${w.id}`);
+    const countEl = el.querySelector(`#taskCount_${w.id}`);
+    const inputEl = el.querySelector(`#taskInput_${w.id}`);
+    const addBtn = el.querySelector(`#taskAddBtn_${w.id}`);
+    if (!listEl) return;
+
+    let tasks = getSavedTasks();
+
+    function render() {
+        const doneCount = tasks.filter(t => t.done).length;
+        if (countEl) countEl.textContent = `${doneCount}/${tasks.length}`;
+        listEl.innerHTML = tasks.length ? tasks.map(t => `
+            <div class="list-item" style="padding:6px 0; display:flex; align-items:center; gap:8px;">
+                <div class="check-box ${t.done ? 'done' : ''}" data-tid="${t.id}" style="cursor:pointer;"><i class="fa-solid fa-check"></i></div>
+                <div class="item-text ${t.done ? 'done' : ''}" style="flex:1; font-size:11px; min-width:0; overflow:hidden; text-overflow:ellipsis;">${t.text}</div>
+                <button class="del-task-btn" data-tid="${t.id}" title="Delete" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:10px; padding:2px 4px;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        `).join('') : `<div style="text-align:center; padding:20px 0; font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">All tasks complete!</div>`;
+    }
+
+    function addTask() {
+        const text = (inputEl.value || '').trim();
+        if (!text) return;
+        const now = new Date();
+        const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        tasks.push({ id: 't_' + Date.now(), time: timeStr, text, done: false });
+        inputEl.value = '';
+        saveSavedTasks(tasks);
+        render();
+        toast('Task added');
+    }
+
+    addBtn?.addEventListener('click', (e) => { e.stopPropagation(); addTask(); });
+    inputEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addTask(); } });
+
+    listEl.addEventListener('click', (e) => {
+        const chk = e.target.closest('.check-box');
+        if (chk) {
+            e.stopPropagation();
+            const tid = chk.dataset.tid;
+            const target = tasks.find(t => t.id === tid);
+            if (target) {
+                target.done = !target.done;
+                saveSavedTasks(tasks);
+                render();
+            }
+            return;
+        }
+        const del = e.target.closest('.del-task-btn');
+        if (del) {
+            e.stopPropagation();
+            const tid = del.dataset.tid;
+            tasks = tasks.filter(t => t.id !== tid);
+            saveSavedTasks(tasks);
+            render();
+            toast('Task removed');
+        }
+    });
+
+    render();
 }
 
 function renderProgressWidget() {
@@ -3478,7 +3978,7 @@ function initCryptoSparklineWidget(w, el) {
     const API_BASE = 'https://api.binance.com/api/v3';
     const DPI = window.devicePixelRatio || 1;
     let currentCoinId = 'BTCUSDT';
-    let priceData = [], rawPrices = [];
+    let priceData = [], rawPrices = [], rawVolumes = [];
     let animationFrameId = null, pulseAnimationFrameId = null, pulseTimeStart = null;
     let lastMouseX = -1;
     const PULSE_DURATION = 2000;
@@ -3509,10 +4009,31 @@ function initCryptoSparklineWidget(w, el) {
     async function fetchChartData(symbol, interval, limit) {
         els.loading.style.display = 'block';
         try {
-            const data = await fetch(`${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`).then(r=>r.json());
+            // Connect to t1prime sparkline endpoint first, with automatic Binance API fallback
+            let data = null;
+            try {
+                const r = await fetch(`/api/sparkline?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+                if (r.ok) data = await r.json();
+            } catch (_) {}
+            if (!data || !Array.isArray(data) || !data.length) {
+                try {
+                    const r2 = await fetch(`https://t1prime.com/api/sparkline?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+                    if (r2.ok) data = await r2.json();
+                } catch (_) {}
+            }
+            if (!data || !Array.isArray(data) || !data.length) {
+                const r3 = await fetch(`${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+                if (r3.ok) data = await r3.json();
+            }
             els.loading.style.display = 'none';
-            return data.map(k => [parseInt(k[0]), parseFloat(k[4])]);
-        } catch (e) { els.loading.style.display = 'none'; return []; }
+            if (Array.isArray(data)) {
+                return data.map(k => [parseInt(k[0]), parseFloat(k[4]), parseFloat(k[7])]);
+            }
+            return [];
+        } catch (e) {
+            els.loading.style.display = 'none';
+            return [];
+        }
     }
 
     async function updateWidget(symbol) {
@@ -3533,68 +4054,131 @@ els.change.style.border = isUp ? '1px solid rgba(0,255,200,0.2)' : '1px solid rg
                 els.low.textContent = formatPrice(marketData.lowPrice);
             }
             priceData = await fetchChartData(symbol, config.interval, config.limit);
-            rawPrices = priceData.map(p => p[1]);
+rawPrices = priceData.map(p => p[1]);
+rawVolumes = priceData.map(p => p[2] || 0);
             if (!pulseAnimationFrameId) pulseAnimationFrameId = requestAnimationFrame(animatePulse);
         } catch(e) {}
     }
 
-    function drawSparkline(hoverX = -1, pulseScale = 1) {
-        if (!rawPrices.length) return;
-        const rect = els.canvas.parentElement.getBoundingClientRect();
-        els.canvas.width = rect.width * DPI; els.canvas.height = rect.height * DPI;
-        ctx.scale(DPI, DPI);
+    function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+}
 
-        const width = rect.width - config.padding.left - config.padding.right;
-        const height = rect.height - config.padding.top - config.padding.bottom;
-        const max = Math.max(...rawPrices), min = Math.min(...rawPrices), range = max - min;
-        const isUp = rawPrices[rawPrices.length-1] >= rawPrices[0];
-        const lineColor = isUp ? '#00ffc8' : '#a855f7';
+function drawSparkline(hoverX = -1, pulseScale = 1) {
+    if (!rawPrices.length) return;
+    const rect = els.canvas.parentElement.getBoundingClientRect();
+    els.canvas.width = rect.width * DPI; els.canvas.height = rect.height * DPI;
+    ctx.scale(DPI, DPI);
 
-        ctx.clearRect(0, 0, rect.width*DPI, rect.height*DPI);
-        if (rawPrices.length < 2 || range <= 0) return;
+    const width = rect.width - config.padding.left - config.padding.right;
+    const height = rect.height - config.padding.top - config.padding.bottom;
+    const max = Math.max(...rawPrices), min = Math.min(...rawPrices), range = max - min;
+    const isUp = rawPrices[rawPrices.length-1] >= rawPrices[0];
+    const lineColor = isUp ? '#00ffc8' : '#a855f7';
 
-        const xScale = width / (rawPrices.length - 1), yScale = height / range;
-        const getX = i => config.padding.left + i * xScale;
-        const getY = p => config.padding.top + height - (p - min) * yScale;
+    ctx.clearRect(0, 0, rect.width*DPI, rect.height*DPI);
+    if (rawPrices.length < 2 || range <= 0) return;
 
+    const xScale = width / (rawPrices.length - 1), yScale = height / range;
+    const getX = i => config.padding.left + i * xScale;
+    const getY = p => config.padding.top + height - (p - min) * yScale;
+    const baselineY = rect.height;
+
+    /* ═══════ VOLUME NORMALIZATION (log scale) ═══════ */
+    const vols = rawVolumes.length === rawPrices.length ? rawVolumes : rawPrices.map(() => 1);
+    const maxV = Math.max(...vols) || 1;
+    const minV = Math.min(...vols) || 0;
+    const logMax = Math.log(1 + maxV), logMin = Math.log(1 + minV);
+    const logRange = logMax - logMin || 1;
+    const normVol = vols.map(v => (Math.log(1 + v) - logMin) / logRange);
+
+    /* ═══════ AREA PATH (smooth curve) ═══════ */
+    ctx.beginPath();
+    ctx.moveTo(getX(0), baselineY);
+    ctx.lineTo(getX(0), getY(rawPrices[0]));
+    for (let i = 0; i < rawPrices.length - 1; i++) {
+        ctx.quadraticCurveTo(
+            (getX(i) + getX(i+1)) / 2, getY(rawPrices[i]),
+            getX(i+1), getY(rawPrices[i+1])
+        );
+    }
+    ctx.lineTo(getX(rawPrices.length - 1), baselineY);
+    ctx.closePath();
+
+    /* ═══════ VOLUME-DRIVEN FILL ═══════ */
+    ctx.save();
+    ctx.clip();
+
+    // Horizontal gradient: opacity follows volume intensity
+    const volGrad = ctx.createLinearGradient(config.padding.left, 0, config.padding.left + width, 0);
+    const N = normVol.length;
+    for (let i = 0; i < N; i++) {
+        const p = N === 1 ? 0 : i / (N - 1);
+        const alpha = 0.05 + normVol[i] * 0.7;   // 0.05 → 0.75
+        volGrad.addColorStop(p, hexToRgba(lineColor, alpha));
+    }
+    ctx.fillStyle = volGrad;
+    ctx.fillRect(config.padding.left, config.padding.top, width, height);
+
+    // Vertical fade so area dissolves toward baseline
+    ctx.globalCompositeOperation = 'destination-out';
+    const fadeGrad = ctx.createLinearGradient(0, config.padding.top, 0, baselineY);
+    fadeGrad.addColorStop(0, 'rgba(0,0,0,0)');
+    fadeGrad.addColorStop(1, 'rgba(0,0,0,1)');
+    ctx.fillStyle = fadeGrad;
+    ctx.fillRect(config.padding.left, config.padding.top, width, height);
+    ctx.globalCompositeOperation = 'source-over';
+
+    ctx.restore();
+
+    /* ═══════ LINE STROKE ═══════ */
+    ctx.beginPath();
+    ctx.strokeStyle = lineColor; ctx.lineWidth = 2.5;
+    ctx.shadowColor = lineColor; ctx.shadowBlur = 8;
+    ctx.moveTo(getX(0), getY(rawPrices[0]));
+    for (let i = 0; i < rawPrices.length - 1; i++) {
+        ctx.quadraticCurveTo(
+            (getX(i) + getX(i+1)) / 2, getY(rawPrices[i]),
+            getX(i+1), getY(rawPrices[i+1])
+        );
+    }
+    ctx.stroke(); ctx.shadowBlur = 0;
+
+    /* ═══════ LAST-POINT DOT + PULSE ═══════ */
+    const lastX = getX(rawPrices.length - 1), lastY = getY(rawPrices[rawPrices.length - 1]);
+    if (pulseScale > 1) {
         ctx.beginPath();
-        ctx.moveTo(config.padding.left, rect.height);
-        ctx.lineTo(getX(0), getY(rawPrices[0]));
-        for (let i=0; i<rawPrices.length-1; i++) ctx.quadraticCurveTo((getX(i)+getX(i+1))/2, getY(rawPrices[i]), getX(i+1), getY(rawPrices[i+1]));
-        ctx.lineTo(config.padding.left + width, rect.height);
-        ctx.closePath();
-        
-        const grad = ctx.createLinearGradient(0, config.padding.top, 0, rect.height);
-        grad.addColorStop(0, lineColor+'60'); grad.addColorStop(1, lineColor+'00');
-        ctx.fillStyle = grad; ctx.fill();
+        ctx.arc(lastX, lastY, 12 * pulseScale, 0, Math.PI * 2);
+        ctx.strokeStyle = lineColor + Math.round((0.8 / pulseScale) * 255).toString(16).padStart(2, '0');
+        ctx.lineWidth = 2 * (2 - pulseScale); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff'; ctx.fill();
 
-        ctx.beginPath();
-        ctx.strokeStyle = lineColor; ctx.lineWidth = 2.5;
-        ctx.shadowColor = lineColor; ctx.shadowBlur = 8;
-        ctx.moveTo(getX(0), getY(rawPrices[0]));
-        for (let i=0; i<rawPrices.length-1; i++) ctx.quadraticCurveTo((getX(i)+getX(i+1))/2, getY(rawPrices[i]), getX(i+1), getY(rawPrices[i+1]));
-        ctx.stroke(); ctx.shadowBlur = 0;
-
-        const lastX = getX(rawPrices.length-1), lastY = getY(rawPrices[rawPrices.length-1]);
-        if (pulseScale > 1) {
-            ctx.beginPath();
-            ctx.arc(lastX, lastY, 12*pulseScale, 0, Math.PI*2);
-            ctx.strokeStyle = lineColor + Math.round((0.8/pulseScale)*255).toString(16).padStart(2,'0');
-            ctx.lineWidth = 2*(2-pulseScale); ctx.stroke();
-        }
-        ctx.beginPath(); ctx.arc(lastX, lastY, 4, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
-
-        if (hoverX > -1) {
-            const idx = Math.min(Math.round((hoverX - config.padding.left) / xScale), rawPrices.length-1);
-            if (idx >= 0) {
-                const px = getX(idx), py = getY(rawPrices[idx]);
-                ctx.beginPath(); ctx.strokeStyle = config.hoverLineColor; ctx.setLineDash([3, 3]);
-                ctx.moveTo(px, config.padding.top); ctx.lineTo(px, rect.height - config.padding.bottom); ctx.stroke(); ctx.setLineDash([]);
-                ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 10; ctx.fill(); ctx.shadowBlur = 0;
-                return { x: px, y: py, price: rawPrices[idx], time: priceData[idx][0] };
-            }
+    /* ═══════ HOVER CROSSHAIR ═══════ */
+    if (hoverX > -1) {
+        const idx = Math.min(Math.round((hoverX - config.padding.left) / xScale), rawPrices.length - 1);
+        if (idx >= 0) {
+            const px = getX(idx), py = getY(rawPrices[idx]);
+            ctx.beginPath(); ctx.strokeStyle = config.hoverLineColor; ctx.setLineDash([3, 3]);
+            ctx.moveTo(px, config.padding.top);
+            ctx.lineTo(px, rect.height - config.padding.bottom);
+            ctx.stroke(); ctx.setLineDash([]);
+            ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 10;
+            ctx.fill(); ctx.shadowBlur = 0;
+            return {
+                x: px, y: py,
+                price: rawPrices[idx],
+                time: priceData[idx][0],
+                volume: vols[idx] || 0
+            };
         }
     }
+}
 
     function animatePulse(timestamp) {
         if (!pulseTimeStart) pulseTimeStart = timestamp;
@@ -3612,7 +4196,16 @@ els.change.style.border = isUp ? '1px solid rgba(0,255,200,0.2)' : '1px solid rg
             const h = drawSparkline(lastMouseX, 1);
             if (h) {
                 const trendColor = h.price >= rawPrices[0] ? '#00ffc8' : '#a855f7';
-                els.tooltip.innerHTML = `<span style="font-weight:800; font-size:12px; color:${trendColor};">${formatPrice(h.price)}</span><br><span style="color:var(--text-muted); opacity:0.8;">${new Date(h.time).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'})}</span>`;
+                const fmtVol = v => v >= 1e9 ? (v/1e9).toFixed(2)+'B'
+                : v >= 1e6 ? (v/1e6).toFixed(2)+'M'
+                : v >= 1e3 ? (v/1e3).toFixed(1)+'K'
+                : v.toFixed(0);
+
+els.tooltip.innerHTML = `
+    <span style="font-weight:800; font-size:12px; color:${trendColor};">${formatPrice(h.price)}</span><br>
+    <span style="color:var(--accent); opacity:0.9; font-size:10px;">Vol: $${fmtVol(h.volume)}</span><br>
+    <span style="color:var(--text-muted); opacity:0.8;">${new Date(h.time).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'})}</span>
+`;
                 
                 let tipX = h.x + els.canvas.offsetLeft;
                 let tipY = h.y + els.canvas.offsetTop - 15;
@@ -4133,28 +4726,102 @@ function renderRadioWidget() {
         </div>`;
 }
 
-function renderCommunityWidget() {
-    const feed = [
-        { user: '0x23...4f', text: 'Closed 3rd week of stack', time: '2m' },
-        { user: '0x8a...1c', text: 'Hit 100k on YT 🎯', time: '12m' },
-        { user: '0x44...9e', text: 'Added 5kg to bench', time: '28m' },
-        { user: '0x12...ab', text: 'Just joined!', time: '1h' }
-    ];
+function renderCommunityWidget(w) {
     return `
         <div class="mod-header">
             <div class="mod-title"><i class="fa-solid fa-users"></i> Community</div>
-            <span style="font-size:0.6rem; color:var(--accent); font-family:var(--font-mono); font-weight:700;">12 ONLINE</span>
+            <span id="commStatus_${w.id}" style="font-size:0.6rem; color:var(--accent); font-family:var(--font-mono); font-weight:700;">LIVE FEED</span>
         </div>
-        <div style="flex:1; overflow-y:auto;">
-            ${feed.map(f => `
-                <div class="feed-item">
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <span class="feed-user">${f.user}</span>
-                        <span style="color:var(--text-muted); font-size:9px; margin-left:auto; opacity:0.6;">${f.time}</span>
-                    </div>
-                    <div class="feed-text">${f.text}</div>
-                </div>`).join('')}
+        <div id="commAuthBanner_${w.id}" style="margin-bottom:8px;"></div>
+        <div id="commFeed_${w.id}" style="flex:1; overflow-y:auto; min-height:0; display:flex; flex-direction:column; gap:4px;"></div>
+        <div id="commInputBox_${w.id}" style="margin-top:8px; display:flex; gap:6px;">
+            <input type="text" id="commMsgInput_${w.id}" placeholder="Share alpha / progress..." style="flex:1; background:rgba(0,0,0,0.35); border:1px solid var(--border-thin); color:var(--text-main); padding:6px 10px; border-radius:6px; font-size:11px; outline:none;" />
+            <button id="commSendBtn_${w.id}" class="widget-btn" style="width:28px; height:28px; border-radius:6px; background:var(--accent-dim); color:var(--accent); border-color:var(--accent);" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
         </div>`;
+}
+
+function initCommunityWidget(w, el) {
+    const feedEl = el.querySelector(`#commFeed_${w.id}`);
+    const bannerEl = el.querySelector(`#commAuthBanner_${w.id}`);
+    const statusEl = el.querySelector(`#commStatus_${w.id}`);
+    const inputEl = el.querySelector(`#commMsgInput_${w.id}`);
+    const sendBtn = el.querySelector(`#commSendBtn_${w.id}`);
+    if (!feedEl) return;
+
+    let localMsgs = [
+        { user: '0x0sd...0125', text: 'Locked in 4h deep work block + Morning Bio-Sync complete.', time: '2m' },
+        { user: '0x001...0142', text: 'OTHERS 3H structure breaking out cleanly above range.', time: '12m' },
+        { user: '0x8fa...49b1', text: 'Day 42 on 365 Consistency Matrix. Zero missed entries.', time: '28m' },
+        { user: '0x12a...99e1', text: 'Just connected to GRIND // OS Genesis.', time: '1h' }
+    ];
+
+    async function loadFeed() {
+        try {
+            const r = await fetch('/api/community/feed');
+            if (r.ok) {
+                const j = await r.json();
+                if (j.ok && Array.isArray(j.messages) && j.messages.length) {
+                    localMsgs = j.messages.map(m => ({
+                        user: m.display_user || (m.walletAddress ? (m.walletAddress.slice(0, 5) + '...' + m.walletAddress.slice(-4)) : 'Member'),
+                        text: m.message,
+                        time: m.created_at ? new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'now'
+                    }));
+                }
+            }
+        } catch (_) {}
+        render();
+    }
+
+    function render() {
+        const isAuth = !!window.currentWallet;
+        if (statusEl) {
+            statusEl.textContent = isAuth ? 'SYNCED' : 'LIVE FEED';
+            statusEl.style.color = isAuth ? 'var(--green)' : 'var(--accent)';
+        }
+        if (bannerEl) {
+            if (isAuth) {
+                bannerEl.innerHTML = `<div style="font-size:9px; font-family:var(--font-mono); color:var(--green); background:rgba(0,255,136,0.08); padding:3px 8px; border-radius:4px; border:1px solid rgba(0,255,136,0.2); display:flex; justify-content:space-between; align-items:center;"><span>CONNECTED: <b>${window.currentWallet.slice(0, 6)}...${window.currentWallet.slice(-4)}</b></span><span style="color:var(--accent);">● ONLINE</span></div>`;
+            } else {
+                bannerEl.innerHTML = `<div style="font-size:9px; font-family:var(--font-mono); color:var(--text-muted); background:rgba(255,255,255,0.02); padding:3px 8px; border-radius:4px; border:1px solid var(--border-thin); display:flex; justify-content:space-between; align-items:center;"><span>Viewer mode</span><button onclick="openWalletModal()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:9px; font-weight:700; text-transform:uppercase;">Connect Wallet →</button></div>`;
+            }
+        }
+        feedEl.innerHTML = localMsgs.map(f => `
+            <div class="feed-item" style="padding:6px 0; border-bottom:1px solid var(--border-thin);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="feed-user" style="font-family:var(--font-mono); font-size:9px; color:var(--accent); font-weight:700;">${f.user}</span>
+                    <span style="color:var(--text-muted); font-size:8px; opacity:0.6;">${f.time}</span>
+                </div>
+                <div class="feed-text" style="font-size:11px; margin-top:2px; color:var(--text-hover);">${f.text}</div>
+            </div>
+        `).join('');
+    }
+
+    async function sendMsg() {
+        const msg = (inputEl.value || '').trim();
+        if (!msg) return;
+        const shortUser = window.currentWallet ? (window.currentWallet.slice(0, 5) + '...' + window.currentWallet.slice(-4)) : '0x' + Math.random().toString(36).slice(2, 6);
+        localMsgs.unshift({ user: shortUser, text: msg, time: 'Just now' });
+        inputEl.value = '';
+        render();
+
+        if (window.currentWallet) {
+            try {
+                await fetch('/api/community/post', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ wallet: window.currentWallet, message: msg })
+                });
+            } catch (_) {}
+        }
+        toast('Message posted');
+    }
+
+    sendBtn?.addEventListener('click', (e) => { e.stopPropagation(); sendMsg(); });
+    inputEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
+
+    loadFeed();
+    const interval = setInterval(loadFeed, 30000);
+    widgetCleanup[w.id] = () => clearInterval(interval);
 }
 
 function renderAffiliateWidget() {
@@ -4569,8 +5236,143 @@ function toast(text) {
     setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, 2400);
 }
 
+/* ════════════════════════════════════════════════════════════
+   GLOBAL TELEGRAM CONFIG
+   ─────────────────────────────────────────────────────────────
+   Shared via localStorage across ALL apps on t1prime.com:
+     · EnginePro
+     · Screener
+     · Watchlist
+     · Any future app
+   ─────────────────────────────────────────────────────────────
+   Zero exposure:
+     · Never in URL
+     · Never in iframe src
+     · Never in Cloudflare logs
+     · Only in browser memory + direct POST to Telegram
+   ════════════════════════════════════════════════════════════ */
+const HUB_TG_KEY = 't1prime_hub_tg_config';
+
+const HubTG = {
+    get() {
+        try {
+            const raw = localStorage.getItem(HUB_TG_KEY);
+            if (!raw) return { token: '', chat: '', updatedAt: 0 };
+            const d = JSON.parse(raw);
+            return {
+                token: String(d.token || ''),
+                chat: String(d.chat || ''),
+                updatedAt: Number(d.updatedAt) || 0
+            };
+        } catch(e) {
+            return { token: '', chat: '', updatedAt: 0 };
+        }
+    },
+    set(token, chat) {
+        localStorage.setItem(HUB_TG_KEY, JSON.stringify({
+            token: String(token || '').trim(),
+            chat: String(chat || '').trim(),
+            updatedAt: Date.now()
+        }));
+    },
+    clear() {
+        localStorage.removeItem(HUB_TG_KEY);
+    },
+    isConfigured() {
+        const c = this.get();
+        return !!(c.token && c.chat);
+    }
+};
+
+/* ─── Settings Modal UI ─── */
+function loadHubTgInputs() {
+    const c = HubTG.get();
+    const tokEl = document.getElementById('hubTgToken');
+    const chatEl = document.getElementById('hubTgChat');
+    if (tokEl) tokEl.value = c.token;
+    if (chatEl) chatEl.value = c.chat;
+    updateHubTgBadge();
+}
+
+function updateHubTgBadge() {
+    const badge = document.getElementById('tgStatusBadge');
+    if (!badge) return;
+    if (HubTG.isConfigured()) {
+        badge.textContent = 'ON';
+        badge.classList.add('on');
+    } else {
+        badge.textContent = 'OFF';
+        badge.classList.remove('on');
+    }
+}
+
+function hubTgMsg(text, kind = '') {
+    const el = document.getElementById('hubTgMsg');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = kind === 'error' ? 'var(--red)' :
+                     kind === 'ok'    ? 'var(--green)' :
+                                        'var(--text-muted)';
+    if (text) setTimeout(() => { if (el.textContent === text) el.textContent = ''; }, 4000);
+}
+
+function saveHubTg() {
+    const token = (document.getElementById('hubTgToken')?.value || '').trim();
+    const chat  = (document.getElementById('hubTgChat')?.value  || '').trim();
+    if (!token || !chat) {
+        hubTgMsg('Both token and chat ID required', 'error');
+        return;
+    }
+    HubTG.set(token, chat);
+    updateHubTgBadge();
+    hubTgMsg('Saved ✓', 'ok');
+}
+
+async function testHubTg() {
+    const c = HubTG.get();
+    if (!c.token || !c.chat) {
+        hubTgMsg('Save credentials first', 'error');
+        return;
+    }
+    hubTgMsg('Sending test message...');
+    try {
+        const r = await fetch(`https://api.telegram.org/bot${c.token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: c.chat,
+                text: '✅ <b>GRIND OS</b> · Telegram connected successfully!\n\nAll apps will now use this config for chart snapshots.',
+                parse_mode: 'HTML'
+            })
+        });
+        const j = await r.json();
+        if (!j.ok) throw new Error(j.description || 'Telegram error');
+        hubTgMsg('✓ Sent · Check Telegram', 'ok');
+    } catch(e) {
+        hubTgMsg('✗ Failed: ' + e.message, 'error');
+    }
+}
+
+function clearHubTg() {
+    if (!confirm('Clear Telegram config? All apps will stop sending alerts.')) return;
+    HubTG.clear();
+    const tokEl = document.getElementById('hubTgToken');
+    const chatEl = document.getElementById('hubTgChat');
+    if (tokEl) tokEl.value = '';
+    if (chatEl) chatEl.value = '';
+    updateHubTgBadge();
+    hubTgMsg('Cleared', 'ok');
+}
+
+/* Auto-load on settings modal open */
+function openModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+    if (id === 'settingsModal') loadHubTgInputs();
+}
+
 /* ─── MODALS / LANG ─── */
-function openModal(id) { const el = document.getElementById(id); if (el) el.classList.add('active'); }
+
 function closeModals() { document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('active')); }
 function closeWalletMenu() {
     const menu = document.getElementById('walletMenu');
@@ -4750,11 +5552,68 @@ function bindEvents() {
     window.addEventListener('resize', closeWalletMenu);
 }
 
-// Listen for wallet updates from parent
+// Listen for parent messages & simulation controls
 window.addEventListener('message', (e) => {
-    if (e.data && e.data.type === 'wallet-update') {
-        // e.data.address, e.data.chainId
-        // ... update UI
+    if (!e.data || typeof e.data !== 'object') return;
+    const type = e.data.type;
+    if (type === 'wallet-update') {
+        if (e.data.address) {
+            window.currentWallet = e.data.address;
+            const btnText = document.getElementById('wallet-text');
+            const btn = document.getElementById('wallet-btn');
+            const short = e.data.address.slice(0, 6) + '...' + e.data.address.slice(-4);
+            if (btnText) btnText.textContent = short;
+            if (btn) btn.classList.add('connected');
+        }
+    } else if (type === 'STUDIO_SIM_CONNECT_DEMO_WALLET') {
+        window.currentWallet = '0x6gw4920fba0123g';
+        const btnText = document.getElementById('wallet-text');
+        const btn = document.getElementById('wallet-btn');
+        if (btnText) btnText.textContent = '0x6gw...23g';
+        if (btn) btn.classList.add('connected');
+        toast('Connected Demo Wallet');
+    } else if (type === 'STUDIO_FAST_FORWARD_TRIAL') {
+        fetch('/api/studio/sim-timer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'expire_soon' })
+        }).then(() => toast('Fast-forwarded: 4s remaining of trial')).catch(() => {});
+    } else if (type === 'STUDIO_COOLDOWN_59S') {
+        fetch('/api/studio/sim-timer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'cooldown_59s' })
+        }).then(() => toast('Simulation: Cooldown 00:59')).catch(() => {});
+    } else if (type === 'STUDIO_OPEN_PAYMENT_WITH_DEMO_TX') {
+        toast('Simulating $9 TRON TXID payment...');
+        if (!window.currentWallet) {
+            window.currentWallet = '0x6gw4920fba0123g';
+            const btnText = document.getElementById('wallet-text');
+            const btn = document.getElementById('wallet-btn');
+            if (btnText) btnText.textContent = '0x6gw...23g';
+            if (btn) btn.classList.add('connected');
+        }
+        fetch('/api/prime/verify-tx', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wallet: window.currentWallet, txid: 'trondemo_simulated_9usdt_payment_txid_' + Date.now() })
+        }).then(r => r.json()).then(res => {
+            if (res.ok) {
+                state.subscribed = true;
+                saveState();
+                renderGrid();
+                toast('✓ $9 TRON USDT Verified · Prime Unlocked!');
+            }
+        }).catch(() => {});
+    } else if (type === 'STUDIO_RESET_VISITOR') {
+        fetch('/api/studio/sim-timer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'reset_all' })
+        }).then(() => {
+            toast('Resetting simulator...');
+            setTimeout(() => location.reload(), 500);
+        }).catch(() => location.reload());
     }
 });
 
@@ -4899,25 +5758,32 @@ window.viewOnExplorer = () => {
 };
 
 // 1. ՊԱՀՊԱՆԵԼ (MAKE MY DEFAULT)
-document.querySelector('#make-default-btn').addEventListener('click', () => {
-    const currentSetup = {
-        // Նշիր այն արժեքները, որոնք պետք է պահվեն
-        presetId: 'active_preset_name', 
-        sidebarClass: document.getElementById('sidebar').className
-    };
-    localStorage.setItem('userDefaultSetup', JSON.stringify(currentSetup));
+document.querySelector('#make-default-btn')?.addEventListener('click', () => {
+    makeMyDefault();
 });
 
 // 2. ԿԱՆՉԵԼ (MY SETUP)
-document.querySelector('#my-setup-btn').addEventListener('click', () => {
-    const saved = JSON.parse(localStorage.getItem('userDefaultSetup'));
-    if (saved) {
-        // Վերականգնել պահպանված վիճակը
-        // Օրինակ՝
-        document.getElementById('sidebar').className = saved.sidebarClass;
-        // applyPreset(saved.presetId); 
-    }
+document.querySelector('#my-setup-btn')?.addEventListener('click', (e) => {
+    applyPreset('user', e.currentTarget);
 });
+
+// Sidebar State Persistence
+function saveSidebarState() {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+    let s = '';
+    if (sidebar.classList.contains('fully-closed')) s = 'fully-closed';
+    else if (sidebar.classList.contains('collapsed')) s = 'collapsed';
+    localStorage.setItem('sidebarState', s);
+}
+
+try {
+    const savedSidebar = localStorage.getItem('sidebarState');
+    const sbEl = document.getElementById('sidebar');
+    if (savedSidebar && sbEl) {
+        sbEl.classList.add(savedSidebar);
+    }
+} catch (_) {}
 
 modal.subscribeAccount((account) => {
     window.currentWallet = account?.isConnected ? account.address : null;
@@ -4925,46 +5791,15 @@ modal.subscribeAccount((account) => {
     const btn = document.getElementById('wallet-btn');
     const addrEl = document.getElementById('walletAddr');
     const menu = document.getElementById('walletMenu');
-    
+
     if (account?.isConnected) {
         const short = account.address.slice(0, 6) + '...' + account.address.slice(-4);
         if (btnText) btnText.textContent = short;
         if (addrEl) addrEl.textContent = short;
         if (btn) btn.classList.add('connected');
-        syncAdminData(account.address); 
-        
+        syncAdminData(account.address);
 
-        document.addEventListener("DOMContentLoaded", () => {
-    const sidebar = document.getElementById('sidebar');
-    // Կարդում ենք հիշված վիճակը, եթե չկա՝ դնում ենք 'collapsed' (icon-only)
-    const savedState = localStorage.getItem('sidebarState') || 'collapsed';
-    
-    if (savedState) {
-        sidebar.classList.add(savedState);
-    }
-});
-
-// Ավելացնել toggle ֆունկցիաների մեջ
-function saveSidebarState() {
-    const sidebar = document.getElementById('sidebar');
-    let state = '';
-    
-    if (sidebar.classList.contains('fully-closed')) {
-        state = 'fully-closed';
-    } else if (sidebar.classList.contains('collapsed')) {
-        state = 'collapsed';
-    }
-    
-    localStorage.setItem('sidebarState', state);
-}
-
-// Կանչել saveSidebarState() ֆունկցիան քո գոյություն ունեցող toggle կոճակների event listener-ների վերջում:
-        // ՆՈՐ ԿՈԴ՝ ԱՆՄԻՋԱՊԵՍ ՈՒՂԱՐԿԵԼ ՉԱՏԻՆ
-             const walletAddr = window.currentWallet;
-        const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim();
-
-        // 1. Widget iframes (ImChat as widget)
-               const _wallet = account.address;
+        const _wallet = account.address;
         const _accent = getComputedStyle(document.body).getPropertyValue('--accent').trim();
 
         // 1. ImChat widgets on dashboard
