@@ -3644,26 +3644,37 @@ window.addEventListener('message', async function(e) {
     if (!d || typeof d !== 'object') return;
 
     if (d.type === 'GENERATE_SNAP') {
-        console.log('📸 Snap Engine received request for:', d.symbol);
+        console.log('📸 enginesnap received GENERATE_SNAP for:', d.symbol);
 
-        const sym = String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$/,'');
+        const sym = String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'');
         const tf = d.tf || '5m';
 
-        // 1. Եթե ունես պատրաստի canvas render/snapshot ֆունկցիա EnginePro-ում
         try {
-            // Ստանում ենք նկարը base64/blob տեսքով
-            let base64Img = null;
-            
-            if (typeof generateCanvasBase64 === 'function') {
-                base64Img = await generateCanvasBase64(sym, tf);
-            } else if (typeof takeSnapBase64 === 'function') {
-                base64Img = await takeSnapBase64(sym, tf);
-            } else if (typeof enqueueSnap === 'function') {
-                // Եթե enqueueSnap-ը Telegram է ուղարկում, փոխում ենք իրեն, որ միայն base64 return անի
-                base64Img = await enqueueSnap({ symbol: sym, tf: tf, returnOnly: true });
+            // 1. Symbol-ը set ենք անում enginesnap-ում
+            if (typeof ENGINE !== 'undefined' && ENGINE.snapTest) {
+                // Եթե ENGINE object-ը կա
+                const ci = document.getElementById('ci');
+                if (ci) {
+                    ci.value = sym.replace('USDT','');
+                    ci.dispatchEvent(new Event('blur'));
+                }
             }
 
-            // 2. Նկարը (base64) ետ ենք ուղարկում Watchlist-ին (կամ ով zapros էր արել)
+            // 2. Սպասում ենք 1 վայրկյան, որ չարթը նկարվի
+            await new Promise(r => setTimeout(r, 1000));
+
+            // 3. html2canvas-ով սարքում ենք Base64 նկարը
+            const el = document.getElementById('app') || document.body;
+            const cv = await html2canvas(el, {
+                backgroundColor: '#0d1017',
+                scale: 1,
+                logging: false,
+                useCORS: true
+            });
+            
+            const base64Img = cv.toDataURL('image/png');
+
+            // 4. Base64-ը ետ ենք ուղարկում Watchlist-ին
             if (e.source) {
                 e.source.postMessage({
                     type: 'SNAP_READY',
@@ -3671,10 +3682,10 @@ window.addEventListener('message', async function(e) {
                     img: base64Img,
                     caption: d.caption || ''
                 }, '*');
-                console.log('✅ Base64 Snap sent back to caller for:', d.symbol);
+                console.log('✅ Base64 Snap sent to Watchlist for:', d.symbol);
             }
         } catch (err) {
-            console.error('❌ Snap generation error:', err);
+            console.error('❌ enginesnap photo generation error:', err);
         }
     }
 });
