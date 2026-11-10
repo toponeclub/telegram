@@ -3638,6 +3638,33 @@ ENGINE.init();
     }, 800);
 })();
 
+  /* EnginePro Internal Message Listener */
+window.addEventListener('message', function(e) {
+    var d = e.data;
+    if (!d || typeof d !== 'object') return;
+
+    if (d.type === 'SET_SYMBOL' && d.symbol) {
+        if (typeof setSymbol === 'function') setSymbol(d.symbol);
+    } 
+    else if (d.type === 'EXTERNAL_SNAP') {
+        console.log('📸 EnginePro received snap request for:', d.symbol);
+        
+        // Կանչում ենք EnginePro-ի snapshot generator-ը
+        if (typeof enqueueSnap === 'function') {
+            enqueueSnap({
+                symbol:  String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$/,''),
+                tf:      d.tf || '5m',
+                tgToken: d.tg_token || d.tgToken || (window.S && window.S.tg ? window.S.tg.token : ''),
+                tgChat:  d.tg_chat  || d.tgChat  || (window.S && window.S.tg ? window.S.tg.chat : ''),
+                caption: d.caption  || '',
+                panels:  Array.isArray(d.panels) ? d.panels : ['oi','oid','bsd']
+            });
+        } else {
+            console.error('❌ enqueueSnap is missing inside enginepro.html');
+        }
+    }
+});
+
 </script>
 </body>
 </html>
