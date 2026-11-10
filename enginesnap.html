@@ -3638,51 +3638,42 @@ ENGINE.init();
     }, 800);
 })();
 
-/* Snap Engine - Pure Standalone 1400x900 Renderer */
+/* Snap Engine - Pure In-Memory Canvas Snapshot (Առանց html2canvas DOM-ի) */
 window.addEventListener('message', async function(e) {
     var d = e.data;
     if (!d || typeof d !== 'object') return;
 
     if (d.type === 'GENERATE_SNAP') {
-        console.log('📸 enginesnap generating standalone 1400x900 snap for:', d.symbol);
+        console.log('📸 enginesnap rendering memory snap for:', d.symbol);
 
         const sym = String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$/,'');
         const tf = d.tf || '5m';
 
         try {
             if (typeof ENGINE !== 'undefined' && ENGINE.snapTest) {
-                // 1. ENGINE.snapTest-ով ռենդեր ենք անում ֆիքսված 1400x900 չափերով, preset մետրիկաներով (OI, OID, BSD)
-                const res = await ENGINE.snapTest({
+                // 1. ENGINE.snapTest-ը աշխատեցնում ենք enginesnap-ի վրա
+                await ENGINE.snapTest({
                     symbol: sym,
                     tf: tf,
-                    width: 1400,
-                    height: 900,
                     preset: true,
-                    panels: ['oi', 'oid', 'bsd'],
-                    tgToken: '', // TG Token-ը դատարկ ենք թողնում, որ Watchlist-ը ինքը ուղարկի
-                    tgChat: ''
+                    panels: ['oi', 'oid', 'bsd']
                 });
 
-                // 2. Ստանում ենք պատրաստի Canvas-ը
-                const el = document.getElementById('app') || document.body;
-                const cv = await html2canvas(el, {
-                    backgroundColor: '#0d1017',
-                    scale: 2, // High-quality rendering
-                    logging: false,
-                    useCORS: true
-                });
-                
-                const base64Img = cv.toDataURL('image/png', 0.95);
+                // 2. Iframe-ի մեջ գտնվող lightweight-charts-ի Canvas-ներից direct նկար ենք հանում
+                const mainCanvas = document.querySelector('#c-main canvas');
+                if (mainCanvas) {
+                    const base64Img = mainCanvas.toDataURL('image/png');
 
-                // 3. Ուղարկում ենք ետ Watchlist-ին
-                if (e.source) {
-                    e.source.postMessage({
-                        type: 'SNAP_READY',
-                        symbol: d.symbol,
-                        img: base64Img,
-                        caption: d.caption || ''
-                    }, '*');
-                    console.log('✅ Independent Snap Ready for:', d.symbol);
+                    // 3. Ուղարկում ենք Base64-ը Watchlist-ին
+                    if (e.source) {
+                        e.source.postMessage({
+                            type: 'SNAP_READY',
+                            symbol: d.symbol,
+                            img: base64Img,
+                            caption: d.caption || ''
+                        }, '*');
+                        console.log('✅ enginesnap Base64 READY for:', d.symbol);
+                    }
                 }
             }
         } catch (err) {
