@@ -3638,54 +3638,51 @@ ENGINE.init();
     }, 800);
 })();
 
-/* Snap Engine - Pure Render & Response Listener */
+/* Snap Engine - Independent Standard 1400x900 Renderer */
 window.addEventListener('message', async function(e) {
     var d = e.data;
     if (!d || typeof d !== 'object') return;
 
     if (d.type === 'GENERATE_SNAP') {
-        console.log('📸 enginesnap received GENERATE_SNAP for:', d.symbol);
+        console.log('📸 enginesnap rendering independent snap for:', d.symbol);
 
-        const sym = String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'');
+        const sym = String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$/,'');
         const tf = d.tf || '5m';
 
         try {
-            // 1. Symbol-ը set ենք անում enginesnap-ում
             if (typeof ENGINE !== 'undefined' && ENGINE.snapTest) {
-                // Եթե ENGINE object-ը կա
-                const ci = document.getElementById('ci');
-                if (ci) {
-                    ci.value = sym.replace('USDT','');
-                    ci.dispatchEvent(new Event('blur'));
+                // snapTest-ը ինքը ֆիքսված 1400x900 + Preset մետրիկաներով չարթ է սարքում
+                const snapRes = await ENGINE.snapTest({
+                    symbol: sym,
+                    tf: tf,
+                    width: 1400,
+                    height: 900,
+                    preset: true,
+                    panels: ['oi', 'oid', 'bsd']
+                });
+
+                // HTML2Canvas-ով ստանում ենք բարձր որակի HD նկար
+                const el = document.getElementById('app') || document.body;
+                const cv = await html2canvas(el, {
+                    backgroundColor: '#0d1017',
+                    scale: 2, // HD որակ
+                    logging: false,
+                    useCORS: true
+                });
+
+                const base64Img = cv.toDataURL('image/png', 0.95);
+
+                if (e.source) {
+                    e.source.postMessage({
+                        type: 'SNAP_READY',
+                        symbol: d.symbol,
+                        img: base64Img,
+                        caption: d.caption || ''
+                    }, '*');
                 }
             }
-
-            // 2. Սպասում ենք 1 վայրկյան, որ չարթը նկարվի
-            await new Promise(r => setTimeout(r, 1000));
-
-            // 3. html2canvas-ով սարքում ենք Base64 նկարը
-            const el = document.getElementById('app') || document.body;
-            const cv = await html2canvas(el, {
-                backgroundColor: '#0d1017',
-                scale: 1,
-                logging: false,
-                useCORS: true
-            });
-            
-            const base64Img = cv.toDataURL('image/png');
-
-            // 4. Base64-ը ետ ենք ուղարկում Watchlist-ին
-            if (e.source) {
-                e.source.postMessage({
-                    type: 'SNAP_READY',
-                    symbol: d.symbol,
-                    img: base64Img,
-                    caption: d.caption || ''
-                }, '*');
-                console.log('✅ Base64 Snap sent to Watchlist for:', d.symbol);
-            }
         } catch (err) {
-            console.error('❌ enginesnap photo generation error:', err);
+            console.error('❌ enginesnap rendering error:', err);
         }
     }
 });
