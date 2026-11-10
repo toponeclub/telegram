@@ -652,7 +652,20 @@ setTimeout(()=>{e.style.opacity='0';e.style.transform='translateX(16px)'},2400);
 setTimeout(()=>e.remove(),2800);
 };
 const load = on => $('#ld').classList.toggle('on', !!on);
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+/* ★ SNAP-FIX E1 · Worker-based sleep.
+   Background/hidden tab-um setTimeout-ը throttle է լինում (~1վրկ, երկար hidden-ից հետո ~1/րոպե).
+   Worker-ի timer-ը throttle չի լինում, պատասխանը գալիս է message-ով (task, ոչ թե timer). */
+const sleep = (() => {
+  try {
+    const code = 'self.onmessage=function(e){var id=e.data.id;setTimeout(function(){self.postMessage(id)},e.data.ms)}';
+    const w = new Worker(URL.createObjectURL(new Blob([code], { type: 'application/javascript' })));
+    const pend = new Map(); let n = 0;
+    w.onmessage = e => { const r = pend.get(e.data); if (r) { pend.delete(e.data); r(); } };
+    return ms => new Promise(r => { const id = ++n; pend.set(id, r); w.postMessage({ id, ms }); });
+  } catch (err) {
+    return ms => new Promise(r => setTimeout(r, ms));
+  }
+})();
 const tfSec = tf => ({'1m':60,'5m':300,'15m':900,'1h':3600,'4h':14400,'1d':86400})[tf]||300;
 const oiPer = tf => ({'1m':'5m','5m':'5m','15m':'15m','1h':'1h','4h':'4h','1d':'1d'})[tf]||'5m';
 
@@ -3373,7 +3386,7 @@ async function applySnapPreset(opts = {}) {
     /* VP */
     if (!S.vp.en) { try { toggleVP(); } catch(e){} }
 
-    await new Promise(r => setTimeout(r, 200));
+    await sleep(200);
 
     /* Open snap panels */
     wantPanels.forEach(t => {
@@ -3382,7 +3395,7 @@ async function applySnapPreset(opts = {}) {
         }
     });
 
-    await new Promise(r => setTimeout(r, 400));
+    await sleep(400);
 
     /* Force-resize charts to container's natural size */
     const forceAll = () => {
@@ -3405,17 +3418,17 @@ async function applySnapPreset(opts = {}) {
         }
     };
 
-    await new Promise(r => setTimeout(r, 300));
+    await sleep(300);
     window.dispatchEvent(new Event('resize'));
     forceAll();
 
-    await new Promise(r => setTimeout(r, 300));
+    await sleep(300);
     forceAll();
 
     S.order.forEach(t => { try { renderPanel(t); } catch(e){} });
     try { syncAllPanelsToMain(); } catch(e){}
 
-    await new Promise(r => setTimeout(r, 400));
+    await sleep(400);
     forceAll();
 
     return {
@@ -3437,7 +3450,7 @@ async function applySnapPreset(opts = {}) {
             S.order = saved.panelOrder.filter(t => PDEF[t]);
             try { saveLayout(); } catch(e){}
 
-            await new Promise(r => setTimeout(r, 300));
+            await sleep(300);
             window.dispatchEvent(new Event('resize'));
 
             Object.keys(S.charts).forEach(id => {
@@ -3451,6 +3464,145 @@ async function applySnapPreset(opts = {}) {
         }
     };
 }
+
+  /* ═══════════ ★ SNAP-FIX E4 · ENGINE.capture — universal snapper ═══════════
+     Не TG, не download, не html2canvas (fallback только).
+     Каждый chart -> chart.takeScreenshot() (LWC 4.1.1, sync, не зависит от rAF/visibility),
+     всё собирается в один in-memory canvas (header + main + VP + panels).               */
+  function _normSym(s){
+    s = String(s || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return s.endsWith('USDT') ? s : s + 'USDT';
+  }
+
+  async function _waitReady(ms){
+    const t0 = Date.now();
+    while ((!S._ready || !S.prices.length) && Date.now() - t0 < ms) await sleep(200);
+    return !!(S._ready && S.prices.length);
+  }
+
+  function _composeSnap(){
+    const app = document.getElementById('app');
+    const W = app.clientWidth, H = app.clientHeight;
+    const appR = app.getBoundingClientRect();
+    const SC = 2;
+    const cv = document.createElement('canvas');
+    cv.width = W * SC; cv.height = H * SC;
+    const ctx = cv.getContext('2d');
+    ctx.scale(SC, SC);
+    ctx.fillStyle = '#0d1017'; ctx.fillRect(0, 0, W, H);
+    const MONO = 'JetBrains Mono, ui-monospace, Menlo, Consolas, monospace';
+    ctx.textBaseline = 'middle';
+
+    /* ── header: ticker · TF · PRICE · 24H ── */
+    const top = document.getElementById('top');
+    const hh = top ? top.getBoundingClientRect().height : 44;
+    const bgc = top ? getComputedStyle(top).backgroundColor : '';
+    ctx.fillStyle = (bgc && bgc !== 'rgba(0, 0, 0, 0)') ? bgc : '#11141b';
+    ctx.fillRect(0, 0, W, hh);
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(0, hh - 1, W, 1);
+    let x = 14; const cy = hh / 2;
+    const base = S.symbol.replace('USDT', '');
+    ctx.font = '800 16px ' + MONO; ctx.fillStyle = '#eaeaea';
+    ctx.fillText(base, x, cy); x += ctx.measureText(base).width + 8;
+    const tfl = S.tf.toUpperCase();
+    ctx.font = '600 11px ' + MONO; ctx.fillStyle = '#6b7280';
+    ctx.fillText(tfl, x, cy + 1); x += ctx.measureText(tfl).width + 22;
+    [['PRICE', document.getElementById('hp')], ['24H', document.getElementById('hc')]].forEach(([lb, el]) => {
+      if (!el) return;
+      ctx.font = '600 9px ' + MONO; ctx.fillStyle = '#6b7280';
+      ctx.fillText(lb, x, cy - 1); x += ctx.measureText(lb).width + 6;
+      const txt = el.textContent || '--';
+      ctx.font = '700 13px ' + MONO; ctx.fillStyle = el.style.color || '#eaeaea';
+      ctx.fillText(txt, x, cy); x += ctx.measureText(txt).width + 18;
+    });
+
+    /* ── panels: main + extra, in DOM order ── */
+    $$('#stack .pnl').forEach(pnl => {
+      const isMain = pnl.id === 'p-main';
+      const type = isMain ? 'main' : pnl.id.replace(/^p-/, '');
+      const chart = isMain ? S.charts.main : (S.panels[type] && S.panels[type].ch);
+      const lw = pnl.querySelector('.lw');
+      if (!chart || !lw) return;
+      const pr = pnl.getBoundingClientRect();
+      const px = pr.left - appR.left, py = pr.top - appR.top;
+
+      if (!isMain) {
+        ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(px, py, pr.width, 1);
+        const hd = pnl.querySelector('.pnl-hd');
+        if (hd) {
+          const hr = hd.getBoundingClientRect();
+          const hx = hr.left - appR.left, hy = hr.top - appR.top;
+          ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(hx, hy, hr.width, hr.height);
+          ctx.font = '700 9px ' + MONO;
+          ctx.fillStyle = (PDEF[type] && PDEF[type].c) || '#9ca3af';
+          ctx.fillText((PDEF[type] ? PDEF[type].t : type).toUpperCase(), hx + 10, hy + hr.height / 2);
+        }
+      }
+
+      const r = lw.getBoundingClientRect();
+      const shot = chart.takeScreenshot();
+      ctx.drawImage(shot, r.left - appR.left, r.top - appR.top, r.width, r.height);
+
+      if (isMain && S.vp.en && S.vp.cv) {
+        S.vp.lastKey = '';
+        try {
+          drawVP();   /* sync call · rAF loop-ը hidden tab-um չի աշխատում */
+          ctx.drawImage(S.vp.cv, r.left - appR.left, r.top - appR.top, S.vp.cv.clientWidth, S.vp.cv.clientHeight);
+        } catch (e) { console.warn('[capture] VP:', e); }
+      }
+    });
+    return cv;
+  }
+
+  async function capture(opts = {}){
+    const sym = _normSym(opts.symbol);
+    const tf  = opts.tf || '5m';
+    const panels = (opts.panels && opts.panels.length) ? opts.panels : ['oi', 'oid', 'bsd'];
+
+    if (!(await _waitReady(25000))) throw new Error('initial load timeout');
+
+    /* symbol + tf together -> ONE reload() */
+    const symCh = sym !== S.symbol, tfCh = tf !== S.tf;
+    if (symCh || tfCh) {
+      S.symbol = sym;
+      const ci = document.getElementById('ci'); if (ci) ci.value = sym.replace('USDT', '');
+      if (tfCh) {
+        S.tf = tf;
+        document.querySelectorAll('#tfs .tf').forEach(b => b.classList.toggle('active', b.dataset.tf === tf));
+      }
+      await reload();
+    }
+    if (!(await _waitReady(25000))) throw new Error('data load timeout (' + sym + ' ' + tf + ')');
+
+    let preset = null;
+    try {
+      preset = await applySnapPreset({ panels, panelHeight: opts.panelHeight || 100 });
+      /* explicit render · panelnery chen hamarvum timer-ic */
+      Object.keys(S.panels).forEach(t => { try { renderPanel(t); } catch (e) {} });
+      try { syncAllPanelsToMain(); } catch (e) {}
+      await sleep(150);
+
+      let cv, method = 'takeScreenshot';
+      try {
+        if (typeof S.charts.main.takeScreenshot !== 'function') throw new Error('takeScreenshot missing');
+        cv = _composeSnap();
+      } catch (err) {
+        console.warn('[capture] compose failed -> html2canvas fallback:', err);
+        method = 'html2canvas';
+        const { el, hide } = getSnapshotTarget();
+        hide.forEach(x => x && (x.style.display = 'none'));
+        try {
+          cv = await html2canvas(el, { backgroundColor: '#0d1017', scale: 2, logging: false, useCORS: true, width: el.clientWidth, height: el.clientHeight });
+        } finally { hide.forEach(x => x && (x.style.display = '')); }
+      }
+      const img = cv.toDataURL('image/png');
+      console.log('[capture] OK', S.symbol, S.tf, cv.width + 'x' + cv.height, method);
+      return { symbol: S.symbol.replace('USDT', ''), tf: S.tf, img, w: cv.width, h: cv.height, method };
+    } finally {
+      if (preset) { try { await preset.restore(); } catch (e) { console.warn('[capture] restore:', e); } }
+      try { updateAlertLabel(); } catch (e) {}
+    }
+  }
 
   return {
     init: () => {
@@ -3477,6 +3629,9 @@ async function applySnapPreset(opts = {}) {
         startWS();
     },
 
+    capture,
+    isReady: () => !!(S._ready && S.prices.length),
+
     snapTest: async (opts = {}) => {
         const symbol  = String(opts.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g, '');
         const tf      = opts.tf || '5m';
@@ -3499,7 +3654,7 @@ async function applySnapPreset(opts = {}) {
         const waitReady = async (ms) => {
             const t0 = Date.now();
             while ((!S._ready || !S.prices.length) && Date.now() - t0 < ms) {
-                await new Promise(r => setTimeout(r, 200));
+                await sleep(200);
             }
             return S._ready && S.prices.length > 0;
         };
@@ -3535,7 +3690,7 @@ async function applySnapPreset(opts = {}) {
             }
 
             /* 4) Թող paint-ը ավարտվի */
-            await new Promise(r => setTimeout(r, 800));
+            await sleep(800);
             console.log('[snapTest] chart ready, taking screenshot...');
 
             /* 5) Screenshot */
@@ -3617,69 +3772,60 @@ hide.forEach(x => x && (x.style.display = 'none'));
 
 ENGINE.init();
 
-/* ═══════════ URL auto-trigger · ?mode=snap ═══════════ */
+/* ═══════════ ★ SNAP-FIX E5 · ?mode=snap — end-to-end TEST of ENGINE.capture ═══════════
+   t1prime.com/enginesnap?mode=snap&symbol=ETH&tf=5m[&tg_token=..&tg_chat=..&caption=..]
+   (TG-ն ու download-ը ՄԻԱՅՆ այստեղ, manual test-ի համար. postMessage API-ն TG չի ուղարկում) */
 (function autoSnapFromURL() {
     const p = new URLSearchParams(location.search);
     if (p.get('mode') !== 'snap') return;
-    const opts = {
-        symbol:  p.get('symbol')  || 'BTC',
-        tf:      p.get('tf')      || '5m',
-        tgToken: p.get('tg_token') || '',
-        tgChat:  p.get('tg_chat')  || '',
-        caption: p.get('caption')  || '',
-    };
-    console.log('[autoSnap] URL detected — will run in 800ms');
+    const symbol = p.get('symbol') || 'BTC', tf = p.get('tf') || '5m';
+    const tgToken = p.get('tg_token') || '', tgChat = p.get('tg_chat') || '', caption = p.get('caption') || '';
     setTimeout(async () => {
-        const res = await ENGINE.snapTest(opts);
-        document.title = res.ok
-            ? (res.tgOk === false ? '⚠ SNAP OK · TG FAIL' : '✅ SNAP OK')
-            : '❌ SNAP FAILED';
-        console.log('[autoSnap] FINAL:', res);
+        try {
+            const r = await ENGINE.capture({ symbol, tf });
+            const blob = await (await fetch(r.img)).blob();
+            let tgOk = null;
+            if (tgToken && tgChat) {
+                const fd = new FormData();
+                fd.append('chat_id', tgChat); fd.append('photo', blob, 'chart.png');
+                if (caption) fd.append('caption', caption);
+                const j = await (await fetch('https://api.telegram.org/bot' + tgToken + '/sendPhoto', { method: 'POST', body: fd })).json();
+                tgOk = !!j.ok;
+                if (!j.ok) console.error('[autoSnap] TG:', j);
+            } else {
+                const a = document.createElement('a');
+                a.download = 'snap_' + r.symbol + '_' + r.tf + '_' + Date.now() + '.png';
+                a.href = URL.createObjectURL(blob); a.click();
+            }
+            document.title = tgOk === false ? '⚠ SNAP OK · TG FAIL' : '✅ SNAP OK (' + r.method + ')';
+        } catch (err) {
+            console.error('[autoSnap] FAILED:', err);
+            document.title = '❌ SNAP FAILED';
+        }
     }, 800);
 })();
 
-/* Snap Engine - Pure In-Memory Canvas Snapshot (Առանց html2canvas DOM-ի) */
-window.addEventListener('message', async function(e) {
-    var d = e.data;
-    if (!d || typeof d !== 'object') return;
-
-    if (d.type === 'GENERATE_SNAP') {
-        console.log('📸 enginesnap rendering memory snap for:', d.symbol);
-
-        const sym = String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$/,'');
-        const tf = d.tf || '5m';
-
+/* ═══════════ ★ SNAP-FIX E6 · postMessage API ═══════════
+   request : { type:'GENERATE_SNAP', id, symbol, tf, panels?, caption? }
+   response: { type:'SNAP_READY', id, symbol, tf, img(dataURL png), w, h, caption }
+          or { type:'SNAP_ERROR', id, symbol, error }
+   Requests-ը մշակվում են հերթով (queue), TG չի ուղարկվում, ֆայլ չի download-վում. */
+let _snapChain = Promise.resolve();
+window.addEventListener('message', function (e) {
+    const d = e.data;
+    if (!d || typeof d !== 'object' || d.type !== 'GENERATE_SNAP') return;
+    const src = e.source;
+    if (!src) return;
+    const reply = msg => { try { src.postMessage(msg, '*'); } catch (_) {} };
+    _snapChain = _snapChain.then(async () => {
         try {
-            if (typeof ENGINE !== 'undefined' && ENGINE.snapTest) {
-                // 1. ENGINE.snapTest-ը աշխատեցնում ենք enginesnap-ի վրա
-                await ENGINE.snapTest({
-                    symbol: sym,
-                    tf: tf,
-                    preset: true,
-                    panels: ['oi', 'oid', 'bsd']
-                });
-
-                // 2. Iframe-ի մեջ գտնվող lightweight-charts-ի Canvas-ներից direct նկար ենք հանում
-                const mainCanvas = document.querySelector('#c-main canvas');
-                if (mainCanvas) {
-                    const base64Img = mainCanvas.toDataURL('image/png');
-
-                    // 3. Ուղարկում ենք Base64-ը Watchlist-ին
-                    if (e.source) {
-                        e.source.postMessage({
-                            type: 'SNAP_READY',
-                            symbol: d.symbol,
-                            img: base64Img,
-                            caption: d.caption || ''
-                        }, '*');
-                        console.log('✅ enginesnap Base64 READY for:', d.symbol);
-                    }
-                }
-            }
+            const r = await ENGINE.capture({ symbol: d.symbol, tf: d.tf, panels: d.panels });
+            reply({ type: 'SNAP_READY', id: d.id, symbol: r.symbol, tf: r.tf, img: r.img, w: r.w, h: r.h, caption: d.caption || '' });
         } catch (err) {
-            console.error('❌ enginesnap generation error:', err);
+            console.error('[snap] failed:', err);
+            reply({ type: 'SNAP_ERROR', id: d.id, symbol: d.symbol, error: String((err && err.message) || err) });
         }
-    }
+    });
 });
 </script>
 </body>
