@@ -1634,31 +1634,29 @@ async function processAlerts() {
   while (alertQueue.length > 0) {
     const task = alertQueue.shift();
     
-    // Փոխում ենք տեսանելի iframe-ի ticker-ը trigger եղածով
+    // 1. Փոխում ենք EnginePro-ի symbol-ը
     setChartTicker(task.sym);
 
+    // 2. Եթե Telegram-ի տվյալները կան, ուղարկում ենք EXTERNAL_SNAP command-ը EnginePro-ին
     if (STATE.tg.token && STATE.tg.chat) {
-      await new Promise(resolve => {
-        const base = String(task.sym).toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/USDT$/, '');
-        const params = new URLSearchParams({
-          mode: 'snap', symbol: base, tf: '15m',
-          tg_token: STATE.tg.token, tg_chat: String(STATE.tg.chat), caption: task.caption
-        });
-        
-        // Ստեղծում ենք screenerpro-ի նման background iframe՝ նկարելու համար
-        const iframe = document.createElement('iframe');
-        iframe.src = `${ENGINE_BASE}?${params}`;
-        iframe.style.cssText = 'position:fixed;top:0;left:0;width:1400px;height:900px;opacity:0.01;pointer-events:none;border:0;z-index:-1';
-        document.body.appendChild(iframe);
-        
-        // Սպասում ենք 12 վայրկյան՝ համոզվելու համար, որ chart-ը լրիվ load է եղել և snap արել
-        setTimeout(() => {
-  try { iframe.remove(); } catch (e) {}
-  resolve();
-}, 20000);
-      });
+      const fr = document.getElementById('engine-frame');
+      if (fr && fr.contentWindow) {
+        fr.contentWindow.postMessage({
+          type: 'EXTERNAL_SNAP',
+          symbol: task.sym,
+          tf: '5m', // կամ քո ուզած timeframe-ը
+          tg_token: STATE.tg.token,
+          tg_chat: String(STATE.tg.chat),
+          caption: task.caption,
+          panels: ['oi', 'oid', 'bsd']
+        }, '*');
+      }
     }
+    
+    // Փոքր դադար ալերտների արանքում
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
+  
   isProcessingAlerts = false;
 }
 
@@ -2043,6 +2041,35 @@ window.addEventListener('beforeunload', () => {
   if (STATE.timer) clearInterval(STATE.timer);
   if (STATE.pollWorker) try { STATE.pollWorker.terminate(); } catch(e) {}
 });
+
+window.addEventListener('message', e => {
+    const d = e.data;
+    if(!d || typeof d !== 'object') return;
+    
+    if(d.type === 'SET_SYMBOL' && d.symbol){
+        let s = String(d.symbol).toUpperCase();
+        if(!s.endsWith('USDT')) s += 'USDT';
+        if(s !== S.symbol){ S.symbol = s; $('#ci').value = s.replace('USDT',''); reload(); }
+    } else if(d.type === 'SET_TF' && d.tf){
+        S.tf = String(d.tf);
+        $$('#tfs .tf').forEach(b => b.classList.toggle('active', b.dataset.tf === S.tf));
+        reload();
+    } else if(d.type === 'SET_STYLE' && d.style){ 
+        setStyle(String(d.style)); 
+    }
+    /* ★ EXTERNAL_SNAP · 1in1 henc EnginePro-ի ներսի snapshot generator-ով */
+    else if(d.type === 'EXTERNAL_SNAP'){
+        enqueueSnap({
+            symbol:  String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$/,''),
+            tf:      d.tf || '5m',
+            tgToken: d.tg_token || d.tgToken || S.tg.token,
+            tgChat:  d.tg_chat  || d.tgChat  || S.tg.chat,
+            caption: d.caption  || '',
+            panels:  Array.isArray(d.panels) ? d.panels : ['oi','oid','bsd'],
+        });
+    }
+});
+
 </script>
 </body>
 </html>
