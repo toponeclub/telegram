@@ -679,6 +679,20 @@ body.is-resizing-cards .coin-card{ transition: none !important; animation: none 
   border-left: 2px solid var(--ac);
 }
 
+.metric[data-state="violet"] .mfill {
+  background: var(--dn);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
+.metric[data-state="violet"] .mcurr { color: var(--dn); }
+.metric[data-state="violet"] .mlabel { color: var(--dn); }
+
+.metric[data-state="violet"] .mfill {
+  background: var(--dn);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
+}
+.metric[data-state="violet"] .mcurr { color: var(--dn); }
+.metric[data-state="violet"] .mlabel { color: var(--dn); }
+
 </style>
 </head>
 <body>
@@ -713,7 +727,7 @@ body.is-resizing-cards .coin-card{ transition: none !important; animation: none 
   </div>
 
   <div class="globals">
-    <div class="gitem"><i class="fas fa-clock" style="color:var(--ac)"></i> Window (min)
+    <div class="gitem"> Global  |  <i class="fas fa-clock" style="color:var(--ac)"></i> Window (min)
       <input type="number" id="g-window" value="15" min="3" max="60" step="1">
     </div>
     <div class="gitem">Trigger if ≥
@@ -1353,8 +1367,27 @@ function evaluate(data, thr, enabled, minTriggers) {
   return { pPrice, pVol, pOI, pLiq, triggered, hot, dir, activeCount, needed };
 }
 
-function metricState(pct, thr) {
-  const ratio = Math.min(1.4, Math.abs(pct) / Math.abs(thr));
+function metricState(pct, thr, dir) {
+  // thr-ը օրինակ 5 է, pct-ն՝ տվյալ պահի %-ը (օր. -3 կամ +4)
+  const absThr = Math.abs(thr);
+  const ratio = Math.min(1.4, Math.abs(pct) / absThr);
+
+  // 1. Եթե ուղղությունը կոնկրետ '+5' (Միայն Աճ) է
+  if (dir === 'up') {
+    if (pct < 0) {
+      // Հակառակ ուղղություն (անկում) -> Մանուշակագույն
+      return { state: 'violet', ratio: Math.min(1, Math.abs(pct) / absThr) };
+    }
+  } 
+  // 2. Եթե ուղղությունը կոնկրետ '-5' (Միայն Անկում) է
+  else if (dir === 'down') {
+    if (pct > 0) {
+      // Հակառակ ուղղություն (աճ) -> Մանուշակագույն
+      return { state: 'violet', ratio: Math.min(1, Math.abs(pct) / absThr) };
+    }
+  }
+
+  // 3. Ստանդարտ / Both կամ ճիշտ ուղղությամբ շարժ
   if (ratio >= 1) return { state: 'hot', ratio: 1 };
   if (ratio >= 0.7) return { state: 'warn', ratio };
   return { state: 'cool', ratio };
@@ -1366,11 +1399,11 @@ function liqState(liq, thr) {
   return { state: 'cool', ratio };
 }
 
-function renderMetricRow(metricKey, label, currTxt, thr, enabled, s, unit) {
-  const width = Math.min(100, s.ratio * 100).toFixed(0);
+function renderMetricRow(metricKey, label, currTxt, thr, enabled, s, unit, dir) {
+  const width   = Math.min(100, s.ratio * 100).toFixed(0);
   const checked = enabled !== false ? 'checked' : '';
-  
-  const minAttr = metricKey === 'vol' ? 'min="-9999"' : 'min="0.0001"';
+  const prefix  = dir === 'up' ? '+' : (dir === 'down' ? '-' : '');
+  const displayThr = prefix + Math.abs(thr);
 
   return `
     <div class="metric" data-state="${s.state}" data-metric="${metricKey}">
@@ -1378,7 +1411,10 @@ function renderMetricRow(metricKey, label, currTxt, thr, enabled, s, unit) {
       <span class="mlabel">${label}</span>
       <div class="mbar"><div class="mfill" style="width:${width}%"></div></div>
       <span class="mcurr">${currTxt}</span>
-      <input type="number" class="mthr" data-thr="${metricKey}" value="${thr}" step="${unit==='$'?'1000':'0.1'}" ${minAttr}>
+      <input type="text" class="mthr" data-thr="${metricKey}" value="${displayThr}"
+             style="text-align:center;"
+             placeholder="5/+5/-5"
+             title="5 = Both&#10;+5 = Only UP&#10;-5 = Only DOWN">
     </div>`;
 }
 
@@ -1447,9 +1483,9 @@ function renderCoinCard(coin) {
   let statusHTML = '<span class="status-dot waiting"><span class="d"></span>waiting</span>';
 
   if (d && d.ok) {
-    const pS = metricState(d.pricePct, thr.price);
-    const vS = metricState(d.volPct,   thr.vol);
-    const oS = metricState(d.oiPct,    thr.oi);
+    const pS = metricState(d.pricePct, thr.price, thr.priceDir);
+    const vS = metricState(d.volPct,   thr.vol,   thr.volDir);
+    const oS = metricState(d.oiPct,    thr.oi,    thr.oiDir);
     const lS = liqState(d.liqUsd,      thr.liq);
 
     const pCurr = (d.pricePct >= 0 ? '+' : '') + d.pricePct.toFixed(2) + '%';
@@ -1457,10 +1493,12 @@ function renderCoinCard(coin) {
     const oCurr = (d.oiPct    >= 0 ? '+' : '') + d.oiPct.toFixed(2) + '%';
     const lCurr = fmtUSD(d.liqUsd);
 
-    priceHTML = renderMetricRow('price', 'PRICE', pCurr, thr.price, en.price, pS, '%');
-    volHTML   = renderMetricRow('vol',   'VOL',   vCurr, thr.vol,   en.vol,   vS, '%');
-    oiHTML    = renderMetricRow('oi',    'OI',    oCurr, thr.oi,    en.oi,    oS, '%');
-    liqHTML   = renderMetricRow('liq',   'LIQ',   lCurr, thr.liq,   en.liq,   lS, '$');
+    priceHTML = renderMetricRow('price', 'PRICE', pCurr, thr.price, en.price, pS, '%', thr.priceDir);
+volHTML   = renderMetricRow('vol',   'VOL',   vCurr, thr.vol,   en.vol,   vS, '%', thr.volDir);
+oiHTML    = renderMetricRow('oi',    'OI',    oCurr, thr.oi,    en.oi,    oS, '%', thr.oiDir);
+liqHTML   = renderMetricRow('liq',   'LIQ',   lCurr, thr.liq,   en.liq,   lS, '$', thr.liqDir);
+
+// empty state նույն ձևով
 
     const ev = evaluate(d, thr, en);
     if (ev.activeCount === 0) {
@@ -1620,6 +1658,29 @@ function bindGridInputEvents() {
   if (!grid || grid._inputBound) return;
   grid._inputBound = true;
 
+  // 1. Սահմանափակում ենք մուտքագրումը (թույլ ենք տալիս միայն թվեր, կետ, +, -)
+  grid.addEventListener('input', (e) => {
+    if (e.target.matches('.mthr[data-thr]')) {
+      let val = e.target.value;
+      let sign = '';
+      
+      if (val.startsWith('+') || val.startsWith('-')) {
+        sign = val[0];
+        val = val.slice(1);
+      }
+      
+      val = val.replace(/[^0-9.]/g, ''); // Մաքրում ենք ամեն ինչ, բացի թվերից և կետից
+      
+      const parts = val.split('.');
+      if (parts.length > 2) {
+        val = parts[0] + '.' + parts.slice(1).join(''); // Կանխում ենք կրկնակի կետերը
+      }
+      
+      e.target.value = sign + val;
+    }
+  });
+
+  // 2. Փոփոխությունը պահպանելիս որոշում ենք ուղղությունը (Dir)
   grid.addEventListener('change', (e) => {
     const card = e.target.closest('.coin-card');
     if (!card) return;
@@ -1635,27 +1696,34 @@ function bindGridInputEvents() {
       const d = STATE.liveData.get(sym);
       if (d && d.ok) updateCardInPlace(sym, d);
       return;
-      
     }
 
     if (e.target.matches('.mthr[data-thr]')) {
-      const key = e.target.dataset.thr;
-      const v = parseFloat(e.target.value);
-      if (!isFinite(v) || v <= 0) {
-        toast('Invalid threshold', 'err');
-        e.target.value = coin.thr[key];
-        return;
-      }
-      coin.thr[key] = v;
-      save();
+  const key = e.target.dataset.thr;
+  const rawVal = e.target.value.trim();
+  const v = parseFloat(rawVal);
+
+  if (!isFinite(v) || v === 0) {
+    toast('Invalid threshold', 'err');
+    e.target.value = coin.thr[key];
+    return;
+  }
+
+  if (rawVal.startsWith('+'))       coin.thr[key + 'Dir'] = 'up';
+  else if (rawVal.startsWith('-'))  coin.thr[key + 'Dir'] = 'down';
+  else                              coin.thr[key + 'Dir'] = 'both';
+
+  coin.thr[key] = Math.abs(v);   // ★ ՄԻՇՏ դրական
+  save();
       const d = STATE.liveData.get(sym);
       if (d && d.ok) updateCardInPlace(sym, d);
       return;
     }
-     if (e.target.matches('.coin-win')) {
+
+    if (e.target.matches('.coin-win')) {
       let v = parseInt(e.target.value);
       if (isNaN(v) || v < 1 || v > 120) {
-        coin.windowMin = null; // Վերականգնում ենք գլոբալը
+        coin.windowMin = null;
         e.target.value = STATE.windowMin;
       } else {
         coin.windowMin = v;
@@ -1665,7 +1733,6 @@ function bindGridInputEvents() {
       return;
     }
 
-    // ★ NEW: Trigger-ի փոփոխում
     if (e.target.matches('.coin-trig')) {
       let v = parseInt(e.target.value);
       if (isNaN(v) || v < 1 || v > 4) {
@@ -1682,11 +1749,65 @@ function bindGridInputEvents() {
   });
 
   grid.addEventListener('keydown', (e) => {
-    if (e.target.matches('.mthr') && e.key === 'Enter') {
+    if (e.target.matches('.mthr, .coin-win, .coin-trig') && e.key === 'Enter') {
       e.preventDefault();
       e.target.blur();
     }
   });
+}
+
+function evaluate(data, thr, enabled, minTriggers) {
+  const en = enabled || { price: true, vol: true, oi: true, liq: true };
+  const activeCount = ['price','vol','oi','liq'].filter(k => en[k]).length;
+
+  // ★ ՍՏՈՒԳՈՒՄ ԵՆՔ ԸՍՏ ՈՒՂՂՈՒԹՅԱՆ ('up', 'down', 'both')
+  const pPrice = en.price && (
+    thr.priceDir === 'up'   ? data.pricePct >= thr.price :
+    thr.priceDir === 'down' ? data.pricePct <= -thr.price : // Քանի որ thr.price-ը դրական ա, - ենք դնում
+                              Math.abs(data.pricePct) >= thr.price
+  );
+
+  const pVol = en.vol && (
+    thr.volDir === 'up'   ? data.volPct >= thr.vol :
+    thr.volDir === 'down' ? data.volPct <= -thr.vol :
+                            Math.abs(data.volPct) >= thr.vol
+  );
+
+  const pOI = en.oi && (
+    thr.oiDir === 'up'   ? data.oiPct >= thr.oi :
+    thr.oiDir === 'down' ? data.oiPct <= -thr.oi :
+                           Math.abs(data.oiPct) >= thr.oi
+  );
+
+  const pLiq = en.liq && (
+    thr.liqDir === 'up'   ? data.liqUsd >= thr.liq :
+    thr.liqDir === 'down' ? data.liqUsd <= -thr.liq : 
+                            data.liqUsd >= thr.liq
+  );
+
+  const triggered = [pPrice, pVol, pOI, pLiq].filter(Boolean).length;
+  
+  const finalTrig = minTriggers || STATE.minTriggers; 
+  const needed = Math.min(finalTrig, activeCount || 1);
+  const hot = activeCount > 0 && triggered >= needed;
+
+  const signs = [];
+  if (pPrice) signs.push(Math.sign(data.pricePct));
+  if (pVol)   signs.push(Math.sign(data.volPct));
+  if (pOI)    signs.push(Math.sign(data.oiPct));
+  if (pLiq) {
+    const net = (data.liqShort - data.liqLong);
+    if (net) signs.push(Math.sign(net));
+  }
+  let dir = 'mixed';
+  if (signs.length) {
+    const u = signs.filter(s => s > 0).length;
+    const d = signs.filter(s => s < 0).length;
+    if (u > 0 && d === 0) dir = 'up';
+    else if (d > 0 && u === 0) dir = 'down';
+  }
+
+  return { pPrice, pVol, pOI, pLiq, triggered, hot, dir, activeCount, needed };
 }
 
 function normalizeSymbol(input) {
@@ -1900,7 +2021,7 @@ function snapFmtLiqUsd(v) {
   if (v >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
   if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
   if (v >= 1e3) return '$' + (v / 1e3).toFixed(0) + 'K';
-  return '$' + v.toFixed(0);
+  return v.toFixed(0);
 }
 
 /* ★ NEW · Draw liquidation bubbles (enginepro-style)
