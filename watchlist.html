@@ -174,7 +174,12 @@ body::after{
   transition:var(--tr);
 }
 .coin-sym .sym:hover{ color:var(--ac); background:rgba(0,255,213,.08); }
-.coin-sym .price{font-family:var(--mono); font-weight:700; font-size:12px; color:var(--txt)}
+.coin-sym .price{
+  font-family:var(--mono);
+  font-weight:700;
+  font-size:12px;
+  color:#9ca0a9; /* ← Սա այն գեղեցիկ մոխրագույնն է */
+}
 .coin-sym .chg{font-family:var(--mono); font-size:10px; font-weight:800; padding:2px 7px; border-radius:4px}
 .coin-sym .chg.pos{color:var(--up); background:rgba(0,255,200,.08)}
 .coin-sym .chg.neg{color:var(--dn); background:rgba(168,85,247,.1)}
@@ -185,7 +190,8 @@ body::after{
 .ico-btn{
   width:22px; height:22px; display:flex; align-items:center; justify-content:center;
   background:rgba(0,0,0,.4); border:1px solid var(--bd); border-radius:5px;
-  color:var(--muted); cursor:pointer; font-size:9px; transition:var(--tr);
+  color:#9ca3af; /* ★ Փոխված է var(--muted)-ից ավելի բաց գույնի, որ չկորչի */
+  cursor:pointer; font-size:9px; transition:var(--tr);
 }
 .ico-btn:hover{color:var(--ac); border-color:var(--ac); background:var(--acD)}
 .ico-btn.danger:hover{color:var(--red); border-color:rgba(255,0,85,.5); background:rgba(255,0,85,.1)}
@@ -516,6 +522,162 @@ body.is-resizing-cards .coin-card{ transition: none !important; animation: none 
   background:linear-gradient(90deg,transparent,var(--ac),transparent);
 }
 
+/* ★ Minimal inline editors in coin-foot */
+.coin-foot .inline-edit {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.coin-foot .inline-edit input {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--txt);
+  font-family: var(--mono);
+  font-weight: 900;
+  font-size: 9px;
+  text-align: center;
+  padding: 0 1px;
+  margin: 0;
+  outline: none;
+  width: 22px;
+  transition: all .18s ease;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.coin-foot .inline-edit input:hover {
+  border-bottom-color: rgba(255,255,255,.15);
+  color: var(--ac);
+}
+
+.coin-foot .inline-edit input:focus {
+  border-bottom-color: var(--ac);
+  color: var(--ac);
+  width: 30px;
+  cursor: text;
+}
+
+.coin-foot .inline-edit input::-webkit-outer-spin-button,
+.coin-foot .inline-edit input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.coin-foot .inline-edit input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.coin-foot .inline-edit .sep {
+  opacity: .4;
+  margin: 0 1px;
+}
+
+/* ★ GLOBAL SEARCH BAR */
+.search-container {
+  position: relative;
+  z-index: 1000; /* ★ Ավելացրու այս տողը */
+  display: flex;
+  align-items: center;
+  background: var(--elev);
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  padding: 0 14px;
+  margin-bottom: 14px;
+  transition: var(--tr);
+  backdrop-filter: blur(20px);
+}
+.search-container:focus-within {
+  border-color: var(--ac);
+  box-shadow: 0 0 0 3px var(--acD);
+}
+.search-container .ico {
+  color: var(--muted);
+  font-size: 14px;
+}
+.search-container input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--txt);
+  padding: 12px 10px;
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+}
+.search-container input::placeholder {
+  color: var(--muted);
+  opacity: .6;
+}
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg2);
+  border: 1px solid var(--bd-hi);
+  border-radius: 0 0 10px 10px;
+  margin-top: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+    z-index: 99999; /* ★ Բարձրացրու սա 9999-ից 99999 */
+  display: none;
+  z-index: 9999;
+  display: none;
+  box-shadow: 0 20px 40px rgba(0,0,0,.8);
+}
+.search-dropdown.open {
+  display: block;
+}
+.search-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  transition: background .15s;
+}
+.search-item:hover {
+  background: rgba(255,255,255,.05);
+}
+.search-item:last-child {
+  border-bottom: none;
+}
+.search-item .sym-name {
+  font-weight: 800;
+  color: #fff;
+  font-size: 13px;
+}
+.search-item .sym-name span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 4px;
+}
+.search-item .sym-price {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--txt);
+}
+.search-item .sym-chg {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.search-item.active {
+  background: rgba(0, 255, 213, 0.1) !important;
+  border-left: 2px solid var(--ac);
+}
 
 </style>
 </head>
@@ -525,7 +687,7 @@ body.is-resizing-cards .coin-card{ transition: none !important; animation: none 
   <header class="topbar">
     <div class="brand">
       <i class="fas fa-eye"></i> WATCHLIST
-      <span class="badge">DOLF · 4-METRIC MONITOR</span>
+<span class="badge">4D SCANNER</span>
     </div>
     <div class="top-actions">
       <div class="tb-status">
@@ -538,19 +700,16 @@ body.is-resizing-cards .coin-card{ transition: none !important; animation: none 
       </div>
       <button class="tb-btn" id="btn-tg"><i class="fab fa-telegram"></i> <span id="tg-state">OFF</span></button>
       <button class="tb-btn" id="btn-refresh"><i class="fas fa-rotate-right"></i></button>
+            <button class="tb-btn" id="btn-keepawake" title="Prevent PC from sleeping">
+        <i class="fas fa-moon"></i> <span id="ka-state">OFF</span>
+      </button>
     </div>
   </header>
 
-  <div class="add-bar">
-    <i class="fas fa-plus ico"></i>
-    <input id="add-symbol" placeholder="Add coin symbol (e.g. EDU, BTC, PEPE) ..." spellcheck="false" autocomplete="off">
-    <button class="btn-add" id="btn-add">Add</button>
-    <div class="preset-chips">
-      <button class="pchip on" data-preset="alt">Alt</button>
-      <button class="pchip" data-preset="mega">Mega</button>
-      <button class="pchip" data-preset="micro">Micro</button>
-      <button class="pchip" data-preset="scalp">Scalp</button>
-    </div>
+  <div class="search-container">
+    <i class="fas fa-search ico"></i>
+    <input id="global-search" placeholder="Search all Binance Futures..." spellcheck="false" autocomplete="off">
+    <div id="search-dropdown" class="search-dropdown"></div>
   </div>
 
   <div class="globals">
@@ -567,17 +726,25 @@ body.is-resizing-cards .coin-card{ transition: none !important; animation: none 
     <div class="gitem">Cooldown (min)
       <input type="number" id="g-cool" value="5" min="1" max="60" step="1">
     </div>
+    
+    <!-- ★ Preset-ները տեղափոխված են այստեղ (աջ կողմ) -->
+    <div class="preset-chips" style="margin-left: auto;">
+      <button class="pchip" data-preset="mega">Mega</button>
+      <button class="pchip on" data-preset="alt">Alt</button>
+      <button class="pchip" data-preset="meme">Meme</button>
+    </div>
   </div>
 
   <div class="watch-grid" id="watch-grid"></div>
   <div class="empty-state" id="empty-state">
     <i class="fas fa-radar"></i>
-    <b>NO COINS IN WATCHLIST</b>
-    <div>Add a symbol above — you'll get pinged when 2+ metrics spike together.</div>
+    <b></b>
+   
     <div style="font-size:10px; color:var(--muted2); max-width: 380px; line-height:1.6;">
-      Idea: <b style="color:var(--ac);">ОИ + Объём + Цена + Ликвидации</b>.
-      Направление не важно — важно <b style="color:var(--ac);">изменение</b>.
+       <b style="color:var(--ac);">NO COINS IN WATCHLIST</b>.
+     <b style="color:var(--ac);"></b>
     </div>
+     <div> Add a symbol above — you'll get pinged when 2+ metrics spike together.</div>
   </div>
 
   <div class="engine-static" id="engine-static">
@@ -709,6 +876,8 @@ body.is-resizing-cards .coin-card{ transition: none !important; animation: none 
             }`;
         document.head.appendChild(s);
     }
+
+    
 
     function injectDOM() {
         if (document.getElementById('msp-tip')) return;
@@ -935,14 +1104,14 @@ const FAPI = 'https://fapi.binance.com';
 const SK   = 'watchlist_v1';
 
 const PRESETS = {
-  alt:   { price: 1.5, vol: 100, oi: 2.0, liq:  50000 },
-  mega:  { price: 0.5, vol:  50, oi: 1.0, liq: 500000 },
-  micro: { price: 3.0, vol: 150, oi: 3.0, liq:  15000 },
-  scalp: { price: 0.8, vol:  70, oi: 1.2, liq:  25000 },
+  mega:  { price: 1.0, vol: 50,  oi: 2.0,  liq: 500000 },
+  alt:   { price: 5.0, vol: 100, oi: 12.0, liq: 50000 },
+  meme:  { price: 8.0, vol: 150, oi: 15.0, liq: 20000 },
 };
 
 const STATE = {
   coins: [],
+  allTickers: [], // ★ Ավելացրու այս տողը
   tg: { token: '', chat: '' },
   windowMin: 15,
   minTriggers: 2,
@@ -1005,7 +1174,10 @@ function load() {
     if (Array.isArray(s.coins)) STATE.coins = s.coins.map(c => ({
   ...c,
   viewMode: 'metrics',   /* ← force metrics · mini iframe այլեւս չի օգտագործվում */
-  enabled: c.enabled || { price: true, vol: true, oi: true, liq: true }
+  enabled: c.enabled || { price: true, vol: true, oi: true, liq: true },
+  windowMin: c.windowMin || null,       // ★ NEW
+      minTriggers: c.minTriggers || null    // ★ NEW
+  
 }));
     if (s.tg) STATE.tg = { token: s.tg.token || '', chat: s.tg.chat || '' };
     if (s.windowMin) STATE.windowMin = +s.windowMin;
@@ -1087,10 +1259,14 @@ function startLiqWS() {
 }
 
 async function fetchCoinData(sym) {
-  const w = STATE.windowMin;
-  const klLimit = Math.max(20, w + 5);
+  const coin = STATE.coins.find(c => c.sym === sym);
+  const w = coin?.windowMin || STATE.windowMin;
+  
+  // ✅ 100% ԱՊԱՀՈՎ: Բավարար պատմություն ցանկացած Window-ի համար (2x պատուհան + բուֆեր)
+  const klLimit = Math.max(60, (w * 2) + 15);
+
   const oiPer = '5m';
-  const oiLimit = Math.max(6, Math.ceil(w / 5) * 2 + 4);
+  const oiLimit = Math.max(12, Math.ceil((w * 2) / 5) + 6);
 
   const [klines, oiHist, ticker] = await Promise.all([
     fetch(`${FAPI}/fapi/v1/klines?symbol=${sym}&interval=1m&limit=${klLimit}`).then(r => r.json()).catch(() => []),
@@ -1098,7 +1274,7 @@ async function fetchCoinData(sym) {
     fetch(`${FAPI}/fapi/v1/ticker/24hr?symbol=${sym}`).then(r => r.json()).catch(() => null),
   ]);
 
-  if (!Array.isArray(klines) || klines.length < w + 2) {
+  if (!Array.isArray(klines) || klines.length < (w * 2)) {
     return { error: 'NO_DATA' };
   }
 
@@ -1106,6 +1282,7 @@ async function fetchCoinData(sym) {
   const pastClose = parseFloat(klines[klines.length - 1 - w][4]);
   const pricePct = pastClose > 0 ? ((curClose - pastClose) / pastClose) * 100 : 0;
 
+  // ✅ TRUE ROLLING WINDOW: Համեմատում ենք վերջին w րոպեն նախորդ w րոպեի հետ
   const volRecent = klines.slice(-w).reduce((s, k) => s + parseFloat(k[7]), 0);
   const volPrior  = klines.slice(-w * 2, -w).reduce((s, k) => s + parseFloat(k[7]), 0);
   const volPct = volPrior > 0 ? ((volRecent - volPrior) / volPrior) * 100 : 0;
@@ -1139,17 +1316,22 @@ async function fetchCoinData(sym) {
   };
 }
 
-function evaluate(data, thr, enabled) {
+function evaluate(data, thr, enabled, minTriggers) {
   const en = enabled || { price: true, vol: true, oi: true, liq: true };
   const activeCount = ['price','vol','oi','liq'].filter(k => en[k]).length;
 
-  const pPrice = en.price && Math.abs(data.pricePct) >= thr.price;
-  const pVol   = en.vol   && Math.abs(data.volPct)   >= thr.vol;
-  const pOI    = en.oi    && Math.abs(data.oiPct)    >= thr.oi;
-  const pLiq   = en.liq   && data.liqUsd              >= thr.liq;
+  // ✅ FLEXIBLE SIGN CHECK (+ for growth, - for fall)
+  // Եթե թիվը բացասական է (օր. -5), ստուգում ենք <= -5 (անկում)
+  // Եթե թիվը դրական է (օր. 5), ստուգում ենք >= 5 (աճ)
+  const pPrice = en.price && (thr.price < 0 ? data.pricePct <= thr.price : data.pricePct >= thr.price);
+  const pVol   = en.vol   && (thr.vol < 0 ? data.volPct <= thr.vol : data.volPct >= thr.vol);
+  const pOI    = en.oi    && (thr.oi < 0 ? data.oiPct <= thr.oi : data.oiPct >= thr.oi);
+  const pLiq   = en.liq   && data.liqUsd >= thr.liq;
 
   const triggered = [pPrice, pVol, pOI, pLiq].filter(Boolean).length;
-  const needed = Math.min(STATE.minTriggers, activeCount || 1);
+  
+  const finalTrig = minTriggers || STATE.minTriggers; 
+  const needed = Math.min(finalTrig, activeCount || 1);
   const hot = activeCount > 0 && triggered >= needed;
 
   const signs = [];
@@ -1172,7 +1354,7 @@ function evaluate(data, thr, enabled) {
 }
 
 function metricState(pct, thr) {
-  const ratio = Math.min(1.4, Math.abs(pct) / thr);
+  const ratio = Math.min(1.4, Math.abs(pct) / Math.abs(thr));
   if (ratio >= 1) return { state: 'hot', ratio: 1 };
   if (ratio >= 0.7) return { state: 'warn', ratio };
   return { state: 'cool', ratio };
@@ -1187,13 +1369,16 @@ function liqState(liq, thr) {
 function renderMetricRow(metricKey, label, currTxt, thr, enabled, s, unit) {
   const width = Math.min(100, s.ratio * 100).toFixed(0);
   const checked = enabled !== false ? 'checked' : '';
+  
+  const minAttr = metricKey === 'vol' ? 'min="-9999"' : 'min="0.0001"';
+
   return `
     <div class="metric" data-state="${s.state}" data-metric="${metricKey}">
       <input type="checkbox" class="mtog" data-tog="${metricKey}" ${checked} title="Toggle monitoring">
       <span class="mlabel">${label}</span>
       <div class="mbar"><div class="mfill" style="width:${width}%"></div></div>
       <span class="mcurr">${currTxt}</span>
-      <input type="number" class="mthr" data-thr="${metricKey}" value="${thr}" step="${unit==='$'?'1000':'0.1'}" min="0.0001">
+      <input type="number" class="mthr" data-thr="${metricKey}" value="${thr}" step="${unit==='$'?'1000':'0.1'}" ${minAttr}>
     </div>`;
 }
 
@@ -1282,7 +1467,7 @@ function renderCoinCard(coin) {
       statusHTML = `<span class="status-dot disabled"><span class="d"></span>DISABLED</span>`;
     } else if (ev.hot) {
       footClass = 'triggered';
-      statusHTML = `<span class="status-dot triggered"><span class="d"></span>${ev.triggered}/${ev.activeCount} TRIGGERED</span>`;
+      statusHTML = `<span class="status-dot triggered"><span class="d"></span>${ev.triggered}/${ev.activeCount} TRIG</span>`;
     } else if (ev.triggered === ev.needed - 1) {
       statusHTML = `<span class="status-dot pending"><span class="d"></span>${ev.triggered}/${ev.activeCount} ARMED</span>`;
     } else {
@@ -1351,7 +1536,11 @@ function renderCoinCard(coin) {
     </div>
 
     <div class="coin-foot ${footClass}">
-      <span class="cnt">Window ${STATE.windowMin}m · min ${STATE.minTriggers}</span>
+      <!-- ★ NEW: Խմբագրվող Window և Min Triggers -->
+      <span class="cnt" style="display:flex; align-items:center; gap:4px;">
+        Win <input type="number" class="coin-win" data-sym="${coin.sym}" value="${coin.windowMin || STATE.windowMin}" min="1" max="120" step="1" style="width:28px; background:transparent; border:none; border-bottom:1px solid var(--muted); color:var(--txt); text-align:center; font-family:var(--mono); font-size:9px; outline:none; padding:0;">
+        m · Min <input type="number" class="coin-trig" data-sym="${coin.sym}" value="${coin.minTriggers || STATE.minTriggers}" min="1" max="4" step="1" style="width:16px; background:transparent; border:none; border-bottom:1px solid var(--muted); color:var(--txt); text-align:center; font-family:var(--mono); font-size:9px; outline:none; padding:0;">
+      </span>
       ${statusHTML}
     </div>
 
@@ -1446,6 +1635,7 @@ function bindGridInputEvents() {
       const d = STATE.liveData.get(sym);
       if (d && d.ok) updateCardInPlace(sym, d);
       return;
+      
     }
 
     if (e.target.matches('.mthr[data-thr]')) {
@@ -1457,6 +1647,33 @@ function bindGridInputEvents() {
         return;
       }
       coin.thr[key] = v;
+      save();
+      const d = STATE.liveData.get(sym);
+      if (d && d.ok) updateCardInPlace(sym, d);
+      return;
+    }
+     if (e.target.matches('.coin-win')) {
+      let v = parseInt(e.target.value);
+      if (isNaN(v) || v < 1 || v > 120) {
+        coin.windowMin = null; // Վերականգնում ենք գլոբալը
+        e.target.value = STATE.windowMin;
+      } else {
+        coin.windowMin = v;
+      }
+      save();
+      refreshCoin(sym);
+      return;
+    }
+
+    // ★ NEW: Trigger-ի փոփոխում
+    if (e.target.matches('.coin-trig')) {
+      let v = parseInt(e.target.value);
+      if (isNaN(v) || v < 1 || v > 4) {
+        coin.minTriggers = null;
+        e.target.value = STATE.minTriggers;
+      } else {
+        coin.minTriggers = v;
+      }
       save();
       const d = STATE.liveData.get(sym);
       if (d && d.ok) updateCardInPlace(sym, d);
@@ -1515,7 +1732,7 @@ async function refreshCoin(sym) {
     STATE.liveData.set(sym, data);
     const coin = STATE.coins.find(c => c.sym === sym);
     if (!coin) return;
-    const ev = evaluate(data, coin.thr, coin.enabled);
+    const ev = evaluate(data, coin.thr, coin.enabled, coin.minTriggers);
     if (ev.hot) fireAlert(coin, data, ev);
     updateCardInPlace(sym, data);
   } catch(e) {}
@@ -1616,6 +1833,762 @@ function updateCardInPlace(sym, data) {
   if (rz) rz.addEventListener('pointerdown', e => startCardResize(e, fresh));
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   SNAP · NATIVE CANVAS 2D · 1:1 enginesnap visual
+   Works 100% in background · no iframe · no LWC · no html2canvas
+   Panels: PRICE+VP · VOLUME · OPEN INTEREST · OI DELTA · B/S DELTA
+   Resolution: 1600 x 900 (16:9 Aspect Ratio)
+   ═══════════════════════════════════════════════════════════════════ */
+
+const SNAP = {
+  tf: '15m',
+  candles: 250,
+  width: 1600,   // ★ 16:9 Width
+  height: 900,   // ★ 16:9 Height
+  colors: {
+    bg:        '#0d1017',                  // ✓ նույնն է
+    grid:      'rgba(255,255,255,0.02)',   // ← 0.025 → 0.02
+    line:      'rgba(255,255,255,0.05)',   // ← 0.035 → 0.05
+    txt:       '#6b7280',                  // ✓ նույնն է
+    txtBright: '#e6e7ea',                  // ✓ նույնն է
+    up:        '#00ffc8',                  // ✓ նույնն է
+    down:      '#a855f7',                  // ✓ նույնն է
+    accent:    '#00ffd5',                  // ✓ նույնն է
+    yellow:    '#ffd60a',                  // ✓ նույնն է
+    volUp:     'rgba(0,255,200,0.35)',     // ✓ չի օգտագործվում
+    volDn:     'rgba(168,85,247,0.35)',    // ✓ չի օգտագործվում
+    vol:       'rgba(0,255,213,0.3)',      // ← (0,255,157,0.42) → (0,255,213,0.3)
+    pocLine:   'rgba(255,214,10,0.3)',     // ← նոր · POC գծի գույն
+    pocLabel:  'rgba(255,214,10,0)',     // ← նոր · POC տեքստի գույն
+},
+};
+
+function snapOiPeriod(tf) {
+  return ({'1m':'5m','3m':'5m','5m':'5m','15m':'15m','30m':'30m','1h':'1h','2h':'1h','4h':'4h','1d':'1d'})[tf] || '15m';
+}
+
+function snapFmtPrice(p) {
+  if (!isFinite(p)) return '--';
+  const a = Math.abs(p);
+  if (a >= 1000) return p.toFixed(2);
+  if (a >= 100) return p.toFixed(3);
+  if (a >= 1) return p.toFixed(4);
+  if (a >= 0.01) return p.toFixed(5);
+  if (a >= 0.0001) return p.toFixed(6);
+  return p.toFixed(8);
+}
+
+function snapFmtVol(v) {
+  if (!isFinite(v)) return '--';
+  if (v >= 1e9) return (v/1e9).toFixed(2) + 'B';
+  if (v >= 1e6) return (v/1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(2) + 'K';
+  return v.toFixed(2);
+}
+
+function snapFmtUSD(v) {
+  if (!isFinite(v)) return '--';
+  if (v >= 1e9) return '$' + (v/1e9).toFixed(2) + 'B';
+  if (v >= 1e6) return '$' + (v/1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return '$' + (v/1e3).toFixed(2) + 'K';
+  return '$' + v.toFixed(2);
+}
+
+/* ★ NEW · short formatter for liquidation bubbles */
+function snapFmtLiqUsd(v) {
+  if (!isFinite(v)) return '--';
+  if (v >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return '$' + (v / 1e3).toFixed(0) + 'K';
+  return '$' + v.toFixed(0);
+}
+
+/* ★ NEW · Draw liquidation bubbles (enginepro-style)
+   SHORT liq → above candle high  · purple (C.down)
+   LONG  liq → below candle low   · green  (C.up)      */
+function snapDrawLiqMarkers(ctx, priceRect, candles, liqData, minP, range, stepX, C) {
+  if (!liqData || !liqData.length || !candles.length) return;
+
+  const agg = new Map();
+  for (const liq of liqData) {
+    let idx = -1;
+    for (let i = candles.length - 1; i >= 0; i--) {
+      if (candles[i].time <= liq.time) { idx = i; break; }
+    }
+    if (idx < 0) idx = 0;
+    const key = idx + ':' + liq.side;
+    if (!agg.has(key)) agg.set(key, { idx, side: liq.side, usd: 0 });
+    agg.get(key).usd += liq.usd;
+  }
+
+  const priceH  = priceRect.h;
+  const topEdge = priceRect.y;
+  const botEdge = priceRect.y + priceH;
+  const bubbleR = 3;
+  const OFFSET  = 14;
+  const LABEL_H = 10;
+
+  agg.forEach(({ idx, side, usd }) => {
+    const c       = candles[idx];
+    const xCenter = priceRect.x + idx * stepX + stepX / 2;
+    const isShort = side === 'SHORT';
+    const color   = isShort ? C.down : C.up;
+
+    const yHigh = topEdge + priceH - ((c.high - minP) / range) * priceH;
+    const yLow  = topEdge + priceH - ((c.low  - minP) / range) * priceH;
+    const yWick = isShort ? yHigh : yLow;
+
+    let bubbleY, labelAbove = false;
+
+    if (isShort) {
+      if (yWick - OFFSET - bubbleR >= topEdge) {
+        bubbleY    = yWick - OFFSET;
+        labelAbove = true;
+      } else if (yWick + OFFSET + bubbleR <= botEdge) {
+        bubbleY    = yWick + OFFSET;
+        labelAbove = false;
+      } else {
+        bubbleY    = topEdge + bubbleR + 2;
+        labelAbove = false;
+      }
+    } else {
+      if (yWick + OFFSET + bubbleR <= botEdge) {
+        bubbleY    = yWick + OFFSET;
+        labelAbove = false;
+      } else if (yWick - OFFSET - bubbleR >= topEdge) {
+        bubbleY    = yWick - OFFSET;
+        labelAbove = true;
+      } else {
+        bubbleY    = botEdge - bubbleR - 2;
+        labelAbove = true;
+      }
+    }
+
+    ctx.beginPath();
+    ctx.arc(xCenter, bubbleY, bubbleR, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+
+    const label = snapFmtLiqUsd(usd);
+    ctx.font = 'bold 8px "JetBrains Mono", monospace';
+    const tw = ctx.measureText(label).width;
+
+    const labelY = labelAbove ? bubbleY - bubbleR - 2 : bubbleY + bubbleR + 2;
+    const labelBaseline = labelAbove ? 'bottom' : 'top';
+
+    ctx.fillStyle = 'rgba(13,16,23,0.9)';
+    ctx.fillRect(
+      xCenter - tw / 2 - 2,
+      labelAbove ? labelY - 9 : labelY - 1,
+      tw + 4,
+      LABEL_H
+    );
+
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = labelBaseline;
+    ctx.fillText(label, xCenter, labelY);
+  });
+}
+
+function snapFmtTime(ts, tf) {
+  const d = new Date(ts);
+  const day = String(d.getDate()).padStart(2, '0');
+  const mon = String(d.getMonth() + 1).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  if (tf === '1d') return `${day}/${mon}`;
+  return `${hh}:${mm}`;
+}
+
+async function snapFetchKlines(symbol, tf, limit) {
+  try {
+    const r = await fetch(`${FAPI}/fapi/v1/klines?symbol=${symbol}&interval=${tf}&limit=${limit}`);
+    const d = await r.json();
+    if (!Array.isArray(d)) return [];
+    return d.map(k => ({
+      time: k[0], open: +k[1], high: +k[2], low: +k[3], close: +k[4],
+      volume: +k[5], takerBuy: +k[9],
+    }));
+  } catch (e) { return []; }
+}
+
+async function snapFetchOI(symbol, tf, limit) {
+  try {
+    const period = snapOiPeriod(tf);
+    const r = await fetch(`${FAPI}/futures/data/openInterestHist?symbol=${symbol}&period=${period}&limit=${Math.min(limit, 500)}`);
+    const d = await r.json();
+    if (!Array.isArray(d)) return [];
+    return d.map(o => ({ time: o.timestamp, value: +o.sumOpenInterestValue }));
+  } catch (e) { return []; }
+}
+
+async function snapFetchTicker(symbol) {
+  try {
+    const r = await fetch(`${FAPI}/fapi/v1/ticker/24hr?symbol=${symbol}`);
+    const d = await r.json();
+    if (!d || d.code) return null;
+    return { price: +d.lastPrice, change: +d.priceChangePercent };
+  } catch (e) { return null; }
+}
+
+/* ═══ Volume Profile ═══ */
+function snapComputeVP(candles, buckets = 100) {
+  if (!candles.length) return null;
+  const minP = Math.min(...candles.map(c => c.low));
+  const maxP = Math.max(...candles.map(c => c.high));
+  const range = maxP - minP || 1;
+  const bucketSize = range / buckets;
+  const hist = new Array(buckets).fill(0);
+
+  candles.forEach(c => {
+    const cR = c.high - c.low;
+    if (cR <= 0) {
+      const b = Math.min(buckets - 1, Math.max(0, Math.floor((c.close - minP) / bucketSize)));
+      hist[b] += c.volume;
+      return;
+    }
+    const avgPrice = (c.high + c.low + c.close) / 3;
+    const b1 = Math.max(0, Math.floor((c.low - minP) / bucketSize));
+    const b2 = Math.min(buckets - 1, Math.floor((c.high - minP) / bucketSize));
+    const weights = [];
+    let totalW = 0;
+    for (let b = b1; b <= b2; b++) {
+      const center = minP + (b + 0.5) * bucketSize;
+      const dist = Math.abs(center - avgPrice) / (cR / 2);
+      const w = Math.max(0.05, 1 - Math.min(1, dist));
+      weights.push(w);
+      totalW += w;
+    }
+    if (totalW <= 0) return;
+    for (let i = 0; i < weights.length; i++) hist[b1 + i] += c.volume * (weights[i] / totalW);
+  });
+
+  let pocIdx = 0;
+  for (let i = 1; i < buckets; i++) if (hist[i] > hist[pocIdx]) pocIdx = i;
+  return {
+    hist, buckets, minP, maxP, bucketSize,
+    maxV: Math.max(...hist),
+    pocPrice: minP + pocIdx * bucketSize + bucketSize / 2,
+  };
+}
+
+/* ═══ Align OI to candles ═══ */
+function snapAlignOI(oiData, candles) {
+  if (!oiData.length) return candles.map(() => null);
+  const map = new Map();
+  oiData.forEach(o => map.set(o.time, o.value));
+  const keys = Array.from(map.keys()).sort((a, b) => a - b);
+  return candles.map(c => {
+    let lo = 0, hi = keys.length - 1, best = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (keys[mid] <= c.time) { best = mid; lo = mid + 1; }
+      else hi = mid - 1;
+    }
+    return best >= 0 ? map.get(keys[best]) : null;
+  });
+}
+
+/* ═══ Panel border ═══ */
+function snapDrawPanelBorder(ctx, rect, C) {
+  ctx.strokeStyle = C.line;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([]);
+  ctx.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.w, rect.h);
+}
+
+/* ═══ Header ═══ */
+function snapDrawHeader(ctx, symbol, tf, ticker, W, C) {
+  ctx.fillStyle = '#11141b';
+  ctx.fillRect(0, 0, W, 44);
+  ctx.fillStyle = C.line;
+  ctx.fillRect(0, 43, W, 1);
+
+  let x = 14;
+  const cy = 22;
+  const sym = symbol.replace('USDT', '');
+
+  ctx.font = 'bold 15px "JetBrains Mono", monospace';
+  const symW = ctx.measureText(sym).width;
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  ctx.fillRect(x, 10, symW + 20, 24);
+  ctx.fillStyle = C.txtBright;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(sym, x + 10, cy);
+  x += symW + 34;
+
+  ctx.font = '600 9px "JetBrains Mono", monospace';
+  ctx.fillStyle = C.txt;
+  ctx.fillText('PRICE', x, cy - 8);
+  x += 44;
+
+  const price = ticker ? ticker.price : 0;
+  const change = ticker ? ticker.change : 0;
+  const priceColor = change >= 0 ? C.up : C.down;
+
+  ctx.font = 'bold 14px "JetBrains Mono", monospace';
+  ctx.fillStyle = priceColor;
+  ctx.fillText(snapFmtPrice(price), x, cy);
+  x += 96;
+
+  ctx.font = '600 9px "JetBrains Mono", monospace';
+  ctx.fillStyle = C.txt;
+  ctx.fillText('24H', x, cy - 8);
+  x += 28;
+
+  ctx.font = 'bold 14px "JetBrains Mono", monospace';
+  ctx.fillStyle = priceColor;
+  ctx.fillText((change >= 0 ? '+' : '') + change.toFixed(2) + '%', x, cy);
+  x += 96;
+
+  const tfs = ['1M', '5M', '15M', '1H', '4H', '1D'];
+  const tfMap = { '1M':'1m', '5M':'5m', '15M':'15m', '1H':'1h', '4H':'4h', '1D':'1d' };
+  ctx.font = 'bold 10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  tfs.forEach(t => {
+    const isActive = tfMap[t] === tf;
+    if (isActive) {
+      ctx.fillStyle = 'rgba(0,255,213,0.1)';
+      ctx.fillRect(x - 4, cy - 9, 30, 18);
+      ctx.fillStyle = C.accent;
+    } else ctx.fillStyle = C.txt;
+    ctx.fillText(t, x + 11, cy);
+    x += 32;
+  });
+  ctx.textAlign = 'left';
+}
+
+/* ═══ Main chart: VP + candles + POC + price line + volume + time axis ═══ */
+/* ═══ Main chart: VP + candles + POC + price line + volume + time axis ═══ */
+/* ═══ Main chart: VP + candles + POC + price line + volume ═══ */
+function snapDrawMainChart(ctx, rect, candles, tf, C, liqData) {
+  if (!candles.length) return;
+
+  const volH = rect.h * 0.22;
+  const priceH = rect.h - volH;
+
+  const priceRect = { x: rect.x, y: rect.y, w: rect.w, h: priceH };
+  const volRect   = { x: rect.x, y: rect.y + priceH, w: rect.w, h: volH };
+
+  const VP_W = 80;
+
+  const minP = Math.min(...candles.map(c => c.low));
+  const maxP = Math.max(...candles.map(c => c.high));
+  const range = maxP - minP || 1;
+
+  const RIGHT_PAD = 40;
+  const stepX = (priceRect.w - RIGHT_PAD) / candles.length;
+  const candleW = Math.max(1, Math.floor(stepX * 0.55));
+
+  // Grid
+  ctx.strokeStyle = C.grid;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  const gridLines = 4;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = priceRect.y + (priceH / gridLines) * i;
+    ctx.beginPath();
+    ctx.moveTo(priceRect.x, y);
+    ctx.lineTo(priceRect.x + priceRect.w, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // VP bars
+  const vp = snapComputeVP(candles, 100);
+  if (vp) {
+    vp.hist.forEach((v, i) => {
+      const intensity = v / vp.maxV;
+      if (intensity < 0.01) return;
+      const barY = priceRect.y + (1 - (i + 1) / vp.buckets) * priceH;
+      const barH = priceH / vp.buckets;
+      const barW = intensity * VP_W * 0.95;
+      const alpha = 0.22 + intensity * 0.68;
+      ctx.fillStyle = `rgba(0,255,213,${alpha})`;
+      ctx.fillRect(priceRect.x, barY, barW, Math.max(1, barH - 0.5));
+    });
+
+    const pocY = priceRect.y + priceH - ((vp.pocPrice - minP) / range) * priceH;
+    ctx.strokeStyle = C.pocLine;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(priceRect.x, pocY);
+    ctx.lineTo(priceRect.x + priceRect.w, pocY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.font = 'bold 10px "JetBrains Mono", monospace';
+    ctx.fillStyle = C.pocLabel;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('POC ' + snapFmtPrice(vp.pocPrice), priceRect.x + priceRect.w - 6, pocY - 8);
+  }
+
+  // Candles
+  candles.forEach((c, i) => {
+    const xCenter = priceRect.x + i * stepX + stepX / 2;
+    const xWick = Math.round(xCenter) + 0.5;
+    const up = c.close >= c.open;
+    const color = up ? C.up : C.down;
+
+    const yH = priceRect.y + priceH - ((c.high - minP) / range) * priceH;
+    const yL = priceRect.y + priceH - ((c.low - minP) / range) * priceH;
+    const yO = priceRect.y + priceH - ((c.open - minP) / range) * priceH;
+    const yC = priceRect.y + priceH - ((c.close - minP) / range) * priceH;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(xWick, Math.round(yH) + 0.5);
+    ctx.lineTo(xWick, Math.round(yL) + 0.5);
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    const bodyY = Math.round(Math.min(yO, yC));
+    const bodyH = Math.max(1, Math.round(Math.abs(yC - yO)));
+    const bodyX = Math.round(xCenter - candleW / 2);
+    ctx.fillRect(bodyX, bodyY, candleW, bodyH);
+    
+  });
+
+  
+
+  // Last price line + badge
+  const last = candles[candles.length - 1];
+  const lastY = priceRect.y + priceH - ((last.close - minP) / range) * priceH;
+  const lastColor = last.close >= last.open ? C.up : C.down;
+
+  ctx.strokeStyle = lastColor;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(priceRect.x, lastY);
+  ctx.lineTo(priceRect.x + priceRect.w, lastY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const badgeW = 76, badgeH = 18;
+  ctx.fillStyle = lastColor;
+  ctx.fillRect(priceRect.x + priceRect.w, lastY - badgeH / 2, badgeW, badgeH);
+  ctx.fillStyle = '#0d1017';
+  ctx.font = 'bold 11px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(snapFmtPrice(last.close), priceRect.x + priceRect.w + badgeW / 2, lastY);
+
+  // Price axis
+  ctx.font = '10px "JetBrains Mono", monospace';
+  ctx.fillStyle = C.txt;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= gridLines; i++) {
+    const y = priceRect.y + (priceH / gridLines) * i;
+    if (Math.abs(y - lastY) < 12) continue;
+    const price = maxP - (range / gridLines) * i;
+    ctx.fillText(snapFmtPrice(price), priceRect.x + priceRect.w + 4, y);
+  }
+
+  // Volume bars
+  const maxVol = Math.max(...candles.map(c => c.volume)) || 1;
+  candles.forEach((c, i) => {
+    const xCenter = volRect.x + i * stepX + stepX / 2;
+    const h = (c.volume / maxVol) * (volRect.h - 10);
+    const y = volRect.y + volRect.h - h;
+    ctx.fillStyle = C.vol;
+    ctx.fillRect(Math.round(xCenter - candleW / 2), Math.round(y), candleW, Math.round(h));
+  });
+
+  if (liqData && liqData.length) {
+    snapDrawLiqMarkers(ctx, priceRect, candles, liqData, minP, range, stepX, C);
+  }
+
+  // Panel labels
+  ctx.fillStyle = C.txt;
+  ctx.font = 'bold 10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('PRICE', priceRect.x + 8, priceRect.y + 6);
+  ctx.fillText('VOLUME', volRect.x + 8, volRect.y + 6);
+}
+
+
+
+/* ═══ OPEN INTEREST panel ═══ */
+function snapDrawOIPanel(ctx, rect, candles, oi, C) {
+  snapDrawPanelBorder(ctx, rect, C);
+  if (!candles.length) return;
+  const values = snapAlignOI(oi, candles);
+  const valid = values.filter(v => v != null);
+  if (valid.length < 2) return;
+
+  const minV = Math.min(...valid);
+  const maxV = Math.max(...valid);
+  const range = maxV - minV || 1;
+  
+  const RIGHT_PAD = 40;
+  const stepX = (rect.w - RIGHT_PAD) / candles.length;
+  const barW = Math.max(1, stepX * 0.6);
+
+  ctx.strokeStyle = C.grid;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  for (let i = 0; i <= 2; i++) {
+    const y = rect.y + (rect.h / 2) * i;
+    ctx.beginPath();
+    ctx.moveTo(rect.x, y);
+    ctx.lineTo(rect.x + rect.w, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  for (let i = 0; i < candles.length; i++) {
+    const v = values[i];
+    const prev = i > 0 ? values[i - 1] : null;
+    if (v == null) continue;
+    if (prev == null) continue;
+    const up = v >= prev;
+    const color = up ? C.up : C.down;
+    const yO = rect.y + rect.h - ((prev - minV) / range) * rect.h;
+    const yC = rect.y + rect.h - ((v - minV) / range) * rect.h;
+    const x = rect.x + i * stepX + stepX / 2;
+    const top = Math.min(yO, yC);
+    const bottom = Math.max(yO, yC);
+    ctx.fillStyle = color;
+    ctx.fillRect(x - barW / 2, top, barW, Math.max(1, bottom - top));
+  }
+
+  const lastV = valid[valid.length - 1];
+  ctx.font = 'bold 11px "JetBrains Mono", monospace';
+  ctx.fillStyle = C.accent;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(snapFmtUSD(lastV), rect.x + rect.w + 10, rect.y + rect.h / 2);
+
+  ctx.fillStyle = C.txt;
+  ctx.font = 'bold 10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('OPEN INTEREST', rect.x + 8, rect.y + 6);
+}
+
+/* ═══ OI DELTA panel ═══ */
+function snapDrawOIDeltaPanel(ctx, rect, candles, oi, C) {
+  snapDrawPanelBorder(ctx, rect, C);
+  if (!candles.length) return;
+  const values = snapAlignOI(oi, candles);
+  const deltas = values.map((v, i) => {
+    if (i === 0 || v == null || values[i - 1] == null) return null;
+    return v - values[i - 1];
+  });
+  const valid = deltas.filter(d => d != null);
+  if (!valid.length) return;
+
+  const maxAbs = Math.max(...valid.map(d => Math.abs(d))) || 1;
+  const RIGHT_PAD = 40;
+  const stepX = (rect.w - RIGHT_PAD) / candles.length;
+  const barW = Math.max(1, stepX * 0.6);
+  const centerY = rect.y + rect.h / 2;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(rect.x, centerY);
+  ctx.lineTo(rect.x + rect.w, centerY);
+  ctx.stroke();
+
+  deltas.forEach((d, i) => {
+    if (d == null) return;
+    const x = rect.x + i * stepX + stepX / 2;
+    const h = (d / maxAbs) * (rect.h / 2 - 8);
+    ctx.fillStyle = d >= 0 ? C.yellow : C.down;
+    ctx.fillRect(x - barW / 2, centerY - h, barW, h);
+  });
+
+  ctx.fillStyle = C.txt;
+  ctx.font = 'bold 10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('OI DELTA', rect.x + 8, rect.y + 6);
+}
+
+/* ═══ B/S DELTA panel ═══ */
+function snapDrawBSDeltaPanel(ctx, rect, candles, C) {
+  snapDrawPanelBorder(ctx, rect, C);
+  if (!candles.length) return;
+  const deltas = candles.map(c => c.takerBuy * 2 - c.volume);
+  const maxAbs = Math.max(...deltas.map(d => Math.abs(d))) || 1;
+  
+  const RIGHT_PAD = 40;
+  const stepX = (rect.w - RIGHT_PAD) / candles.length;
+  const barW = Math.max(1, stepX * 0.6);
+  const centerY = rect.y + rect.h / 2;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(rect.x, centerY);
+  ctx.lineTo(rect.x + rect.w, centerY);
+  ctx.stroke();
+
+  deltas.forEach((d, i) => {
+    const x = rect.x + i * stepX + stepX / 2;
+    const h = (d / maxAbs) * (rect.h / 2 - 8);
+    ctx.fillStyle = d >= 0 ? C.up : C.down;
+    ctx.fillRect(x - barW / 2, centerY - h, barW, h);
+  });
+
+  const lastVal = deltas[deltas.length - 1];
+  if (lastVal != null) {
+    ctx.font = 'bold 11px "JetBrains Mono", monospace';
+    ctx.fillStyle = lastVal >= 0 ? C.up : C.down;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(snapFmtVol(lastVal), rect.x + rect.w + 10, rect.y + rect.h / 2);
+  }
+
+  ctx.fillStyle = C.txt;
+  ctx.font = 'bold 10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('B/S DELTA', rect.x + 8, rect.y + 6);
+}
+
+/* ═══ TIME AXIS · bottom strip · ստորին ժամերի սանդղակ ═══ */
+function snapDrawTimeAxis(ctx, rect, candles, tf, C) {
+  if (!candles.length) return;
+
+  // Ֆոն
+  ctx.fillStyle = 'rgba(255,255,255,0.02)';
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+
+  // Վերին բաժանող գիծ (B/S DELTA-ից առանձնացնելու համար)
+  ctx.strokeStyle = C.line;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(rect.x, rect.y + 0.5);
+  ctx.lineTo(rect.x + rect.w, rect.y + 0.5);
+  ctx.stroke();
+
+  // Ժամերի պիտակներ · 1:1 alignment բոլոր panel-ների հետ
+  const RIGHT_PAD = 40;
+  const stepX = (rect.w - RIGHT_PAD) / candles.length;
+
+  ctx.font = 'bold 11px "JetBrains Mono", monospace';
+  ctx.fillStyle = C.txtBright;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const labelEvery = Math.max(1, Math.floor(candles.length / 10));
+  const cy = rect.y + rect.h / 2;
+
+  for (let i = 0; i < candles.length; i += labelEvery) {
+    const x = rect.x + i * stepX + stepX / 2;
+    if (x < rect.x + 20 || x > rect.x + rect.w - 40) continue;
+    ctx.fillText(snapFmtTime(candles[i].time, tf), x, cy);
+  }
+}
+
+/* ═══ Master renderer ═══ */
+/* ═══ Master renderer ═══ */
+/* ═══ Master renderer ═══ */
+function snapRender(symbol, tf, candles, oi, ticker, opts) {
+  const C = SNAP.colors;
+  const W = opts.width || SNAP.width;
+  const H = opts.height || SNAP.height;
+
+  const SCALE = 2;                          // ★ NEW · 2x supersampling
+
+  const canvas = document.createElement('canvas');
+  canvas.width  = W * SCALE;                // ★ 3200 (փոխարեն 1600)
+  canvas.height = H * SCALE;                // ★ 1800 (փոխարեն 900)
+  const ctx = canvas.getContext('2d');
+  ctx.scale(SCALE, SCALE);                  // ★ ամեն ինչ նկարվում ա W×H կոորդինատներով
+
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // ... մնացած ԲՈԼՈՐ կոդը ԱՆՓՈՓՈԽ ...
+  // snapDrawHeader, snapDrawMainChart, snapDrawOIPanel, ...
+
+
+  const HEADER_H = 44;
+  const PAD_TOP  = 10;
+  const GAP      = 8;
+  const RIGHT_AXIS_W = 92;
+  const CHART_LEFT   = 12;
+  const CHART_W      = W - RIGHT_AXIS_W - CHART_LEFT;
+
+  const MAIN_H = 518;
+  const OI_H   = 90;
+  const OID_H  = 90;
+  const BSD_H  = 90;
+  const TIME_H = 26;
+
+  let y = HEADER_H + PAD_TOP;
+
+  const mainRect = { x: CHART_LEFT, y, w: CHART_W, h: MAIN_H };
+  y += MAIN_H + GAP;
+
+  const oiRect = { x: CHART_LEFT, y, w: CHART_W, h: OI_H };
+  y += OI_H + GAP;
+
+  const oidRect = { x: CHART_LEFT, y, w: CHART_W, h: OID_H };
+  y += OID_H + GAP;
+
+  const bsdRect = { x: CHART_LEFT, y, w: CHART_W, h: BSD_H };
+  y += BSD_H + GAP;
+
+  const timeRect = { x: CHART_LEFT, y, w: CHART_W, h: TIME_H };
+
+  /* ★ Liq data — filter by SAME window as alert caption (NOT 60-min buffer) */
+  const coin    = STATE.coins.find(c => c.sym === symbol);
+  const wMin    = coin?.windowMin || STATE.windowMin;
+  const cutoff  = Date.now() - wMin * 60 * 1000;
+  const liqBuf  = STATE.liqBuffer.get(symbol) || [];
+  const liqData = liqBuf.filter(l => l.time >= cutoff);
+
+  snapDrawHeader(ctx, symbol, tf, ticker, W, C);
+  snapDrawMainChart(ctx, mainRect, candles, tf, C, liqData);   // ← SINGLE call · liqData
+  snapDrawOIPanel(ctx, oiRect, candles, oi, C);          // ★ վերադարձվել ա
+  snapDrawOIDeltaPanel(ctx, oidRect, candles, oi, C);
+  snapDrawBSDeltaPanel(ctx, bsdRect, candles, C);
+  snapDrawTimeAxis(ctx, timeRect, candles, tf, C);
+
+  return canvas;
+}
+
+/* ═══ Full pipeline ═══ */
+async function produceSnapBlob(symbol, tf, opts = {}) {
+  const limit = opts.candles || SNAP.candles;
+
+  const [candles, oi, ticker] = await Promise.all([
+    snapFetchKlines(symbol, tf, limit),
+    snapFetchOI(symbol, tf, limit),
+    snapFetchTicker(symbol),
+  ]);
+
+  if (!candles.length) throw new Error('No klines for ' + symbol);
+
+  const canvas = snapRender(symbol, tf, candles, oi, ticker, {
+    width: opts.width || SNAP.width,
+    height: opts.height || SNAP.height,
+  });
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) resolve(blob);
+      else reject(new Error('toBlob failed'));
+    }, 'image/jpeg', 0.92);
+  });
+}
+
 /* ▶ 1) Change ticker on the static chart · same as screenerpro (SET_SYMBOL) */
 const alertQueue = [];
 let isProcessingAlerts = false;
@@ -1632,31 +2605,54 @@ async function processAlerts() {
   isProcessingAlerts = true;
 
   while (alertQueue.length > 0) {
-    const task = alertQueue.shift();
-    
-    // 1. Փոխում ենք EnginePro-ի symbol-ը
-    setChartTicker(task.sym);
+    const task = alertQueue[0];
 
-    // 2. Եթե Telegram-ի տվյալները կան, ուղարկում ենք EXTERNAL_SNAP command-ը EnginePro-ին
-    if (STATE.tg.token && STATE.tg.chat) {
-      const fr = document.getElementById('engine-frame');
-      if (fr && fr.contentWindow) {
-        fr.contentWindow.postMessage({
-          type: 'EXTERNAL_SNAP',
-          symbol: task.sym,
-          tf: '5m', // կամ քո ուզած timeframe-ը
-          tg_token: STATE.tg.token,
-          tg_chat: String(STATE.tg.chat),
-          caption: task.caption,
-          panels: ['oi', 'oid', 'bsd']
-        }, '*');
-      }
+    if (!STATE.tg.token || !STATE.tg.chat) {
+      console.warn('[alert] TG not configured, skip', task.sym);
+      alertQueue.shift(); // հեռացնում ենք հերթից
+      continue;
     }
-    
-    // Փոքր դադար ալերտների արանքում
-    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    try {
+      /* Ցույց տալ trigger-ված symbol-ը visible chart-ում */
+      try { setChartTicker(task.sym); } catch (e) {}
+
+      const tf = task.tf || SNAP.tf;
+      toast(`📸 Rendering: ${task.sym.replace('USDT', '')} ${tf}`, '');
+
+      /* ⭐ NATIVE — pure Canvas 2D, 100% background-safe */
+      const blob = await produceSnapBlob(task.sym, tf, {
+        candles: SNAP.candles,
+        width: SNAP.width,
+        height: SNAP.height,
+      });
+
+      if (!blob) throw new Error('No blob produced');
+
+      const fd = new FormData();
+      fd.append('chat_id', STATE.tg.chat);
+      fd.append('photo', blob, `snap_${task.sym}_${Date.now()}.jpg`);
+      fd.append('caption', task.caption || '');
+      fd.append('parse_mode', 'HTML');
+
+      const r = await fetch(`https://api.telegram.org/bot${STATE.tg.token}/sendPhoto`, {
+        method: 'POST',
+        body: fd,
+      });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.description || 'TG error');
+
+      toast(`✅ Snapshot sent: ${task.sym.replace('USDT', '')}`, '');
+      console.log('[snap] OK', task.sym, 'blob=' + blob.size + 'B');
+    } catch (err) {
+      console.error('[snap] FAILED:', task.sym, err);
+      await sendTG(task.caption, false).catch(() => {});
+      toast(`⚠ Snap failed, text sent: ${task.sym.replace('USDT', '')}`, 'warn');
+    } finally {
+      alertQueue.shift(); // հերթից հեռացնում ենք աշխատանքից հետո
+    }
   }
-  
+
   isProcessingAlerts = false;
 }
 
@@ -1670,7 +2666,9 @@ function fireAlert(coin, data, ev) {
   const dirStr = ev.dir === 'up' ? 'BULLISH' : ev.dir === 'down' ? 'BEARISH' : 'MIXED';
 
   // Կազմում ենք տեքստը միայն trigger եղած մետրիկաներով
-  const lines = [`${coin.sym.replace('USDT','')} - ${dirStr}`];
+  // Ավելացվել է window-ի ժամանակը
+   const finalWindow = coin.windowMin || STATE.windowMin;  // ★ NEW
+  const lines = [`▫️ <b>${coin.sym.replace('USDT','')}</b> ${finalWindow} min`];
   if (ev.pPrice) lines.push(`✅ Price ${sgn(data.pricePct, 2)}%`);
   if (ev.pVol)   lines.push(`✅ Vol ${sgn(data.volPct, 0)}%`);
   if (ev.pOI)    lines.push(`✅ OI ${sgn(data.oiPct, 2)}%`);
@@ -1678,7 +2676,7 @@ function fireAlert(coin, data, ev) {
 
   const caption = lines.join('\n');
 
-  alertQueue.push({ sym: coin.sym, caption: caption });
+  alertQueue.push({ sym: coin.sym, caption: caption, tf: SNAP.tf });
   toast(`⚡ Alert Queued: ${coin.sym.replace('USDT','')} ${ev.triggered}/${ev.activeCount}`);
   
   processAlerts();
@@ -1687,10 +2685,13 @@ function fireAlert(coin, data, ev) {
     ts: now(),
     sym: coin.sym,
     dir: ev.dir,
+     windowMin: finalWindow, // ★ Ավելացրու այս տողը
     pricePct: data.pricePct,
     volPct: data.volPct,
     oiPct: data.oiPct,
     liqUsd: data.liqUsd,
+     liqLong:  data.liqLong,     // ★ NEW
+    liqShort: data.liqShort,    // ★ NEW
     triggered: ev.triggered,
     activeCount: ev.activeCount,
   });
@@ -1700,7 +2701,7 @@ function fireAlert(coin, data, ev) {
 
   try { beep(ev.dir === 'down' ? 440 : 880); } catch(e) {}
   document.title = `⚡ ${coin.sym.replace('USDT','')} ${ev.triggered}/${ev.activeCount} — Watchlist`;
-  setTimeout(() => { document.title = 'Watchlist · 4-Metric Monitor'; }, 8000);
+  setTimeout(() => { document.title = 'Watchlist · 4D Scanner'; }, 8000);
 }
 
 function renderLog() {
@@ -1712,21 +2713,31 @@ function renderLog() {
     body.innerHTML = `<div class="log-empty">No alerts yet — waiting for movements...</div>`;
     return;
   }
-  body.innerHTML = STATE.log.map(x => `
+  body.innerHTML = STATE.log.map(x => {
+    /* ★ NEW · LONG / SHORT breakdown (fallback for old log entries) */
+    const liqTxt = (x.liqLong > 0 || x.liqShort > 0)
+      ? [
+          x.liqLong  > 0 ? 'LONG '  + fmtUSD(x.liqLong)  : '',
+          x.liqShort > 0 ? 'SHORT ' + fmtUSD(x.liqShort) : ''
+        ].filter(Boolean).join(' / ')
+      : fmtUSD(x.liqUsd);
+
+    return `
     <div class="log-item">
       <div class="log-time">${fmtTime(x.ts)}</div>
       <div>
-        <div class="log-sym">${x.sym.replace('USDT','')}<span class="side ${x.dir}">${x.dir.toUpperCase()}</span></div>
+        <div class="log-sym">▫️ ${x.sym.replace('USDT','')} <span style="font-size:10px; color:var(--muted); font-weight:600; margin-left:4px;">${x.windowMin || STATE.windowMin} min</span></div>
         <div class="log-meta">
           <b class="g">PRICE ${x.pricePct>=0?'+':''}${x.pricePct.toFixed(2)}%</b>
           <b class="g">VOL ${x.volPct>=0?'+':''}${x.volPct.toFixed(0)}%</b>
           <b class="g">OI ${x.oiPct>=0?'+':''}${x.oiPct.toFixed(2)}%</b>
-          <b class="g">LIQ ${fmtUSD(x.liqUsd)}</b>
+          <b class="g">LIQ ${liqTxt}</b>
         </div>
       </div>
       <div style="color:var(--green); font-size:10px; font-weight:800; letter-spacing:.5px;">${x.triggered}/${x.activeCount||4}</div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 let _ac = null;
@@ -1961,7 +2972,119 @@ function bindUI() {
       $$('.modal').forEach(m => m.classList.remove('open'));
     }
   });
+
+    /* ★ GLOBAL SEARCH LOGIC */
+   /* ★ GLOBAL SEARCH LOGIC + UP/DOWN NAVIGATION */
+  const searchInput = $('#global-search');
+  const dropdown = $('#search-dropdown');
+  let activeDropdownIndex = -1; // ★ Սլաքների ինդեքս
+
+  // ★ Ֆունկցիա ակտիվ տողը գունավորելու համար
+  function updateActiveItem() {
+    const items = dropdown.querySelectorAll('.search-item[data-sym]');
+    items.forEach(el => el.classList.remove('active'));
+    if (items[activeDropdownIndex]) {
+      items[activeDropdownIndex].classList.add('active');
+      items[activeDropdownIndex].scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  // ★ Ստեղնաշարի կառավարում
+  searchInput.addEventListener('keydown', (e) => {
+    const items = dropdown.querySelectorAll('.search-item[data-sym]');
+    if (!dropdown.classList.contains('open') || items.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeDropdownIndex++;
+      if (activeDropdownIndex >= items.length) activeDropdownIndex = 0;
+      updateActiveItem();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeDropdownIndex--;
+      if (activeDropdownIndex < 0) activeDropdownIndex = items.length - 1;
+      updateActiveItem();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (activeDropdownIndex >= 0 && items[activeDropdownIndex]) {
+        items[activeDropdownIndex].click(); // Սեղմում է ընտրվածին
+      } else {
+        items[0].click(); // Եթե սլաքով չի ընտրված, սեղմում է առաջինին
+      }
+    } else if (e.key === 'Escape') {
+      dropdown.classList.remove('open');
+    }
+  });
+
+  async function loadAllTickers() {
+    if (STATE.allTickers.length > 0) return;
+    try {
+      const res = await fetch(`${FAPI}/fapi/v1/ticker/24hr`);
+      const data = await res.json();
+      STATE.allTickers = data
+        .filter(t => t.symbol.endsWith('USDT') && parseFloat(t.quoteVolume) > 0)
+        .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume));
+    } catch (e) {
+      console.warn('Tickers load failed', e);
+    }
+  }
+
+  searchInput.addEventListener('focus', loadAllTickers);
+
+  searchInput.addEventListener('input', (e) => {
+    activeDropdownIndex = -1; // ★ Զրոյացնում ենք ինդեքսը նոր որոնման ժամանակ
+    const q = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!q) { dropdown.classList.remove('open'); return; }
+    if (STATE.allTickers.length === 0) return;
+
+    const matches = STATE.allTickers
+      .filter(t => t.symbol.includes(q))
+      .slice(0, 10);
+
+    if (matches.length === 0) {
+      dropdown.innerHTML = `<div class="search-item" style="color:var(--muted);cursor:default;justify-content:center;">No results</div>`;
+    } else {
+      dropdown.innerHTML = matches.map(m => {
+        const p = parseFloat(m.lastPrice);
+        const c = parseFloat(m.priceChangePercent);
+        const color = c >= 0 ? 'var(--up)' : 'var(--dn)';
+        const sign = c >= 0 ? '+' : '';
+        return `
+          <div class="search-item" data-sym="${m.symbol}">
+            <div class="sym-name">${m.symbol.replace('USDT','')}<span>USDT</span></div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <span class="sym-price">$${p < 1 ? p.toFixed(5) : p.toFixed(2)}</span>
+              <span class="sym-chg" style="color:${color}">${sign}${c.toFixed(2)}%</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    dropdown.classList.add('open');
+  });
+
+    dropdown.addEventListener('click', (e) => {
+    const item = e.target.closest('.search-item');
+    if (!item || !item.dataset.sym) return;
+    const sym = item.dataset.sym;
+    
+    // ★ Վերցնում ենք ակտիվ Preset-ը (Mega, Alt, թե Meme)
+    const activePresetBtn = document.querySelector('.pchip.on');
+    const preset = activePresetBtn ? activePresetBtn.dataset.preset : 'alt';
+
+    if (!STATE.coins.find(c => c.sym === sym)) {
+      addCoin(sym, preset); // ★ Փոխանցում ենք Preset-ը
+    } else {
+      toast(`Already in list: ${sym.replace('USDT','')}`, 'warn');
+    }
+    
+    searchInput.value = '';
+    dropdown.classList.remove('open');
+    activeDropdownIndex = -1;
+  });
 }
+
+
 
 function updateTGButton() {
   const s = $('#tg-state');
@@ -2042,33 +3165,157 @@ window.addEventListener('beforeunload', () => {
   if (STATE.pollWorker) try { STATE.pollWorker.terminate(); } catch(e) {}
 });
 
-window.addEventListener('message', e => {
-    const d = e.data;
-    if(!d || typeof d !== 'object') return;
-    
-    if(d.type === 'SET_SYMBOL' && d.symbol){
-        let s = String(d.symbol).toUpperCase();
-        if(!s.endsWith('USDT')) s += 'USDT';
-        if(s !== S.symbol){ S.symbol = s; $('#ci').value = s.replace('USDT',''); reload(); }
-    } else if(d.type === 'SET_TF' && d.tf){
-        S.tf = String(d.tf);
-        $$('#tfs .tf').forEach(b => b.classList.toggle('active', b.dataset.tf === S.tf));
-        reload();
-    } else if(d.type === 'SET_STYLE' && d.style){ 
-        setStyle(String(d.style)); 
+/* ═══════════════════════════════════════════════════════════════════
+   KEEP AWAKE SYSTEM (Default ON + Auto-Unlock on first click)
+   ═══════════════════════════════════════════════════════════════════ */
+const KeepAwake = (() => {
+  let wakeLock = null;
+  let audioCtx = null;
+  let oscillator = null;
+  let gainNode = null;
+  let enabled = true; // ★ ԱՅՍՏԵՂ true է, որպեսզի default-ով ON լինի
+
+  const updateUI = (isOn) => {
+    const btn = document.getElementById('btn-keepawake');
+    const state = document.getElementById('ka-state');
+    if (btn && state) {
+      state.textContent = isOn ? 'ON' : 'OFF';
+      btn.classList.toggle('on', isOn);
+      
+      if (isOn) {
+        btn.style.color = 'var(--green)';
+        btn.style.borderColor = 'rgba(0,255,157,.4)';
+        btn.style.background = 'rgba(0,255,157,.06)';
+      } else {
+        btn.style.color = '';
+        btn.style.borderColor = '';
+        btn.style.background = '';
+      }
     }
-    /* ★ EXTERNAL_SNAP · 1in1 henc EnginePro-ի ներսի snapshot generator-ով */
-    else if(d.type === 'EXTERNAL_SNAP'){
-        enqueueSnap({
-            symbol:  String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$/,''),
-            tf:      d.tf || '5m',
-            tgToken: d.tg_token || d.tgToken || S.tg.token,
-            tgChat:  d.tg_chat  || d.tgChat  || S.tg.chat,
-            caption: d.caption  || '',
-            panels:  Array.isArray(d.panels) ? d.panels : ['oi','oid','bsd'],
-        });
+  };
+
+  const startAudio = async () => {
+    if (audioCtx) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      audioCtx = new AC();
+      
+      oscillator = audioCtx.createOscillator();
+      gainNode = audioCtx.createGain();
+      
+      gainNode.gain.value = 0.001; // Անլսելի ձայն
+      oscillator.frequency.value = 40;
+      oscillator.type = 'sine';
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.start();
+      
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+    } catch (e) {
+      console.warn('[KeepAwake] Audio initialization failed:', e);
     }
+  };
+
+  const requestWakeLock = async () => {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      if (wakeLock) return;
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => {
+        if (enabled && document.visibilityState === 'visible') {
+          setTimeout(requestWakeLock, 1000);
+        }
+      });
+    } catch (e) {
+      console.warn('[KeepAwake] WakeLock request failed:', e);
+    }
+  };
+
+  const start = async () => {
+    enabled = true;
+    updateUI(true);
+    await startAudio();
+    await requestWakeLock();
+    console.log('[KeepAwake] Status: ON');
+  };
+
+  const stop = () => {
+    enabled = false;
+    updateUI(false);
+    if (wakeLock) {
+      try { wakeLock.release(); } catch (e) {}
+      wakeLock = null;
+    }
+    if (audioCtx) {
+      try { audioCtx.close(); } catch (e) {}
+      audioCtx = null;
+      oscillator = null;
+      gainNode = null;
+    }
+    console.log('[KeepAwake] Status: OFF');
+  };
+
+  const toggle = () => {
+    if (enabled) stop();
+    else start();
+  };
+
+  // Երբ tab-ը նորից ակտիվանում է, վերականգնում ենք
+  document.addEventListener('visibilitychange', async () => {
+    if (enabled && document.visibilityState === 'visible') {
+      if (!wakeLock) await requestWakeLock();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        try { await audioCtx.resume(); } catch (e) {}
+      }
+    }
+  });
+
+  return { start, stop, toggle, isEnabled: () => enabled };
+})();
+
+// ★ ԱՎՏՈՄԱՏ ՄԻԱՑՈՒՄ ԵՎ ԱՌԱՋԻՆ ԿԼԻԿԻ ԲՌՆՈՒՄ
+document.addEventListener('DOMContentLoaded', () => {
+  // Կոճակի միացում
+  const btn = document.getElementById('btn-keepawake');
+  if (btn) {
+    btn.addEventListener('click', () => KeepAwake.toggle());
+  }
+
+  // 1. Փորձում ենք միացնել անմիջապես (եթե բրաուզերը թույլ տա)
+  KeepAwake.start();
+
+  // 2. Եթե Chrome-ը արգելափակել է ձայնը, ապա առաջին իսկ կլիկին այն կմիանա
+  const unlockOnFirstClick = () => {
+    if (KeepAwake.isEnabled()) {
+      KeepAwake.start(); // Սա նորից կկանչի audio.resume()
+    }
+    document.removeEventListener('pointerdown', unlockOnFirstClick);
+    document.removeEventListener('keydown', unlockOnFirstClick);
+  };
+  
+  document.addEventListener('pointerdown', unlockOnFirstClick);
+  document.addEventListener('keydown', unlockOnFirstClick);
 });
+
+
+
+const wlFrame = document.querySelector('iframe[src*="WATCHLISTFROMGIT"]');
+const reqId   = 'r-' + Date.now();
+
+window.addEventListener('message', function once(e) {
+  const m = e.data;
+  if (!m || m.reqId !== reqId) return;
+  console.log(m.type, m);
+  window.removeEventListener('message', once);
+});
+
+wlFrame.contentWindow.postMessage({ type: 'snap_request', reqId, symbol: 'BTC', tf: '15m' }, '*');
+// կամ add_to_watchlist
+wlFrame.contentWindow.postMessage({ type: 'add_to_watchlist', reqId, symbol: 'ETH', preset: 'meme' }, '*');
 
 </script>
 </body>
