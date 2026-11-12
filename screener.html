@@ -24,7 +24,54 @@
     --t1: #e6e7ea; --t2: #9ca0a9; --t3: #6b7280;
     --tr: all .2s cubic-bezier(.16,1,.3,1);
     --tr-smooth: all .4s cubic-bezier(.16,1,.3,1);
+    /* ─── Hub CSS var aliases · for 1:1 ported widgets ─── */
+--accent: var(--ac);
+--accent-dim: var(--acD);
+--text-main: var(--text);
+--text-muted: var(--muted);
+--text-hover: var(--t2);
+--border-thin: var(--border);
+--bg-deep: var(--bg);
+--bg-surface: var(--bg2);
+--bg-elevated: var(--bg3);
+--transition-smooth: all .4s cubic-bezier(.16,1,.3,1);
 }
+
+/* ─── Ported from Hub · for BTC sparkline widget ─── */
+.mod-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; gap: 10px; flex-shrink: 0; min-width: 0;
+    padding-right: 90px;
+}
+.mod-title {
+    font-size: 0.7rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 2px;
+    color: var(--text-muted);
+    display: flex; align-items: center; gap: 10px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    min-width: 0;
+}
+.mod-title i { color: var(--accent); flex-shrink: 0; }
+
+.scr-tab {
+    padding: 5px 12px; font-size: 10px; font-weight: 700;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 6px; cursor: pointer;
+    transition: var(--tr); letter-spacing: 0.5px;
+    font-family: var(--font-sans);
+}
+.scr-tab:hover { color: var(--text); border-color: var(--border-hi); }
+.scr-tab.active {
+    color: var(--accent); border-color: var(--accent);
+    background: var(--accent-dim);
+}
+
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.5; transform: scale(0.85); }
+}
+
+
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html { scroll-behavior: smooth; }
@@ -542,30 +589,6 @@ body.is-dragging iframe { pointer-events: none !important; }
 .neg { color: var(--red); }
 
 /* Liquidations widget */
-.liq-tg-panel { margin: 0 14px 10px; padding: 10px 12px; background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 7px; flex-shrink: 0; }
-.liq-tg-header { display: flex; align-items: center; gap: 7px; font-size: 9px; letter-spacing: 1.4px; font-weight: 800; color: var(--muted); text-transform: uppercase; }
-.liq-tg-header i { color: #29b6f6; font-size: 12px; }
-.liq-tg-header .st { margin-left: auto; font-size: 9px; padding: 2px 7px; border-radius: 10px; background: rgba(255,255,255,0.04); color: var(--muted); letter-spacing: 0.5px; }
-.liq-tg-header .st.on { color: var(--green); background: rgba(0,255,157,0.08); }
-.liq-tg-row { display: flex; gap: 5px; align-items: center; }
-.liq-tg-row .lb-in { flex: 1; background: rgba(0,0,0,.4); border: 1px solid var(--bd); color: var(--t1); padding: 5px 8px; border-radius: 5px; font-size: 10px; font-family: var(--font-mono); outline: none; transition: var(--tr); min-width: 0; }
-.liq-tg-row .lb-in:focus { border-color: var(--ac); }
-.liq-tg-row .lb-btn { padding: 5px 12px; background: transparent; border: 1px solid var(--bd); color: var(--t2); border-radius: 5px; font-size: 9px; font-weight: 800; letter-spacing: .8px; cursor: pointer; transition: var(--tr); text-transform: uppercase; flex-shrink: 0; }
-.liq-tg-row .lb-btn:hover { color: var(--ac); border-color: var(--ac); background: var(--acD); }
-.liq-tg-note { font-size: 9px; color: var(--muted); line-height: 1.4; letter-spacing: 0.3px; }
-.liq-tg-note b { color: var(--gold); }
-
-.liq-feed { flex: 1; overflow-y: auto; padding: 0 4px 8px; min-height: 0; }
-.liq-item { display: grid; grid-template-columns: 60px 1fr auto; gap: 8px; padding: 9px 14px; font-size: 11px; border-bottom: 1px dashed rgba(255,255,255,0.04); align-items: center; animation: slideIn 0.35s ease-out; }
-@keyframes slideIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
-.liq-time { color: var(--muted); font-size: 9px; }
-.liq-symbol { font-weight: 800; letter-spacing: 0.5px; }
-.liq-side { font-size: 9px; color: var(--muted); font-weight: 600; }
-.liq-side.long { color: var(--green); }
-.liq-side.short { color: var(--red); }
-.liq-amt { font-weight: 800; text-align: right; }
-.liq-amt.big { color: var(--gold); text-shadow: 0 0 10px rgba(255,190,11,0.4); }
-.liq-empty { padding: 30px 20px; text-align: center; color: var(--muted); font-size: 11px; }
 
 /* Screener widget */
 .screener-controls { display: flex; gap: 6px; padding: 4px 18px 14px; flex-wrap: wrap; align-items: center; flex-shrink: 0; }
@@ -704,49 +727,6 @@ td.c-change, td.c-vol, td.c-fund { transition: color 0.4s ease; }
 /* ════════════════════════════════════════════════════════════
    SIGNAL MONITOR
    ════════════════════════════════════════════════════════════ */
-.mon-wrap { display:flex; flex-direction:column; height:100%; overflow:hidden; }
-.mon-toolbar { padding:8px 14px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; border-bottom:1px solid var(--border); flex-shrink:0; background:rgba(0,0,0,.2); }
-.mon-toggles { display:flex; gap:4px; flex-wrap:wrap; }
-.mon-toggle { display:inline-flex; align-items:center; gap:5px; padding:5px 10px; background:rgba(255,255,255,.02); border:1px solid var(--border); border-radius:6px; font-size:10px; font-weight:700; letter-spacing:.5px; color:var(--muted); cursor:pointer; transition:var(--tr); user-select:none; font-family:var(--font-mono); }
-.mon-toggle:hover { border-color:var(--border-hi); color:var(--text); }
-.mon-toggle.on { color:#000; background:var(--ac); border-color:var(--ac); }
-.mon-toggle i { font-size:10px; }
-.mon-thresh-group { display:flex; align-items:center; gap:6px; margin-left:auto; flex-wrap:wrap; }
-.mon-thresh { display:inline-flex; align-items:center; gap:3px; font-size:9.5px; color:var(--muted); letter-spacing:.3px; font-weight:700; }
-.mon-thresh input { width:46px; padding:4px 6px; background:rgba(0,0,0,.4); border:1px solid var(--border); border-radius:4px; color:var(--text); font-size:10px; font-family:var(--font-mono); text-align:center; outline:none; }
-.mon-thresh input:focus { border-color:var(--ac); }
-.mon-scan-btn { padding:6px 14px; background:var(--ac); color:#000; border:none; border-radius:6px; font-size:10px; font-weight:800; letter-spacing:1px; cursor:pointer; transition:var(--tr); font-family:var(--font-mono); text-transform:uppercase; }
-.mon-scan-btn:hover { filter:brightness(1.15); }
-.mon-scan-btn.scanning { opacity:.6; cursor:wait; }
-.mon-status { font-size:9px; color:var(--muted); letter-spacing:.5px; padding:0 4px; }
-.mon-progress { height:2px; background:rgba(255,255,255,.05); overflow:hidden; flex-shrink:0; }
-.mon-progress-bar { height:100%; width:0%; background:var(--ac); transition:width .3s ease; }
-
-.mon-movers { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:8px 14px; border-bottom:1px solid var(--border); flex-shrink:0; }
-.mon-movers-col { display:flex; flex-direction:column; gap:3px; }
-.mon-movers-title { font-size:9px; letter-spacing:1.5px; font-weight:800; text-transform:uppercase; color:var(--muted); padding-bottom:2px; }
-.mon-movers-title.pos { color:var(--green); }
-.mon-movers-title.neg { color:var(--red); }
-.mon-mover { display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:3px 6px; border-radius:4px; background:rgba(255,255,255,.02); cursor:pointer; }
-.mon-mover:hover { background:rgba(255,255,255,.05); }
-.mon-mover .sym { font-weight:700; color:var(--text); letter-spacing:.3px; }
-.mon-mover .val { font-weight:800; font-variant-numeric:tabular-nums; }
-
-.mon-feed { flex:1; overflow-y:auto; padding:8px 10px; display:flex; flex-direction:column; gap:6px; min-height:0; }
-.mon-signal { display:grid; grid-template-columns:32px 1fr auto; gap:10px; padding:10px 12px; background:rgba(255,255,255,.02); border:1px solid var(--border); border-left-width:3px; border-radius:8px; align-items:center; animation:sigIn .4s cubic-bezier(.16,1,.3,1); transition:var(--tr); cursor:pointer; }
-.mon-signal:hover { background:rgba(255,255,255,.05); border-color:var(--border-hi); }
-@keyframes sigIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
-.mon-signal.sev-high { box-shadow:0 0 20px rgba(255,190,11,.15); }
-.mon-sig-icon { width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:13px; background:rgba(255,255,255,.04); }
-.mon-sig-body { min-width:0; }
-.mon-sig-head { display:flex; align-items:center; gap:8px; font-size:11px; margin-bottom:3px; flex-wrap:wrap; }
-.mon-sig-sym { font-weight:800; letter-spacing:.5px; color:var(--text); }
-.mon-sig-type { font-size:9px; font-weight:800; letter-spacing:1px; padding:1px 6px; border-radius:3px; text-transform:uppercase; }
-.mon-sig-meta { font-size:10px; color:var(--muted); line-height:1.5; display:flex; flex-wrap:wrap; gap:10px; }
-.mon-sig-meta b { color:var(--text); font-weight:700; }
-.mon-sig-time { font-size:9px; color:var(--muted-2); text-align:right; white-space:nowrap; letter-spacing:.5px; }
-.mon-empty { padding:40px 20px; text-align:center; color:var(--muted); font-size:11px; line-height:1.6; }
-.mon-empty i { display:block; font-size:24px; margin-bottom:12px; opacity:.4; }
 
 /* ════════════════════════════════════════════════════════════
    MINI WIDGET POPUP
@@ -840,6 +820,8 @@ td.c-change, td.c-vol, td.c-fund { transition: color 0.4s ease; }
     animation: pulse 1.4s ease-in-out infinite;
 }
 
+
+
 @media (max-width: 780px) {
     .mini-spark { width: 230px; }
     .mini-spark-body { height: 88px; }
@@ -859,9 +841,384 @@ td.c-change, td.c-vol, td.c-fund { transition: color 0.4s ease; }
     touch-action: manipulation;
 }
 
+/* ════════════════════════════════════════════════════════════
+   MARKET MONITOR (MM) · 5 cards · purple Apple-style switches
+   ════════════════════════════════════════════════════════════ */
+.mm-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mm-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.25);
+}
+.mm-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.mm-title i { color: var(--ac); font-size: 13px; }
+.mm-badge {
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(168,85,247,0.12);
+  color: #c084fc;
+  border: 1px solid rgba(168,85,247,0.3);
+  font-weight: 800;
+}
+.mm-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+.mm-status {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 1.2px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* ▶ Unique purple Apple-style switch */
+.mm-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.mm-switch input {
+  opacity: 0;
+  position: absolute;
+  width: 0; height: 0;
+}
+.mm-switch-track {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 18px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 18px;
+  border: 1px solid rgba(168,85,247,0.18);
+  transition: all 0.28s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+}
+.mm-switch-thumb {
+  position: absolute;
+  top: 1.5px;
+  left: 1.5px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #6b21a8;
+  transition: all 0.28s cubic-bezier(0.16,1,0.3,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.7), inset 0 0 4px rgba(168,85,247,0.3);
+}
+.mm-switch input:checked + .mm-switch-track {
+  background: rgba(168,85,247,0.32);
+  border-color: rgba(168,85,247,0.65);
+  box-shadow: inset 0 0 10px rgba(168,85,247,0.35), 0 0 10px rgba(168,85,247,0.2);
+}
+.mm-switch input:checked + .mm-switch-track .mm-switch-thumb {
+  transform: translateX(16px);
+  background: #d8b4fe;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.7), 0 0 10px rgba(216,180,254,0.9);
+}
+.mm-switch-label {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+.mm-switch input:checked ~ .mm-switch-label {
+  color: #d8b4fe;
+}
+
+/* ▶ Cards grid */
+.mm-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.mm-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+  min-width: 0;
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.25s;
+  position: relative;
+}
+.mm-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--mm-accent, rgba(255,255,255,0.1));
+  opacity: 0.7;
+}
+.mm-card[data-card="pump_dump"]     { --mm-accent: var(--green); }
+.mm-card[data-card="vol_spike"]     { --mm-accent: var(--gold); }
+.mm-card[data-card="oi_raise"]      { --mm-accent: var(--blue); }
+.mm-card[data-card="divergence"]    { --mm-accent: #ff8f1f; }
+.mm-card[data-card="liquidations"]  { --mm-accent: var(--red); grid-column: span 2; }
+.mm-card.off { opacity: 0.5; }
+.mm-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.mm-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-right: auto;
+}
+.mm-card-title i {
+  color: var(--mm-accent);
+  font-size: 11px;
+}
+.mm-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.mm-in-num, .mm-pool-sel {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 4px;
+  outline: none;
+  transition: var(--tr);
+  text-align: center;
+}
+.mm-in-num { width: 42px; }
+.mm-pool-sel {
+  padding-right: 20px;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+                    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 9px) 8px, calc(100% - 5px) 8px;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+.mm-in-num:focus, .mm-pool-sel:focus { border-color: var(--ac); }
+.mm-in-num::-webkit-outer-spin-button,
+.mm-in-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.mm-in-num { -moz-appearance: textfield; }
+
+.mm-feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+}
+.mm-feed::-webkit-scrollbar { width: 5px; }
+.mm-feed::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+.mm-feed-empty {
+  padding: 20px 12px;
+  text-align: center;
+  color: var(--muted-2);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+.mm-sig {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  padding: 7px 9px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-left: 2px solid var(--mm-accent, var(--ac));
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--tr);
+  animation: mmSigIn 0.35s cubic-bezier(0.16,1,0.3,1);
+  align-items: center;
+}
+.mm-sig:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: var(--border-hi);
+  border-left-color: var(--mm-accent, var(--ac));
+}
+@keyframes mmSigIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.mm-sig-icon {
+  font-size: 14px;
+  width: 22px;
+  text-align: center;
+}
+.mm-sig-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mm-sig-line1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  flex-wrap: wrap;
+}
+.mm-sig-sym {
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.4px;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.mm-sig-sym:hover { color: var(--ac); }
+.mm-sig-tag {
+  font-size: 8.5px;
+  padding: 1px 5px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.mm-sig-label {
+  font-size: 9px;
+  color: var(--mm-accent, var(--ac));
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.mm-sig-line2 {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.mm-sig-val {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.mm-sig-val.pos { color: var(--up); }
+.mm-sig-val.neg { color: var(--dn); }
+.mm-sig-val.gold { color: var(--gold); }
+.mm-sig-val.blue { color: var(--blue); }
+.mm-sig-val.dim { color: var(--muted); }
+.mm-sig-time {
+  font-size: 8.5px;
+  color: var(--muted-2);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.mm-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 3000;
+  padding: 8px 14px;
+  background: rgba(255,190,11,0.1);
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  animation: mmToastIn 0.3s ease-out;
+  max-width: 300px;
+}
+@keyframes mmToastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 900px) {
+  .mm-cards-grid { grid-template-columns: 1fr; }
+  .mm-card[data-card="liquidations"] { grid-column: auto; }
+}
+
 </style>
 </head>
 <body>
+
+    <script>
+/* ═══════════════════════════════════════════════════════════════
+   T1_BUS · SENDER (ScreenerPro)
+   ═══════════════════════════════════════════════════════════════ */
+window.T1_BUS = (function () {
+  const bc = new BroadcastChannel('t1prime-bus');
+  const pending = new Map();
+  bc.onmessage = (e) => {
+    const m = e.data;
+    if (!m || !m.reqId || !pending.has(m.reqId)) return;
+    const { resolve, timer } = pending.get(m.reqId);
+    clearTimeout(timer);
+    pending.delete(m.reqId);
+    resolve(m);
+  };
+  function req(type, payload, timeoutMs = 25000) {
+    return new Promise((resolve, reject) => {
+      const reqId = type.split('_')[0] + '_' +
+                    Date.now().toString(36) + '_' +
+                    Math.random().toString(36).slice(2, 6);
+      const timer = setTimeout(() => {
+        pending.delete(reqId);
+        reject(new Error('timeout — Watchlist բաց չէ՞'));
+      }, timeoutMs);
+      pending.set(reqId, { resolve, timer });
+      bc.postMessage({ type, reqId, ...payload });
+    });
+  }
+  return {
+    snap: (opts) => req('snap_request', opts, 25000),
+    ping: ()       => req('ping', {}, 3000),
+  };
+})();
+console.log('[T1_BUS] sender ready', Object.keys(window.T1_BUS));
+</script>
 
 <div class="wrap">
 
@@ -958,9 +1315,9 @@ const STORAGE_KEY = 'bitdash_layout_v4';
 /* ════════════════════════════════════════════════════════════
    LAYOUT MIGRATION · ավտոմատ ավելացնում է նոր widget-ները
    ════════════════════════════════════════════════════════════ */
-const LAYOUT_VERSION = 2;              // ← ամեն նոր widget-ի հետ bump արա
+const LAYOUT_VERSION = 3;
 const LAYOUT_VERSION_KEY = 'bitdash_layout_ver';
-const REQUIRED_WIDGETS = ['signal_monitor'];   // ← պարտադիր widget-ների ցանկը
+const REQUIRED_WIDGETS = ['market_monitor'];
 
 /* ════════════════════════════════════════════════════════════
    STATE
@@ -972,19 +1329,7 @@ const state = {
     liqTotalCount: 0,
     refreshMs: 30000, refreshTimer: null, lastUpdateAt: null,
     _prevPrices: new Map(),
-    monitor: {
-        enabled: { oi: true, pump: true, dump: true, vol: true, div: true },
-        thresholds: { oi: 3, pump: 3, dump: 3, vol: 5, div: 2 },
-        topN: 500,
-        intervalMs: 180000,
-        signals: [],
-        lastScan: null,
-        scanning: false,
-        scanProgress: { i: 0, total: 0 },
-        scanTimer: null,
-        lastSignalByKey: {},
-        topMovers: { pumps: [], dumps: [] }
-    }
+    
 };
 const sparkCache = new Map();
 const widgetCleanup = {};
@@ -1188,6 +1533,7 @@ function sendChartSnap({ symbol, tf = '15m', caption = '' }) {
    RENDER FUNCTIONS · data → DOM
    ════════════════════════════════════════════════════════════ */
 function updateBTCHeroFast() {
+    if (!$('btc-price')) return;      // ← early exit — new widget active
     const t = state.tickersMap['BTCUSDT']; if (!t) return;
     const pEl = $('btc-price');
     if (pEl) { pEl.textContent = '$' + fmtPrice(t.price); pEl.style.color = t.change >= 0 ? 'var(--green)' : 'var(--red)'; }
@@ -1199,6 +1545,8 @@ function updateBTCHeroFast() {
     if (hl) hl.textContent = `H ${fmtPrice(t.high)} / L ${fmtPrice(t.low)}`;
 }
 async function refreshBTCSparkline() {
+     const el = $('btc-spark');
+    if (!el) return;                  // ← early exit — new widget active
     try {
         const t = state.tickersMap['BTCUSDT']; if (!t) return;
         const k = await fetchKlines('BTCUSDT', '1h', 24);
@@ -1580,73 +1928,23 @@ async function buildCorrelation() {
         grid.innerHTML = html;
     } catch(e) {}
 }
-const _liqSnapCooldown = new Map();
+
 
 
 /* ════════════════════════════════════════════════════════════
    LIQUIDATIONS WS
    ════════════════════════════════════════════════════════════ */
-function startScreenerLiqWS() {
-    
-    const ws = new WebSocket('wss://fstream.binance.com/market/ws/!forceOrder@arr');
-    ws.onmessage = async (e) => {
-        try {
-            const o = JSON.parse(e.data).o;
-            if (!o || !o.s || !o.s.endsWith('USDT')) return;
-            const usd = parseFloat(o.q) * parseFloat(o.p);
-            if (usd < 50000) return;
-            state.liqTotalCount++;
-            const cnt = $('liq-count'); if (cnt) cnt.textContent = state.liqTotalCount;
-            const feed = $('liq-feed');
-            const isLong = o.S === 'SELL';
-            const base = o.s.replace('USDT','');
-            const html = `<div class="liq-item"><div class="liq-time">${timeShort(o.T || Date.now())}</div><div><div class="liq-symbol">${base}</div><div class="liq-side ${isLong ? 'long' : 'short'}">${isLong ? 'LONG LIQ' : 'SHORT LIQ'} · $${fmtPrice(parseFloat(o.p))}</div></div><div class="liq-amt ${usd >= 500000 ? 'big' : ''}">${fmtUSD(usd, 1)}</div></div>`;
-            if (feed) {
-                if (feed.querySelector('.liq-empty')) feed.innerHTML = html;
-                else feed.insertAdjacentHTML('afterbegin', html);
-            }
-            if (TG.enabled && TG.token && TG.chat && usd >= TG.threshold) {
-    const nowTs = Date.now();
-    const lastSnap = _liqSnapCooldown.get(base) || 0;
-    if (nowTs - lastSnap > 60000) {
-        _liqSnapCooldown.set(base, nowTs);
-        const icon = isLong ? '🔴' : '🟢';
-        const amt  = fmtUSD(usd, 0);
-        sendChartSnap({
-            symbol: base,
-            tf: '5m',
-            caption: `${icon} REKT · ${base} · ${amt}\n${isLong ? 'LONG' : 'SHORT'} liq @ $${fmtPrice(parseFloat(o.p))}`
-        });
-    }
-}
-        } catch(e) {}
-    };
-    
-    ws.onerror = () => setTimeout(startScreenerLiqWS, 3000);
-}
+
 
 /* ════════════════════════════════════════════════════════════
    WIDGET REGISTRY
    ════════════════════════════════════════════════════════════ */
 const WIDGET_REGISTRY = {
-    btc_hero: {
-        id: 'btc_hero', name: 'BTC Hero', desc: 'Bitcoin price + sparkline', icon: 'fa-bitcoin-sign',
-        size: '2x1', category: 'Market',
-        render: () => `
-            <div class="btc-card-content">
-                <div class="btc-live">
-                    <span class="live-dot" style="background:var(--gold); box-shadow: 0 0 8px var(--gold);"></span>
-                    <span style="color:var(--gold);">BTC / USDT · PERP</span>
-                    <span style="margin-left:auto; font-size:9px;">FUTURES</span>
-                </div>
-                <div class="btc-price" id="btc-price">--</div>
-                <div class="btc-delta">
-                    <span id="btc-chg-val" class="pos">--</span>
-                    <span style="color:var(--muted); font-weight:600;" id="btc-chg-abs">--</span>
-                    <span style="color:var(--muted); margin-left:auto; font-size:10px;" id="btc-hl">H -- / L --</span>
-                </div>
-                <div class="btc-spark" id="btc-spark"></div>
-            </div>`
+     btc_hero: {
+        id: 'btc_hero', name: 'BTC Hero', desc: 'Bitcoin price + sparkline (Hub-style)', icon: 'fa-bitcoin-sign',
+        size: '2x2', category: 'Market',
+        render: renderBTCSparklineWidget,
+        init:   initBTCSparklineWidget
     },
     fng: {
         id: 'fng', name: 'Fear & Greed', desc: 'Sentiment index 0-100', icon: 'fa-gauge',
@@ -1712,126 +2010,14 @@ const WIDGET_REGISTRY = {
             <div class="card-title"><i class="fas fa-layer-group" style="color:var(--blue);"></i> SECTOR PERFORMANCE <span class="badge">24H</span></div>
             <div class="sector-list" id="sector-list"></div>`
     },
-    liquidations: {
-        id: 'liquidations', name: 'Live Liquidations', desc: 'Realtime whale liqs + TG alerts', icon: 'fa-water',
-        size: '1x2', category: 'Flow',
-        render: () => `
-            <div class="card-title"><i class="fas fa-water" style="color:var(--red);"></i> LIVE LIQUIDATIONS <span class="badge" id="liq-count">0</span></div>
-            <div class="liq-tg-panel">
-                <div class="liq-tg-header">
-                    <i class="fab fa-telegram"></i>
-                    <span>Telegram Alerts</span>
-                    <span class="st" id="ltg-st">off</span>
-                </div>
-                <div class="liq-tg-row">
-                    <input class="lb-in" id="ltg-tok" type="text" placeholder="Bot token (123:ABC...)" autocomplete="off" />
-                </div>
-                <div class="liq-tg-row">
-                    <input class="lb-in" id="ltg-chat" type="text" placeholder="Chat ID" autocomplete="off" />
-                </div>
-                <div class="liq-tg-row">
-                    <input class="lb-in" id="ltg-thresh" type="number" min="0" step="1000" value="100000" placeholder="Min $" />
-                    <button class="lb-btn" id="ltg-save">Save</button>
-                </div>
-                <div class="liq-tg-note">Only <b>≥ threshold</b> liqs are pushed. Feed shows ≥ $50K.</div>
-            </div>
-            <div class="liq-feed" id="liq-feed">
-                <div class="liq-empty">Waiting for liquidations... 🐋</div>
-            </div>`,
-        init: (w, el) => {
-            const save = el.querySelector('#ltg-save');
-            if (!save) return;
-            const st = el.querySelector('#ltg-st');
-            save.addEventListener('click', async () => {
-                TG.token = el.querySelector('#ltg-tok').value.trim();
-                TG.chat = el.querySelector('#ltg-chat').value.trim();
-                const th = parseFloat(el.querySelector('#ltg-thresh').value);
-                if (isFinite(th) && th > 0) TG.threshold = th;
-                const ok = !!(TG.token && TG.chat);
-                TG.enabled = ok;
-                if (ok) {
-                     saveTg();   // ★ persist
-                    st.textContent = `on · $${(TG.threshold/1000).toFixed(0)}k+`;
-                    st.classList.add('on');
-                    await sendTg(
-    `🩸Liquidation alerts enabled\n` +
-    `Threshold: <b>${fmtUSD(TG.threshold, 0)}</b>`,
-    true
-);
-                } else {
-                    st.textContent = 'off';
-                    st.classList.remove('on');
-                    toast('Enter Telegram token & chat ID');
-                }
-            });
-        }
-    },
-
-        signal_monitor: {
-        id: 'signal_monitor', name: 'Signal Monitor', desc: 'OI · Pumper · Dumper · Volume · Divergence', icon: 'fa-satellite-dish',
-        size: 'hero', category: 'Flow',
-        render: () => {
-            const M = state.monitor;
-            const types = [
-                ['oi',   'OI Spike',    'fa-arrow-up-right-dots'],
-                ['pump', 'Pumper',      'fa-rocket'],
-                ['dump', 'Dumper',      'fa-arrow-trend-down'],
-                ['vol',  'Volume',      'fa-bolt'],
-                ['div',  'P/OI Div',    'fa-code-branch']
-            ];
-            return `
-            <div class="card-title">
-                <i class="fas fa-satellite-dish" style="color:var(--ac);"></i>
-                SIGNAL MONITOR
-                <span class="badge" id="mon-count">0</span>
-                <span class="mon-status" id="mon-status" style="margin-left:auto;padding-right:0;">IDLE</span>
-            </div>
-            <div class="mon-wrap">
-                <div class="mon-toolbar">
-                    <div class="mon-toggles">
-                        ${types.map(([k,l,ic]) => `
-                            <label class="mon-toggle ${M.enabled[k] ? 'on' : ''}" data-mon-toggle="${k}">
-                                <i class="fas ${ic}"></i> ${l}
-                            </label>`).join('')}
-                    </div>
-                    <div class="mon-thresh-group">
-                        <span class="mon-thresh">OI<input type="number" step="0.5" min="0.5" value="${M.thresholds.oi}" data-mon-th="${'oi'}">%</span>
-                        <span class="mon-thresh">P<input type="number" step="0.5" min="0.5" value="${M.thresholds.pump}" data-mon-th="pump">%</span>
-                        <span class="mon-thresh">D<input type="number" step="0.5" min="0.5" value="${M.thresholds.dump}" data-mon-th="dump">%</span>
-                        <span class="mon-thresh">V<input type="number" step="0.5" min="1" value="${M.thresholds.vol}" data-mon-th="vol">x</span>
-                        <span class="mon-thresh">Div<input type="number" step="0.5" min="0.5" value="${M.thresholds.div}" data-mon-th="div">%</span>
-                        <button class="mon-scan-btn" id="mon-scan">SCAN</button>
-                    </div>
-                </div>
-                                <div style="display:flex;gap:5px;align-items:center;padding:6px 14px;border-bottom:1px solid var(--border);background:rgba(41,182,246,.03);font-size:9px;">
-                    <i class="fab fa-telegram" style="color:#29b6f6;font-size:12px;"></i>
-                    <input id="mon-tg-tok" placeholder="token" value="${TG.token || ''}" autocomplete="off" style="flex:1;min-width:80px;padding:3px 6px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:9px;outline:none;font-family:var(--font-mono);">
-                    <input id="mon-tg-chat" placeholder="chat id" value="${TG.chat || ''}" autocomplete="off" style="width:90px;padding:3px 6px;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:9px;outline:none;font-family:var(--font-mono);">
-                    <button id="mon-tg-save" style="padding:3px 10px;background:#29b6f6;color:#000;border:none;border-radius:4px;font-size:9px;font-weight:800;cursor:pointer;letter-spacing:.5px;">SAVE</button>
-                    <span id="mon-tg-status" style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:8px;background:${TG.enabled ? 'rgba(0,255,157,.1)' : 'rgba(255,255,255,.05)'};color:${TG.enabled ? 'var(--green)' : 'var(--muted)'};">${TG.enabled ? 'ON' : 'OFF'}</span>
-                </div>
-                <div class="mon-progress"><div class="mon-progress-bar" id="mon-progress-bar"></div></div>
-                <div class="mon-movers">
-                    <div class="mon-movers-col">
-                        <div class="mon-movers-title pos">▲ TOP PUMPS · 15M</div>
-                        <div id="mon-top-pumps"><div class="mon-empty" style="padding:8px; font-size:9px;">—</div></div>
-                    </div>
-                    <div class="mon-movers-col">
-                        <div class="mon-movers-title neg">▼ TOP DUMPS · 15M</div>
-                        <div id="mon-top-dumps"><div class="mon-empty" style="padding:8px; font-size:9px;">—</div></div>
-                    </div>
-                </div>
-                <div class="mon-feed" id="mon-feed">
-                    <div class="mon-empty">
-                        <i class="fas fa-satellite-dish"></i>
-                        Press <b>SCAN</b> or wait for the auto-scan (every 3 min).
-                        Signals will appear here as the market moves.
-                    </div>
-                </div>
-            </div>`;
-        },
-        init: (w, el) => { initSignalMonitor(w, el); }
-    },
+    
+market_monitor: {
+    id: 'market_monitor', name: 'Market Monitor', desc: '5-card signal hunter · Pumps · Vol · OI · Div · Liq', icon: 'fa-satellite-dish',
+    size: 'hero', category: 'Flow',
+    render: () => MM.render(),
+    init: (w, el) => MM.init(w, el)
+},
+        
     screener: {
         id: 'screener', name: 'Mega Screener', desc: 'Top 200 pairs · smooth refresh', icon: 'fa-radar',
         size: 'full', category: 'Market',
@@ -1999,7 +2185,7 @@ const SIZE_CATALOG = [
    ════════════════════════════════════════════════════════════ */
 function getDefaultLayout() {
     return [
-        { id: uid(), type: 'signal_monitor', size: 'hero' },   // ← ՆՈՐ
+        { id: uid(), type: 'market_monitor', size: 'hero' },   // ← ՆՈՐ
         { id: uid(), type: 'btc_hero',     size: '1x1'    },   // S
         { id: uid(), type: 'fng',          size: '1x1'    },   // S
         { id: uid(), type: 'mcap',         size: '1x1'    },   // S
@@ -2023,6 +2209,7 @@ function loadState() {
         if (!raw) return false;
         const s = JSON.parse(raw);
         state.widgets = (s.widgets || []).filter(w => WIDGET_REGISTRY[w.type]);
+        state.widgets = (s.widgets || []).filter(w => WIDGET_REGISTRY[w.type] && w.type !== 'liquidations');
         return true;
     } catch(e) { return false; }
 }
@@ -2221,6 +2408,8 @@ function removeWidget(widgetId) {
     }, 240);
 }
 
+
+
 /* ════════════════════════════════════════════════════════════
    SET WIDGET SIZE
    ════════════════════════════════════════════════════════════ */
@@ -2414,6 +2603,338 @@ function reorderWidget(fromId, toId) {
     } else {
         toEl.parentNode.insertBefore(fromEl, toEl);
     }
+}
+
+/* ════════════════════════════════════════════════════════════
+   BTC SPARKLINE · 1:1 PORTED FROM GRIND // OS (Hub)
+   canvas-based · volume gradient · pulse · hover tooltip
+   ════════════════════════════════════════════════════════════ */
+function renderBTCSparklineWidget(w) {
+    return `
+        <div style="display:flex; flex-direction:column; height:100%; min-height:0; padding:14px 16px 12px; box-sizing:border-box;">
+            <div class="mod-header" style="overflow: visible; margin-bottom:8px; flex-shrink:0;">
+                <div class="mod-title" style="overflow: visible; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-bolt" style="color: var(--accent);"></i>
+                    <div style="position: relative;">
+                        <input type="text" id="coinInput_${w.id}" value="BTCUSDT" list="coinList_${w.id}" spellcheck="false"
+                               style="background: transparent; color: var(--text-main); border: none; border-bottom: 1px dashed var(--border-thin);
+                                      padding: 0; font-size: 0.75rem; font-weight: 700; font-family: var(--font-mono); width: 75px;
+                                      text-transform: uppercase; outline: none; transition: border-color 0.3s; cursor: pointer;"
+                               onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-thin)'">
+                        <datalist id="coinList_${w.id}"></datalist>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px; font-size:8px; font-family:var(--font-mono); color:var(--accent); font-weight:700; letter-spacing:1px; background:var(--accent-dim); padding:2px 6px; border-radius:4px; border:1px solid rgba(0,255,213,0.2);">
+                    <div style="width:5px; height:5px; background:var(--accent); border-radius:50%; box-shadow:0 0 5px var(--accent); animation:pulseDot 1.5s infinite;"></div> LIVE
+                </div>
+            </div>
+
+            <div style="flex:1; display:flex; flex-direction:column; min-height:0; position:relative;">
+
+                <div style="display:flex; justify-content:flex-end; align-items:flex-start; margin-bottom:8px; flex-shrink:0;">
+                    <div style="text-align:right;">
+                        <div id="currentPrice_${w.id}" style="font-size:clamp(1.1rem, 4cqw, 1.8rem); font-weight:800; font-family:var(--font-mono); line-height:1; letter-spacing:-1px; text-shadow:0 0 20px rgba(255,255,255,0.1); transition:color 0.3s ease;">--</div>
+                        <div id="priceChange_${w.id}" style="font-size:0.72rem; font-family:var(--font-mono); padding:2px 8px; border-radius:4px; display:inline-block; margin-top:5px; font-weight:700; letter-spacing:0.5px;">--</div>
+                    </div>
+                </div>
+
+                <div style="position:relative; flex:1; min-height:0; background:linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.4) 100%); border-radius:8px; border:1px solid rgba(255,255,255,0.03); overflow:hidden; margin-bottom:8px;">
+                    <div id="loadingState_${w.id}" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:var(--accent); font-size:10px; font-family:var(--font-mono); letter-spacing:2px; z-index:10; text-shadow:0 0 10px var(--accent); display:none;">SYNCING...</div>
+                    <canvas id="sparklineChart_${w.id}" style="width:100%; height:100%; display:block; cursor:crosshair;"></canvas>
+                    <div id="hoverTooltip_${w.id}" style="position:absolute; background:rgba(10,10,12,0.95); color:var(--text-main); padding:6px 10px; border-radius:6px; font-size:10px; font-family:var(--font-mono); pointer-events:none; opacity:0; transition:opacity 0.1s; transform:translate(-50%,-100%); border:1px solid var(--accent-dim); box-shadow:0 5px 15px rgba(0,0,0,0.5); z-index:20; white-space:nowrap; text-align:center;"></div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; flex-shrink:0;">
+                    <div style="display:flex; gap:10px; font-size:9px; color:var(--text-muted); font-family:var(--font-mono);">
+                        <div>H: <strong id="highPrice_${w.id}" style="color:var(--text-main);">--</strong></div>
+                        <div>L: <strong id="lowPrice_${w.id}" style="color:var(--text-main);">--</strong></div>
+                    </div>
+                    <div id="tfSelector_${w.id}" style="display:flex; gap:4px;">
+                        <button class="scr-tab active" data-interval="1h" data-limit="24" style="padding:4px 8px; font-size:9px;">24H</button>
+                        <button class="scr-tab" data-interval="4h" data-limit="42" style="padding:4px 8px; font-size:9px;">7D</button>
+                        <button class="scr-tab" data-interval="1d" data-limit="30" style="padding:4px 8px; font-size:9px;">1M</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function initBTCSparklineWidget(w, el) {
+    const API_BASE = 'https://api.binance.com/api/v3';
+    const DPI = window.devicePixelRatio || 1;
+    let currentCoinId = 'BTCUSDT';
+    let priceData = [], rawPrices = [], rawVolumes = [];
+    let animationFrameId = null, pulseAnimationFrameId = null, pulseTimeStart = null;
+    let lastMouseX = -1;
+    const PULSE_DURATION = 2000;
+
+    const SYMBOL_NAMES = { 'BTCUSDT':'BITCOIN', 'ETHUSDT':'ETHEREUM', 'SOLUSDT':'SOLANA', 'BNBUSDT':'BNB', 'XRPUSDT':'RIPPLE', 'DOGEUSDT':'DOGECOIN', 'ADAUSDT':'CARDANO', 'AVAXUSDT':'AVALANCHE', 'LINKUSDT':'CHAINLINK' };
+
+    let config = { interval: '1h', limit: 24, padding: { top: 15, right: 10, bottom: 10, left: 10 }, hoverLineColor: 'rgba(255,255,255,0.15)' };
+
+    const els = {
+        input:    el.querySelector(`#coinInput_${w.id}`),
+        datalist: el.querySelector(`#coinList_${w.id}`),
+        price:    el.querySelector(`#currentPrice_${w.id}`),
+        change:   el.querySelector(`#priceChange_${w.id}`),
+        high:     el.querySelector(`#highPrice_${w.id}`),
+        low:      el.querySelector(`#lowPrice_${w.id}`),
+        loading:  el.querySelector(`#loadingState_${w.id}`),
+        canvas:   el.querySelector(`#sparklineChart_${w.id}`),
+        tooltip:  el.querySelector(`#hoverTooltip_${w.id}`),
+        tfs:      el.querySelectorAll(`#tfSelector_${w.id} .scr-tab`)
+    };
+    if (!els.canvas) return;
+    const ctx = els.canvas.getContext('2d');
+
+    function formatPrice(price) {
+        const num = parseFloat(price);
+        return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits: num>100?2:6 }).format(num);
+    }
+
+    async function fetchChartData(symbol, interval, limit) {
+        els.loading.style.display = 'block';
+        try {
+            let data = null;
+            try {
+                const r = await fetch(`/api/sparkline?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+                if (r.ok) data = await r.json();
+            } catch (_) {}
+            if (!data || !Array.isArray(data) || !data.length) {
+                try {
+                    const r2 = await fetch(`https://t1prime.com/api/sparkline?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+                    if (r2.ok) data = await r2.json();
+                } catch (_) {}
+            }
+            if (!data || !Array.isArray(data) || !data.length) {
+                const r3 = await fetch(`${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+                if (r3.ok) data = await r3.json();
+            }
+            els.loading.style.display = 'none';
+            if (Array.isArray(data)) {
+                return data.map(k => [parseInt(k[0]), parseFloat(k[4]), parseFloat(k[7])]);
+            }
+            return [];
+        } catch (e) {
+            els.loading.style.display = 'none';
+            return [];
+        }
+    }
+
+    async function updateWidget(symbol) {
+        try {
+            const marketData = await fetch(`${API_BASE}/ticker/24hr?symbol=${symbol}`).then(r=>r.json());
+            if (marketData && !marketData.code) {
+                const chg = parseFloat(marketData.priceChangePercent);
+                els.price.textContent = formatPrice(marketData.lastPrice);
+                const isUp = chg >= 0;
+                const upCol = '#00ffc8', dnCol = '#a855f7';
+                els.price.style.color = isUp ? upCol : dnCol;
+                els.change.textContent = `${isUp?'+':''}${chg.toFixed(2)}%`;
+                els.change.style.color = isUp ? upCol : dnCol;
+                els.change.style.background = isUp ? 'rgba(0,255,200,0.1)' : 'rgba(168,85,247,0.1)';
+                els.change.style.border = isUp ? '1px solid rgba(0,255,200,0.2)' : '1px solid rgba(168,85,247,0.2)';
+                els.high.textContent = formatPrice(marketData.highPrice);
+                els.low.textContent  = formatPrice(marketData.lowPrice);
+            }
+            priceData = await fetchChartData(symbol, config.interval, config.limit);
+            rawPrices  = priceData.map(p => p[1]);
+            rawVolumes = priceData.map(p => p[2] || 0);
+            if (!pulseAnimationFrameId) pulseAnimationFrameId = requestAnimationFrame(animatePulse);
+        } catch(e) {}
+    }
+
+    function hexToRgba(hex, alpha) {
+        const r = parseInt(hex.slice(1,3), 16);
+        const g = parseInt(hex.slice(3,5), 16);
+        const b = parseInt(hex.slice(5,7), 16);
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function drawSparkline(hoverX = -1, pulseScale = 1) {
+        if (!rawPrices.length) return;
+        const rect = els.canvas.parentElement.getBoundingClientRect();
+        els.canvas.width  = rect.width  * DPI;
+        els.canvas.height = rect.height * DPI;
+        ctx.scale(DPI, DPI);
+
+        const width  = rect.width  - config.padding.left - config.padding.right;
+        const height = rect.height - config.padding.top  - config.padding.bottom;
+        const max = Math.max(...rawPrices), min = Math.min(...rawPrices), range = max - min;
+        const isUp = rawPrices[rawPrices.length-1] >= rawPrices[0];
+        const lineColor = isUp ? '#00ffc8' : '#a855f7';
+
+        ctx.clearRect(0, 0, rect.width*DPI, rect.height*DPI);
+        if (rawPrices.length < 2 || range <= 0) return;
+
+        const xScale = width / (rawPrices.length - 1), yScale = height / range;
+        const getX = i => config.padding.left + i * xScale;
+        const getY = p => config.padding.top + height - (p - min) * yScale;
+        const baselineY = rect.height;
+
+        const vols = rawVolumes.length === rawPrices.length ? rawVolumes : rawPrices.map(() => 1);
+        const maxV = Math.max(...vols) || 1;
+        const minV = Math.min(...vols) || 0;
+        const logMax = Math.log(1 + maxV), logMin = Math.log(1 + minV);
+        const logRange = logMax - logMin || 1;
+        const normVol = vols.map(v => (Math.log(1 + v) - logMin) / logRange);
+
+        /* AREA PATH */
+        ctx.beginPath();
+        ctx.moveTo(getX(0), baselineY);
+        ctx.lineTo(getX(0), getY(rawPrices[0]));
+        for (let i = 0; i < rawPrices.length - 1; i++) {
+            ctx.quadraticCurveTo(
+                (getX(i) + getX(i+1)) / 2, getY(rawPrices[i]),
+                getX(i+1), getY(rawPrices[i+1])
+            );
+        }
+        ctx.lineTo(getX(rawPrices.length - 1), baselineY);
+        ctx.closePath();
+
+        /* VOLUME-DRIVEN FILL */
+        ctx.save();
+        ctx.clip();
+        const volGrad = ctx.createLinearGradient(config.padding.left, 0, config.padding.left + width, 0);
+        const N = normVol.length;
+        for (let i = 0; i < N; i++) {
+            const p = N === 1 ? 0 : i / (N - 1);
+            const alpha = 0.05 + normVol[i] * 0.7;
+            volGrad.addColorStop(p, hexToRgba(lineColor, alpha));
+        }
+        ctx.fillStyle = volGrad;
+        ctx.fillRect(config.padding.left, config.padding.top, width, height);
+
+        ctx.globalCompositeOperation = 'destination-out';
+        const fadeGrad = ctx.createLinearGradient(0, config.padding.top, 0, baselineY);
+        fadeGrad.addColorStop(0, 'rgba(0,0,0,0)');
+        fadeGrad.addColorStop(1, 'rgba(0,0,0,1)');
+        ctx.fillStyle = fadeGrad;
+        ctx.fillRect(config.padding.left, config.padding.top, width, height);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.restore();
+
+        /* LINE */
+        ctx.beginPath();
+        ctx.strokeStyle = lineColor; ctx.lineWidth = 2.5;
+        ctx.shadowColor = lineColor; ctx.shadowBlur = 8;
+        ctx.moveTo(getX(0), getY(rawPrices[0]));
+        for (let i = 0; i < rawPrices.length - 1; i++) {
+            ctx.quadraticCurveTo(
+                (getX(i) + getX(i+1)) / 2, getY(rawPrices[i]),
+                getX(i+1), getY(rawPrices[i+1])
+            );
+        }
+        ctx.stroke(); ctx.shadowBlur = 0;
+
+        /* LAST POINT + PULSE */
+        const lastX = getX(rawPrices.length - 1), lastY = getY(rawPrices[rawPrices.length - 1]);
+        if (pulseScale > 1) {
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, 12 * pulseScale, 0, Math.PI * 2);
+            ctx.strokeStyle = lineColor + Math.round((0.8 / pulseScale) * 255).toString(16).padStart(2, '0');
+            ctx.lineWidth = 2 * (2 - pulseScale); ctx.stroke();
+        }
+        ctx.beginPath(); ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff'; ctx.fill();
+
+        /* HOVER CROSSHAIR */
+        if (hoverX > -1) {
+            const idx = Math.min(Math.round((hoverX - config.padding.left) / xScale), rawPrices.length - 1);
+            if (idx >= 0) {
+                const px = getX(idx), py = getY(rawPrices[idx]);
+                ctx.beginPath(); ctx.strokeStyle = config.hoverLineColor; ctx.setLineDash([3, 3]);
+                ctx.moveTo(px, config.padding.top);
+                ctx.lineTo(px, rect.height - config.padding.bottom);
+                ctx.stroke(); ctx.setLineDash([]);
+                ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#fff'; ctx.shadowColor = '#fff'; ctx.shadowBlur = 10;
+                ctx.fill(); ctx.shadowBlur = 0;
+                return { x: px, y: py, price: rawPrices[idx], time: priceData[idx][0], volume: vols[idx] || 0 };
+            }
+        }
+    }
+
+    function animatePulse(timestamp) {
+        if (!pulseTimeStart) pulseTimeStart = timestamp;
+        let progress = (timestamp - pulseTimeStart) / PULSE_DURATION;
+        if (progress >= 1) { progress = 1; drawSparkline(lastMouseX, 1); pulseAnimationFrameId = null; return; }
+        drawSparkline(lastMouseX, 1 + 0.6 * Math.sin(progress * Math.PI));
+        pulseAnimationFrameId = requestAnimationFrame(animatePulse);
+    }
+
+    els.canvas.addEventListener('mousemove', e => {
+        lastMouseX = e.clientX - els.canvas.getBoundingClientRect().left;
+        if (pulseAnimationFrameId) { cancelAnimationFrame(pulseAnimationFrameId); pulseAnimationFrameId = null; pulseTimeStart = null; }
+        if (!animationFrameId) animationFrameId = requestAnimationFrame(() => {
+            animationFrameId = null;
+            const h = drawSparkline(lastMouseX, 1);
+            if (h) {
+                const trendColor = h.price >= rawPrices[0] ? '#00ffc8' : '#a855f7';
+                const fmtVol = v => v >= 1e9 ? (v/1e9).toFixed(2)+'B'
+                    : v >= 1e6 ? (v/1e6).toFixed(2)+'M'
+                    : v >= 1e3 ? (v/1e3).toFixed(1)+'K'
+                    : v.toFixed(0);
+                els.tooltip.innerHTML = `
+                    <span style="font-weight:800; font-size:12px; color:${trendColor};">${formatPrice(h.price)}</span><br>
+                    <span style="color:var(--accent); opacity:0.9; font-size:10px;">Vol: $${fmtVol(h.volume)}</span><br>
+                    <span style="color:var(--text-muted); opacity:0.8;">${new Date(h.time).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'})}</span>
+                `;
+                let tipX = h.x + els.canvas.offsetLeft;
+                let tipY = h.y + els.canvas.offsetTop - 15;
+                const tipW = els.tooltip.offsetWidth || 80;
+                if (tipY < 40) { tipY = h.y + els.canvas.offsetTop + 20; els.tooltip.style.transform = 'translate(-50%, 0)'; }
+                else { els.tooltip.style.transform = 'translate(-50%, -100%)'; }
+                if (tipX < tipW/2 + 5) tipX = tipW/2 + 5;
+                if (tipX > els.canvas.offsetWidth - tipW/2 - 5) tipX = els.canvas.offsetWidth - tipW/2 - 5;
+                els.tooltip.style.left = `${tipX}px`;
+                els.tooltip.style.top  = `${tipY}px`;
+                els.tooltip.style.opacity = '1';
+            }
+        });
+    });
+
+    els.canvas.addEventListener('mouseout', () => {
+        if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+        els.tooltip.style.opacity = '0'; lastMouseX = -1;
+        if (!pulseAnimationFrameId) pulseAnimationFrameId = requestAnimationFrame(animatePulse);
+    });
+
+    Object.keys(SYMBOL_NAMES).forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id; opt.textContent = SYMBOL_NAMES[id];
+        els.datalist.appendChild(opt);
+    });
+
+    let debounceTimer;
+    els.input.addEventListener('input', e => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            let val = e.target.value.trim().toUpperCase();
+            if (val.length > 2 && !val.includes('USDT') && !val.includes('USD')) val += 'USDT';
+            if (val) { currentCoinId = val; updateWidget(currentCoinId); }
+        }, 600);
+    });
+
+    els.tfs.forEach(btn => btn.addEventListener('click', e => {
+        e.stopPropagation();
+        els.tfs.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        config.interval = btn.dataset.interval;
+        config.limit    = parseInt(btn.dataset.limit);
+        updateWidget(currentCoinId);
+    }));
+
+    const ro = new ResizeObserver(() => drawSparkline(lastMouseX, 1));
+    ro.observe(els.canvas.parentElement);
+    updateWidget(currentCoinId);
+
+    widgetCleanup[w.id] = () => {
+        ro.disconnect();
+        if (pulseAnimationFrameId)   cancelAnimationFrame(pulseAnimationFrameId);
+        if (animationFrameId)        cancelAnimationFrame(animationFrameId);
+    };
 }
 
 /* ─── Library → dashboard drop ─── */
@@ -2745,386 +3266,768 @@ function refreshSparkCacheLoop() {
 /* ════════════════════════════════════════════════════════════
    SIGNAL MONITOR · detection engine
    ════════════════════════════════════════════════════════════ */
-const MON_CFG_KEY = 'bitdash_monitor_cfg_v1';
-const monCache = new Map();  // key → { data, ts }
+/* ════════════════════════════════════════════════════════════════
+   MARKET MONITOR (MM) · 5-card signal hunter
+   ════════════════════════════════════════════════════════════════ */
+const MM_CFG_KEY = 'market_monitor_v1';
 
-async function cachedFetch(key, url, ttlMs = 240000) {
-    const hit = monCache.get(key);
+const MM = (() => {
+  const S = {
+    alertsEnabled: true,
+    cards: {
+      pump_dump: {
+        enabled: true,
+        pool: { mode: 'all' },
+        pumpThr: 8, dumpThr: 8, windowMin: 30,
+        cooldownMs: 30 * 60 * 1000, scanMs: 7.5 * 60 * 1000,
+        lastScan: 0, lastSignalAt: {}, signals: [],
+      },
+      vol_spike: {
+        enabled: true,
+        pool: { mode: 'top', topN: 200 },
+        floor: 5, windowMin: 3,
+        cooldownMs: 20 * 60 * 1000, scanMs: 60 * 1000,
+        lastScan: 0, lastSignalAt: {}, signals: [],
+      },
+      oi_raise: {
+        enabled: true,
+        pool: { mode: 'all' },
+        oiThr: 3, priceThr: 5, volFloor: 5, windowMin: 20,
+        cooldownMs: 20 * 60 * 1000, scanMs: 5 * 60 * 1000,
+        lastScan: 0, lastSignalAt: {}, signals: [],
+      },
+      divergence: {
+    enabled: true,
+    pool: { mode: 'all' },
+    oiThr: 5, priceThr: 5, lookbackH: 12,          /* fixed 12h */
+    cooldownMs: 2 * 60 * 60 * 1000, scanMs: 60 * 60 * 1000,
+    lastScan: 0, lastSignalAt: {}, signals: [],
+},
+      liquidations: {
+        enabled: true,
+        pool: { mode: 'excluding', topN: 25 },
+        minUsd: 20000, volFloor: 5,
+        lastSignalAt: {}, signals: [],
+      },
+    },
+  };
+
+  const CACHE = new Map();
+  const UNIVERSE = { coins: [], lastFetch: 0 };
+  let WS = null;
+  let TICK = null;
+  let BOOTED = false;
+
+  /* ── Config persistence ── */
+  function loadCfg() {
+    try {
+      const raw = localStorage.getItem(MM_CFG_KEY); if (!raw) return;
+      const c = JSON.parse(raw);
+      if (typeof c.alertsEnabled === 'boolean') S.alertsEnabled = c.alertsEnabled;
+      if (c.cards) {
+        for (const k of Object.keys(S.cards)) {
+          if (!c.cards[k]) continue;
+          const src = c.cards[k], dst = S.cards[k];
+          if (typeof src.enabled === 'boolean') dst.enabled = src.enabled;
+          if (src.pool) dst.pool = { ...dst.pool, ...src.pool };
+          ['pumpThr','dumpThr','oiThr','priceThr','volFloor','minUsd','windowMin','floor','lookbackH']
+            .forEach(f => { if (src[f] != null) dst[f] = +src[f]; });
+          if (src.lastSignalAt) dst.lastSignalAt = src.lastSignalAt;
+        }
+      }
+    } catch(e) {}
+  }
+  function saveCfg() {
+    try {
+      const out = { alertsEnabled: S.alertsEnabled, cards: {} };
+      for (const k of Object.keys(S.cards)) {
+        const c = S.cards[k];
+        out.cards[k] = {
+          enabled: c.enabled, pool: c.pool,
+          pumpThr: c.pumpThr, dumpThr: c.dumpThr,
+          oiThr: c.oiThr, priceThr: c.priceThr, volFloor: c.volFloor,
+          minUsd: c.minUsd, windowMin: c.windowMin, floor: c.floor,
+          lookbackH: c.lookbackH,
+          lastSignalAt: c.lastSignalAt,
+        };
+      }
+      localStorage.setItem(MM_CFG_KEY, JSON.stringify(out));
+    } catch(e) {}
+  }
+
+  /* ── Cache helper ── */
+  async function cached(key, url, ttlMs) {
     const now = Date.now();
+    const hit = CACHE.get(key);
     if (hit && (now - hit.ts) < ttlMs) return hit.data;
     try {
-        const data = await fetch(url).then(r => r.json());
-        monCache.set(key, { data, ts: now });
-        return data;
+      const data = await fetch(url).then(r => r.json());
+      CACHE.set(key, { data, ts: now });
+      return data;
     } catch(e) { return null; }
-}
+  }
 
-const SIG_DEF = {
-    oi_up: { icon:'fa-arrow-up-from-bracket',   label:'OI ↑',  color:'#00d4ff', short:'OI' },
-    oi_dn: { icon:'fa-arrow-down-to-bracket',   label:'OI ↓',  color:'#a855f7', short:'OI' },
-    pump:  { icon:'fa-rocket',                   label:'PUMP',  color:'#00ff9d', short:'PUMP' },
-    dump:  { icon:'fa-arrow-trend-down',         label:'DUMP',  color:'#ff0055', short:'DUMP' },
-    vol:   { icon:'fa-bolt',                     label:'VOL',   color:'#ffbe0b', short:'VOL' },
-    div:   { icon:'fa-code-branch',              label:'DIV',   color:'#ff8f1f', short:'DIV' }
-};
-
-function loadMonitorCfg() {
+  /* ── Universe ── */
+  async function refreshUniverse() {
+    if (Date.now() - UNIVERSE.lastFetch < 55000) return;
     try {
-        const raw = localStorage.getItem(MON_CFG_KEY); if (!raw) return;
-        const c = JSON.parse(raw);
-        if (c.enabled) Object.assign(state.monitor.enabled, c.enabled);
-        if (c.thresholds) Object.assign(state.monitor.thresholds, c.thresholds);
-        if (c.topN) state.monitor.topN = c.topN;
-        if (c.intervalMs) state.monitor.intervalMs = c.intervalMs;
-        if (c.lastSignalByKey) state.monitor.lastSignalByKey = c.lastSignalByKey;
+      const data = await fetch(`${API.binance}/fapi/v1/ticker/24hr`).then(r => r.json());
+      UNIVERSE.coins = data
+        .filter(t => t.symbol.endsWith('USDT') && !t.symbol.includes('_'))
+        .map(t => ({
+          sym: t.symbol,
+          base: t.symbol.replace('USDT',''),
+          vol24h: parseFloat(t.quoteVolume),
+          price: parseFloat(t.lastPrice),
+        }))
+        .filter(t => t.vol24h >= 1_000_000)
+        .sort((a,b) => b.vol24h - a.vol24h);
+      UNIVERSE.lastFetch = Date.now();
     } catch(e) {}
-}
-function saveMonitorCfg() {
-    try {
-        localStorage.setItem(MON_CFG_KEY, JSON.stringify({
-            enabled: state.monitor.enabled,
-            thresholds: state.monitor.thresholds,
-            topN: state.monitor.topN,
-            intervalMs: state.monitor.intervalMs,
-            lastSignalByKey: state.monitor.lastSignalByKey
-        }));
-    } catch(e) {}
-}
+  }
+  function filterPool(pool) {
+    const u = UNIVERSE.coins;
+    if (!pool || pool.mode === 'all') return u;
+    if (pool.mode === 'top') return u.slice(0, pool.topN);
+    if (pool.mode === 'excluding') return u.slice(pool.topN);
+    return u;
+  }
 
-function initSignalMonitor(w, el) {
-    loadMonitorCfg();
+  /* ── Format helpers ── */
+  const bolts = (x) => x >= 50 ? '⚡⚡⚡⚡' : x >= 25 ? '⚡⚡⚡' : x >= 10 ? '⚡⚡' : '⚡';
+  const cgLink = (base) => `<a href="https://www.coinglass.com/tv/Binance_${base}USDT">${base}</a>`;
+  const sgn = (v) => (v >= 0 ? '+' : '');
+  const fmtUsd = (v) => v >= 1e6 ? `$${(v/1e6).toFixed(1)}m` : v >= 1e3 ? `$${(v/1e3).toFixed(0)}k` : `$${v.toFixed(0)}`;
 
-    /* toggle buttons */
-    el.querySelectorAll('[data-mon-toggle]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const k = btn.dataset.monToggle;
-            state.monitor.enabled[k] = !state.monitor.enabled[k];
-            btn.classList.toggle('on', state.monitor.enabled[k]);
-            saveMonitorCfg();
-        });
-    });
-
-    /* threshold inputs */
-    el.querySelectorAll('[data-mon-th]').forEach(inp => {
-        inp.addEventListener('change', () => {
-            const k = inp.dataset.monTh;
-            const v = parseFloat(inp.value);
-            if (isFinite(v) && v > 0) state.monitor.thresholds[k] = v;
-            saveMonitorCfg();
-        });
-    });
-
-    /* scan button */
-    el.querySelector('#mon-scan').addEventListener('click', () => runMonitorScan());
-
-    /* auto-scan */
-    if (!state.monitor.scanTimer) {
-        setTimeout(() => { if (state.tickers.length) runMonitorScan(); }, 8000);
-        state.monitor.scanTimer = setInterval(() => {
-            if (document.hidden) return;
-            if (!state.tickers.length) return;
-            runMonitorScan();
-        }, state.monitor.intervalMs);
+  /* ── Signal emission (via T1_BUS) ── */
+  function emit(cardId, sig) {
+    const cfg = S.cards[cardId];
+    if (cardId !== 'liquidations') {
+      const key = sig.sym + '_' + (sig.type || 'na');
+      if (Date.now() - (cfg.lastSignalAt[key] || 0) < cfg.cooldownMs) return;
+      cfg.lastSignalAt[key] = Date.now();
     }
 
-    /* re-render existing signals if persisted */
-    renderSignalFeed();
+    sig.ts = Date.now();
+    sig.base = sig.base || sig.sym.replace('USDT','');
+    sig.caption = buildCaption(cardId, sig);
+    sig.tf = pickTf(cardId, sig);
+    sig.icon = pickIcon(cardId, sig);
 
-        /* ★ TG bar wiring */
-    const tgSaveBtn = el.querySelector('#mon-tg-save');
-    if (tgSaveBtn) {
-        tgSaveBtn.addEventListener('click', () => {
-            TG.token = (el.querySelector('#mon-tg-tok').value || '').trim();
-            TG.chat  = (el.querySelector('#mon-tg-chat').value || '').trim();
-            TG.enabled = !!(TG.token && TG.chat);
-            saveTg();
-            const st = el.querySelector('#mon-tg-status');
-            if (st) {
-                st.textContent = TG.enabled ? 'ON' : 'OFF';
-                st.style.background = TG.enabled ? 'rgba(0,255,157,.1)' : 'rgba(255,255,255,.05)';
-                st.style.color = TG.enabled ? 'var(--green)' : 'var(--muted)';
-            }
-            toast(TG.enabled ? 'TG snapshots: ON ✓' : 'Լրացրու token + chat');
-        });
+    cfg.signals.unshift(sig);
+    if (cfg.signals.length > 50) cfg.signals.length = 50;
+    saveCfg();
+    renderCardFeed(cardId);
+
+    // Send via T1_BUS (Watchlist does the TG snapshot)
+    if (window.T1_BUS && S.alertsEnabled) {
+      window.T1_BUS.snap({
+        symbol: sig.base,
+        tf: sig.tf,
+        icon: sig.icon,
+        note: sig.caption,
+      }).catch(err => {
+        console.warn('[MM] snap failed:', err.message);
+        toast(`⚠ TG failed: ${sig.base}`, 'warn');
+      });
     }
+  }
 
-    widgetCleanup[w.id] = () => { /* keep scanning even if widget hidden; other tabs may add it */ };
-}
+  function buildCaption(cardId, sig) {
+    if (cardId === 'pump_dump') {
+      const arrow = sig.type === 'pump' ? '🟢' : '🔻';
+      const label = sig.type === 'pump' ? 'Pump' : 'Dump';
+      return [
+        `❗️ ${sig.windowMin}m · ${cgLink(sig.base)}`,
+        `${arrow} ${label}: ${sgn(sig.chgPct)}${sig.chgPct.toFixed(2)}%`,
+        `💲 Price: $${fmtPrice(sig.prevPrice)} → $${fmtPrice(sig.price)}`,
+      ].join('\n');
+    }
+    if (cardId === 'vol_spike') {
+      return [
+        `💹 · ${sig.windowMin}m · ${cgLink(sig.base)}`,
+        `${bolts(sig.volRatio)} Vol: ${Math.round(sig.volRatio)}x`,
+        `💲 Price: ${sgn(sig.chgPct)} ${sig.chgPct.toFixed(2)}%`,
+      ].join('\n');
+    }
+    if (cardId === 'oi_raise') {
+      return [
+        `⚠️ · ${sig.windowMin}m · ${cgLink(sig.base)}`,
+        `📈 OI: ${sgn(sig.oiChg)}${sig.oiChg.toFixed(2)}% (${fmtUsd(sig.oiValue)})`,
+        `💲 Price: ${sgn(sig.priceChg)}${sig.priceChg.toFixed(2)}%`,
+        `${bolts(sig.volRatio)} Vol: ${Math.round(sig.volRatio)}x`,
+      ].join('\n');
+    }
+    if (cardId === 'divergence') {
+      return [
+        `⚠️ · ${sig.spanHours}h · ${cgLink(sig.base)}`,
+        `📉 Price: ${sgn(sig.priceChg)}${sig.priceChg.toFixed(2)}%`,
+        `📈 OI: ${sgn(sig.oiChg)}${sig.oiChg.toFixed(2)}%`,
+      ].join('\n');
+    }
+    if (cardId === 'liquidations') {
+      const dot = sig.type === 'liq_long' ? '🟢' : '🟣';
+      return [
+        `🩸 · ${cgLink(sig.base)}`,
+        `${dot} Liq: ${fmtUsd(sig.usd)}`,
+        `${bolts(sig.volRatio)} Vol: ${sig.volRatio.toFixed(1)}x`,
+      ].join('\n');
+    }
+    return '';
+  }
+  function pickTf(cardId, sig) {
+    return ({
+      pump_dump: `${sig.windowMin}m`,
+      vol_spike: `${sig.windowMin}m`,
+      oi_raise: '15m',
+      divergence: '1h',
+      liquidations: '5m',
+    })[cardId] || '15m';
+  }
+  function pickIcon(cardId, sig) {
+    if (cardId === 'pump_dump') return sig.type === 'pump' ? '🟢' : '🔻';
+    if (cardId === 'vol_spike') return '💹';
+    if (cardId === 'oi_raise') return '⚠️';
+    if (cardId === 'divergence') return '⚠️';
+    if (cardId === 'liquidations') return '🩸';
+    return '⚡';
+  }
 
-async function runMonitorScan() {
-    const M = state.monitor;
-    if (M.scanning) return;
-    if (!state.tickers.length) return;
-    M.scanning = true;
-
-    const scanBtn = document.getElementById('mon-scan');
-    if (scanBtn) { scanBtn.classList.add('scanning'); scanBtn.textContent = '…'; }
-
-    const top = [...state.tickers]
-        .filter(t => t.volume > 1e6)
-        .sort((a,b) => b.volume - a.volume)
-        .slice(0, M.topN);
-
-    M.scanProgress = { i: 0, total: top.length };
-    const allMovers = [];
-
+  /* ── Card scans ── */
+  async function scanPumpDump() {
+    const c = S.cards.pump_dump; c.lastScan = Date.now();
+    const pool = filterPool(c.pool);
+    const W = c.windowMin;
+    const limit = 65;
     const BATCH = 6;
-    let i = 0;
-    while (i < top.length) {
-        const batch = top.slice(i, i + BATCH);
-        i += BATCH;
-        const results = await Promise.all(batch.map(coin => analyzeCoinForSignals(coin)));
-        results.forEach(r => { if (r && r.mover) allMovers.push(r.mover); });
-        M.scanProgress.i = Math.min(i, top.length);
-        updateMonitorProgress();
-        await new Promise(r => setTimeout(r, 120));
+    for (let i = 0; i < pool.length; i += BATCH) {
+      if (!S.alertsEnabled || !c.enabled) return;
+      await Promise.all(pool.slice(i, i + BATCH).map(coin => analyzePD(coin, c, limit)));
+      await new Promise(r => setTimeout(r, 130));
     }
-
-    /* top movers */
-    allMovers.sort((a,b) => b.chg - a.chg);
-    M.topMovers.pumps = allMovers.slice(0, 3);
-    M.topMovers.dumps = allMovers.slice(-3).reverse();
-
-    M.scanning = false;
-    M.lastScan = Date.now();
-    saveMonitorCfg();
-
-    renderSignalFeed();
-    renderTopMovers();
-    updateMonitorProgress();
-
-    if (scanBtn) { scanBtn.classList.remove('scanning'); scanBtn.textContent = 'SCAN'; }
-}
-
-function updateMonitorProgress() {
-    const M = state.monitor;
-    const bar = document.getElementById('mon-progress-bar');
-    if (bar) {
-        const pct = M.scanning && M.scanProgress.total
-            ? Math.round((M.scanProgress.i / M.scanProgress.total) * 100) : 0;
-        bar.style.width = pct + '%';
+  }
+  async function analyzePD(coin, cfg, limit) {
+    const sym = coin.sym;
+    const kl = await cached(
+      `kl_1m_${sym}_${limit}`,
+      `${API.binance}/fapi/v1/klines?symbol=${sym}&interval=1m&limit=${limit}`,
+      55000
+    );
+    if (!Array.isArray(kl) || kl.length < limit - 5) return;
+    const W = cfg.windowMin;
+    const cur = parseFloat(kl[kl.length - 1][4]);
+    const prev = parseFloat(kl[kl.length - 1 - W][4]);
+    if (!prev || prev <= 0) return;
+    const chg = ((cur - prev) / prev) * 100;
+    if (chg >= cfg.pumpThr) {
+      emit('pump_dump', { type: 'pump', sym, base: coin.base, price: cur, prevPrice: prev, chgPct: chg, windowMin: W });
+    } else if (chg <= -cfg.dumpThr) {
+      emit('pump_dump', { type: 'dump', sym, base: coin.base, price: cur, prevPrice: prev, chgPct: chg, windowMin: W });
     }
-    const st = document.getElementById('mon-status');
-    if (st) {
-        if (M.scanning) {
-            st.textContent = `SCANNING ${M.scanProgress.i}/${M.scanProgress.total}`;
-            st.style.color = 'var(--ac)';
-        } else if (M.lastScan) {
-            const ago = Math.round((Date.now() - M.lastScan) / 1000);
-            st.textContent = `LAST ${ago < 60 ? ago + 's' : Math.round(ago/60) + 'm'} AGO`;
-            st.style.color = 'var(--muted)';
-        }
+  }
+
+  async function scanVolSpike() {
+    const c = S.cards.vol_spike; c.lastScan = Date.now();
+    const pool = filterPool(c.pool);
+    const W = c.windowMin;
+    const limit = 65;
+    const BATCH = 6;
+    for (let i = 0; i < pool.length; i += BATCH) {
+      if (!S.alertsEnabled || !c.enabled) return;
+      await Promise.all(pool.slice(i, i + BATCH).map(coin => analyzeVS(coin, c, limit)));
+      await new Promise(r => setTimeout(r, 100));
     }
-}
+  }
+  async function analyzeVS(coin, cfg, limit) {
+    const sym = coin.sym;
+    const kl = await cached(
+      `kl_1m_${sym}_${limit}`,
+      `${API.binance}/fapi/v1/klines?symbol=${sym}&interval=1m&limit=${limit}`,
+      55000
+    );
+    if (!Array.isArray(kl) || kl.length < limit - 5) return;
+    const W = cfg.windowMin;
+    const recent = kl.slice(-W).reduce((s,k) => s + parseFloat(k[7]), 0);
+    const prior  = kl.slice(-W*2, -W).reduce((s,k) => s + parseFloat(k[7]), 0);
+    if (prior <= 0) return;
+    const ratio = recent / prior;
+    if (ratio < cfg.floor) return;
+    const cur = parseFloat(kl[kl.length - 1][4]);
+    const prev = parseFloat(kl[kl.length - 1 - W][4]);
+    const chg = prev > 0 ? ((cur - prev) / prev) * 100 : 0;
+    if (chg <= 0) return;   // must be positive
+    emit('vol_spike', { type: 'vol_spike', sym, base: coin.base, price: cur, chgPct: chg, volRatio: ratio, windowMin: W });
+  }
 
-async function analyzeCoinForSignals(coin) {
-    const M = state.monitor;
-    const sym = coin.symbol;
-    const base = coin.base;
-
-    const [oiData, klines] = await Promise.all([
-        cachedFetch(`oi_${sym}`, `${API.binance}/futures/data/openInterestHist?symbol=${sym}&period=5m&limit=12`),
-        cachedFetch(`kl_${sym}`, `${API.binance}/fapi/v1/klines?symbol=${sym}&interval=5m&limit=24`)
+  async function scanOiRaise() {
+    const c = S.cards.oi_raise; c.lastScan = Date.now();
+    const pool = filterPool(c.pool);
+    const W = c.windowMin;
+    const BATCH = 6;
+    for (let i = 0; i < pool.length; i += BATCH) {
+      if (!S.alertsEnabled || !c.enabled) return;
+      await Promise.all(pool.slice(i, i + BATCH).map(coin => analyzeOI(coin, c, W)));
+      await new Promise(r => setTimeout(r, 150));
+    }
+  }
+  async function analyzeOI(coin, cfg, W) {
+    const sym = coin.sym;
+    const [kl, oi] = await Promise.all([
+        cached(`kl_1m_${sym}_65`, `${API.binance}/fapi/v1/klines?symbol=${sym}&interval=1m&limit=65`, 55000),
+        cached(`oi_5m_${sym}_15`, `${API.binance}/futures/data/openInterestHist?symbol=${sym}&period=5m&limit=15`, 4 * 60 * 1000),
     ]);
+    if (!Array.isArray(kl) || kl.length < 60) return;
+    if (!Array.isArray(oi) || oi.length < 5) return;
 
-    if (!klines || klines.length < 13) return null;
+    /* ── 1. Basic thresholds (window W) ────────────────────────── */
+    const cur  = parseFloat(kl[kl.length - 1][4]);
+    const prev = parseFloat(kl[kl.length - 1 - W][4]);
+    if (!prev || prev <= 0) return;
 
-    const closes = klines.map(k => parseFloat(k[4]));
-    const vols   = klines.map(k => parseFloat(k[5]));
+    const priceChg = ((cur - prev) / prev) * 100;
+    if (priceChg < cfg.priceThr) return;   /* MUST be ≥ +5% (or user-set) */
 
-    const cur  = closes[closes.length - 1];
-    const p5m  = closes[closes.length - 2];
-    const p15m = closes[closes.length - 4];
-    const p1h  = closes[closes.length - 13];
+    const oiSamples = Math.max(1, Math.round(W / 5));   /* 20m / 5m = 4 */
+    const oiSlice   = oi.slice(-(oiSamples + 1));       /* 5 samples → 4 steps */
+    if (oiSlice.length < 2) return;
 
-    const chg15m = p15m > 0 ? ((cur - p15m) / p15m) * 100 : 0;
-    const chg1h  = p1h  > 0 ? ((cur - p1h)  / p1h)  * 100 : 0;
+    const oiNow  = parseFloat(oiSlice[oiSlice.length - 1].sumOpenInterestValue);
+    const oiPast = parseFloat(oiSlice[0].sumOpenInterestValue);
+    if (oiPast <= 0) return;
 
-    const lastVol = vols[vols.length - 1];
-    const avgVol  = vols.slice(-13, -1).reduce((a,b)=>a+b,0) / 12;
-    const volRatio = avgVol > 0 ? lastVol / avgVol : 0;
+    const oiChg = ((oiNow - oiPast) / oiPast) * 100;
+    if (oiChg < cfg.oiThr) return;         /* MUST be ≥ +3% (or user-set) */
 
-    let oi20m = 0, oi1h = 0, oiDelta = 0, curOI = 0;
-    if (Array.isArray(oiData) && oiData.length >= 4) {
-        const ois = oiData.map(o => parseFloat(o.sumOpenInterestValue));
-        curOI  = ois[ois.length - 1];
-        const o20 = ois[ois.length - 4];
-        const o1h = ois[0];
-        oi20m = o20 > 0 ? ((curOI - o20) / o20) * 100 : 0;
-        oi1h  = o1h > 0 ? ((curOI - o1h)  / o1h)  * 100 : 0;
-        oiDelta = curOI - o20;
+    /* ── 2. Smart Filter A · OI Smoothness ────────────────────────
+       ≥ 65% of 5m OI steps must be non-decreasing
+       (using 5m OI hist as proxy · Binance gives min 5m, not 1m)  */
+    let positiveSteps = 0, totalSteps = 0;
+    for (let i = 1; i < oiSlice.length; i++) {
+        const a = parseFloat(oiSlice[i - 1].sumOpenInterestValue);
+        const b = parseFloat(oiSlice[i].sumOpenInterestValue);
+        if (b >= a) positiveSteps++;
+        totalSteps++;
     }
+    const smoothness = totalSteps > 0 ? positiveSteps / totalSteps : 0;
+    if (smoothness < 0.65) return;
 
-    /* ──── OI Spike ──── */
-    if (M.enabled.oi && Math.abs(oi20m) >= M.thresholds.oi) {
-        emitSignal({
-            type: oi20m > 0 ? 'oi_up' : 'oi_dn',
-            symbol: sym, base, price: cur,
-            headline: `OI ${oi20m >= 0 ? '+' : ''}${oi20m.toFixed(2)}%`,
-            metrics: {
-                oiChg: oi20m, oiDelta, oiValue: curOI,
-                priceChg: chg15m, volume: coin.volume, volRatio
-            },
-            sev: Math.abs(oi20m) >= M.thresholds.oi * 2 ? 'high' : 'med'
-        });
+    /* ── 3. Smart Filter B · Momentum Acceleration ────────────────
+       Last-half ROC must be ≥ first-half ROC (FOMO check)         */
+    const halfW  = Math.round(W / 2);
+    const pMid   = parseFloat(kl[kl.length - 1 - halfW][4]);
+    if (!pMid || pMid <= 0) return;
+    const rocFirst = ((pMid - prev) / prev) * 100;
+    const rocLast  = ((cur  - pMid) / pMid) * 100;
+    if (rocLast < rocFirst) return;
+
+    /* ── 4. Smart Filter C · Volume Breakout ──────────────────────
+       avg last 5m volume per minute ≥ 1.5× avg prev 15m per minute */
+    const volLast5   = kl.slice(-5).reduce((s, k) => s + parseFloat(k[7]), 0) / 5;
+    const volPrev15  = kl.slice(-20, -5).reduce((s, k) => s + parseFloat(k[7]), 0) / 15;
+    if (volPrev15 <= 0) return;
+    const volBreakout = volLast5 / volPrev15;
+    if (volBreakout < 1.5) return;
+
+    /* ── 5. Candle Spike ratio — for ⚡ DISPLAY only, NOT a filter ─
+       (keeps old "Vol: 13x" look via bolts() helper)               */
+    const recentW = kl.slice(-W).reduce((s, k) => s + parseFloat(k[7]), 0);
+    const priorW  = kl.slice(-W * 2, -W).reduce((s, k) => s + parseFloat(k[7]), 0);
+    const volRatio = priorW > 0 ? recentW / priorW : 0;
+
+    emit('oi_raise', {
+        type: 'oi_raise', sym, base: coin.base,
+        price: cur,
+        priceChg, oiChg, oiValue: oiNow,
+        volRatio,      /* used by bolts() in caption + UI ⚡ */
+        volBreakout,   /* for debugging / future display */
+        smoothness,    /* for debugging / future display */
+        windowMin: W,
+    });
+}
+
+  async function scanDivergence() {
+    const c = S.cards.divergence; c.lastScan = Date.now();
+    const pool = filterPool(c.pool);
+    const BATCH = 6;
+    for (let i = 0; i < pool.length; i += BATCH) {
+      if (!S.alertsEnabled || !c.enabled) return;
+      await Promise.all(pool.slice(i, i + BATCH).map(coin => analyzeDV(coin, c)));
+      await new Promise(r => setTimeout(r, 200));
     }
+  }
+  async function analyzeDV(coin, cfg) {
+    const sym = coin.sym;
+    const LB  = cfg.lookbackH || 12;   /* fixed 12h */
+    const limit = LB + 16;             /* 28 candles @1h · buffer */
 
-    /* ──── Pumper ──── */
-    if (M.enabled.pump && chg15m >= M.thresholds.pump) {
-        emitSignal({
-            type: 'pump', symbol: sym, base, price: cur,
-            headline: `+${chg15m.toFixed(2)}% · 15m`,
-            metrics: { priceChg: chg15m, priceChg1h: chg1h, volRatio, volume: coin.volume },
-            sev: chg15m >= M.thresholds.pump * 2 ? 'high' : 'med'
-        });
+    const [kl, oi] = await Promise.all([
+        cached(`kl_1h_${sym}_${limit}`, `${API.binance}/fapi/v1/klines?symbol=${sym}&interval=1h&limit=${limit}`, 55 * 60 * 1000),
+        cached(`oi_1h_${sym}_${limit}`, `${API.binance}/futures/data/openInterestHist?symbol=${sym}&period=1h&limit=${limit}`, 55 * 60 * 1000),
+    ]);
+    if (!Array.isArray(kl) || kl.length < LB + 2) return;
+    if (!Array.isArray(oi) || oi.length < LB + 2) return;
+
+    /* ── 1. Basic thresholds (fixed 12h) ───────────────────────── */
+    const priceNow = parseFloat(kl[kl.length - 1][4]);
+    const priceOld = parseFloat(kl[kl.length - 1 - LB][4]);
+    if (!priceOld || priceOld <= 0 || priceNow <= 0) return;
+
+    const priceChg = ((priceNow - priceOld) / priceOld) * 100;
+    if (priceChg > -cfg.priceThr) return;   /* MUST be ≤ -5% (user-set) */
+
+    const oiNow = parseFloat(oi[oi.length - 1].sumOpenInterestValue);
+    const oiOld = parseFloat(oi[oi.length - 1 - LB].sumOpenInterestValue);
+    if (!oiOld || oiOld <= 0 || oiNow <= 0) return;
+
+    const oiChg = ((oiNow - oiOld) / oiOld) * 100;
+    if (oiChg < cfg.oiThr) return;          /* MUST be ≥ +5% (user-set) */
+
+    /* ── 2. Smart Filter A · OI Smoothness ────────────────────────
+       ≥ 70% of hourly OI deltas must be non-decreasing            */
+    const oiSlice = oi.slice(-(LB + 1));    /* 13 samples → 12 steps */
+    let positive = 0, total = 0;
+    for (let i = 1; i < oiSlice.length; i++) {
+        const a = parseFloat(oiSlice[i - 1].sumOpenInterestValue);
+        const b = parseFloat(oiSlice[i].sumOpenInterestValue);
+        if (b >= a) positive++;
+        total++;
     }
+    const smoothness = total > 0 ? positive / total : 0;
+    if (smoothness < 0.70) return;
 
-    /* ──── Dumper ──── */
-    if (M.enabled.dump && chg15m <= -M.thresholds.dump) {
-        emitSignal({
-            type: 'dump', symbol: sym, base, price: cur,
-            headline: `${chg15m.toFixed(2)}% · 15m`,
-            metrics: { priceChg: chg15m, priceChg1h: chg1h, volRatio, volume: coin.volume },
-            sev: chg15m <= -M.thresholds.dump * 2 ? 'high' : 'med'
-        });
-    }
+    /* ── 3. Smart Filter B · Progressive 3 blocks × 4h ────────────
+       OI_block3 > OI_block2 > OI_block1                            */
+    const blockSize = Math.floor(LB / 3);   /* 4h per block */
+    const b1End = oiSlice.length - blockSize * 2;
+    const b2End = oiSlice.length - blockSize;
 
-    /* ──── Volume Spike ──── */
-    if (M.enabled.vol && volRatio >= M.thresholds.vol && Math.abs(chg15m) > 0.4) {
-        emitSignal({
-            type: 'vol', symbol: sym, base, price: cur,
-            headline: `${volRatio.toFixed(1)}x vol`,
-            metrics: { volRatio, priceChg: chg15m, volume: coin.volume },
-            sev: volRatio >= M.thresholds.vol * 2 ? 'high' : 'med'
-        });
-    }
-
-    /* ──── Price/OI Divergence ──── */
-    if (M.enabled.div && oiData) {
-        const T = M.thresholds.div;
-        if (chg15m > T && oi20m < -T) {
-            emitSignal({
-                type: 'div', symbol: sym, base, price: cur,
-                headline: `⚠ Weak rally · P+${chg15m.toFixed(1)}% OI${oi20m.toFixed(1)}%`,
-                metrics: { priceChg: chg15m, oiChg: oi20m, volRatio },
-                sev: 'med'
-            });
-        } else if (chg15m < -T && oi20m > T) {
-            emitSignal({
-                type: 'div', symbol: sym, base, price: cur,
-                headline: `⚠ Short buildup · P${chg15m.toFixed(1)}% OI+${oi20m.toFixed(1)}%`,
-                metrics: { priceChg: chg15m, oiChg: oi20m, volRatio },
-                sev: 'med'
-            });
+    const oiBlockAvg = (start, end) => {
+        let s = 0, n = 0;
+        for (let i = start; i < end; i++) {
+            s += parseFloat(oiSlice[i].sumOpenInterestValue);
+            n++;
         }
-    }
-
-    return { mover: { symbol: sym, base, chg: chg15m, price: cur, volume: coin.volume } };
-}
-
-function emitSignal(sig) {
-    const M = state.monitor;
-    const now = Date.now();
-    const key = `${sig.symbol}_${sig.type}`;
-    const last = M.lastSignalByKey[key] || 0;
-    if (now - last < 600000) return;   // 10 min dedup
-
-    M.lastSignalByKey[key] = now;
-    sig.id = 'sig_' + Math.random().toString(36).slice(2, 9);
-    sig.ts = now;
-    M.signals.unshift(sig);
-    if (M.signals.length > 200) M.signals.length = 200;
-    saveMonitorCfg();
-
-    /* ★ Snapshot → TG */
-    if (TG.enabled) {
-        const d = SIG_DEF[sig.type] || { label: sig.type };
-        const m = sig.metrics || {};
-        const parts = [sig.headline];
-        if (m.priceChg != null) parts.push(`P ${m.priceChg >= 0 ? '+' : ''}${m.priceChg.toFixed(2)}%`);
-        if (m.oiChg != null)    parts.push(`OI ${m.oiChg >= 0 ? '+' : ''}${m.oiChg.toFixed(2)}%`);
-        if (m.volRatio != null) parts.push(`V ${m.volRatio.toFixed(1)}x`);
-        sendChartSnap({
-            symbol: sig.symbol,
-            tf: '15m',
-            caption: `${sig.base} · ${d.label}\n${parts.join(' · ')}`
-        });
-    }
-}
-
-function renderSignalFeed() {
-    const M = state.monitor;
-    const feed = document.getElementById('mon-feed');
-    if (!feed) return;
-
-    if (!M.signals.length) {
-        feed.innerHTML = `<div class="mon-empty">
-            <i class="fas fa-satellite-dish"></i>
-            Press <b>SCAN</b> or wait for the auto-scan (every 3 min).
-            Signals will appear here as the market moves.</div>`;
-    } else {
-        feed.innerHTML = M.signals.slice(0, 80).map(sig => {
-            const def = SIG_DEF[sig.type] || SIG_DEF.pump;
-            const ago = Math.round((Date.now() - sig.ts) / 1000);
-            const agoStr = ago < 60 ? `${ago}s` : `${Math.round(ago/60)}m`;
-            const m = sig.metrics || {};
-            const meta = [];
-            if (m.priceChg != null) meta.push(`Price <b class="${pnlClass(m.priceChg)}">${m.priceChg >= 0 ? '+' : ''}${m.priceChg.toFixed(2)}%</b>`);
-            if (m.oiChg != null)    meta.push(`OI <b class="${pnlClass(m.oiChg)}">${m.oiChg >= 0 ? '+' : ''}${m.oiChg.toFixed(2)}%</b>`);
-            if (m.oiDelta != null && Math.abs(m.oiDelta) > 0) meta.push(`ΔOI <b>${fmtUSD(Math.abs(m.oiDelta), 1)}</b>`);
-            if (m.volRatio != null) meta.push(`Vol <b style="color:var(--gold);">${m.volRatio.toFixed(1)}x</b>`);
-            if (m.volume != null)   meta.push(`24h <b>${fmtUSD(m.volume, 1)}</b>`);
-            return `<div class="mon-signal ${sig.sev === 'high' ? 'sev-high' : ''}" style="border-left-color:${def.color};" onclick="window.open('https://www.coinglass.com/tv/Binance_${sig.symbol}','_blank')">
-                <div class="mon-sig-icon" style="color:${def.color}; background:${def.color}15;">
-                    <i class="fas ${def.icon}"></i>
-                </div>
-                <div class="mon-sig-body">
-                    <div class="mon-sig-head">
-                        <span class="mon-sig-sym">${sig.base}</span>
-                        <span class="mon-sig-type" style="color:${def.color}; background:${def.color}15; border:1px solid ${def.color}44;">${def.label}</span>
-                        <span style="font-size:10px; color:${def.color}; font-weight:800;">${sig.headline}</span>
-                    </div>
-                    <div class="mon-sig-meta">${meta.join(' · ')}</div>
-                </div>
-                <div class="mon-sig-time">${agoStr}<br>ago</div>
-            </div>`;
-        }).join('');
-    }
-
-    const cnt = document.getElementById('mon-count');
-    if (cnt) cnt.textContent = M.signals.length;
-}
-
-function renderTopMovers() {
-    const M = state.monitor;
-    const render = (id, arr, positive) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        if (!arr || !arr.length) {
-            el.innerHTML = '<div class="mon-empty" style="padding:8px; font-size:9px;">—</div>';
-            return;
-        }
-        el.innerHTML = arr.map(m => `
-            <div class="mon-mover" onclick="window.open('https://www.coinglass.com/tv/Binance_${m.symbol}','_blank')">
-                <span class="sym">${m.base}</span>
-                <span class="val" style="color:${positive ? 'var(--green)' : 'var(--red)'};">${m.chg >= 0 ? '+' : ''}${m.chg.toFixed(2)}%</span>
-            </div>`).join('');
+        return n > 0 ? s / n : 0;
     };
-    render('mon-top-pumps', M.topMovers.pumps, true);
-    render('mon-top-dumps', M.topMovers.dumps, false);
+    const b1 = oiBlockAvg(0, b1End);
+    const b2 = oiBlockAvg(b1End, b2End);
+    const b3 = oiBlockAvg(b2End, oiSlice.length);
+    if (!(b3 > b2 && b2 > b1)) return;
+
+    /* ── 4. Smart Filter C · Volume Confirmation ──────────────────
+       avg last 3h volume ≥ 0.8× avg prev 9h volume                */
+    const volArr = kl.map(k => parseFloat(k[7]));
+    const last3h = volArr.slice(-3).reduce((s, v) => s + v, 0) / 3;
+    const prev9h = volArr.slice(-12, -3).reduce((s, v) => s + v, 0) / 9;
+    if (prev9h <= 0) return;
+    if (last3h < prev9h * 0.8) return;
+
+    /* ── 5. Emit ────────────────────────────────────────────────── */
+    emit('divergence', {
+        type: 'divergence', sym, base: coin.base,
+        price: priceNow,
+        priceChg, oiChg, oiValue: oiNow,
+        spanHours: LB,          /* fixed 12 · used in caption */
+        smoothness,             /* for debugging */
+        windowMin: LB * 60,
+    });
 }
 
-/* periodic status refresh (aging of "Xs ago") */
-setInterval(() => {
-    if (document.getElementById('mon-status')) updateMonitorProgress();
-    if (state.monitor.signals.length && document.getElementById('mon-feed')) {
-        /* only re-render if a widget exists — light enough once every 15s */
-        renderSignalFeed();
-    }
-}, 15000);
+  /* ── Liq WS ── */
+  function startLiqWS() {
+    if (WS) try { WS.close(); } catch(e) {}
+    let alive = true;
+    const connect = () => {
+      if (!alive) return;
+      try {
+        WS = new WebSocket('wss://fstream.binance.com/market/ws/!forceOrder@arr');
+        WS.onopen = () => {};
+        WS.onmessage = async (e) => {
+          try {
+            const o = JSON.parse(e.data).o;
+            if (!o || !o.s || !o.s.endsWith('USDT')) return;
+            const c = S.cards.liquidations;
+            if (!S.alertsEnabled || !c.enabled) return;
+            const pool = filterPool(c.pool);
+            if (!pool.find(x => x.sym === o.s)) return;
+            const usd = parseFloat(o.q) * parseFloat(o.p);
+            if (usd < c.minUsd) return;
+            const sym = o.s;
+            const kl = await cached(
+              `kl_1m_${sym}_20`,
+              `${API.binance}/fapi/v1/klines?symbol=${sym}&interval=1m&limit=20`,
+              55000
+            );
+            if (!Array.isArray(kl) || kl.length < 6) return;
+            const recent = kl.slice(-3).reduce((s,k) => s + parseFloat(k[7]), 0);
+            const prior = kl.slice(-6, -3).reduce((s,k) => s + parseFloat(k[7]), 0);
+            const ratio = prior > 0 ? recent / prior : 0;
+            if (ratio < c.volFloor) return;
+            const isLong = o.S === 'SELL';
+            emit('liquidations', {
+              type: isLong ? 'liq_long' : 'liq_short',
+              sym, base: sym.replace('USDT',''),
+              price: parseFloat(o.p),
+              usd, volRatio: ratio,
+            });
+          } catch(e) {}
+        };
+        WS.onerror = () => {};
+        WS.onclose = () => { if (alive) setTimeout(connect, 2500); };
+      } catch(e) { setTimeout(connect, 2500); }
+    };
+    connect();
+  }
 
-/* restore last monitor config early (before widget init) */
-loadMonitorCfg();
+  /* ── Scan wave (30s tick) ── */
+  async function tickWave() {
+    if (!S.alertsEnabled) return;
+    await refreshUniverse();
+    const now = Date.now();
+    const tasks = [];
+    if (S.cards.pump_dump.enabled    && now - S.cards.pump_dump.lastScan    >= S.cards.pump_dump.scanMs)    tasks.push(scanPumpDump());
+    if (S.cards.vol_spike.enabled    && now - S.cards.vol_spike.lastScan    >= S.cards.vol_spike.scanMs)    tasks.push(scanVolSpike());
+    if (S.cards.oi_raise.enabled     && now - S.cards.oi_raise.lastScan     >= S.cards.oi_raise.scanMs)     tasks.push(scanOiRaise());
+    if (S.cards.divergence.enabled   && now - S.cards.divergence.lastScan   >= S.cards.divergence.scanMs)   tasks.push(scanDivergence());
+    if (tasks.length) {
+      setStatus(`SCANNING · ${tasks.length} cards`);
+      await Promise.allSettled(tasks);
+      setStatus('LIVE');
+    }
+  }
+  function setStatus(txt) {
+    const el = document.getElementById('mm-status');
+    if (el) el.textContent = txt;
+  }
+
+  /* ── Render ── */
+  function render() {
+    const cardsHTML = [
+      renderCardShell('pump_dump',    'fa-rocket',              'PUMPS / DUMPS',
+        `<input type="number" class="mm-in-num" data-in="pump_dump" data-f="pumpThr" value="${S.cards.pump_dump.pumpThr}" min="1" max="100" title="Pump %">
+         <input type="number" class="mm-in-num" data-in="pump_dump" data-f="dumpThr" value="${S.cards.pump_dump.dumpThr}" min="1" max="100" title="Dump %">`),
+      renderCardShell('vol_spike',    'fa-bolt',                'VOL SPIKE',
+        `<span style="font-size:8.5px;color:var(--muted);letter-spacing:.5px;">min 5×</span>`),
+      renderCardShell('oi_raise',     'fa-arrow-up-right-dots', 'OI RAISE',
+    `<input type="number" class="mm-in-num" data-in="oi_raise" data-f="oiThr" value="${S.cards.oi_raise.oiThr}" min="1" max="100" step="0.5" title="OI % ≥">
+     <input type="number" class="mm-in-num" data-in="oi_raise" data-f="priceThr" value="${S.cards.oi_raise.priceThr}" min="0" max="100" step="0.5" title="Price % ≥">`),
+      renderCardShell('divergence',   'fa-code-branch',         'DIVERGENCE',
+        `<input type="number" class="mm-in-num" data-in="divergence" data-f="oiThr" value="${S.cards.divergence.oiThr}" min="1" max="50" step="0.5" title="OI %">
+         <input type="number" class="mm-in-num" data-in="divergence" data-f="priceThr" value="${S.cards.divergence.priceThr}" min="1" max="50" step="0.5" title="Price %">`),
+      renderCardShell('liquidations', 'fa-water',               'LIQUIDATIONS',
+        `<input type="number" class="mm-in-num" data-in="liquidations" data-f="minUsd" value="${S.cards.liquidations.minUsd}" min="1000" step="1000" title="Min USD">`),
+    ].join('');
+
+    return `
+      <div class="mm-root">
+        <div class="mm-topbar">
+          <div class="mm-title">
+            <i class="fas fa-satellite-dish"></i>
+            MARKET MONITOR
+            <span class="mm-badge" id="mm-count">0</span>
+          </div>
+          <div class="mm-topbar-actions">
+            <span class="mm-status" id="mm-status">IDLE</span>
+            <label class="mm-switch">
+              <input type="checkbox" id="mm-master" ${S.alertsEnabled ? 'checked' : ''}>
+              <span class="mm-switch-track"><span class="mm-switch-thumb"></span></span>
+              <span class="mm-switch-label">ALERTS</span>
+            </label>
+          </div>
+        </div>
+        <div class="mm-cards-grid">${cardsHTML}</div>
+      </div>`;
+  }
+
+  function renderCardShell(cardId, icon, title, extraInputs) {
+    const c = S.cards[cardId];
+    const poolVal = poolToStr(c.pool);
+    return `
+      <div class="mm-card ${c.enabled ? '' : 'off'}" data-card="${cardId}">
+        <div class="mm-card-head">
+          <div class="mm-card-title"><i class="fas ${icon}"></i>${title}</div>
+          <div class="mm-card-actions">
+            ${extraInputs}
+            <select class="mm-pool-sel" data-pool="${cardId}">
+              ${poolOptions(poolVal)}
+            </select>
+            <label class="mm-switch">
+              <input type="checkbox" data-toggle="${cardId}" ${c.enabled ? 'checked' : ''}>
+              <span class="mm-switch-track"><span class="mm-switch-thumb"></span></span>
+            </label>
+          </div>
+        </div>
+        <div class="mm-feed" id="mm-feed-${cardId}">
+          <div class="mm-feed-empty">No signals yet</div>
+        </div>
+      </div>`;
+  }
+  function poolToStr(pool) {
+    if (!pool || pool.mode === 'all') return 'all';
+    return `${pool.mode}:${pool.topN}`;
+  }
+  function strToPool(s) {
+    if (s === 'all') return { mode: 'all' };
+    const [m, n] = s.split(':');
+    return { mode: m, topN: +n };
+  }
+  function poolOptions(current) {
+    const opts = [
+      ['all', 'All coins'],
+      ['top:20', 'Top 20'], ['top:50', 'Top 50'], ['top:100', 'Top 100'],
+      ['top:200', 'Top 200'], ['top:300', 'Top 300'], ['top:500', 'Top 500'],
+      ['excluding:10', 'Excl Top 10'], ['excluding:20', 'Excl Top 20'],
+      ['excluding:25', 'Excl Top 25'], ['excluding:50', 'Excl Top 50'],
+      ['excluding:100', 'Excl Top 100'], ['excluding:200', 'Excl Top 200'],
+    ];
+    return opts.map(([v,l]) => `<option value="${v}" ${v === current ? 'selected' : ''}>${l}</option>`).join('');
+  }
+
+  function renderCardFeed(cardId) {
+    const feed = document.getElementById(`mm-feed-${cardId}`);
+    if (!feed) return;
+    const sigs = S.cards[cardId].signals;
+    if (!sigs.length) {
+      feed.innerHTML = `<div class="mm-feed-empty">No signals yet</div>`;
+      return;
+    }
+    feed.innerHTML = sigs.map(s => sigHTML(cardId, s)).join('');
+    // Update total badge
+    const total = Object.values(S.cards).reduce((a,c) => a + c.signals.length, 0);
+    const badge = document.getElementById('mm-count');
+    if (badge) badge.textContent = total;
+  }
+
+  function sigHTML(cardId, s) {
+    const ago = Math.round((Date.now() - s.ts) / 1000);
+    const agoStr = ago < 60 ? `${ago}s` : ago < 3600 ? `${Math.round(ago/60)}m` : `${Math.round(ago/3600)}h`;
+    const icon = s.icon;
+    const base = s.base;
+    const link = `https://www.coinglass.com/tv/Binance_${base}USDT`;
+
+    let tag = '', label = '', lines = '';
+
+    if (cardId === 'pump_dump') {
+      tag = `${s.windowMin}m`;
+      label = s.type === 'pump' ? 'Pump' : 'Dump';
+      lines = `<span class="mm-sig-val ${s.chgPct >= 0 ? 'pos' : 'neg'}">${sgn(s.chgPct)}${s.chgPct.toFixed(2)}%</span>
+               <span class="mm-sig-val dim">$${fmtPrice(s.prevPrice)} → $${fmtPrice(s.price)}</span>`;
+    } else if (cardId === 'vol_spike') {
+      tag = `${s.windowMin}m`;
+      label = 'Vol';
+      lines = `<span class="mm-sig-val gold">${bolts(s.volRatio)} ${Math.round(s.volRatio)}x</span>
+               <span class="mm-sig-val pos">P ${sgn(s.chgPct)}${s.chgPct.toFixed(2)}%</span>`;
+    } else if (cardId === 'oi_raise') {
+      tag = `${s.windowMin}m`;
+      label = 'OI';
+      lines = `<span class="mm-sig-val blue">OI ${sgn(s.oiChg)}${s.oiChg.toFixed(2)}%</span>
+               <span class="mm-sig-val pos">P ${sgn(s.priceChg)}${s.priceChg.toFixed(2)}%</span>
+               <span class="mm-sig-val gold">${bolts(s.volRatio)} ${Math.round(s.volRatio)}x</span>`;
+    } else if (cardId === 'divergence') {
+      tag = `${s.spanHours}h`;
+      label = 'Div';
+      lines = `<span class="mm-sig-val neg">P ${sgn(s.priceChg)}${s.priceChg.toFixed(2)}%</span>
+               <span class="mm-sig-val blue">OI ${sgn(s.oiChg)}${s.oiChg.toFixed(2)}%</span>`;
+    } else if (cardId === 'liquidations') {
+      tag = '';
+      label = s.type === 'liq_long' ? 'LONG' : 'SHORT';
+      lines = `<span class="mm-sig-val neg">${fmtUsd(s.usd)}</span>
+               <span class="mm-sig-val gold">${bolts(s.volRatio)} ${s.volRatio.toFixed(1)}x</span>`;
+    }
+
+    return `
+      <div class="mm-sig" data-sym="${s.sym}" onclick="window.open('${link}','_blank')">
+        <div class="mm-sig-icon">${icon}</div>
+        <div class="mm-sig-body">
+          <div class="mm-sig-line1">
+            <a class="mm-sig-sym" href="${link}" target="_blank" onclick="event.stopPropagation()">${base}</a>
+            ${tag ? `<span class="mm-sig-tag">${tag}</span>` : ''}
+            <span class="mm-sig-label">${label}</span>
+          </div>
+          <div class="mm-sig-line2">${lines}</div>
+        </div>
+        <div class="mm-sig-time">${agoStr}</div>
+      </div>`;
+  }
+
+  /* ── Init (wire up events + start scanning) ── */
+  function init(w, el) {
+    // Wire master switch
+    const master = el.querySelector('#mm-master');
+    if (master) {
+      master.addEventListener('change', () => {
+        S.alertsEnabled = master.checked;
+        saveCfg();
+        setStatus(S.alertsEnabled ? 'LIVE' : 'PAUSED');
+        toast(`Alerts ${S.alertsEnabled ? 'ON' : 'OFF'}`);
+        if (S.alertsEnabled && !BOOTED) startAll();
+      });
+    }
+
+    // Wire per-card toggles
+    el.querySelectorAll('[data-toggle]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const id = inp.dataset.toggle;
+        S.cards[id].enabled = inp.checked;
+        const cardEl = el.querySelector(`.mm-card[data-card="${id}"]`);
+        if (cardEl) cardEl.classList.toggle('off', !inp.checked);
+        saveCfg();
+      });
+    });
+
+    // Wire threshold inputs
+    el.querySelectorAll('.mm-in-num').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const id = inp.dataset.in;
+        const f = inp.dataset.f;
+        const v = parseFloat(inp.value);
+        if (isFinite(v) && v > 0) S.cards[id][f] = v;
+        else inp.value = S.cards[id][f];
+        saveCfg();
+      });
+    });
+
+    // Wire pool selectors
+    el.querySelectorAll('.mm-pool-sel').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const id = sel.dataset.pool;
+        S.cards[id].pool = strToPool(sel.value);
+        saveCfg();
+      });
+    });
+
+    // Render existing feeds (from previous session)
+    for (const id of Object.keys(S.cards)) renderCardFeed(id);
+
+    // Start scanner (once per page)
+    if (!BOOTED) startAll();
+  }
+
+  function startAll() {
+    if (BOOTED) return;
+    BOOTED = true;
+    loadCfg();
+    startLiqWS();
+    // Initial scan after universe is fetched
+    setTimeout(async () => {
+      await refreshUniverse();
+      tickWave();
+    }, 3000);
+    // 30s tick
+    TICK = setInterval(tickWave, 30_000);
+    // 15s feed "ago" refresh
+    setInterval(() => {
+      for (const id of Object.keys(S.cards)) {
+        const feed = document.getElementById(`mm-feed-${id}`);
+        if (feed && feed.children.length) renderCardFeed(id);
+      }
+    }, 15000);
+    setStatus('LIVE');
+    console.log('[MM] started · 5 cards active');
+  }
+
+  return { render, init, startAll, _S: S };
+})();
 
 /* ════════════════════════════════════════════════════════════
    BOOT BINDINGS
@@ -3373,9 +4276,9 @@ const miniWidget = (() => {
     initDashboardDropZone();
     initTrashZone();
     bindTopbarUI();
-    
+    MM.startAll();
 
-    startScreenerLiqWS();
+    
     await loadInitial();
     buildCorrelation();
 
