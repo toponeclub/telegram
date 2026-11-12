@@ -507,9 +507,17 @@ body.is-resizing-cards .coin-card{ transition: none !important; animation: none 
 /* ▶ Static EnginePro chart (between cards and alert log) */
 .engine-static{
   margin:14px 0; border:1px solid var(--bd); border-radius:12px;
-  background:var(--bg, #0d1017); overflow:hidden; position:relative;
+  background:var(--bg, #0d1017); 
+  position:relative;
+  height: 560px;       /* ★ Սկզբնական բարձրությունը */
+  min-height: 250px;   /* ★ Նվազագույն բարձրությունը */
+  max-height: 90vh;    /* ★ Մաքսիմալը՝ էկրանի 90%-ը */
+  resize: vertical;    /* ★ Դարձնում ենք Resizable */
+  overflow: hidden;
 }
-.engine-static iframe{display:block; width:100%; height:560px; border:0; background:var(--bg, #0d1017)}
+.engine-static iframe{
+  display:block; width:100%; height:100%; border:0; background:var(--bg, #0d1017)
+}
 
 
 /* ▶ Active card · engine is showing this symbol */
@@ -711,6 +719,18 @@ body.is-resizing-cards .coin-card{ transition: none !important; animation: none 
         <span id="mon-label">60s</span>
         <span class="sep">·</span>
         LAST <b id="mon-last">--:--:--</b>
+      </div>
+            <div class="tb-status" style="padding: 0 4px;">
+        <i class="fas fa-camera" style="margin-left: 8px; font-size: 10px; color: var(--ac);"></i>
+        <select id="snap-tf" style="background: transparent; border: none; color: var(--txt); font-family: var(--mono); font-size: 10px; font-weight: 800; padding: 6px 8px; outline: none; cursor: pointer; text-transform: uppercase;">
+          <option value="1m">1m</option>
+          <option value="5m">5m</option>
+          <option value="15m" selected>15m</option>
+          <option value="30m">30m</option>
+          <option value="1h">1h</option>
+          <option value="4h">4h</option>
+          <option value="1d">1d</option>
+        </select>
       </div>
       <button class="tb-btn" id="btn-tg"><i class="fab fa-telegram"></i> <span id="tg-state">OFF</span></button>
       <button class="tb-btn" id="btn-refresh"><i class="fas fa-rotate-right"></i></button>
@@ -1131,6 +1151,7 @@ const STATE = {
   minTriggers: 2,
   pollSec: 60,
   cooldownMin: 5,
+  snapTf: '15m',        // ★ NEW
   cardW: 0,
   cardH: 0,
   lastAlerts: {},
@@ -1169,6 +1190,7 @@ function save() {
   try {
     localStorage.setItem(SK, JSON.stringify({
       coins: STATE.coins,
+            snapTf: STATE.snapTf,
       tg: STATE.tg,
       windowMin: STATE.windowMin,
       minTriggers: STATE.minTriggers,
@@ -1182,11 +1204,14 @@ function save() {
 }
 function load() {
   try {
+    
     const raw = localStorage.getItem(SK);
     if (!raw) return;
+
     const s = JSON.parse(raw);
     if (Array.isArray(s.coins)) STATE.coins = s.coins.map(c => ({
   ...c,
+  
   viewMode: 'metrics',   /* ← force metrics · mini iframe այլեւս չի օգտագործվում */
   enabled: c.enabled || { price: true, vol: true, oi: true, liq: true },
   windowMin: c.windowMin || null,       // ★ NEW
@@ -1201,6 +1226,7 @@ function load() {
     if (Array.isArray(s.log)) STATE.log = s.log;
     if (s.cardW) STATE.cardW = +s.cardW;
     if (s.cardH) STATE.cardH = +s.cardH;
+        if (s.snapTf) STATE.snapTf = s.snapTf;
   } catch(e) {}
 }
 
@@ -1963,9 +1989,9 @@ function updateCardInPlace(sym, data) {
 
 const SNAP = {
   tf: '15m',
-  candles: 250,
-  width: 1600,   // ★ 16:9 Width
-  height: 900,   // ★ 16:9 Height
+  candles: 220,     // ★ 180 մոմ
+  width: 1280,      // ★ 1280x720 (16:9)
+  height: 720,      // ★
   colors: {
     bg:        '#0d1017',                  // ✓ նույնն է
     grid:      'rgba(255,255,255,0.02)',   // ← 0.025 → 0.02
@@ -1979,10 +2005,15 @@ const SNAP = {
     volUp:     'rgba(0,255,200,0.35)',     // ✓ չի օգտագործվում
     volDn:     'rgba(168,85,247,0.35)',    // ✓ չի օգտագործվում
     vol:       'rgba(0,255,213,0.3)',      // ← (0,255,157,0.42) → (0,255,213,0.3)
+    
     pocLine:   'rgba(255,214,10,0.3)',     // ← նոր · POC գծի գույն
     pocLabel:  'rgba(255,214,10,0)',     // ← նոր · POC տեքստի գույն
+    
 },
 };
+
+const SNAP_VP_W = 80;
+const SNAP_RIGHT_PAD = 40;
 
 function snapOiPeriod(tf) {
   return ({'1m':'5m','3m':'5m','5m':'5m','15m':'15m','30m':'30m','1h':'1h','2h':'1h','4h':'4h','1d':'1d'})[tf] || '15m';
@@ -2267,8 +2298,8 @@ function snapDrawHeader(ctx, symbol, tf, ticker, W, C) {
   ctx.fillText((change >= 0 ? '+' : '') + change.toFixed(2) + '%', x, cy);
   x += 96;
 
-  const tfs = ['1M', '5M', '15M', '1H', '4H', '1D'];
-  const tfMap = { '1M':'1m', '5M':'5m', '15M':'15m', '1H':'1h', '4H':'4h', '1D':'1d' };
+  const tfs = ['1M', '5M', '15M', '30M', '1H', '4H', '1D'];
+  const tfMap = { '1M':'1m', '5M':'5m', '15M':'15m', '30M':'30m', '1H':'1h', '4H':'4h', '1D':'1d' };
   ctx.font = 'bold 10px "JetBrains Mono", monospace';
   ctx.textAlign = 'center';
   tfs.forEach(t => {
@@ -2287,6 +2318,9 @@ function snapDrawHeader(ctx, symbol, tf, ticker, W, C) {
 /* ═══ Main chart: VP + candles + POC + price line + volume + time axis ═══ */
 /* ═══ Main chart: VP + candles + POC + price line + volume + time axis ═══ */
 /* ═══ Main chart: VP + candles + POC + price line + volume ═══ */
+/* ═══════════════════════════════════════════════════════════════
+   MAIN CHART (VP Overlay + Candles + Volume)
+   ═══════════════════════════════════════════════════════════════ */
 function snapDrawMainChart(ctx, rect, candles, tf, C, liqData) {
   if (!candles.length) return;
 
@@ -2296,17 +2330,27 @@ function snapDrawMainChart(ctx, rect, candles, tf, C, liqData) {
   const priceRect = { x: rect.x, y: rect.y, w: rect.w, h: priceH };
   const volRect   = { x: rect.x, y: rect.y + priceH, w: rect.w, h: volH };
 
+  const RIGHT_PAD = 40;
   const VP_W = 80;
 
   const minP = Math.min(...candles.map(c => c.low));
   const maxP = Math.max(...candles.map(c => c.high));
   const range = maxP - minP || 1;
 
-  const RIGHT_PAD = 40;
-  const stepX = (priceRect.w - RIGHT_PAD) / candles.length;
-  const candleW = Math.max(1, Math.floor(stepX * 0.55));
+  // ★ Մոմերը զբաղեցնում են ամբողջ լայնությունը (առանց VP-ի բացվածքի)
+  const usableW = priceRect.w - RIGHT_PAD;
+  const n = candles.length;
+  const stepX = usableW / n;
 
-  // Grid
+  // ★ Կենտ լայնություն (Ոչ զույգ), որ Wick-ը միշտ կենտրոնում լինի
+  let bodyW = Math.max(3, Math.floor(stepX * 0.65));
+  if (bodyW % 2 === 0) bodyW -= 1; 
+  const bodyHalf = Math.floor(bodyW / 2);
+
+  // ★ Սկսվում ենք հենց ձախ եզրից (rect.x), առանց VP_W-ի
+  const xCenter = (i) => Math.round(priceRect.x + (i + 0.5) * stepX);
+
+  // ─── Grid ───
   ctx.strokeStyle = C.grid;
   ctx.lineWidth = 1;
   ctx.setLineDash([2, 4]);
@@ -2320,7 +2364,7 @@ function snapDrawMainChart(ctx, rect, candles, tf, C, liqData) {
   }
   ctx.setLineDash([]);
 
-  // VP bars
+  // ─── Volume Profile (Նկարվում է ՆԱԽՔԱՆ մոմերը, որպես ֆոն) ───
   const vp = snapComputeVP(candles, 100);
   if (vp) {
     vp.hist.forEach((v, i) => {
@@ -2329,11 +2373,12 @@ function snapDrawMainChart(ctx, rect, candles, tf, C, liqData) {
       const barY = priceRect.y + (1 - (i + 1) / vp.buckets) * priceH;
       const barH = priceH / vp.buckets;
       const barW = intensity * VP_W * 0.95;
-      const alpha = 0.22 + intensity * 0.68;
+      const alpha = 0.15 + intensity * 0.45; // Մի փոքր ավելի թափանցիկ
       ctx.fillStyle = `rgba(0,255,213,${alpha})`;
       ctx.fillRect(priceRect.x, barY, barW, Math.max(1, barH - 0.5));
     });
 
+    // POC Line
     const pocY = priceRect.y + priceH - ((vp.pocPrice - minP) / range) * priceH;
     ctx.strokeStyle = C.pocLine;
     ctx.lineWidth = 1;
@@ -2344,6 +2389,7 @@ function snapDrawMainChart(ctx, rect, candles, tf, C, liqData) {
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // POC Label
     ctx.font = 'bold 10px "JetBrains Mono", monospace';
     ctx.fillStyle = C.pocLabel;
     ctx.textAlign = 'right';
@@ -2351,42 +2397,31 @@ function snapDrawMainChart(ctx, rect, candles, tf, C, liqData) {
     ctx.fillText('POC ' + snapFmtPrice(vp.pocPrice), priceRect.x + priceRect.w - 6, pocY - 8);
   }
 
-  // Candles
+  // ─── Candles (Նկարվում են VP-ի վրայից) ───
   candles.forEach((c, i) => {
-    const xCenter = priceRect.x + i * stepX + stepX / 2;
-    const xWick = Math.round(xCenter) + 0.5;
+    const cX = xCenter(i);
     const up = c.close >= c.open;
     const color = up ? C.up : C.down;
 
-    const yH = priceRect.y + priceH - ((c.high - minP) / range) * priceH;
-    const yL = priceRect.y + priceH - ((c.low - minP) / range) * priceH;
-    const yO = priceRect.y + priceH - ((c.open - minP) / range) * priceH;
-    const yC = priceRect.y + priceH - ((c.close - minP) / range) * priceH;
-
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(xWick, Math.round(yH) + 0.5);
-    ctx.lineTo(xWick, Math.round(yL) + 0.5);
-    ctx.stroke();
+    const yH = Math.round(priceRect.y + priceH - ((c.high - minP) / range) * priceH);
+    const yL = Math.round(priceRect.y + priceH - ((c.low - minP) / range) * priceH);
+    const yO = Math.round(priceRect.y + priceH - ((c.open - minP) / range) * priceH);
+    const yC = Math.round(priceRect.y + priceH - ((c.close - minP) / range) * priceH);
 
     ctx.fillStyle = color;
-    const bodyY = Math.round(Math.min(yO, yC));
-    const bodyH = Math.max(1, Math.round(Math.abs(yC - yO)));
-    const bodyX = Math.round(xCenter - candleW / 2);
-    ctx.fillRect(bodyX, bodyY, candleW, bodyH);
-    
+    // Wick (1px, կենտրոնում)
+    ctx.fillRect(cX, Math.min(yH, yL), 1, Math.max(1, Math.abs(yH - yL)));
+    // Body (Կենտ լայնություն)
+    ctx.fillRect(cX - bodyHalf, Math.min(yO, yC), bodyW, Math.max(1, Math.abs(yO - yC)));
   });
 
-  
-
-  // Last price line + badge
+  // ─── Last price line + badge ───
   const last = candles[candles.length - 1];
   const lastY = priceRect.y + priceH - ((last.close - minP) / range) * priceH;
   const lastColor = last.close >= last.open ? C.up : C.down;
 
   ctx.strokeStyle = lastColor;
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 0.5;
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
   ctx.moveTo(priceRect.x, lastY);
@@ -2394,16 +2429,15 @@ function snapDrawMainChart(ctx, rect, candles, tf, C, liqData) {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  const badgeW = 76, badgeH = 18;
   ctx.fillStyle = lastColor;
-  ctx.fillRect(priceRect.x + priceRect.w, lastY - badgeH / 2, badgeW, badgeH);
+  ctx.fillRect(priceRect.x + priceRect.w, lastY - 9, 76, 18);
   ctx.fillStyle = '#0d1017';
   ctx.font = 'bold 11px "JetBrains Mono", monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(snapFmtPrice(last.close), priceRect.x + priceRect.w + badgeW / 2, lastY);
+  ctx.fillText(snapFmtPrice(last.close), priceRect.x + priceRect.w + 38, lastY);
 
-  // Price axis
+  // ─── Price axis ───
   ctx.font = '10px "JetBrains Mono", monospace';
   ctx.fillStyle = C.txt;
   ctx.textAlign = 'left';
@@ -2415,21 +2449,21 @@ function snapDrawMainChart(ctx, rect, candles, tf, C, liqData) {
     ctx.fillText(snapFmtPrice(price), priceRect.x + priceRect.w + 4, y);
   }
 
-  // Volume bars
+  // ─── Volume bars ───
   const maxVol = Math.max(...candles.map(c => c.volume)) || 1;
   candles.forEach((c, i) => {
-    const xCenter = volRect.x + i * stepX + stepX / 2;
     const h = (c.volume / maxVol) * (volRect.h - 10);
-    const y = volRect.y + volRect.h - h;
+    const y = Math.round(volRect.y + volRect.h - h);
     ctx.fillStyle = C.vol;
-    ctx.fillRect(Math.round(xCenter - candleW / 2), Math.round(y), candleW, Math.round(h));
+    ctx.fillRect(xCenter(i) - bodyHalf, y, bodyW, Math.max(1, h));
   });
 
+  // ─── Liq markers ───
   if (liqData && liqData.length) {
     snapDrawLiqMarkers(ctx, priceRect, candles, liqData, minP, range, stepX, C);
   }
 
-  // Panel labels
+  // ─── Panel labels ───
   ctx.fillStyle = C.txt;
   ctx.font = 'bold 10px "JetBrains Mono", monospace';
   ctx.textAlign = 'left';
@@ -2438,9 +2472,9 @@ function snapDrawMainChart(ctx, rect, candles, tf, C, liqData) {
   ctx.fillText('VOLUME', volRect.x + 8, volRect.y + 6);
 }
 
-
-
-/* ═══ OPEN INTEREST panel ═══ */
+/* ═══════════════════════════════════════════════════════════════
+   OPEN INTEREST PANEL
+   ═══════════════════════════════════════════════════════════════ */
 function snapDrawOIPanel(ctx, rect, candles, oi, C) {
   snapDrawPanelBorder(ctx, rect, C);
   if (!candles.length) return;
@@ -2451,37 +2485,26 @@ function snapDrawOIPanel(ctx, rect, candles, oi, C) {
   const minV = Math.min(...valid);
   const maxV = Math.max(...valid);
   const range = maxV - minV || 1;
-  
-  const RIGHT_PAD = 40;
-  const stepX = (rect.w - RIGHT_PAD) / candles.length;
-  const barW = Math.max(1, stepX * 0.6);
 
-  ctx.strokeStyle = C.grid;
-  ctx.lineWidth = 1;
-  ctx.setLineDash([2, 4]);
-  for (let i = 0; i <= 2; i++) {
-    const y = rect.y + (rect.h / 2) * i;
-    ctx.beginPath();
-    ctx.moveTo(rect.x, y);
-    ctx.lineTo(rect.x + rect.w, y);
-    ctx.stroke();
-  }
-  ctx.setLineDash([]);
+  const RIGHT_PAD = 40;
+  const usableW = rect.w - RIGHT_PAD;
+  const stepX = usableW / candles.length;
+
+  let barW = Math.max(3, Math.floor(stepX * 0.65));
+  if (barW % 2 === 0) barW -= 1;
+  const barHalf = Math.floor(barW / 2);
+  
+  const xCenter = (i) => Math.round(rect.x + (i + 0.5) * stepX);
 
   for (let i = 0; i < candles.length; i++) {
     const v = values[i];
     const prev = i > 0 ? values[i - 1] : null;
-    if (v == null) continue;
-    if (prev == null) continue;
-    const up = v >= prev;
-    const color = up ? C.up : C.down;
+    if (v == null || prev == null) continue;
+
     const yO = rect.y + rect.h - ((prev - minV) / range) * rect.h;
     const yC = rect.y + rect.h - ((v - minV) / range) * rect.h;
-    const x = rect.x + i * stepX + stepX / 2;
-    const top = Math.min(yO, yC);
-    const bottom = Math.max(yO, yC);
-    ctx.fillStyle = color;
-    ctx.fillRect(x - barW / 2, top, barW, Math.max(1, bottom - top));
+    ctx.fillStyle = v >= prev ? C.up : C.down;
+    ctx.fillRect(xCenter(i) - barHalf, Math.min(yO, yC), barW, Math.max(1, Math.abs(yO - yC)));
   }
 
   const lastV = valid[valid.length - 1];
@@ -2498,23 +2521,29 @@ function snapDrawOIPanel(ctx, rect, candles, oi, C) {
   ctx.fillText('OPEN INTEREST', rect.x + 8, rect.y + 6);
 }
 
-/* ═══ OI DELTA panel ═══ */
+/* ═══════════════════════════════════════════════════════════════
+   OI DELTA PANEL
+   ═══════════════════════════════════════════════════════════════ */
 function snapDrawOIDeltaPanel(ctx, rect, candles, oi, C) {
   snapDrawPanelBorder(ctx, rect, C);
   if (!candles.length) return;
   const values = snapAlignOI(oi, candles);
-  const deltas = values.map((v, i) => {
-    if (i === 0 || v == null || values[i - 1] == null) return null;
-    return v - values[i - 1];
-  });
+  const deltas = values.map((v, i) => (i === 0 || v == null || values[i-1] == null) ? null : v - values[i-1]);
   const valid = deltas.filter(d => d != null);
   if (!valid.length) return;
 
   const maxAbs = Math.max(...valid.map(d => Math.abs(d))) || 1;
+  
   const RIGHT_PAD = 40;
-  const stepX = (rect.w - RIGHT_PAD) / candles.length;
-  const barW = Math.max(1, stepX * 0.6);
+  const usableW = rect.w - RIGHT_PAD;
+  const stepX = usableW / candles.length;
+
+  let barW = Math.max(3, Math.floor(stepX * 0.65));
+  if (barW % 2 === 0) barW -= 1;
+  const barHalf = Math.floor(barW / 2);
   const centerY = rect.y + rect.h / 2;
+  
+  const xCenter = (i) => Math.round(rect.x + (i + 0.5) * stepX);
 
   ctx.strokeStyle = 'rgba(255,255,255,0.1)';
   ctx.lineWidth = 1;
@@ -2525,10 +2554,9 @@ function snapDrawOIDeltaPanel(ctx, rect, candles, oi, C) {
 
   deltas.forEach((d, i) => {
     if (d == null) return;
-    const x = rect.x + i * stepX + stepX / 2;
     const h = (d / maxAbs) * (rect.h / 2 - 8);
     ctx.fillStyle = d >= 0 ? C.yellow : C.down;
-    ctx.fillRect(x - barW / 2, centerY - h, barW, h);
+    ctx.fillRect(xCenter(i) - barHalf, centerY - h, barW, h);
   });
 
   ctx.fillStyle = C.txt;
@@ -2538,17 +2566,25 @@ function snapDrawOIDeltaPanel(ctx, rect, candles, oi, C) {
   ctx.fillText('OI DELTA', rect.x + 8, rect.y + 6);
 }
 
-/* ═══ B/S DELTA panel ═══ */
+/* ═══════════════════════════════════════════════════════════════
+   B/S DELTA PANEL
+   ═══════════════════════════════════════════════════════════════ */
 function snapDrawBSDeltaPanel(ctx, rect, candles, C) {
   snapDrawPanelBorder(ctx, rect, C);
   if (!candles.length) return;
   const deltas = candles.map(c => c.takerBuy * 2 - c.volume);
   const maxAbs = Math.max(...deltas.map(d => Math.abs(d))) || 1;
-  
+
   const RIGHT_PAD = 40;
-  const stepX = (rect.w - RIGHT_PAD) / candles.length;
-  const barW = Math.max(1, stepX * 0.6);
+  const usableW = rect.w - RIGHT_PAD;
+  const stepX = usableW / candles.length;
+
+  let barW = Math.max(3, Math.floor(stepX * 0.65));
+  if (barW % 2 === 0) barW -= 1;
+  const barHalf = Math.floor(barW / 2);
   const centerY = rect.y + rect.h / 2;
+  
+  const xCenter = (i) => Math.round(rect.x + (i + 0.5) * stepX);
 
   ctx.strokeStyle = 'rgba(255,255,255,0.1)';
   ctx.lineWidth = 1;
@@ -2558,10 +2594,9 @@ function snapDrawBSDeltaPanel(ctx, rect, candles, C) {
   ctx.stroke();
 
   deltas.forEach((d, i) => {
-    const x = rect.x + i * stepX + stepX / 2;
     const h = (d / maxAbs) * (rect.h / 2 - 8);
     ctx.fillStyle = d >= 0 ? C.up : C.down;
-    ctx.fillRect(x - barW / 2, centerY - h, barW, h);
+    ctx.fillRect(xCenter(i) - barHalf, centerY - h, barW, h);
   });
 
   const lastVal = deltas[deltas.length - 1];
@@ -2580,15 +2615,15 @@ function snapDrawBSDeltaPanel(ctx, rect, candles, C) {
   ctx.fillText('B/S DELTA', rect.x + 8, rect.y + 6);
 }
 
-/* ═══ TIME AXIS · bottom strip · ստորին ժամերի սանդղակ ═══ */
+/* ═══════════════════════════════════════════════════════════════
+   TIME AXIS (Ներքևի ժամանակի սանդղակ)
+   ═══════════════════════════════════════════════════════════════ */
 function snapDrawTimeAxis(ctx, rect, candles, tf, C) {
   if (!candles.length) return;
 
-  // Ֆոն
   ctx.fillStyle = 'rgba(255,255,255,0.02)';
   ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 
-  // Վերին բաժանող գիծ (B/S DELTA-ից առանձնացնելու համար)
   ctx.strokeStyle = C.line;
   ctx.lineWidth = 1;
   ctx.setLineDash([]);
@@ -2597,9 +2632,9 @@ function snapDrawTimeAxis(ctx, rect, candles, tf, C) {
   ctx.lineTo(rect.x + rect.w, rect.y + 0.5);
   ctx.stroke();
 
-  // Ժամերի պիտակներ · 1:1 alignment բոլոր panel-ների հետ
   const RIGHT_PAD = 40;
-  const stepX = (rect.w - RIGHT_PAD) / candles.length;
+  const usableW = rect.w - RIGHT_PAD;
+  const stepX = usableW / candles.length;
 
   ctx.font = 'bold 11px "JetBrains Mono", monospace';
   ctx.fillStyle = C.txtBright;
@@ -2610,7 +2645,7 @@ function snapDrawTimeAxis(ctx, rect, candles, tf, C) {
   const cy = rect.y + rect.h / 2;
 
   for (let i = 0; i < candles.length; i += labelEvery) {
-    const x = rect.x + i * stepX + stepX / 2;
+    const x = Math.round(rect.x + (i + 0.5) * stepX);
     if (x < rect.x + 20 || x > rect.x + rect.w - 40) continue;
     ctx.fillText(snapFmtTime(candles[i].time, tf), x, cy);
   }
@@ -2623,21 +2658,16 @@ function snapRender(symbol, tf, candles, oi, ticker, opts) {
   const C = SNAP.colors;
   const W = opts.width || SNAP.width;
   const H = opts.height || SNAP.height;
-
-  const SCALE = 2;                          // ★ NEW · 2x supersampling
+  const SCALE = 2;
 
   const canvas = document.createElement('canvas');
-  canvas.width  = W * SCALE;                // ★ 3200 (փոխարեն 1600)
-  canvas.height = H * SCALE;                // ★ 1800 (փոխարեն 900)
+  canvas.width  = W * SCALE;
+  canvas.height = H * SCALE;
   const ctx = canvas.getContext('2d');
-  ctx.scale(SCALE, SCALE);                  // ★ ամեն ինչ նկարվում ա W×H կոորդինատներով
+  ctx.scale(SCALE, SCALE);
 
   ctx.fillStyle = C.bg;
   ctx.fillRect(0, 0, W, H);
-
-  // ... մնացած ԲՈԼՈՐ կոդը ԱՆՓՈՓՈԽ ...
-  // snapDrawHeader, snapDrawMainChart, snapDrawOIPanel, ...
-
 
   const HEADER_H = 44;
   const PAD_TOP  = 10;
@@ -2646,11 +2676,14 @@ function snapRender(symbol, tf, candles, oi, ticker, opts) {
   const CHART_LEFT   = 12;
   const CHART_W      = W - RIGHT_AXIS_W - CHART_LEFT;
 
-  const MAIN_H = 518;
-  const OI_H   = 90;
-  const OID_H  = 90;
-  const BSD_H  = 90;
-  const TIME_H = 26;
+  // ★ ԴԻՆԱՄԻԿ ԲԱՐՁՐՈՒԹՅՈՒՆՆԵՐ (Ամեն ինչ տեղավորվում է H-ի մեջ)
+  const TIME_H = 36;
+  const availableH = H - HEADER_H - PAD_TOP - TIME_H - (GAP * 4);
+  
+  const MAIN_H = Math.floor(availableH * 0.65); // 65% գլխավոր գրաֆիկ
+  const OI_H   = Math.floor(availableH * 0.12);
+  const OID_H  = Math.floor(availableH * 0.10);
+  const BSD_H  = Math.floor(availableH * 0.10);
 
   let y = HEADER_H + PAD_TOP;
 
@@ -2668,7 +2701,6 @@ function snapRender(symbol, tf, candles, oi, ticker, opts) {
 
   const timeRect = { x: CHART_LEFT, y, w: CHART_W, h: TIME_H };
 
-  /* ★ Liq data — filter by SAME window as alert caption (NOT 60-min buffer) */
   const coin    = STATE.coins.find(c => c.sym === symbol);
   const wMin    = coin?.windowMin || STATE.windowMin;
   const cutoff  = Date.now() - wMin * 60 * 1000;
@@ -2676,8 +2708,8 @@ function snapRender(symbol, tf, candles, oi, ticker, opts) {
   const liqData = liqBuf.filter(l => l.time >= cutoff);
 
   snapDrawHeader(ctx, symbol, tf, ticker, W, C);
-  snapDrawMainChart(ctx, mainRect, candles, tf, C, liqData);   // ← SINGLE call · liqData
-  snapDrawOIPanel(ctx, oiRect, candles, oi, C);          // ★ վերադարձվել ա
+  snapDrawMainChart(ctx, mainRect, candles, tf, C, liqData);
+  snapDrawOIPanel(ctx, oiRect, candles, oi, C);
   snapDrawOIDeltaPanel(ctx, oidRect, candles, oi, C);
   snapDrawBSDeltaPanel(ctx, bsdRect, candles, C);
   snapDrawTimeAxis(ctx, timeRect, candles, tf, C);
@@ -2728,16 +2760,24 @@ async function processAlerts() {
   while (alertQueue.length > 0) {
     const task = alertQueue[0];
 
+    /* ★ Chart-ը փոխիր ՄԻՇՏ · TG-ից անկախ */
+    try { setChartTicker(task.sym); } catch (e) {}
+
+    /* Բոնուս · scroll + card highlight, ինչպես toggleView-ում */
+    try {
+      document.getElementById('engine-static')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.querySelectorAll('.coin-card').forEach(c => c.classList.remove('active-chart'));
+      document.querySelector(`.coin-card[data-sym="${task.sym}"]`)?.classList.add('active-chart');
+    } catch (e) {}
+
     if (!STATE.tg.token || !STATE.tg.chat) {
-      console.warn('[alert] TG not configured, skip', task.sym);
-      alertQueue.shift(); // հեռացնում ենք հերթից
+      console.warn('[alert] TG not configured, chart switched only', task.sym);
+      alertQueue.shift();
       continue;
     }
 
     try {
-      /* Ցույց տալ trigger-ված symbol-ը visible chart-ում */
-      try { setChartTicker(task.sym); } catch (e) {}
-
+      /* ★ Այստեղից հանիր հին setChartTicker-ը, որովհետև վերևում արդեն կա */
       const tf = task.tf || SNAP.tf;
       toast(`📸 Rendering: ${task.sym.replace('USDT', '')} ${tf}`, '');
 
@@ -2783,21 +2823,43 @@ function fireAlert(coin, data, ev) {
   if (now() - last < cd) return;
   STATE.lastAlerts[coin.sym] = now();
 
-  const sgn = (v, d) => (v >= 0 ? '+' : '') + v.toFixed(d);
-  const dirStr = ev.dir === 'up' ? 'BULLISH' : ev.dir === 'down' ? 'BEARISH' : 'MIXED';
+   const sgn = (v, d) => (v >= 0 ? '+' : '') + v.toFixed(d);
+  const finalWindow = coin.windowMin || STATE.windowMin;
 
-  // Կազմում ենք տեքստը միայն trigger եղած մետրիկաներով
-  // Ավելացվել է window-ի ժամանակը
-   const finalWindow = coin.windowMin || STATE.windowMin;  // ★ NEW
-  const lines = [`▫️ <b>${coin.sym.replace('USDT','')}</b> ${finalWindow} min`];
-  if (ev.pPrice) lines.push(`✅ Price ${sgn(data.pricePct, 2)}%`);
-  if (ev.pVol)   lines.push(`✅ Vol ${sgn(data.volPct, 0)}%`);
-  if (ev.pOI)    lines.push(`✅ OI ${sgn(data.oiPct, 2)}%`);
-  if (ev.pLiq)   lines.push(`✅ Liq ${fmtUSD(data.liqUsd)}`);
+  /* ★ Liq · $15k փոքրատառ · $1.2M մեծատառ */
+  const fmtLiq = (v) => {
+    if (!isFinite(v)) return '--';
+    const a = Math.abs(v);
+    if (a >= 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
+    if (a >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+    if (a >= 1e3) return '$' + (v / 1e3).toFixed(0) + 'k';
+    return '$' + v.toFixed(0);
+  };
+
+  /* ★ Volume · multiplier (2.2x) + ⚡ count */
+  const volMult = 1 + data.volPct / 100;
+  const volMultStr = (() => {
+    let s = Math.abs(volMult).toFixed(1);
+    if (s.endsWith('.0')) s = s.slice(0, -2);   // 23.0 → 23
+    return (data.volPct >= 0 ? '' : '-') + s + 'x';
+  })();
+  const volBolts =
+    volMult < 10 ? '⚡' :
+    volMult < 25 ? '⚡⚡' :
+    volMult < 50 ? '⚡⚡⚡' : '⚡⚡⚡⚡';
+
+  const oiEmoji = data.oiPct >= 0 ? '📈' : '📉';
+
+  /* ★ Կարգ · Price → Volume → OI → Liq */
+  const lines = [`▫️ ${finalWindow}m  · <b>${coin.sym.replace('USDT','')}</b>`];
+  if (ev.pPrice) lines.push(`💲 Price: ${sgn(data.pricePct, 2)}%`);
+  if (ev.pVol)   lines.push(`${volBolts} Volume: ${volMultStr}`);
+  if (ev.pOI)    lines.push(`${oiEmoji} OI:  ${sgn(data.oiPct, 2)}%`);
+  if (ev.pLiq)   lines.push(`🩸 Liq: ${fmtLiq(data.liqUsd)}`);
 
   const caption = lines.join('\n');
 
-  alertQueue.push({ sym: coin.sym, caption: caption, tf: SNAP.tf });
+  alertQueue.push({ sym: coin.sym, caption: caption, tf: STATE.snapTf });
   toast(`⚡ Alert Queued: ${coin.sym.replace('USDT','')} ${ev.triggered}/${ev.activeCount}`);
   
   processAlerts();
@@ -3013,7 +3075,17 @@ function bindUI() {
       const ok = addCoin(input.value);
       if (ok) input.value = '';
     }
+    
   });
+    const snapTfSelect = $('#snap-tf');
+  if (snapTfSelect) {
+    snapTfSelect.value = STATE.snapTf;
+    snapTfSelect.addEventListener('change', () => {
+      STATE.snapTf = snapTfSelect.value;
+      save();
+      toast(`Snap Timeframe: ${STATE.snapTf.toUpperCase()}`);
+    });
+  }
 
   $$('.pchip[data-preset]').forEach(b => {
     b.addEventListener('click', () => {
