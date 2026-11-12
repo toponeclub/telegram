@@ -552,6 +552,8 @@ margin-right:6px;
 </div>
 <div id="tst"></div>
 
+
+
 <script>
 const ENGINE = (() => {
 'use strict';
@@ -559,6 +561,7 @@ const ENGINE = (() => {
 if(!window.LightweightCharts){
 document.getElementById('ld').innerHTML = '<div style="color:#ff2a5f;font-family:monospace">Failed to load Lightweight Charts. Check connection.</div>';
 document.getElementById('ld').classList.add('on');
+
 return { init: () => {} };
 }
 
@@ -606,6 +609,8 @@ liqEnabled: false
 
 
 };
+
+window.OF_CONTEXT = { get S() { return S; } };
 
 const $  = (s,r=document) => r.querySelector(s);
 const $$ = (s,r=document) => [...r.querySelectorAll(s)];
@@ -1545,7 +1550,7 @@ ctx.setLineDash([4,4]);
 ctx.beginPath(); ctx.moveTo(0,pocY); ctx.lineTo(rightEdge,pocY); ctx.stroke();
 ctx.setLineDash([]);
 ctx.font = '9px JetBrains Mono, monospace';
-ctx.fillStyle = 'rgba(255,214,10,0.9)';
+ctx.fillStyle = 'rgba(255,214,10,0.7)';
 ctx.textAlign = 'right';
 ctx.fillText('POC '+fmtP(pocPrice), rightEdge-2, pocY-3);
 }
@@ -1579,60 +1584,74 @@ async function fetchInit(){
 load(true);
 try{
 const sym = S.symbol, tf = S.tf;
+// 1. Արագ քաշում ենք միայն գրաֆիկի հիմքը (մոմիկներ, տիկեր, սփոթ)
 const [kl, tk, spot] = await Promise.all([
-get(`${CFG.rest}/klines?symbol=${sym}&interval=${tf}&limit=1000`),
-get(`${CFG.rest}/ticker/24hr?symbol=${sym}`).catch(()=>null),
-fetchSpot(tf, 1000)
+  get(`${CFG.rest}/klines?symbol=${sym}&interval=${tf}&limit=1000`),
+  get(`${CFG.rest}/ticker/24hr?symbol=${sym}`).catch(()=>null),
+  fetchSpot(tf, 1000)
 ]);
 if(!Array.isArray(kl) || !kl.length) throw new Error('No klines');
 if(sym !== S.symbol || tf !== S.tf) return;
 
 const bars = kl.map(k => {
-const vol = parseFloat(k[5]), tb = parseFloat(k[9]);
-return { time: Math.floor(k[0]/1000), open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:vol, takerBuy:tb, takerSell:vol-tb };
+  const vol = parseFloat(k[5]), tb = parseFloat(k[9]);
+  return { time: Math.floor(k[0]/1000), open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:vol, takerBuy:tb, takerSell:vol-tb };
 });
 S.rawBars.clear(); bars.forEach(b => S.rawBars.set(b.time, b));
 S.spotBars.clear(); (spot||[]).forEach(b => S.spotBars.set(b.time, b));
 S.oldestTime = kl[0][0];
 S.noMore = false;
 
-const [oi, lsr] = await Promise.all([
-fetchAllOI(tf, kl[0][0]).catch(()=>[]),
-fetchAllLSR(tf, kl[0][0]).catch(()=>[])
-]);
-if(sym !== S.symbol || tf !== S.tf) return;
-S.oiRaw = oi.slice().sort((a,b)=>a.timestamp-b.timestamp);
-S.lsrRaw = lsr.slice().sort((a,b)=>a.timestamp-b.timestamp);
-
-/* rebuild main chart data — suppress timescale propagation */
+// 2. ՄՈՄԻԿՆԵՐԸ ՆԿԱՐՈՒՄ ԵՆՔ ԱՆՄԻՋԱՊԵՍ (ոչ մի բան չենք սպասում)
 S._syncing = true;
-try {
-rebuild();
-} finally {
-S._syncing = false;
-}
+try { rebuild(); } finally { S._syncing = false; }
 
 const last = S.prices[S.prices.length-1];
 if(last){
-S.livePrice = last.close;
-const n = S.prices.length;
-S._syncing = true;
-try{ S.charts.main.timeScale().setVisibleLogicalRange({ from: Math.max(0, n-150), to: n+3 }); }catch(e){}
-S._syncing = false;
-updateHUD(last.close, tk ? parseFloat(tk.priceChangePercent) : null);
-scheduleAutoCheck();   // ← NEW
+  S.livePrice = last.close;
+  const n = S.prices.length;
+  S._syncing = true;
+  try{ S.charts.main.timeScale().setVisibleLogicalRange({ from: Math.max(0, n-150), to: n+3 }); }catch(e){}
+  S._syncing = false;
+  updateHUD(last.close, tk ? parseFloat(tk.priceChangePercent) : null);
+  scheduleAutoCheck();
 }
-/* alerts will be rebuilt by rebuild() → rebuildAlertLines() */
 updateAlertLabel();
 S.vp.lastKey = '';
 S._ready = true;
 
-/* Sync all existing panels to main range */
-syncAllPanelsToMain();
+// 3. Էկրանը հանում ենք լոադինգից, քանի որ մոմիկներն արդեն էկրանին են
+load(false);
+
+// 4. OI և LSR քաշում ենք ՖՈՆՈՒՄ (500-ական կտորներով), մինչև հասնենք մոմիկների սկզբին (kl[0][0])
+Promise.all([
+  fetchAllOI(tf, kl[0][0]).catch(()=>[]),
+  fetchAllLSR(tf, kl[0][0]).catch(()=>[])
+]).then(([oi, lsr]) => {
+  // Երբ ֆոնային քաշումը ավարտվի, ստուգում ենք, որ օգտատերը չի փոխել սիմվոլը կամ TF-ը
+  if(sym !== S.symbol || tf !== S.tf) return;
+  
+  S.oiRaw = oi.slice().sort((a,b)=>a.timestamp-b.timestamp);
+  S.lsrRaw = lsr.slice().sort((a,b)=>a.timestamp-b.timestamp);
+  
+  // Թարմացնում ենք պանելները նոր եկած տվյալներով
+  S._syncing = true;
+  try {
+    if(S.panels.oi) renderPanel('oi');
+    if(S.panels.oid) renderPanel('oid');
+    if(S.panels.lsr) renderPanel('lsr');
+    if(S.panels.rsi) renderPanel('rsi');
+  } finally {
+    S._syncing = false;
+  }
+  syncAllPanelsToMain();
+}).catch(e => console.warn('BG OI/LSR fetch failed:', e));
+
 }catch(e){
-console.error(e);
-toast('Fetch error: '+e.message, 'e');
-}finally{ load(false); }
+  console.error(e);
+  toast('Fetch error: '+e.message, 'e');
+  load(false);
+}
 }
 
 async function fetchAllOI(tf, targetMs){
@@ -1926,7 +1945,16 @@ try{ S.series.candle.setMarkers(S.liqMarkers); }catch(e){}
 pushLiqToFeed(side, usd, px, time);
 beep(isL ? 880 : 440);
 if(usd >= 200000) toast(`${isL?'🟢 LONG':'🟣 SHORT'} LIQ: ${fmtU(usd)}`, 'w');
-if(S.tg.token && S.tg.chat) sendTgWithScreenshot(`🩸 <b>${side} LIQ</b>\n${S.symbol}\nSize: ${fmtU(usd)}\nPrice: ${fmtP(px)}`);
+    if(S.tg.token && S.tg.chat){
+      /* ★ NEW · off-screen clean 1280×720 snap via queue */
+      enqueueSnap({
+        symbol: S.symbol.replace('USDT',''),
+        tf: S.tf,
+        tgToken: S.tg.token,
+        tgChat: S.tg.chat,
+        caption: `🩸 <b>${side} LIQ</b>\n${S.symbol}\nSize: ${fmtU(usd)}\nPrice: ${fmtP(px)}`,
+      });
+    }
 }catch(err){}
 };
 S.wsL.onclose = ()=>{
@@ -2202,7 +2230,14 @@ function checkAlerts(p){
     beep(1200);
     toast('🔔 Alert: ' + fmtP(p), 'w');
     if(S.tg.token && S.tg.chat){
-      sendTgWithScreenshot(`🔔 <b>PRICE ALERT</b>\n${S.symbol} crossed ${fmtP(a.price)}\nNow: ${fmtP(p)}`);
+      /* ★ NEW · off-screen clean 1280×720 snap via queue */
+      enqueueSnap({
+        symbol: S.symbol.replace('USDT',''),
+        tf: S.tf,
+        tgToken: S.tg.token,
+        tgChat: S.tg.chat,
+        caption: `🔔 <b>PRICE ALERT</b>\n${S.symbol} crossed ${fmtP(a.price)}\nNow: ${fmtP(p)}`,
+      });
     }
     changed = true;
   });
@@ -2326,6 +2361,434 @@ async function sendTgWithScreenshot(caption){
     m.forEach(x => x && (x.style.display='')); 
     updateAlertLabel();
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   OFF-SCREEN SNAP · generateSnapImage()
+   ─────────────────────────────────────────────────────────────────
+   Ստեղծում է clean 1280×720 JPEG պատկեր `position:fixed; left:-100000px`
+   container-ի մեջ — ԱՌԱՆՑ visible UI-ին դիպչելու։
+   Երբ symbol/tf նույնն է → օգտագործում է հիշողության մեջ եղած տվյալները։
+   Երբ տարբեր է → fetch անում է off-screen-ի համար (visible chart-ը անփոփոխ)։
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Fetch helpers · off-screen-ի համար (S.symbol-ից անկախ) ─── */
+async function _fetchSpotFor(sym, tf, limit, endTime) {
+  try {
+    let u = `${CFG.spot}/klines?symbol=${sym}&interval=${tf}&limit=${limit}`;
+    if (endTime) u += `&endTime=${endTime}`;
+    const r = await get(u);
+    if (!Array.isArray(r)) return [];
+    return r.map(k => {
+      const vol = parseFloat(k[5]), tb = parseFloat(k[9]);
+      return { time: Math.floor(k[0]/1000), open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:vol, takerBuy:tb, takerSell:vol-tb };
+    });
+  } catch (e) { return []; }
+}
+
+async function _fetchAllOIFor(sym, tf) {
+  const per = oiPer(tf);
+  let all = [], end = null;
+  for (let i = 0; i < 30; i++) {
+    try {
+      const u = `https://fapi.binance.com/futures/data/openInterestHist?symbol=${sym}&period=${per}&limit=500${end ? '&endTime='+end : ''}`;
+      const r = await get(u);
+      if (!Array.isArray(r) || !r.length) break;
+      all = r.concat(all);
+      if (r.length < 500) break;
+      end = r[0].timestamp - 1;
+      await sleep(60);
+    } catch (e) { break; }
+  }
+  return all;
+}
+
+async function _fetchAllLSRFor(sym, tf) {
+  const per = oiPer(tf);
+  let all = [], end = null;
+  for (let i = 0; i < 30; i++) {
+    try {
+      const u = `https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=${sym}&period=${per}&limit=500${end ? '&endTime='+end : ''}`;
+      const r = await get(u);
+      if (!Array.isArray(r) || !r.length) break;
+      all = r.concat(all);
+      if (r.length < 500) break;
+      end = r[0].timestamp - 1;
+      await sleep(60);
+    } catch (e) { break; }
+  }
+  return all;
+}
+
+/* ─── Parameterized panel data builders ─── */
+function _snapBuildOICandles(bars, oiRaw, tf) {
+  const period = tfSec(oiPer(tf));
+  const m = new Map();
+  oiRaw.forEach(o => {
+    const t = Math.floor((o.timestamp / 1000) / period) * period;
+    m.set(t, parseFloat(o.sumOpenInterestValue));
+  });
+  const out = [];
+  let prev = null;
+  bars.forEach(b => {
+    const bucket = Math.floor(b.time / period) * period;
+    const v = m.get(bucket);
+    if (v == null) { out.push({ time: b.time }); return; }
+    const o = prev == null ? v : prev;
+    const c = v;
+    const up = c >= o;
+    out.push({
+      time: b.time,
+      open: o, high: Math.max(o, c), low: Math.min(o, c), close: c,
+      color: up ? C.UP : C.DN, borderColor: up ? C.UP : C.DN, wickColor: up ? C.UP : C.DN
+    });
+    prev = v;
+  });
+  return out;
+}
+
+function _snapBuildOID(bars, oiRaw, tf) {
+  const period = tfSec(oiPer(tf));
+  const m = new Map();
+  oiRaw.forEach(o => {
+    const t = Math.floor((o.timestamp / 1000) / period) * period;
+    m.set(t, parseFloat(o.sumOpenInterestValue));
+  });
+  const out = [];
+  let prev = null;
+  bars.forEach(b => {
+    const bucket = Math.floor(b.time / period) * period;
+    const v = m.get(bucket);
+    if (v == null) { out.push({ time: b.time }); return; }
+    if (prev == null) { out.push({ time: b.time, value: 0, color: '#6b7280' }); prev = v; return; }
+    const d = v - prev;
+    out.push({ time: b.time, value: d, color: d >= 0 ? C.YELLOW : C.DN });
+    prev = v;
+  });
+  return out;
+}
+
+function _snapBuildBSDFut(bars) {
+  return bars.map(b => {
+    const d = (b.takerBuy || 0) - (b.takerSell || 0);
+    return { time: b.time, value: d, color: d >= 0 ? C.UP : C.DN };
+  });
+}
+
+function _snapBuildBSDSpot(bars, spotBars) {
+  return bars.map(b => {
+    const sp = spotBars.get(b.time);
+    if (!sp) return { time: b.time, value: 0 };
+    const d = (sp.takerBuy || 0) - (sp.takerSell || 0);
+    return { time: b.time, value: d, color: d >= 0 ? C.UP : C.DN };
+  });
+}
+
+/* ─── Off-screen mini-chart factory ─── */
+function _snapMkChart(container, width, height, opts = {}) {
+  return LWC.createChart(container, {
+    width, height,
+    layout: {
+      background: { type: 'solid', color: 'transparent' },
+      textColor: '#6b7280',
+      fontFamily: 'JetBrains Mono, monospace',
+      fontSize: 10,
+    },
+    grid: {
+      vertLines: { color: 'rgba(255,255,255,0.02)' },
+      horzLines: { color: 'rgba(255,255,255,0.02)' },
+    },
+    crosshair: {
+      mode: 0,
+      vertLine: { color: 'transparent', width: 1, labelVisible: false },
+      horzLine: { color: 'rgba(255,255,255,0.22)', width: 1, style: 3, labelVisible: false, labelBackgroundColor: '#1c1f26' },
+    },
+    timeScale: {
+      timeVisible: true, secondsVisible: false,
+      borderColor: 'rgba(255,255,255,0.05)',
+      rightOffset: 4, barSpacing: 6,
+      visible: opts.showTimeAxis !== false,
+    },
+    rightPriceScale: {
+      borderColor: 'rgba(255,255,255,0.05)',
+      scaleMargins: opts.margins || { top: 0.1, bottom: 0.1 },
+      autoScale: true,
+      minimumWidth: 68,
+    },
+    handleScroll: false,
+    handleScale: false,
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   generateSnapImage · գլխավոր generator
+   ═══════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════
+   generateSnapImage · DIRECT CANVAS EXPORT (100% Background/Tab Safe)
+   Չի օգտագործում html2canvas. Ուղղակիորեն կարդում է Lightweight Charts-ի 
+   կանվասները, ուստի աշխատում է անկախ նրանից տաբը ակտիվ է, թե ոչ։
+   ═══════════════════════════════════════════════════════════════════ */
+
+async function generateSnapImage(opts = {}) {
+  const symbol = String(opts.symbol || S.symbol).toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$/,'');
+  const tf = opts.tf || S.tf;
+  const width = opts.width || 1280;
+  const height = opts.height || 720;
+  const panels = opts.panels || ['oi', 'oid', 'bsd'];
+  const PANEL_H = 100;
+  const HEADER_H = 44;
+
+  const curSym = S.symbol.replace('USDT','').toUpperCase();
+  const sameLive = (symbol === curSym) && (tf === S.tf);
+
+  /* ─── 1. DATA · հիշողությունից կամ fetch ─── */
+  let bars, spotBars, oiRaw, lsrRaw, ticker;
+  if (sameLive && S.prices.length) {
+    bars = S.prices.slice();
+    spotBars = new Map(S.spotBars);
+    oiRaw = S.oiRaw.slice();
+    lsrRaw = S.lsrRaw.slice();
+    ticker = null;
+  } else {
+    const sym = symbol + 'USDT';
+    const [kl, tk, spot, oi, lsr] = await Promise.all([
+      get(`${CFG.rest}/klines?symbol=${sym}&interval=${tf}&limit=1000`),
+      get(`${CFG.rest}/ticker/24hr?symbol=${sym}`).catch(() => null),
+      _fetchSpotFor(sym, tf, 1000),
+      _fetchAllOIFor(sym, tf),
+      _fetchAllLSRFor(sym, tf),
+    ]);
+    if (!Array.isArray(kl) || !kl.length) throw new Error('No klines for ' + symbol);
+    bars = kl.map(k => {
+      const vol = parseFloat(k[5]), tb = parseFloat(k[9]);
+      return { time: Math.floor(k[0]/1000), open:+k[1], high:+k[2], low:+k[3], close:+k[4], volume:vol, takerBuy:tb, takerSell:vol-tb };
+    });
+    spotBars = new Map((spot || []).map(b => [b.time, b]));
+    oiRaw = oi;
+    lsrRaw = lsr;
+    ticker = tk;
+  }
+  if (!bars.length) throw new Error('No data');
+
+  const lastBar = bars[bars.length - 1];
+  const livePrice = lastBar.close;
+  const pct = ticker ? parseFloat(ticker.priceChangePercent) : 0;
+  const upCol = pct >= 0 ? '#00ffc8' : '#a855f7';
+
+  /* ─── 2. DOM ROOT (Տեղադրում ենք էկրանին թափանցիկ, որպեսզի բրաուզերը նկարի) ─── */
+  const root = document.createElement('div');
+  root.style.cssText = `position:fixed;left:0;top:0;width:${width}px;height:${height}px;background:#0d1017;display:grid;grid-template-rows:${HEADER_H}px 1fr;z-index:999999;opacity:0.01;pointer-events:none;overflow:hidden;font-family:Inter,sans-serif;`;
+
+  root.innerHTML = `
+    <div id="snap-header" style="display:flex;align-items:center;gap:8px;padding:0 10px;background:#11141b;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;">
+      <div style="background:rgba(0,0,0,.4);border:1px solid rgba(0,255,213,.2);color:#fff;padding:5px 8px;border-radius:5px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;min-width:82px;text-align:center;text-transform:uppercase;">${symbol}</div>
+      <div style="display:flex;gap:14px;align-items:center;margin:0 8px;">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.05;">
+          <span style="font-size:7px;color:#6b7280;letter-spacing:1px;font-weight:700;">PRICE</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:${upCol};">${fmtP(livePrice)}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.05;">
+          <span style="font-size:7px;color:#6b7280;letter-spacing:1px;font-weight:700;">24H</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:${upCol};">${pct>0?'+':''}${pct.toFixed(2)}%</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:1px;background:rgba(0,0,0,.4);padding:2px;border-radius:5px;border:1px solid rgba(255,255,255,.05);">
+        ${['1m','5m','15m','1h','4h','1d'].map(t =>
+          `<span style="padding:4px 7px;border-radius:3px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;${t===tf?'background:rgba(8,153,129,.08);color:#089981;':'color:#6b7280;'}">${t.toUpperCase()}</span>`
+        ).join('')}
+      </div>
+    </div>
+    <div id="snap-body" style="display:flex;flex-direction:column;overflow:hidden;min-height:0;background:#0d1017;"></div>
+  `;
+
+  document.body.appendChild(root);
+
+  const bodyEl = root.querySelector('#snap-body');
+  const chartsToCleanup = [];
+
+  try {
+    /* ─── 3. MAIN CHART ─── */
+    const MAIN_H = height - HEADER_H - panels.length * PANEL_H;
+    const mainEl = document.createElement('div');
+    mainEl.style.cssText = `flex:0 0 auto;width:${width}px;height:${MAIN_H}px;position:relative;overflow:hidden;`;
+    bodyEl.appendChild(mainEl);
+
+    const mainCh = _snapMkChart(mainEl, width, MAIN_H, { margins: { top: 0.05, bottom: 0.30 } });
+    chartsToCleanup.push(mainCh);
+
+    const candleS = mainCh.addCandlestickSeries({
+      upColor: C.UP, downColor: C.DN, borderVisible: false,
+      wickUpColor: C.UP, wickDownColor: C.DN,
+      priceFormat: { type: 'custom', formatter: fmtP, minMove: 1e-8 },
+      lastValueVisible: true, priceLineVisible: true, priceLineColor: C.UP,
+    });
+    candleS.setData(bars);
+
+    const volS = mainCh.addHistogramSeries({
+      color: C.VOL, priceFormat: { type: 'volume' }, priceScaleId: 'vol',
+      lastValueVisible: false, priceLineVisible: false,
+    });
+    volS.setData(bars.map(b => ({ time: b.time, value: b.volume, color: C.VOL })));
+    mainCh.priceScale('vol').applyOptions({ scaleMargins: { top: 0.78, bottom: 0 }, visible: false });
+
+    const n = bars.length;
+    mainCh.timeScale().setVisibleLogicalRange({ from: Math.max(0, n - 150), to: n + 3 });
+
+    /* ─── 4. PANELS ─── */
+    const PANEL_DEF = {
+      oi: {
+        title: 'OPEN INTEREST', icon: 'chart-line', color: C.ACCENT,
+        build(ch) {
+          return { s: ch.addCandlestickSeries({
+            upColor: C.UP, downColor: C.DN, borderUpColor: C.UP, borderDownColor: C.DN,
+            wickUpColor: C.UP, wickDownColor: C.DN, borderVisible: false,
+            priceFormat: { type: 'custom', formatter: fmtOI, minMove: 0.01 },
+            lastValueVisible: true, priceLineVisible: false,
+          }) };
+        },
+        render(o, d) { o.s.setData(_snapBuildOICandles(d.bars, d.oiRaw, d.tf)); },
+      },
+      oid: {
+        title: 'OI DELTA', icon: 'right-left', color: C.YELLOW,
+        build(ch) { return { s: ch.addHistogramSeries({
+          priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false,
+        }) }; },
+        render(o, d) { o.s.setData(_snapBuildOID(d.bars, d.oiRaw, d.tf)); },
+      },
+      bsd: {
+        title: 'B/S DELTA', icon: 'layer-group', color: C.UP,
+        build(ch) {
+          const fut = ch.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'bs', lastValueVisible: false, priceLineVisible: false });
+          const spot = ch.addHistogramSeries({ priceFormat: { type: 'volume' }, priceScaleId: 'bs', lastValueVisible: false, priceLineVisible: false });
+          ch.priceScale('bs').applyOptions({ scaleMargins: { top: 0.15, bottom: 0.15 } });
+          return { fut, spot };
+        },
+        render(o, d) {
+          o.fut.setData(_snapBuildBSDFut(d.bars));
+          o.spot.setData(_snapBuildBSDSpot(d.bars, d.spotBars));
+        },
+      },
+    };
+
+    const PANEL_BODY_H = PANEL_H - 22;
+    panels.forEach(type => {
+      const def = PANEL_DEF[type];
+      if (!def) return;
+
+      const pEl = document.createElement('div');
+      pEl.style.cssText = `flex:0 0 auto;width:${width}px;height:${PANEL_H}px;display:flex;flex-direction:column;overflow:hidden;border-top:1px solid rgba(255,255,255,.05);`;
+      pEl.innerHTML = `
+        <div style="display:flex;align-items:center;height:22px;padding:0 8px;background:rgba(0,0,0,.25);border-bottom:1px solid rgba(255,255,255,.05);font-size:9px;font-weight:700;letter-spacing:1px;color:#6b7280;text-transform:uppercase;flex-shrink:0;">
+          <i class="fa-solid fa-${def.icon}" style="font-size:9px;color:${def.color};margin-right:5px;"></i>
+          <span>${def.title}</span>
+        </div>
+        <div class="snap-panel-body" style="width:${width}px;height:${PANEL_BODY_H}px;position:relative;overflow:hidden;"></div>
+      `;
+      bodyEl.appendChild(pEl);
+
+      const pBody = pEl.querySelector('.snap-panel-body');
+      const pCh = _snapMkChart(pBody, width, PANEL_BODY_H, { margins: { top: 0.15, bottom: 0.15 }, showTimeAxis: false });
+      chartsToCleanup.push(pCh);
+
+      const obj = def.build(pCh);
+      def.render(obj, { bars, oiRaw, spotBars, lsrRaw, tf });
+      pCh.timeScale().setVisibleLogicalRange({ from: Math.max(0, n - 150), to: n + 3 });
+    });
+
+    /* ─── 5. Spasum enq render-ին ─── */
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise(r => setTimeout(r, 400));
+
+    /* ─── 6. MASTER CANVAS · Հավաքում ենք ամեն ինչ մի նկարի մեջ ─── */
+    const masterCanvas = document.createElement('canvas');
+    const scale = 2; // High DPI (Retina)
+    masterCanvas.width = width * scale;
+    masterCanvas.height = height * scale;
+    const ctx = masterCanvas.getContext('2d');
+    ctx.scale(scale, scale);
+
+    // Ֆոնը
+    ctx.fillStyle = '#0d1017';
+    ctx.fillRect(0, 0, width, height);
+
+    // Կարդում ենք Header-ը (html2canvas-ով կամ ուղղակի նկարում ենք, քանի որ header-ում կանվաս չկա)
+    const headerEl = root.querySelector('#snap-header');
+    const headerCanvas = await html2canvas(headerEl, { backgroundColor: '#11141b', scale: 1, logging: false });
+    ctx.drawImage(headerCanvas, 0, 0, width, HEADER_H);
+
+    // Կարդում ենք բոլոր Lightweight Charts-ի ներսի իրական կանվասները
+    const subCanvases = root.querySelectorAll('canvas');
+    subCanvases.ValueOf = Array.from(subCanvases);
+    
+    for (const subCv of subCanvases) {
+      if (subCv.width === 0 || subCv.height === 0) continue;
+      const rect = subCv.getBoundingClientRect();
+      const rootRect = root.getBoundingClientRect();
+      
+      const x = rect.left - rootRect.left;
+      const y = rect.top - rootRect.top;
+      
+      ctx.drawImage(subCv, x, y, rect.width, rect.height);
+    }
+
+    const blob = await new Promise(r => masterCanvas.toBlob(r, 'image/jpeg', 0.92));
+    if (!blob) throw new Error('masterCanvas blob null');
+    return blob;
+
+  } finally {
+    chartsToCleanup.forEach(ch => { try { ch.remove(); } catch (e) {} });
+    try { root.remove(); } catch (e) {}
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SNAP QUEUE · serializes jobs — multiple alerts չեն կռվի
+   ═══════════════════════════════════════════════════════════════════ */
+const _snapQueue = [];
+let _snapBusy = false;
+
+function enqueueSnap(job) {
+  _snapQueue.push(job);
+  _processSnapQueue();
+}
+
+async function _processSnapQueue() {
+  if (_snapBusy) return;
+  _snapBusy = true;
+  while (_snapQueue.length) {
+    const job = _snapQueue.shift();
+    try {
+      const blob = await generateSnapImage({
+        symbol: job.symbol,
+        tf: job.tf,
+        width: 1280,
+        height: 720,
+        panels: job.panels || ['oi', 'oid', 'bsd'],
+      });
+
+      if (job.tgToken && job.tgChat) {
+        const fd = new FormData();
+        fd.append('chat_id', job.tgChat);
+        fd.append('photo', blob, 'snap.jpg');
+        if (job.caption) fd.append('caption', job.caption);
+        fd.append('parse_mode', 'HTML');
+        const r = await fetch(`https://api.telegram.org/bot${job.tgToken}/sendPhoto`, {
+          method: 'POST', body: fd,
+        });
+        const j = await r.json();
+        console.log('[snapQueue] TG:', j);
+        if (!j.ok) throw new Error('TG: ' + (j.description || 'error'));
+      } else {
+        const a = document.createElement('a');
+        a.download = `snap_${job.symbol}_${job.tf}_${Date.now()}.jpg`;
+        a.href = URL.createObjectURL(blob);
+        a.click();
+      }
+    } catch (err) {
+      console.error('[snapQueue] failed:', err);
+    }
+  }
+  _snapBusy = false;
 }
 
 
@@ -2637,9 +3100,7 @@ const _C_DN = [168, 85, 247];
 /* const _AREA_COLOR = [46, 127, 208]; */  // #2E7FD0.  
 /* const _AREA_COLOR = [51, 102, 255]; */  // #3366FF · Royal Blue
 /* const _AREA_COLOR = [41, 98, 255]; */   // #2962FF
- const _AREA_COLOR = [0, 136, 255];   // #0088FF
-// const _AREA_COLOR = [94, 92, 230];   // #0088FF
-
+const _AREA_COLOR = [0, 136, 255];   // #0088FF
 
 
 let _autoAnim = 0;
@@ -3168,6 +3629,17 @@ S.tf = String(d.tf);
 $$('#tfs .tf').forEach(b => b.classList.toggle('active', b.dataset.tf === S.tf));
 reload();
 } else if(d.type === 'SET_STYLE' && d.style){ setStyle(String(d.style)); }
+    /* ★ EXTERNAL_SNAP · off-screen clean snap via queue */
+    else if(d.type === 'EXTERNAL_SNAP'){
+        enqueueSnap({
+            symbol:  String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$/,''),
+            tf:      d.tf || '5m',
+            tgToken: d.tg_token || S.tg.token,
+            tgChat:  d.tg_chat  || S.tg.chat,
+            caption: d.caption  || '',
+            panels:  Array.isArray(d.panels) ? d.panels : ['oi','oid','bsd'],
+        });
+    }
 });
 
 window.addEventListener('resize', ()=>{
@@ -3269,7 +3741,95 @@ st.textContent = S.thr.vol > 0 ? 'vol ≥ '+S.thr.vol : 'off';
 st.classList.toggle('warn', S.thr.vol > 0);
 }
 
+async function handleExternalSnap(d) {
+    /* 
+      d object-i mej spasum enq stanalu hetevyal tvyalnern (inch vor kuxarken):
+      - d.symbol (orinak 'BTC')
+      - d.tf     (orinak '15m')
+      - d.panels (orinak ['oi', 'oid', 'bsd'])
+      - d.tg_token u d.tg_chat (ete pahanjvum a uxarkel)
+      - d.caption (text)
+    */
+    console.log('[EXTERNAL_SNAP] Stacvec tvyalnerov:', d);
 
+    try {
+        const symbol = String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const tf = d.tf || '5m';
+        
+        // 1. Ete sym kam tf poxvel en, kanchum enq reload (kam tvyalneri tarmacum)
+        if (symbol + 'USDT' !== S.symbol || tf !== S.tf) {
+            S.symbol = symbol + 'USDT';
+            S.tf = tf;
+            const ci = document.getElementById('ci');
+            if (ci) ci.value = symbol;
+            document.querySelectorAll('#tfs .tf').forEach(b => {
+                b.classList.toggle('active', b.dataset.tf === tf);
+            });
+            await reload(); // Spasum enq minchev nor tvyalnery qashvi
+        }
+
+        // 2. Ete pahanjvum en hatuk panelner (kam inch vor kargavorumner)
+        if (Array.isArray(d.panels)) {
+            // Ete uzum es pahanjvats panelnery bacven
+            Object.keys(S.panels).forEach(t => { try { removePanel(t); } catch(e){} });
+            d.panels.forEach(t => {
+                if (PDEF[t]) {
+                    try { addPanel(t, { silent: true, height: 100 }); } catch(e){}
+                }
+            });
+            await new Promise(r => setTimeout(r, 400));
+        }
+
+        // 3. Spasum enq vor chart-y render lini
+        await new Promise(r => setTimeout(r, 800));
+
+        // 4. Nkarum enq (Screenshot)
+        const { el, hide } = getSnapshotTarget();
+        hide.forEach(x => x && (x.style.display = 'none'));
+
+        let blob;
+        try {
+            const cv = await html2canvas(el, {
+                backgroundColor: '#0d1017',
+                scale: 2,
+                logging: false,
+                useCORS: true,
+                width: el.clientWidth,
+                height: el.clientHeight,
+            });
+            blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+        } finally {
+            hide.forEach(x => x && (x.style.display = ''));
+            updateAlertLabel();
+        }
+
+        if (!blob) throw new Error('Blob-n chstacvec');
+
+        // 5. Uxarkum enq Telegram (kam veradardznum enq)
+        if (d.tg_token && d.tg_chat) {
+            const fd = new FormData();
+            fd.append('chat_id', d.tg_chat);
+            fd.append('photo', blob, 'external_snap.png');
+            if (d.caption) fd.append('caption', d.caption);
+            fd.append('parse_mode', 'HTML');
+
+            const res = await fetch(`https://api.telegram.org/bot${d.tg_token}/sendPhoto`, {
+                method: 'POST', body: fd
+            });
+            const json = await res.json();
+            console.log('[EXTERNAL_SNAP] TG Response:', json);
+        } else {
+            // Ete token chka, vorpes download (testi hamar)
+            const a = document.createElement('a');
+            a.download = `external_${symbol}_${tf}.png`;
+            a.href = URL.createObjectURL(blob);
+            a.click();
+        }
+
+    } catch (err) {
+        console.error('[EXTERNAL_SNAP Error]:', err);
+    }
+}
 
 const L = loadLayout();
 let panelsToAdd = [];
@@ -3337,18 +3897,72 @@ console.log('  ✓ Time-scale propagation suppressed during setData');
 console.log('  ✓ Post-rebuild force sync to main range');
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   SILENT TAB KEEPER · keeps tab alive via silent audio
+   — Chrome/Firefox treat tabs with audio as ACTIVE
+   — rAF + setTimeout work normally when "playing"
+   ═══════════════════════════════════════════════════════════════════ */
+let _keepAliveCtx = null;
+
+function startTabKeepAlive() {
+  if (_keepAliveCtx) return;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    _keepAliveCtx = new AC();
+    /* 1-sample silent buffer, looped forever */
+    const buf = _keepAliveCtx.createBuffer(1, 1, 22050);
+    const src = _keepAliveCtx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(_keepAliveCtx.destination);
+    src.start(0);
+    console.log('[KeepAlive] tab is now unthrottled');
+  } catch (e) {
+    console.warn('[KeepAlive] failed:', e);
+  }
+}
+
+function stopTabKeepAlive() {
+  if (_keepAliveCtx) {
+    try { _keepAliveCtx.close(); } catch(e) {}
+    _keepAliveCtx = null;
+    console.log('[KeepAlive] released');
+  }
+}
+
+/* Auto-start when engine has alerts or liq tracker on */
+setInterval(() => {
+  const needAlive = S.alerts.length > 0 || S.liqEnabled;
+  if (needAlive && !_keepAliveCtx) startTabKeepAlive();
+  else if (!needAlive && _keepAliveCtx) stopTabKeepAlive();
+}, 5000);
+
+/* Resume on first user interaction (audio policy) */
+document.addEventListener('pointerdown', () => {
+  if (_keepAliveCtx && _keepAliveCtx.state === 'suspended') {
+    _keepAliveCtx.resume();
+  }
+}, { passive: true });
 
   /* ══════════════════════════════════════════════════════════════════
    SNAP PRESET — միայն snapTest-ի համար
    ══════════════════════════════════════════════════════════════════ */
 async function applySnapPreset(opts = {}) {
+    const width  = opts.width  || 1280;
+    const height = opts.height || 720;
     const wantPanels = opts.panels || ['oi', 'oid', 'bsd'];
     const panelHeight = opts.panelHeight || 100;
 
+    const app     = document.getElementById('app');
     const ctrl    = document.getElementById('ctrl');
     const leftBar = document.getElementById('left-bar');
+    if (!app) throw new Error('applySnapPreset: #app missing');
 
+    /* ── 1. Save state ── */
     const saved = {
+        appStyle: app.style.cssText,
+        bodyStyle: document.body.style.cssText,
         ctrlDisplay: ctrl ? ctrl.style.display : '',
         leftBarDisplay: leftBar ? leftBar.style.display : '',
         vpEnabled: S.vp.en,
@@ -3361,30 +3975,46 @@ async function applySnapPreset(opts = {}) {
         }
     });
 
-    /* Close all panels */
+    /* ── 2. Close all panels ── */
     Object.keys(S.panels).forEach(t => {
         try { removePanel(t); } catch(e){}
     });
 
-    /* Hide ctrl + leftBar */
+    /* ── 3. Hide ctrl + leftBar completely (display:none) ── */
     if (ctrl) ctrl.style.display = 'none';
     if (leftBar) leftBar.style.display = 'none';
 
-    /* VP */
+    /* ── 4. Fix #app ITSELF (not #stack!) ── */
+    document.body.style.overflow = 'hidden';
+    app.style.cssText = `
+        position: fixed;
+        top: 0; left: 0;
+        width: ${width}px;
+        height: ${height}px;
+        z-index: 99999;
+        background: var(--bg);
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: 44px 1fr;
+    `;
+
+    /* ── 5. VP ── */
     if (!S.vp.en) { try { toggleVP(); } catch(e){} }
 
-    await new Promise(r => setTimeout(r, 200));
+    /* ── 6. Settle ── */
+    await new Promise(r => setTimeout(r, 300));
 
-    /* Open snap panels */
+    /* ── 7. Open snap panels ── */
     wantPanels.forEach(t => {
         if (PDEF[t]) {
             try { addPanel(t, { silent: true, height: panelHeight }); } catch(e){}
         }
     });
 
+    /* ── 8. Wait for addPanel's internal setTimeout(30) + render ── */
     await new Promise(r => setTimeout(r, 400));
 
-    /* Force-resize charts to container's natural size */
+    /* ── 9. Force-resize helper ── */
     const forceAll = () => {
         Object.keys(S.charts).forEach(id => {
             const ch = S.charts[id];
@@ -3412,16 +4042,20 @@ async function applySnapPreset(opts = {}) {
     await new Promise(r => setTimeout(r, 300));
     forceAll();
 
+    /* ── 10. Re-render panels after resize ── */
     S.order.forEach(t => { try { renderPanel(t); } catch(e){} });
     try { syncAllPanelsToMain(); } catch(e){}
 
-    await new Promise(r => setTimeout(r, 400));
+    await new Promise(r => setTimeout(r, 500));
     forceAll();
 
+    /* ── 11. Restore ── */
     return {
         restore: async () => {
             try { Object.keys(S.panels).forEach(t => { try { removePanel(t); } catch(e){} }); } catch(e){}
 
+            app.style.cssText = saved.appStyle;
+            document.body.style.cssText = saved.bodyStyle;
             if (ctrl) ctrl.style.display = saved.ctrlDisplay;
             if (leftBar) leftBar.style.display = saved.leftBarDisplay;
 
@@ -3437,7 +4071,7 @@ async function applySnapPreset(opts = {}) {
             S.order = saved.panelOrder.filter(t => PDEF[t]);
             try { saveLayout(); } catch(e){}
 
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 500));
             window.dispatchEvent(new Event('resize'));
 
             Object.keys(S.charts).forEach(id => {
@@ -3617,6 +4251,8 @@ hide.forEach(x => x && (x.style.display = 'none'));
 
 ENGINE.init();
 
+
+
 /* ═══════════ URL auto-trigger · ?mode=snap ═══════════ */
 (function autoSnapFromURL() {
     const p = new URLSearchParams(location.search);
@@ -3638,33 +4274,1124 @@ ENGINE.init();
     }, 800);
 })();
 
-  /* EnginePro Internal Message Listener */
-window.addEventListener('message', function(e) {
-    var d = e.data;
-    if (!d || typeof d !== 'object') return;
-
-    if (d.type === 'SET_SYMBOL' && d.symbol) {
-        if (typeof setSymbol === 'function') setSymbol(d.symbol);
-    } 
-    else if (d.type === 'EXTERNAL_SNAP') {
-        console.log('📸 EnginePro received snap request for:', d.symbol);
-        
-        // Կանչում ենք EnginePro-ի snapshot generator-ը
-        if (typeof enqueueSnap === 'function') {
-            enqueueSnap({
-                symbol:  String(d.symbol || 'BTC').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/USDT$/,''),
-                tf:      d.tf || '5m',
-                tgToken: d.tg_token || d.tgToken || (window.S && window.S.tg ? window.S.tg.token : ''),
-                tgChat:  d.tg_chat  || d.tgChat  || (window.S && window.S.tg ? window.S.tg.chat : ''),
-                caption: d.caption  || '',
-                panels:  Array.isArray(d.panels) ? d.panels : ['oi','oid','bsd']
-            });
-        } else {
-            console.error('❌ enqueueSnap is missing inside enginepro.html');
-        }
-    }
-});
-
 </script>
+<script>
+/* ═══════════════════════════════════════════════════════════════════
+   ORDERFLOW OVERLAY · REAL-TIME ORDER FLOW FOR ENGINE PRO
+   Real Binance data only · REST + WS · No simulation
+   ═══════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  const CSS = `
+    #of-toggle{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08);
+      color:#6b7280;padding:4px 10px;border-radius:4px;font-size:10px;font-weight:800;
+      font-family:'JetBrains Mono',monospace;letter-spacing:1px;cursor:pointer;
+      transition:all .25s;flex-shrink:0;display:flex;align-items:center;gap:5px}
+    #of-toggle:hover{color:#00ffd5;border-color:rgba(0,255,213,.4)}
+    #of-toggle.on{background:rgba(0,255,213,.15);color:#00ffd5;
+      border-color:#00ffd5;box-shadow:0 0 12px rgba(0,255,213,.35)}
+    #of-toggle .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.55}
+    #of-toggle.on .dot{opacity:1;box-shadow:0 0 6px currentColor;animation:ofPulse 1.4s infinite}
+    @keyframes ofPulse{50%{opacity:.3}}
+    #of-toggle .spin{width:8px;height:8px;border:1.5px solid rgba(0,255,213,.2);
+      border-top-color:#00ffd5;border-radius:50%;animation:ofSpin .8s linear infinite}
+    @keyframes ofSpin{to{transform:rotate(360deg)}}
+    #of-canvas{position:absolute;top:0;left:0;width:100%;height:100%;
+      pointer-events:none;z-index:5;display:none}
+    #of-info{position:absolute;top:8px;right:80px;background:rgba(13,16,23,.92);
+      border:1px solid rgba(0,255,213,.25);border-radius:5px;padding:6px 10px;
+      font-family:'JetBrains Mono',monospace;font-size:9px;color:#9ca0a9;z-index:6;
+      pointer-events:none;display:none;min-width:180px;line-height:1.5;backdrop-filter:blur(4px)}
+    #of-info.show{display:block}
+    #of-info .row{display:flex;justify-content:space-between;gap:10px}
+    #of-info .lbl{color:#6b7280}
+    #of-info .val{color:#e6e7ea;font-weight:700}
+    #of-info .val.pos{color:#7fdcd0}
+    #of-info .val.neg{color:#ff8a87}
+    #of-info .hdr{font-size:8px;font-weight:800;letter-spacing:1px;color:#00ffd5;
+      margin-bottom:4px;text-transform:uppercase;display:flex;justify-content:space-between;
+      align-items:center}
+    #of-info .hdr .live{width:5px;height:5px;border-radius:50%;background:#00ffd5;
+      box-shadow:0 0 5px #00ffd5;animation:ofPulse 1.4s infinite}
+    #of-info .hdr .live.off{background:#6b7280;box-shadow:none;animation:none}
+    #of-info .tape{max-height:90px;overflow:hidden;margin-top:4px;padding-top:4px;
+      border-top:1px solid rgba(255,255,255,.05)}
+    #of-info .tape .t{display:flex;justify-content:space-between;font-size:9px;padding:1px 0}
+    #of-info .tape .t.b{color:#7fdcd0}
+    #of-info .tape .t.s{color:#ff8a87}
+  `;
+
+  const styleEl = document.createElement('style');
+  styleEl.textContent = CSS;
+  document.head.appendChild(styleEl);
+
+  const ctx = () => window.OF_CONTEXT ? window.OF_CONTEXT.S : null;
+
+  const state = {
+    enabled: false, loading: false,
+    canvas: null, ctx2d: null, infoEl: null,
+    W: 0, H: 0,
+    wipeX: 0, isAnimating: false,
+    symbol: 'BTCUSDT', tf: '5m', priceDecimals: 2,
+    trades: [], depth: [], cvdHistory: [], cvd: 0,
+    currentBids: [], currentAsks: [],
+    ws: null, wsConnected: false,
+    _dirty: true, _lastRender: 0,
+    _wipeRaf: 0, _loopRaf: 0,
+    _volumeWasVisible: true,
+    _prevStyle: 'candles', // <--- ԱՎԵԼԱՑՐՈՒ ԱՅՍ ՏՈՂԸ
+    _symbolPollTimer: 0,
+    _fetchGen: 0, lastAggId: 0,
+  };
+
+  function getDecimals(str){
+    const s = String(str);
+    const dot = s.indexOf('.');
+    return dot < 0 ? 0 : s.length - dot - 1;
+  }
+  function fmtQty(v){
+    if (v == null || !isFinite(v)) return '0';
+    const a = Math.abs(v);
+    if (a >= 1e9) return (v/1e9).toFixed(2)+'B';
+    if (a >= 1e6) return (v/1e6).toFixed(2)+'M';
+    if (a >= 1e3) return (v/1e3).toFixed(1)+'K';
+    if (a >= 10)  return v.toFixed(1);
+    return v.toFixed(2);
+  }
+  function tfToSec(tf){
+    return {'1m':60,'5m':300,'15m':900,'1h':3600,'4h':14400,'1d':86400}[tf] || 300;
+  }
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  // ═══ BUTTON ═══
+  function injectButton(){
+    if (document.getElementById('of-toggle')) return;
+    const tfs = document.getElementById('tfs');
+    if (!tfs) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'of-toggle';
+    btn.title = 'OrderFlow Overlay · real Binance data';
+    btn.innerHTML = '<span class="dot"></span><span class="lbl">ORDERFLOW</span>';
+    tfs.parentNode.insertBefore(btn, tfs.nextSibling);
+    btn.addEventListener('click', toggleOF);
+  }
+  function setButtonMode(mode){
+    const btn = document.getElementById('of-toggle');
+    if (!btn) return;
+    if (mode === 'loading'){
+      btn.innerHTML = '<span class="spin"></span><span class="lbl">LOADING</span>';
+      btn.classList.remove('on');
+    } else {
+      btn.innerHTML = '<span class="dot"></span><span class="lbl">ORDERFLOW</span>';
+      btn.classList.toggle('on', mode === 'on');
+    }
+  }
+
+  // ═══ CANVAS + INFO ═══
+  function createCanvas(){
+    const container = document.getElementById('c-main');
+    if (!container) return;
+    container.style.position = 'relative';
+
+    if (!state.canvas){
+      const cv = document.createElement('canvas');
+      cv.id = 'of-canvas';
+      container.appendChild(cv);
+      state.canvas = cv;
+      state.ctx2d = cv.getContext('2d');
+    }
+
+    if (!state.infoEl){
+      const info = document.createElement('div');
+      info.id = 'of-info';
+      info.innerHTML = `
+        <div class="hdr"><span>ORDERFLOW</span><span class="live off" id="of-live"></span></div>
+        <div class="row"><span class="lbl">CVD</span><span class="val" id="of-cvd">0</span></div>
+        <div class="row"><span class="lbl">Bid/Ask</span><span class="val" id="of-imbal">—</span></div>
+        <div class="row"><span class="lbl">Trades</span><span class="val" id="of-trades">0</span></div>
+        <div class="tape" id="of-tape"></div>`;
+      container.appendChild(info);
+      state.infoEl = info;
+    }
+
+    if (window.ResizeObserver){
+      new ResizeObserver(resizeCanvas).observe(container);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    setTimeout(resizeCanvas, 100);
+  }
+
+  function resizeCanvas(){
+    if (!state.canvas) return;
+    const c = document.getElementById('c-main');
+    if (!c) return;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = c.getBoundingClientRect();
+    state.canvas.width = Math.max(1, rect.width * dpr);
+    state.canvas.height = Math.max(1, rect.height * dpr);
+    state.canvas.style.width = rect.width + 'px';
+    state.canvas.style.height = rect.height + 'px';
+    state.ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+    state.W = rect.width;
+    state.H = rect.height;
+    state._dirty = true;
+  }
+
+  // ═══ HOOK CHART ═══
+  function hookChart(){
+    const c = ctx();
+    const chart = c?.charts?.main;
+    if (!chart) { setTimeout(hookChart, 400); return; }
+    try {
+      chart.timeScale().subscribeVisibleLogicalRangeChange(r => {
+        if (r) state._dirty = true;
+      });
+    } catch(e){}
+    console.log('[OF] chart hooked');
+  }
+
+  // ═══ SYMBOL / TF POLLER ═══
+  function startPoller(){
+    if (state._symbolPollTimer) clearInterval(state._symbolPollTimer);
+    state._symbolPollTimer = setInterval(() => {
+      const c = ctx();
+      if (!c) return;
+      if (c.symbol !== state.symbol || c.tf !== state.tf){
+        state.symbol = c.symbol;
+        state.tf = c.tf;
+        state.depth = [];
+        if (state.enabled){
+          disconnectWs();
+          refetch().then(() => { if (state.enabled) connectWs(); });
+        }
+      }
+    }, 1000);
+  }
+
+  // ═══ FETCHERS (real Binance data) ═══
+  async function fetchKlines(){
+    const sym = state.symbol, tf = state.tf;
+    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=${tf}&limit=1000`;
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      if (!Array.isArray(data)) return [];
+      return data.map(k => ({
+        time: Math.floor(k[0]/1000),
+        close: +k[4],
+        volume: +k[5],
+        takerBuy: +k[9],
+        takerSell: +k[5] - +k[9],
+      }));
+    } catch(e){ console.warn('[OF] klines:', e.message); return []; }
+  }
+
+  async function fetchAggTrades(){
+    const sym = state.symbol;
+    const base = 'https://fapi.binance.com/fapi/v1/aggTrades';
+    const PAGE = 1000, MAX_PAGES = 120, PAR = 5;
+const cutoffMs = Date.now() - 240 * 60 * 1000;   // max 4 hour
+    const getJson = async (u) => {
+      try {
+        const r = await fetch(u);
+        if (!r.ok) return null;
+        const j = await r.json();
+        return Array.isArray(j) ? j : null;
+      } catch(e){ return null; }
+    };
+
+    const latest = await getJson(`${base}?symbol=${sym}&limit=${PAGE}`);
+    if (!latest || !latest.length) return [];
+    const out = latest.slice();
+    let oldestId = latest[0].a, oldestT = latest[0].T, pages = 1;
+
+    while (pages < MAX_PAGES && oldestT > cutoffMs && oldestId > 0){
+      const ids = [];
+      for (let k = 1; k <= PAR; k++){
+        const from = oldestId - PAGE * k;
+        if (from < 0) { if (k === 1) ids.push(0); break; }
+        ids.push(from);
+      }
+      if (!ids.length) break;
+      const res = await Promise.all(ids.map(id => getJson(`${base}?symbol=${sym}&limit=${PAGE}&fromId=${id}`)));
+      let ok = true;
+      for (const r of res){
+        if (!r || !r.length){ ok = false; break; }   // stop on failure to avoid gaps
+        out.push(...r);
+        oldestId = r[0].a; oldestT = r[0].T;
+      }
+      pages += ids.length;
+      if (!ok || ids[0] === 0) break;
+      await sleep(60);
+    }
+    return out;
+  }
+
+  function addTradesRaw(rawTrades){
+    const seen = new Set();
+    const list = [];
+    for (const t of rawTrades){
+      if (seen.has(t.a)) continue;
+      seen.add(t.a);
+      list.push({
+        id: t.a,
+        time: Math.floor(t.T/1000),
+        price: parseFloat(t.p),
+        qty: parseFloat(t.q),
+        side: t.m ? 'S' : 'B',
+      });
+      if (t.a > state.lastAggId) state.lastAggId = t.a;
+    }
+    list.sort((a,b) => a.id - b.id);
+    state.trades = list;
+    if (state.trades.length > 120000) state.trades.splice(0, state.trades.length - 120000);
+  }
+
+  function buildCVD(klines){
+    state.cvdHistory = [];
+    let cum = 0;
+    for (const bar of klines){
+      const delta = bar.takerBuy - bar.takerSell;
+      cum += delta;
+      state.cvdHistory.push({ time: bar.time, value: cum });
+    }
+    state.cvd = cum;
+  }
+
+  // ═══ ENABLE / DISABLE / REFETCH ═══
+  async function enable(){
+    if (state.enabled || state.loading) return;
+    state.loading = true;
+    state.enabled = true;
+    setButtonMode('loading');
+
+    try {
+      state.canvas.style.display = 'block';
+      state.infoEl.classList.add('show');
+      state.wipeX = 0;
+      state.isAnimating = true;
+
+      const c = ctx();
+      try { state._volumeWasVisible = c.series.volume.options().visible !== false; } catch(e){}
+      try { c.series.volume.applyOptions({ visible: false }); } catch(e){}
+      state._prevStyle = c.style || 'candles';
+
+      // Fetch history first — show spinner while loading
+      await refetch().catch(e => console.warn('[OF] refetch:', e));
+
+      // Skip candle transition if chart is already line/area
+      const needCandleTransition =
+        state._prevStyle !== 'line' && state._prevStyle !== 'area';
+
+      // ═══ Parallel: wipe L→R  +  candle→line  ═══
+      await Promise.all([
+        new Promise(r => animateWipe(0, state.W, 900, () => { state.isAnimating = false; r(); })),
+        needCandleTransition ? animateCandlesToLine(true, 900) : Promise.resolve(),
+      ]);
+
+      connectWs();
+    } finally {
+      state.loading = false;
+      setButtonMode('on');
+    }
+  }
+
+  function disable(){
+    if (!state.enabled || state.loading || state._disabling) return;
+    state._disabling = true;
+    state.isAnimating = true;
+
+    const needRestore =
+      state._prevStyle !== 'line' && state._prevStyle !== 'area';
+
+    // ═══ Parallel: wipe R→L  +  line→candle  ═══
+    Promise.all([
+      new Promise(r => animateWipe(state.W, 0, 700, () => { r(); })),
+      needRestore ? animateCandlesToLine(false, 700) : Promise.resolve(),
+    ]).then(() => {
+      state.enabled = false;
+      state.isAnimating = false;
+      state._disabling = false;
+      if (state.canvas) state.canvas.style.display = 'none';
+      if (state.infoEl) state.infoEl.classList.remove('show');
+      const c = ctx();
+      try { c.series.volume.applyOptions({ visible: state._volumeWasVisible }); } catch(e){}
+
+      // Complex styles (hollow / heiken / area) need engine's setStyle
+      if (state._prevStyle && state._prevStyle !== 'candles' && state._prevStyle !== 'line'){
+        const prevBtn = document.querySelector('#ms .ddi[data-st="' + state._prevStyle + '"]');
+        if (prevBtn) prevBtn.click();
+      }
+
+      disconnectWs();
+    });
+  }
+
+    // ═══ Candle ↔ Line transition (parallel-friendly) ═══
+  function animateCandlesToLine(toLine, duration) {
+    return new Promise(resolve => {
+      const chartData = ctx();
+      if (!chartData) return resolve();
+      const chart = chartData.charts.main;
+      const candleSeries = chartData.series.candle;
+      if (!chart || !candleSeries) return resolve();
+
+      // ---- Read current up/down colors from candle series ----
+      let upRGB = [0, 255, 200];
+      let dnRGB = [168, 85, 247];
+      const parseC = (c) => {
+        if (typeof c !== 'string') return null;
+        c = c.trim();
+        let m = /^#([0-9a-f]{6})$/i.exec(c);
+        if (m) return [parseInt(m[1].slice(0,2),16), parseInt(m[1].slice(2,4),16), parseInt(m[1].slice(4,6),16)];
+        m = /^#([0-9a-f]{3})$/i.exec(c);
+        if (m) return [...m[1]].map(h => parseInt(h+h,16));
+        m = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i.exec(c);
+        if (m) return [+m[1], +m[2], +m[3]];
+        return null;
+      };
+      try {
+        const opts = candleSeries.options();
+        upRGB = parseC(opts.upColor) || parseC(opts.borderUpColor) || upRGB;
+        dnRGB = parseC(opts.downColor) || parseC(opts.borderDownColor) || dnRGB;
+      } catch(e){}
+      const upStr = `${upRGB[0]},${upRGB[1]},${upRGB[2]}`;
+      const dnStr = `${dnRGB[0]},${dnRGB[1]},${dnRGB[2]}`;
+
+      // ---- Create line series on demand ----
+      let lineSeries = chartData._ofLineSeries;
+      if (toLine && !lineSeries) {
+        try {
+          lineSeries = chart.addLineSeries({
+            color: `rgba(${upStr},0)`,
+            lineWidth: 2,
+            lastValueVisible: false,
+            priceLineVisible: false,
+            priceFormat: { type: 'custom', formatter: p => p.toString(), minMove: 1e-8 },
+            crosshairMarkerVisible: false,
+          });
+          const p = chartData.prices;
+          if (p && p.length){
+            lineSeries.setData(p.map(b => ({ time: b.time, value: b.close })));
+          }
+          chartData._ofLineSeries = lineSeries;
+        } catch(e){ return resolve(); }
+      }
+
+      // ---- Ensure candle series is visible (alpha controls appearance) ----
+      try { candleSeries.applyOptions({ visible: true }); } catch(e){}
+
+      const fromProg = toLine ? 0 : 1;
+      const toProg   = toLine ? 1 : 0;
+      const startTime = performance.now();
+
+      const step = (now) => {
+        const prices = chartData.prices;
+        if (!prices || !prices.length) return resolve();
+
+        const p = Math.min(1, (now - startTime) / duration);
+        // Match easeOutCubic — same easing as animateWipe for perfect sync
+        const eased = 1 - Math.pow(1 - p, 3);
+        const prog  = fromProg + (toProg - fromProg) * eased;
+
+        const candleA = 1 - prog;
+        const lineA   = prog;
+
+        // ---- Fade candles ----
+        try {
+          candleSeries.setData(prices.map(bar => {
+            const isUp = bar.close >= bar.open;
+            const base = isUp ? upStr : dnStr;
+            const col  = `rgba(${base},${candleA})`;
+            return {
+              time: bar.time,
+              open: bar.open, high: bar.high, low: bar.low, close: bar.close,
+              color: col, borderColor: col, wickColor: col,
+            };
+          }));
+        } catch(e){}
+
+        // ---- Fade line ----
+        if (lineSeries){
+          try { lineSeries.applyOptions({ color: `rgba(${upStr},${lineA})` }); } catch(e){}
+        }
+
+        if (p < 1){
+          requestAnimationFrame(step);
+          return;
+        }
+
+        // ═══ Finalize ═══
+        if (toLine){
+          chartData.style     = 'line';
+          chartData._autoArea = false;
+          chartData._autoT    = 0;
+          if (chartData._autoS){
+            try { chart.removeSeries(chartData._autoS); } catch(e){}
+            chartData._autoS = null;
+          }
+          try { candleSeries.applyOptions({ visible: false }); } catch(e){}
+        } else {
+          chartData.style  = state._prevStyle || 'candles';
+          chartData._autoT = 0;
+          try {
+            candleSeries.applyOptions({
+              visible: true,
+              upColor:       `rgba(${upStr},1)`,
+              downColor:     `rgba(${dnStr},1)`,
+              wickUpColor:   `rgba(${upStr},1)`,
+              wickDownColor: `rgba(${dnStr},1)`,
+              borderUpColor:   `rgba(${upStr},1)`,
+              borderDownColor: `rgba(${dnStr},1)`,
+              borderVisible: false,
+            });
+            candleSeries.setData(prices);
+          } catch(e){}
+          if (lineSeries){
+            try { chart.removeSeries(lineSeries); } catch(e){}
+            chartData._ofLineSeries = null;
+          }
+        }
+        resolve();
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
+  async function refetch(){
+    // NOTE: does NOT touch WS — WS lifecycle managed by enable/disable/poller
+    const gen = ++state._fetchGen;
+    state.trades = [];
+    state.cvdHistory = [];
+    state.cvd = 0;
+    state.lastAggId = 0;
+    state.currentBids = [];
+    state.currentAsks = [];
+    state._dirty = true;
+
+    const [klines, aggTrades] = await Promise.all([
+      fetchKlines(),
+      fetchAggTrades(),
+    ]);
+    if (gen !== state._fetchGen) return;   // symbol/tf changed meanwhile
+
+    addTradesRaw(aggTrades);
+    if (state.trades.length) console.log('[OF] history:', state.trades.length, 'trades, from', new Date(state.trades[0].time*1000).toLocaleString());
+    buildCVD(klines);
+
+    if (state.trades.length){
+      state.priceDecimals = getDecimals(state.trades[state.trades.length - 1].price.toString());
+    }
+
+    updateInfo();
+    state._dirty = true;
+  }
+
+  // ═══ LIVE WS ═══
+  // ─── WS with generation counter + host fallback ───
+  let _wsGen = 0;
+
+  function disconnectWs(){
+    _wsGen++;
+    for (const k of ['ws', 'wsD']){
+      if (state[k]){
+        try { state[k].close(); } catch(e){}
+        state[k] = null;
+      }
+    }
+    state._bf = null;
+    state.wsConnected = false;
+  }
+
+  // Binance USD-M split (legacy /stream URL retired 2026-04-23):
+  //   aggTrade  -> wss://fstream.binance.com/market/...
+  //   depth     -> wss://fstream.binance.com/public/...
+  // Mixed categories on ONE connection get no data, so we use TWO sockets.
+  function openSocket(kind, url, myGen, onMsg, onOpen){
+    let ws;
+    try { ws = new WebSocket(url); } catch(e){ return null; }
+    ws.onopen = () => {
+      if (myGen !== _wsGen) { try{ws.close()}catch(e){}; return; }
+      if (onOpen) onOpen();
+      console.log('[OF] WS open · ' + kind);
+    };
+    ws.onmessage = (ev) => {
+      if (myGen !== _wsGen) return;
+      let msg;
+      try { msg = JSON.parse(ev.data); } catch(e){ return; }
+      if (!msg || !msg.data) return;
+      onMsg(msg.data);
+    };
+    ws.onerror = () => {
+      if (myGen !== _wsGen) return;
+      if (kind === 'market') { state.wsConnected = false; updateInfo(); }
+    };
+    ws.onclose = () => {
+      if (myGen !== _wsGen) return;
+      if (kind === 'market') { state.wsConnected = false; updateInfo(); }
+      console.log('[OF] WS closed · ' + kind + ' · reconnecting');
+      if (state.enabled){
+        setTimeout(() => {
+          if (state.enabled && myGen === _wsGen) reopen(kind, myGen);
+        }, 2000);
+      }
+    };
+    return ws;
+  }
+
+  function reopen(kind, myGen){
+    const sym = state.symbol.toLowerCase();
+    if (kind === 'market'){
+      state.ws = openSocket('market',
+        `wss://fstream.binance.com/market/stream?streams=${sym}@aggTrade`,
+        myGen,
+        (d) => { if (d.e === 'aggTrade'){ if (state._bf) state._bf.push(d); else onTrade(d); } },
+        () => { state.wsConnected = true; updateInfo(); startBackfill(myGen); });
+    } else {
+      state.wsD = openSocket('public',
+        `wss://fstream.binance.com/public/stream?streams=${sym}@depth20@100ms`,
+        myGen,
+        (d) => onDepth(d));
+    }
+  }
+
+  // after (re)connect: fill the hole between last known trade and the live stream
+  async function startBackfill(myGen){
+    state._bf = [];                                   // buffer live msgs meanwhile
+    const sym = state.symbol;
+    try {
+      if (state.lastAggId > 0){
+        let from = state.lastAggId + 1;
+        for (let p = 0; p < 15; p++){
+          const r = await fetch(`https://fapi.binance.com/fapi/v1/aggTrades?symbol=${sym}&fromId=${from}&limit=1000`);
+          if (!r.ok || myGen !== _wsGen) break;
+          const arr = await r.json();
+          if (!Array.isArray(arr) || !arr.length) break;
+          for (const t of arr) onTrade(t);
+          from = arr[arr.length - 1].a + 1;
+          if (arr.length < 1000) break;
+        }
+      }
+    } catch(e){ console.warn('[OF] backfill:', e.message); }
+    if (myGen !== _wsGen) return;
+    const q = state._bf || [];
+    state._bf = null;
+    for (const d of q) onTrade(d);                    // onTrade dedupes by aggId
+  }
+
+  function connectWs(){
+    disconnectWs();
+    const myGen = _wsGen;
+    reopen('market', myGen);
+    reopen('public', myGen);
+  }
+
+  function onTrade(t){
+    if (t.a != null){ if (t.a <= state.lastAggId) return; state.lastAggId = t.a; }
+    const side = t.m ? 'S' : 'B';
+    const trade = {
+      id: t.a,
+      time: Math.floor(t.T / 1000),
+      price: parseFloat(t.p),
+      qty: parseFloat(t.q),
+      side,
+    };
+    state.trades.push(trade);
+    state.cvd += side === 'B' ? trade.qty : -trade.qty;
+
+    // merge into cvdHistory (same bar → replace; new bar → append)
+    const tfSec = tfToSec(state.tf);
+    const barTime = Math.floor(trade.time / tfSec) * tfSec;
+    const last = state.cvdHistory[state.cvdHistory.length - 1];
+    if (last && last.time === barTime){
+      last.value = state.cvd;                 // same candle -> update in place
+    } else {
+      state.cvdHistory.push({ time: barTime, value: state.cvd });   // new candle (bar-aligned time)
+      if (state.cvdHistory.length > 4000) state.cvdHistory.shift();
+    }
+
+    if (state.trades.length > 120000) state.trades.splice(0, 10000);
+    state._dirty = true;
+    updateInfo();
+  }
+
+  function onDepth(d){
+    const bids = ((d.bids || d.b || [])).slice(0, 5).map(([p,q]) => ({
+      p: parseFloat(p), q: parseFloat(q),
+    }));
+    const asks = ((d.asks || d.a || [])).slice(0, 5).map(([p,q]) => ({
+      p: parseFloat(p), q: parseFloat(q),
+    }));
+    state.currentBids = bids;
+    state.currentAsks = asks;
+
+    const now = Math.floor(Date.now() / 1000);
+    const last = state.depth[state.depth.length - 1];
+    if (last && last.time === now){
+      last.bids = bids;
+      last.asks = asks;
+    } else {
+      state.depth.push({ time: now, bids, asks });
+      if (state.depth.length > 14400) state.depth.shift();
+    }
+    state._dirty = true;
+    updateInfo();
+  }
+
+  // ═══ INFO PANEL ═══
+  function updateInfo(){
+    const cvdEl = document.getElementById('of-cvd');
+    if (cvdEl){
+      cvdEl.textContent = fmtQty(state.cvd);
+      cvdEl.className = 'val ' + (state.cvd >= 0 ? 'pos' : 'neg');
+    }
+    const imEl = document.getElementById('of-imbal');
+    if (imEl && state.currentBids.length && state.currentAsks.length){
+      const bq = state.currentBids[0].q;
+      const aq = state.currentAsks[0].q;
+      const im = (bq - aq) / (bq + aq || 1);
+      imEl.textContent = (im * 100).toFixed(0) + '%';
+      imEl.className = 'val ' + (im > 0.15 ? 'pos' : (im < -0.15 ? 'neg' : ''));
+    }
+    const trEl = document.getElementById('of-trades');
+    if (trEl) trEl.textContent = state.trades.length;
+
+    const tapeEl = document.getElementById('of-tape');
+    if (tapeEl){
+      const last5 = state.trades.slice(-5).reverse();
+      tapeEl.innerHTML = last5.map(t => {
+        const cls = t.side === 'B' ? 'b' : 's';
+        return `<div class="t ${cls}"><span>${t.price.toFixed(state.priceDecimals)}</span><span>${fmtQty(t.qty)}</span></div>`;
+      }).join('');
+    }
+
+    const liveEl = document.getElementById('of-live');
+    if (liveEl) liveEl.className = 'live ' + (state.wsConnected ? '' : 'off');
+  }
+
+  // ═══ WIPE ANIMATION ═══
+  function animateWipe(from, to, duration, onDone){
+    if (state._wipeRaf) cancelAnimationFrame(state._wipeRaf);
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      state.wipeX = from + (to - from) * eased;
+      render();
+      if (p < 1){
+        state._wipeRaf = requestAnimationFrame(step);
+      } else {
+        state._wipeRaf = 0;
+        state.wipeX = to;
+        if (onDone) onDone();
+      }
+    };
+    state._wipeRaf = requestAnimationFrame(step);
+  }
+
+  // ═══ RENDER LOOP ═══
+  function startLoop(){
+    const loop = () => {
+      if (state.enabled){
+        const now = performance.now();
+        if (now - state._lastRender > 100 || state._dirty){
+          state._lastRender = now;
+          state._dirty = false;
+          render();
+        }
+      }
+      state._loopRaf = requestAnimationFrame(loop);
+    };
+    state._loopRaf = requestAnimationFrame(loop);
+  }
+
+  // ═══ RENDER ═══
+  function render(){
+    if (!state.enabled || !state.ctx2d) return;
+    const ctx2d = state.ctx2d;
+    const W = state.W, H = state.H;
+    const chartCtx = ctx();
+    if (!chartCtx) return;
+    const chart = chartCtx.charts?.main;
+    const candleSeries = chartCtx.series?.candle;
+    if (!chart || !candleSeries) return;
+
+    const ts = chart.timeScale();
+    const wipeX = state.wipeX;
+
+    ctx2d.clearRect(0, 0, W, H);
+    if (wipeX <= 0) return;
+
+    let visibleRange = null;
+    try { visibleRange = ts.getVisibleRange(); } catch(e){}
+    if (!visibleRange || visibleRange.from == null) return;
+
+    const rightEdge = W - 70;
+
+    // clip to wipe
+    ctx2d.save();
+    ctx2d.beginPath();
+    ctx2d.rect(0, 0, wipeX, H);
+    ctx2d.clip();
+
+  // ─── dim the candles while OrderFlow is on (0.5 = candles at 50% opacity) ───
+    const CANDLE_DIM = 0.81;
+    {
+      let taH = 28;
+      try { const h = ts.height(); if (h > 0) taH = h; } catch(e){}
+      ctx2d.fillStyle = `rgba(13,16,23,${CANDLE_DIM})`;      // = page bg (#0d1017)
+      ctx2d.fillRect(0, 0, rightEdge, Math.max(0, H - taH));
+    }
+
+    // ─── bar geometry: trades/depth are positioned INSIDE their candle by time ───
+    const tfSec = tfToSec(state.tf);
+    let bs = 6; // px per bar
+    {
+      const tEnd = Math.floor(visibleRange.to / tfSec) * tfSec;
+      const a = ts.timeToCoordinate(tEnd), b = ts.timeToCoordinate(tEnd - tfSec);
+      if (a !== null && b !== null && a > b) bs = a - b;
+    }
+    const xOf = (t) => {
+      const barT = Math.floor(t / tfSec) * tfSec;
+      const x0 = ts.timeToCoordinate(barT);
+      if (x0 === null) return null;
+      return x0 + ((t - barT) / tfSec - 0.5) * bs;
+    };
+    const tTo = visibleRange.to + tfSec;   // include the current (last) bar too
+
+    // ─── 1. Heatmap ───
+    if (state.depth.length){
+      const allQ = [];
+for (const snap of state.depth){
+  for (const lv of snap.bids) allQ.push(lv.q);
+  for (const lv of snap.asks) allQ.push(lv.q);
+}
+allQ.sort((a, b) => a - b);
+// 92-րդ percentile — whale-ները չեն dim-ում մնացածը
+const gMax = Math.max(allQ[Math.floor(allQ.length * 0.92)] || 1, 1);
+      const rowH = 5;
+
+      let start = 0;
+      {
+        let lo = 0, hi = state.depth.length - 1;
+        while (lo < hi){
+          const mid = (lo + hi) >> 1;
+          if (state.depth[mid].time < visibleRange.from) lo = mid + 1;
+          else hi = mid;
+        }
+        start = Math.max(0, lo - 1);
+      }
+
+      let lastPx = -1e9;
+      for (let i = start; i < state.depth.length; i++){
+        const snap = state.depth[i];
+        if (snap.time > tTo) break;
+        const x1 = xOf(snap.time);
+        if (x1 === null) continue;
+        if (x1 < -10 || x1 > rightEdge + 10) continue;
+
+        let x2 = null;
+        if (i < state.depth.length - 1) x2 = xOf(state.depth[i+1].time);
+        let colW = (x2 !== null ? x2 - x1 : 2);
+        if (colW < 1.5){                       // don't overdraw the same pixel
+          const px = Math.round(x1);
+          if (px === lastPx) continue;
+          lastPx = px;
+          colW = 2;
+        }
+
+        for (const lv of snap.bids){
+          const y = candleSeries.priceToCoordinate(lv.p);
+          if (y === null) continue;
+          const t = Math.pow(Math.min(1, lv.q / gMax), 0.7);
+          const alpha = t * 0.72;
+          if (alpha < 0.02) continue;
+          ctx2d.fillStyle = `rgba(38,166,154,${alpha})`;
+          ctx2d.fillRect(x1, y - rowH/2, colW, rowH);
+        }
+        for (const lv of snap.asks){
+          const y = candleSeries.priceToCoordinate(lv.p);
+          if (y === null) continue;
+          const t = Math.pow(Math.min(1, lv.q / gMax), 0.7);
+          const alpha = t * 0.72;
+          if (alpha < 0.02) continue;
+          ctx2d.fillStyle = `rgba(239,83,80,${alpha})`;
+          ctx2d.fillRect(x1, y - rowH/2, colW, rowH);
+        }
+      }
+    }
+
+   // ─── 2. Bubbles (aggregated per pixel-cell · same look for history + live) ───
+    if (state.trades.length){
+      let bStart = 0;
+      {
+        let lo = 0, hi = state.trades.length - 1;
+        while (lo < hi){
+          const mid = (lo + hi) >> 1;
+          if (state.trades[mid].time < visibleRange.from) lo = mid + 1;
+          else hi = mid;
+        }
+        bStart = Math.max(0, lo - 1);
+      }
+
+      // group visible trades into cells: (x column) x (price row) x (side)
+      const CELL_X = 4, CELL_Y = 4;          // px · bigger = fewer, larger bubbles
+      const cells = new Map();
+      for (let i = bStart; i < state.trades.length; i++){
+        const tr = state.trades[i];
+        if (tr.time > tTo) break;
+        if (tr.time < visibleRange.from) continue;
+        const x = xOf(tr.time);
+        if (x === null || x < -30 || x > rightEdge + 30) continue;
+        const y = candleSeries.priceToCoordinate(tr.price);
+        if (y === null) continue;
+        const key = tr.side + ':' + Math.floor(x / CELL_X) + ':' + Math.floor(y / CELL_Y);
+        let c = cells.get(key);
+        if (!c){ c = { sx: 0, sy: 0, q: 0, n: 0, side: tr.side }; cells.set(key, c); }
+        c.sx += x * tr.qty; c.sy += y * tr.qty; c.q += tr.qty; c.n++;
+      }
+
+      const vis = [];
+      for (const c of cells.values()){
+        if (c.q <= 0) continue;
+        vis.push({ x: c.sx / c.q, y: c.sy / c.q, q: c.q, side: c.side });
+      }
+
+      if (vis.length){
+        vis.sort((a, b) => b.q - a.q);            // big first, small ones stay visible on top
+        const n = vis.length;
+        const qs = vis.map(v => v.q).sort((a,b) => a - b);
+        const refQ   = Math.max(qs[Math.floor((n-1) * 0.98)], 1e-12);
+        const largeQ = qs[Math.floor((n-1) * 0.93)];
+
+        const BUBBLE_STYLE = 'flat';          // 'flat' | 'ring' | 'sphere'
+        const DESAT = 0.25;                   // 0 = candle colour as is, 1 = grey. Higher = calmer
+        const minR = 3.5;
+const maxR = Math.max(12, Math.min(22, bs * 1.4));
+        const sizeFn = (q) => minR + Math.min(1, Math.sqrt(q / refQ)) * (maxR - minR);
+
+        // colours follow the candle series
+        const toRgb = (c, fb) => {
+          if (typeof c !== 'string') return fb;
+          c = c.trim();
+          let m = /^#([0-9a-f]{6})$/i.exec(c);
+          if (m) return [parseInt(m[1].slice(0,2),16), parseInt(m[1].slice(2,4),16), parseInt(m[1].slice(4,6),16)];
+          m = /^#([0-9a-f]{3})$/i.exec(c);
+          if (m) return [...m[1]].map(h => parseInt(h+h,16));
+          m = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i.exec(c);
+          if (m) return [+m[1], +m[2], +m[3]];
+          return fb;
+        };
+        let upRGB = [0,255,200], dnRGB = [168,85,247];
+        try {
+          const o = candleSeries.options();
+          upRGB = toRgb(o.upColor, toRgb(o.borderUpColor, upRGB));
+          dnRGB = toRgb(o.downColor, toRgb(o.borderDownColor, dnRGB));
+        } catch(e){}
+        const lighten = (c, t) => [c[0] + (255-c[0])*t, c[1] + (255-c[1])*t, c[2] + (255-c[2])*t];
+        const darken  = (c, t) => [c[0]*(1-t), c[1]*(1-t), c[2]*(1-t)];
+        const mixC    = (a, b, t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
+        const desat   = (c, k) => { const l = 0.3*c[0] + 0.59*c[1] + 0.11*c[2]; return [c[0]+(l-c[0])*k, c[1]+(l-c[1])*k, c[2]+(l-c[2])*k]; };
+        const rgba = (c, a) => `rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`;
+        const baseUp = desat(upRGB, DESAT), baseDn = desat(dnRGB, DESAT);
+
+        // size -> tone ramp:  small = light, bright, more opaque
+        //                     big   = deep, calm, more transparent  (so the small ones stay readable on top)
+        const drawBubble = (v) => {
+          const r = sizeFn(v.q);
+          const t = (r - minR) / (maxR - minR);                 // 0..1
+          const base  = v.side === 'B' ? baseUp : baseDn;
+          const fillC = mixC(lighten(base, 0.08), darken(base, 0.40), t);
+          const rimC  = mixC(lighten(base, 0.25), base, t);
+          const BUBBLE_TRANSPARENCY = 0.55;                      // 0 = solid · 0.6 = previous look · 1 = invisible
+          const k = (1 - BUBBLE_TRANSPARENCY) / 0.2;            // 0.6 -> x1 (as before), 0.2 -> x2
+          const fillA = Math.min(1, (0.46 - 0.16*t) * k);
+          const rimA  = Math.min(1, (0.80 - 0.12*t) * k);
+          ctx2d.beginPath();
+          ctx2d.arc(v.x, v.y, r, 0, Math.PI*2);
+
+          if (BUBBLE_STYLE === 'ring'){
+            ctx2d.fillStyle = rgba(fillC, 0.05 + 0.05*t);
+            ctx2d.fill();
+            ctx2d.lineWidth = 1 + 0.8*t;
+            ctx2d.strokeStyle = rgba(mixC(lighten(base, 0.20), base, t), rimA);
+            ctx2d.stroke();
+          }
+          else if (BUBBLE_STYLE === 'sphere' && r >= 4){
+            const g = ctx2d.createRadialGradient(v.x - r*0.3, v.y - r*0.3, r*0.05, v.x, v.y, r);
+            g.addColorStop(0,    rgba(lighten(fillC, 0.18), fillA + 0.26));
+            g.addColorStop(0.55, rgba(fillC, fillA + 0.20));
+            g.addColorStop(1,    rgba(darken(fillC, 0.30), fillA + 0.10));
+            ctx2d.fillStyle = g;
+            ctx2d.fill();
+            ctx2d.lineWidth = 1;
+            ctx2d.strokeStyle = rgba(rimC, rimA * 0.8);
+            ctx2d.stroke();
+          }
+          else {
+            if (r < 4){
+              ctx2d.fillStyle = rgba(fillC, fillA);
+            } else {
+              const g = ctx2d.createRadialGradient(v.x - r*0.25, v.y - r*0.3, 0, v.x, v.y, r);
+              g.addColorStop(0, rgba(lighten(fillC, 0.06), fillA + 0.06));
+              g.addColorStop(1, rgba(fillC, fillA - 0.06));
+              ctx2d.fillStyle = g;
+            }
+            ctx2d.fill();
+            ctx2d.lineWidth = 1 + 0.5*t;
+            ctx2d.strokeStyle = rgba(rimC, rimA);
+            ctx2d.stroke();
+          }
+        };
+
+        // vis is sorted big -> small, so big ones sit at the bottom and small ones stay visible on top
+        for (const v of vis) drawBubble(v);
+      }
+    }
+
+    // ─── 3. CVD strip (bottom 70px) ───
+    if (state.cvdHistory.length >= 2){
+      const cvdH = 70;
+      const cvdTop = H - cvdH;
+
+      // background
+      ctx2d.fillStyle = 'rgba(13,16,23,0.85)';
+      ctx2d.fillRect(0, cvdTop, rightEdge, cvdH);
+
+      // binary-search
+      // Build pts — X-based, never freezes on pan/zoom
+const pts = [];
+const lastIdx = state.cvdHistory.length - 1;
+const startIdx = Math.max(0, lastIdx - 3000);
+for (let i = startIdx; i <= lastIdx; i++){
+  const c = state.cvdHistory[i];
+  if (!c || !isFinite(c.value)) continue;
+  const x = ts.timeToCoordinate(c.time);
+  if (x === null) continue;
+  if (x < -20) continue;
+  if (x > rightEdge + 20) continue;
+  pts.push({ x, value: c.value });
+}
+
+      if (pts.length >= 2){
+        let minV = Infinity, maxV = -Infinity;
+        for (const p of pts){
+          if (p.value < minV) minV = p.value;
+          if (p.value > maxV) maxV = p.value;
+        }
+        if (minV > 0) minV = 0;
+        if (maxV < 0) maxV = 0;
+        const range = maxV - minV || 1;
+        const zeroY = cvdTop + cvdH * (1 - (0 - minV) / range);
+
+        // zero line
+        ctx2d.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx2d.lineWidth = 1;
+        ctx2d.beginPath();
+        ctx2d.moveTo(0, zeroY);
+        ctx2d.lineTo(rightEdge, zeroY);
+        ctx2d.stroke();
+
+        // fill
+        const firstX = pts[0].x;
+        const lastX  = pts[pts.length - 1].x;
+        ctx2d.beginPath();
+        ctx2d.moveTo(pts[0].x, cvdTop + cvdH * (1 - (pts[0].value - minV) / range));
+        for (let i = 1; i < pts.length; i++){
+          const y = cvdTop + cvdH * (1 - (pts[i].value - minV) / range);
+          ctx2d.lineTo(pts[i].x, y);
+        }
+        ctx2d.lineTo(lastX, zeroY);
+        ctx2d.lineTo(firstX, zeroY);
+        ctx2d.closePath();
+        const grd = ctx2d.createLinearGradient(0, cvdTop, 0, cvdTop + cvdH);
+        if (state.cvd >= 0){
+          grd.addColorStop(0, 'rgba(38,166,154,0.35)');
+          grd.addColorStop(1, 'rgba(38,166,154,0.02)');
+        } else {
+          grd.addColorStop(0, 'rgba(239,83,80,0.02)');
+          grd.addColorStop(1, 'rgba(239,83,80,0.35)');
+        }
+        ctx2d.fillStyle = grd;
+        ctx2d.fill();
+
+        // line
+        ctx2d.beginPath();
+        ctx2d.moveTo(pts[0].x, cvdTop + cvdH * (1 - (pts[0].value - minV) / range));
+        for (let i = 1; i < pts.length; i++){
+          const y = cvdTop + cvdH * (1 - (pts[i].value - minV) / range);
+          ctx2d.lineTo(pts[i].x, y);
+        }
+        ctx2d.strokeStyle = state.cvd >= 0 ? '#7fdcd0' : '#ff8a87';
+        ctx2d.lineWidth = 1.5;
+        ctx2d.stroke();
+
+        // label
+        ctx2d.fillStyle = state.cvd >= 0 ? '#7fdcd0' : '#ff8a87';
+        ctx2d.font = 'bold 10px JetBrains Mono, monospace';
+        ctx2d.textAlign = 'left';
+        ctx2d.textBaseline = 'top';
+        ctx2d.fillText('CVD ' + fmtQty(state.cvd), 8, cvdTop + 5);
+      }
+
+      // divider
+      ctx2d.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx2d.lineWidth = 1;
+      ctx2d.beginPath();
+      ctx2d.moveTo(0, cvdTop);
+      ctx2d.lineTo(rightEdge, cvdTop);
+      ctx2d.stroke();
+    }
+
+    ctx2d.restore();
+
+    // ─── wipe front ───
+    if (state.isAnimating && wipeX < W){
+      ctx2d.strokeStyle = 'rgba(0,255,213,0.85)';
+      ctx2d.lineWidth = 2;
+      ctx2d.beginPath();
+      ctx2d.moveTo(wipeX, 0);
+      ctx2d.lineTo(wipeX, H);
+      ctx2d.stroke();
+
+      const grd = ctx2d.createLinearGradient(wipeX - 32, 0, wipeX + 2, 0);
+      grd.addColorStop(0, 'rgba(0,255,213,0)');
+      grd.addColorStop(1, 'rgba(0,255,213,0.32)');
+      ctx2d.fillStyle = grd;
+      ctx2d.fillRect(wipeX - 32, 0, 32, H);
+    }
+  }
+
+  // ═══ TOGGLE ═══
+  function toggleOF(){
+    if (state.loading) return;
+    if (state.enabled) disable();
+    else enable();
+  }
+
+  // ═══ BOOT ═══
+  function tryInit(){
+    const c = ctx();
+    if (!c || !c.charts || !c.charts.main){
+      setTimeout(tryInit, 400);
+      return;
+    }
+    state.symbol = c.symbol;
+    state.tf = c.tf;
+    createCanvas();
+    injectButton();
+    hookChart();
+    startPoller();
+    startLoop();
+    console.log('[OF] ready · symbol=' + state.symbol + ' tf=' + state.tf);
+  }
+
+  tryInit();
+})();
+</script>
+
 </body>
 </html>
