@@ -3496,19 +3496,96 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-const wlFrame = document.querySelector('iframe[src*="WATCHLISTFROMGIT"]');
-const reqId   = 'r-' + Date.now();
+/* ═══════════════════════════════════════════════════════════════
+   T1_BUS · WATCHLIST LISTENER
+   Receives: snap_request · add_to_watchlist · ping
+   Sends:    snap_result  · add_to_watchlist_result · pong
+   ═══════════════════════════════════════════════════════════════ */
+(function () {
+  const bc = new BroadcastChannel('t1prime-bus');
 
-window.addEventListener('message', function once(e) {
-  const m = e.data;
-  if (!m || m.reqId !== reqId) return;
-  console.log(m.type, m);
-  window.removeEventListener('message', once);
-});
+  bc.onmessage = async (e) => {
+    const msg = e.data;
+    if (!msg || !msg.type || !msg.reqId) return;
+    const reply = (data) => bc.postMessage({ reqId: msg.reqId, ...data });
 
-wlFrame.contentWindow.postMessage({ type: 'snap_request', reqId, symbol: 'BTC', tf: '15m' }, '*');
-// կամ add_to_watchlist
-wlFrame.contentWindow.postMessage({ type: 'add_to_watchlist', reqId, symbol: 'ETH', preset: 'meme' }, '*');
+    /* ─────────── 1) SNAP REQUEST ─────────── */
+    if (msg.type === 'snap_request') {
+      try {
+        if (!STATE.tg.token || !STATE.tg.chat) {
+          throw new Error('Telegram not configured in Watchlist');
+        }
+
+        let sym = String(msg.symbol || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (!sym) throw new Error('Invalid symbol');
+        if (!sym.endsWith('USDT')) sym += 'USDT';
+
+        const tf = msg.tf || SNAP.tf;
+
+        const blob = await produceSnapBlob(sym, tf, {
+          candles: SNAP.candles,
+          width:   SNAP.width,
+          height:  SNAP.height,
+        });
+        if (!blob) throw new Error('Blob render failed');
+
+        const base  = sym.replace('USDT', '');
+        const icon  = (msg.icon || '').trim();
+        const note  = (msg.note || '').trim();
+        const head  = icon ? `${icon} <b>${base}</b>` : `<b>${base}</b>`;
+        const caption = note ? `${head}\n${note}` : head;
+
+        const fd = new FormData();
+        fd.append('chat_id',    STATE.tg.chat);
+        fd.append('photo',      blob, `snap_${sym}_${tf}_${Date.now()}.jpg`);
+        fd.append('caption',    caption);
+        fd.append('parse_mode', 'HTML');
+
+        const r = await fetch(`https://api.telegram.org/bot${STATE.tg.token}/sendPhoto`, {
+          method: 'POST',
+          body: fd,
+        });
+        const j = await r.json();
+        if (!j.ok) throw new Error(j.description || 'TG error');
+
+        reply({ type: 'snap_result', ok: true, symbol: sym, tf, size: blob.size });
+        toast(`📸 Sent: ${base} ${tf}`, '');
+      } catch (err) {
+        reply({ type: 'snap_result', ok: false, error: String(err.message || err) });
+        toast(`⚠ Snap failed: ${err.message}`, 'warn');
+      }
+      return;
+    }
+
+    /* ─────────── 2) ADD TO WATCHLIST ─────────── */
+    if (msg.type === 'add_to_watchlist') {
+      try {
+        const sym = normalizeSymbol(msg.symbol);
+        if (!sym || sym.length < 4) throw new Error('Invalid symbol');
+        const existed = STATE.coins.some(c => c.sym === sym);
+        if (!existed) addCoin(sym, msg.preset || 'alt');
+        reply({ type: 'add_to_watchlist_result', ok: true, symbol: sym, alreadyExists: existed });
+      } catch (err) {
+        reply({ type: 'add_to_watchlist_result', ok: false, error: String(err.message || err) });
+      }
+      return;
+    }
+
+    /* ─────────── 3) PING ─────────── */
+    if (msg.type === 'ping') {
+      reply({
+        type: 'pong',
+        ok: true,
+        from: 'watchlist',
+        tgReady: !!(STATE.tg.token && STATE.tg.chat),
+        coins: STATE.coins.length,
+      });
+    }
+  };
+
+  console.log('%c[WATCHLIST] T1_BUS listening',
+    'background:#00ffd5;color:#000;padding:2px 8px;border-radius:3px;font-weight:800');
+})();
 
 </script>
 </body>
