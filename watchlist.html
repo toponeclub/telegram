@@ -3533,7 +3533,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const icon  = (msg.icon || '').trim();
         const note  = (msg.note || '').trim();
         const head  = icon ? `${icon} <b>${base}</b>` : `<b>${base}</b>`;
-        const caption = note ? `${head}\n${note}` : head;
+        const caption = note || head;
 
         const fd = new FormData();
         fd.append('chat_id',    STATE.tg.chat);
