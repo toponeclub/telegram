@@ -1709,6 +1709,21 @@ body.is-resizing .module { transition: none !important; }
     color: var(--green);
     box-shadow: 0 0 10px rgba(0,255,136,0.15);
 }
+
+#wallOverlay { position:fixed; inset:0; background:rgba(3,3,3,0.92); }
+#wallOverlay.hidden { display:none !important; }
+.wall-timer { font-family:var(--font-mono); font-size:2.2rem; font-weight:800;
+  color:var(--accent); letter-spacing:-1px; text-align:center; margin:12px 0; }
+.wall-note { font-size:0.72rem; color:var(--text-muted); text-align:center;
+  margin-top:8px; font-family:var(--font-mono); letter-spacing:0.5px; }
+.wall-btn { width:100%; padding:14px; margin-top:12px; background:var(--accent);
+  color:#000; border:none; border-radius:10px; font-weight:800;
+  font-size:0.78rem; letter-spacing:1.5px; text-transform:uppercase;
+  cursor:pointer; font-family:var(--font-ui); transition:all 0.2s; }
+.wall-btn:hover { filter:brightness(1.15); transform:translateY(-1px); }
+.wall-btn.secondary { background:transparent; color:var(--text-main);
+  border:1px solid var(--border-thin); }
+.wall-btn.secondary:hover { border-color:var(--accent); color:var(--accent); }
 </style>
 <script src="/_aistudio-iframe.js?v=1f94f900"></script></head>
 <body class="theme-emerald">
@@ -4006,6 +4021,8 @@ function initCryptoSparklineWidget(w, el) {
         return new Intl.NumberFormat('en-US', { style:'currency', currency:'USD', minimumFractionDigits:2, maximumFractionDigits: num>100?2:6 }).format(num);
     }
 
+
+    
     async function fetchChartData(symbol, interval, limit) {
         els.loading.style.display = 'block';
         try {
@@ -4256,6 +4273,13 @@ els.tooltip.innerHTML = `
     const ro = new ResizeObserver(() => drawSparkline(lastMouseX, 1));
     ro.observe(els.canvas.parentElement);
     updateWidget(currentCoinId);
+
+    // ★ NEW · 120s refresh loop
+    const refreshInterval = setInterval(() => {
+        if (document.hidden) return;
+        pulseTimeStart = null;              // ← pulse-ը նորից սկսելու համար
+        updateWidget(currentCoinId);
+    }, 120000);
 
     widgetCleanup[w.id] = () => {
         ro.disconnect();
@@ -5686,6 +5710,13 @@ else boot();
 import { createAppKit } from 'https://esm.sh/@reown/appkit?bundle';
 import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers?bundle';
 
+// Reown AppKit-ի initialization-ից հետո
+appKit.subscribeAccount((account) => {
+  if (account.isConnected && account.address) {
+    onWalletConnected(account.address);
+  }
+});
+
 const mainnet = { 
     id: 1, name: 'Ethereum', 
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
@@ -5828,6 +5859,173 @@ modal.subscribeAccount((account) => {
         if (menu) menu.classList.remove('open');
     }
 });
+
+/* ════════════════════════════════════════════════════════════
+   SESSION CONTROLLER · 2×15min + 4h cooldown + Prime gate
+   ════════════════════════════════════════════════════════════ */
+const API_BASE = 'https://grind-os-prime-api.t1prime.workers.dev'; // ← ՔՈ worker URL
+let sessionTimer = null;
+let sessionRemaining = 0;
+let lastSync = 0;
+
+function getVisitorId() {
+  let v = localStorage.getItem('grind_visitor');
+  if (!v) { v = 'vis_' + Math.random().toString(36).slice(2, 12); localStorage.setItem('grind_visitor', v); }
+  return v;
+}
+
+async function syncSession() {
+  const wallet = state.wallet;
+  if (!wallet) { showLoginWall(); return; }
+  lastSync = Date.now();
+  try {
+    const r = await fetch(`${API_BASE}/api/session/sync`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet, visitorId: getVisitorId() })
+    });
+    const d = await r.json();
+
+    if (d.requireLogin) return showLoginWall();
+
+    if (d.isPrime) {
+      hideWall();
+      if (d.userState && typeof applyUserState === 'function') applyUserState(d.userState);
+      return;
+    }
+
+    if (d.phase === 'session') {
+      hideWall();
+      if (d.userState && typeof applyUserState === 'function') applyUserState(d.userState);
+      startSessionTimer(d.remainingMs, d.sessionNum);
+    } else if (d.phase === 'cooldown') {
+      showCooldownWall(d.cooldownEndsAt, d.sessionNum);
+    } else if (d.phase === 'blocked') {
+      showPrimeWall();
+    }
+  } catch (e) {
+    console.error('[sync]', e);
+    showErrorWall();
+  }
+}
+
+function startSessionTimer(remainingMs, sessionNum) {
+  if (sessionTimer) clearInterval(sessionTimer);
+  sessionRemaining = Math.floor(remainingMs / 1000);
+  const tick = () => {
+    sessionRemaining--;
+    updateSessionBadge(sessionRemaining, sessionNum);
+    if (Date.now() - lastSync > 30000) { syncSession(); return; }
+    if (sessionRemaining <= 0) { clearInterval(sessionTimer); syncSession(); }
+  };
+  updateSessionBadge(sessionRemaining, sessionNum);
+  sessionTimer = setInterval(tick, 1000);
+}
+
+function updateSessionBadge(sec, sessionNum) {
+  let el = document.getElementById('sessionBadge');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'sessionBadge';
+    el.style.cssText = 'position:fixed;top:78px;right:20px;background:rgba(0,0,0,0.85);' +
+      'border:1px solid var(--accent);color:var(--accent);padding:8px 14px;border-radius:8px;' +
+      'font-family:var(--font-mono);font-size:11px;font-weight:800;z-index:200;' +
+      'letter-spacing:1px;backdrop-filter:blur(8px);box-shadow:0 0 20px var(--accent-dim);';
+    document.body.appendChild(el);
+  }
+  const m = Math.floor(sec / 60), s = sec % 60;
+  el.innerHTML = `⏱ ${sessionNum}/2 · ${m}:${String(s).padStart(2,'0')}`;
+  if (sec < 60) el.style.borderColor = 'var(--red)', el.style.color = 'var(--red)';
+}
+
+function hideWall() {
+  document.getElementById('wallOverlay').classList.add('hidden');
+  document.body.classList.remove('locked');
+}
+
+function showLoginWall() {
+  document.body.classList.add('locked');
+  const ov = document.getElementById('wallOverlay');
+  ov.classList.remove('hidden');
+  document.getElementById('wallBody').innerHTML = `
+    <div class="modal-title"><span>Login Required</span></div>
+    <p style="font-size:0.8rem;color:var(--text-muted);line-height:1.6;text-align:center;margin-bottom:20px;">
+      Մուտք գործի՛ր Reown-ով (Google / Email / Wallet)՝ քո պրոգրեսը պահելու և Prime-ը քո հաշվին կապելու համար։
+    </p>
+    <button class="wall-btn" onclick="openWalletModal()">
+      <i class="fa-solid fa-wallet"></i> &nbsp; Connect Wallet
+    </button>`;
+}
+
+function showCooldownWall(cooldownEndsAt, sessionNum) {
+  document.body.classList.add('locked');
+  document.getElementById('wallOverlay').classList.remove('hidden');
+  const t = new Date(cooldownEndsAt);
+  const hh = String(t.getHours()).padStart(2,'0');
+  const mm = String(t.getMinutes()).padStart(2,'0');
+  const secs = Math.max(0, Math.floor((cooldownEndsAt - Date.now()) / 1000));
+  const h = Math.floor(secs / 3600), m = Math.floor((secs % 3600) / 60);
+  document.getElementById('wallBody').innerHTML = `
+    <div class="modal-title"><span>Session 1 · Ended</span></div>
+    <div class="wall-timer">${h}h ${m}m</div>
+    <div class="wall-note">Next free session at <b style="color:var(--accent);">${hh}:${mm}</b></div>
+    <div class="wall-note" style="margin-top:14px;opacity:0.7;">
+      Կամ մի՛ սպասիր՝ ակտիվացրու <b>Prime</b>-ը և շարունակիր հիմա։
+    </div>
+    <button class="wall-btn" onclick="showPrimeWall()" style="margin-top:16px;">
+      <i class="fa-solid fa-bolt"></i> &nbsp; Activate Prime — $9
+    </button>`;
+}
+
+function showPrimeWall() {
+  document.body.classList.add('locked');
+  document.getElementById('wallOverlay').classList.remove('hidden');
+  document.getElementById('wallBody').innerHTML = `
+    <div class="modal-title"><span>Activate Your Prime</span></div>
+    <p style="font-size:0.78rem;color:var(--text-muted);line-height:1.6;text-align:center;margin-bottom:16px;">
+      Try Your Workflow<br>Activate Prime-ը՝ <b style="color:var(--accent);">30 Days Full Access</b>։
+    </p>
+    <div style="text-align:center;font-family:var(--font-mono);font-size:1.6rem;font-weight:800;color:var(--gold);margin-bottom:16px;">$9 USDT</div>
+    <div class="wall-note" style="margin-bottom:14px;">TRON (TRC20) · One Time · 30 օր</div>
+    <button class="wall-btn" onclick="openCryptopay()">
+      <i class="fa-solid fa-credit-card"></i> &nbsp; Pay with USDT (TRC20)
+    </button>`;
+}
+
+function openCryptopay() {
+  // Բացում ենք վճարման էջը
+  window.open('https://t1prime.com/cryptopay.html', '_blank');
+}
+
+function showErrorWall() {
+  document.body.classList.add('locked');
+  document.getElementById('wallOverlay').classList.remove('hidden');
+  document.getElementById('wallBody').innerHTML = `
+    <div class="modal-title"><span>Connection Error</span></div>
+    <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Սերվերը չի պատասխանում։ Փորձի՛ր նորից։</p>
+    <button class="wall-btn" onclick="syncSession()">Retry</button>`;
+}
+
+// ★ Աշխատացրու այս ամենը բեռնելուց հետո
+document.addEventListener('DOMContentLoaded', () => {
+  document.body.classList.add('locked'); // default
+  syncSession();
+});
+
+// ★ Երբ Reown-ը միացնում է wallet-ը → ավտոմատ sync
+// (կանչի՛ր այս ֆունկցիան Reown-ի onConnect callback-ից)
+function onWalletConnected(address) {
+  state.wallet = address.toLowerCase();
+
+  hideWall(); // անմիջապես բացիր overlay-ը, sync-ը կորոշի ինչ ցույց տալ
+  syncSession();
+
+}
 </script>
+<!-- PRIME / LOGIN WALL -->
+<div class="modal-overlay" id="wallOverlay" style="z-index:5000; display:flex; backdrop-filter:blur(20px);">
+  <div class="modal-content" id="wallCard" style="max-width:460px;">
+    <div id="wallBody"></div>
+  </div>
+</div>
 </body>
 </html>
