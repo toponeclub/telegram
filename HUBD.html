@@ -1818,20 +1818,14 @@ body.is-resizing .module { transition: none !important; }
         </div>
 
         <!-- SYSTEM -->
-        <div class="nav-item" style="margin-top: 24px; border-top: 1px solid var(--border-thin); padding-top: 20px;" data-href="https://t1prime.com/coming" onclick="onNavClick(event, 'subs')">
+        <div class="nav-item" style="margin-top: 24px; border-top: 1px solid var(--border-thin); padding-top: 20px;" onclick="openPrimeUpgrade()">
             <div class="nav-item-content">
-                <i class="fa-solid fa-credit-card"></i>
-                <span>Subscriptions</span>
-            </div>
-        </div>
-
-        <div class="nav-item" onclick="resetLayout()">
-            <div class="nav-item-content">
-                <i class="fa-solid fa-rotate-left"></i>
-                <span>Reset Layout</span>
+                <i class="fa-solid fa-crown" style="color: var(--accent);"></i>
+                <span>Prime</span>
             </div>
         </div>
     </div>
+</nav>
 
     
 </nav>
@@ -1848,23 +1842,16 @@ body.is-resizing .module { transition: none !important; }
     <!-- TOPBAR -->
     <header class="topbar">
         <div class="top-left">
-            <div class="brand"></div>
+            
+
+            <div class="brand">GRIND // OS</div>
 
             <button class="back-btn hidden" id="backBtn" onclick="closeIframeView()">
                 <i class="fa-solid fa-arrow-left"></i>
                 <span>Back</span>
             </button>
 
-            <div class="lang-selector-container">
-                <div class="lang-selector" id="langBtn" onclick="toggleLangMenu()">
-                    <span>Grind</span> <i class="fa-solid fa-globe"></i> <span id="langText"> OS</span>
-                </div>
-                <div class="lang-menu" id="langMenu">
-                    <div onclick="setLang('EN')">US (English)</div>
-                    <div onclick="setLang('RU')">RU (Русский)</div>
-                    <div onclick="setLang('ARM')">ARM (Հայերեն)</div>
-                    <div onclick="setLang('CH')">CH (中文)</div>
-                </div>
+            <div class="lang-selector-container hidden">
             </div>
         </div>
 
@@ -1872,7 +1859,7 @@ body.is-resizing .module { transition: none !important; }
             <button id="primeStatusBtn" onclick="openPrimeUpgrade()" style="display:none; align-items:center; gap:6px; padding:5px 10px; border-radius:6px; border:1px solid var(--border-thin); background:rgba(0,0,0,0.4); color:var(--accent); font-family:var(--font-mono); font-size:0.65rem; font-weight:800; cursor:pointer; letter-spacing:0.5px;"></button>
             <!-- WALLET -->
             <!-- ═══════ WALLET CONNECT (Reown AppKit) ═══════ -->
-<div class="wallet-wrap">
+<div class="wallet-wrap" id="walletWrap">
     <button id="wallet-btn" class="wallet-btn" onclick="openWalletModal()">
         <i class="fa-solid fa-wallet"></i> 
         <span id="wallet-text">Connect Wallet</span>
@@ -1880,24 +1867,18 @@ body.is-resizing .module { transition: none !important; }
 
     <div class="wallet-menu" id="walletMenu">
         <div class="wallet-menu-header">
-            <div class="wallet-menu-label">Connected Wallet</div>
+            <div class="wallet-menu-label">Account</div>
             <div class="wallet-menu-addr">
                 <span class="dot"></span>
                 <span id="walletAddr">0x...</span>
             </div>
+            <div id="walletPrimeLine" style="margin-top:8px; font-family:var(--font-mono); font-size:0.65rem; font-weight:800; letter-spacing:0.5px; color:var(--red);">
+                PRIME · NOT ACTIVE
+            </div>
+            <div id="walletTrialLine" style="margin-top:4px; font-family:var(--font-mono); font-size:0.6rem; color:var(--text-muted);"></div>
         </div>
-        <div class="wallet-menu-item" onclick="copyWalletAddress()">
-            <i class="fa-solid fa-copy"></i> Copy Address
-        </div>
-        <div class="wallet-menu-item" onclick="openNetworksModal()">
-            <i class="fa-solid fa-network-wired"></i> Switch Network
-        </div>
-        <div class="wallet-menu-item" onclick="viewOnExplorer()">
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> View on Explorer
-        </div>
-        <div class="wallet-menu-divider"></div>
         <div class="wallet-menu-item danger" onclick="disconnectWallet()">
-            <i class="fa-solid fa-right-from-bracket"></i> Disconnect
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
         </div>
     </div>
 </div>
@@ -1922,7 +1903,7 @@ body.is-resizing .module { transition: none !important; }
     
 
 <!-- PRESET BAR -->
-<div class="preset-wrapper">
+<div class="preset-wrapper hidden">
     <!-- Բուն պրեսետների բարը (Default փակ է .collapsed դասով) -->
     <div class="preset-bar collapsed" id="presetBar">
     <button class="preset-btn" onclick="applyPreset('genesis', this)"><i class="fa-solid fa-cube"></i> Genesis</button>
@@ -1974,7 +1955,7 @@ body.is-resizing .module { transition: none !important; }
     <div class="crypto-ticker">
     <div class="ticker-track"></div>
 </div>
-
+</div>
 <!-- LIBRARY -->
 <div class="library-overlay" id="libraryOverlay" onclick="closeLibrary()"></div>
 <aside class="widget-library" id="widgetLibrary">
@@ -2005,15 +1986,21 @@ body.is-resizing .module { transition: none !important; }
 
 <!-- MODALS -->
 <div class="modal-overlay" id="qrModal">
-    <div class="modal-content">
+    <div class="modal-content" style="text-align:center;">
         <div class="modal-title">
-            <span>Device Synchronization</span>
+            <span>Device Sync</span>
             <button class="close-btn" onclick="closeModals()"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div style="height: 180px; border: 1px dashed var(--border-thin); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.75rem;">
-            <i class="fa-solid fa-qrcode" style="font-size: 3rem; margin-bottom: 15px; color: var(--text-main);"></i>
-            Scan to sync session via mobile
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:16px; line-height:1.5;">
+            Log in with the same <b style="color:var(--accent);">Reown account</b> on any phone or PC — your widgets, notes, tasks and Prime status sync automatically.
         </div>
+        <div style="display:inline-flex; padding:12px; background:#0a0a0c; border:1px solid var(--border-thin); border-radius:12px; margin-bottom:14px;">
+            <img id="syncQrImg" alt="QR" style="width:150px; height:150px; display:block; border-radius:6px;" />
+        </div>
+        <div id="syncStatusText" style="font-family:var(--font-mono); font-size:0.68rem; color:var(--green); margin-bottom:14px;"></div>
+        <button class="wall-btn" onclick="manualCloudSync()" style="margin-top:0;">
+            <i class="fa-solid fa-rotate"></i> &nbsp; Sync Now
+        </button>
     </div>
 </div>
 
@@ -3750,8 +3737,14 @@ function saveSavedGoals(list) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ wallet: window.currentWallet, userState: { goals: list } })
         }).catch(() => {});
+        saveSavedGoals = function(list) {
+    try { localStorage.setItem(GOALS_KEY, JSON.stringify(list)); } catch(e) {}
+    scheduleUserStateSync();
+};
     }
 }
+
+
 
 function renderGoalsWidget(w) {
     return `
@@ -5741,6 +5734,7 @@ window.currentWallet = null;
 window.isPrimeActive = false;
 let _trialData = null;
 let _treasuryTron = '';
+let _primeExpiresAt = 0;
 let _pingTimer = null;
 let _tickTimer = null;
 let _pingFails = 0;
@@ -5828,26 +5822,60 @@ function fmtHHMMSS(ms) {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
+function fmtDateDDMMYY(ts) {
+    if (!ts) return '--';
+    const d = new Date(Number(ts));
+    return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getFullYear()).slice(-2)}`;
+}
+
 function updateTopbarBadge() {
     const btn = document.getElementById('primeStatusBtn');
-    if (!btn) return;
-    if (!window.currentWallet) {
-        btn.style.display = 'none';
-        return;
+    const pLine = document.getElementById('walletPrimeLine');
+    const tLine = document.getElementById('walletTrialLine');
+
+    if (btn) {
+        if (!window.currentWallet) {
+            btn.style.display = 'none';
+        } else {
+            btn.style.display = 'inline-flex';
+            btn.style.borderRadius = '999px';
+            btn.style.padding = '5px 13px';
+            btn.innerHTML = `<i class="fa-solid fa-crown"></i> PRIME`;
+            if (window.isPrimeActive) {
+                btn.style.color = 'var(--green)';
+                btn.style.borderColor = 'var(--green)';
+                btn.style.background = 'rgba(0,255,136,0.08)';
+                btn.style.boxShadow = '0 0 12px rgba(0,255,136,0.18)';
+            } else {
+                btn.style.color = 'var(--red)';
+                btn.style.borderColor = 'var(--red)';
+                btn.style.background = 'rgba(255,42,95,0.08)';
+                btn.style.boxShadow = '0 0 12px rgba(255,42,95,0.15)';
+            }
+        }
     }
-    btn.style.display = 'inline-flex';
-    if (window.isPrimeActive) {
-        btn.innerHTML = `<i class="fa-solid fa-crown"></i> PRIME ✓`;
-        btn.style.color = 'var(--green)';
-        btn.style.borderColor = 'rgba(0,255,136,0.35)';
-    } else if (_trialData && _trialData.phase === 'session') {
-        btn.innerHTML = `<i class="fa-regular fa-clock"></i> TRIAL ${_trialData.sessionNum}/2 · ${fmtMMSS(_trialData.remainingMs)}`;
-        btn.style.color = 'var(--accent)';
-        btn.style.borderColor = 'var(--border-thin)';
-    } else {
-        btn.innerHTML = `<i class="fa-solid fa-lock"></i> ACTIVATE PRIME`;
-        btn.style.color = 'var(--gold)';
-        btn.style.borderColor = 'rgba(255,204,0,0.35)';
+
+    if (pLine) {
+        if (window.isPrimeActive) {
+            pLine.textContent = `PRIME ACTIVE · UNTIL ${fmtDateDDMMYY(_primeExpiresAt)}`;
+            pLine.style.color = 'var(--green)';
+        } else {
+            pLine.textContent = `PRIME · NOT ACTIVE`;
+            pLine.style.color = 'var(--red)';
+        }
+    }
+
+    if (tLine) {
+        if (window.isPrimeActive) {
+            tLine.textContent = '';
+        } else if (_trialData && _trialData.phase === 'session') {
+            tLine.textContent = `Preview: ${fmtMMSS(_trialData.remainingMs)} left (${_trialData.sessionNum}/2)`;
+        } else if (_trialData && _trialData.phase === 'cooldown' && _trialData.cooldownEndsAt) {
+            const d = new Date(_trialData.cooldownEndsAt);
+            tLine.textContent = `Next preview at ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        } else {
+            tLine.textContent = '';
+        }
     }
 }
 
@@ -5861,7 +5889,11 @@ function showWallOverlay() {
 
 function hideWallOverlay() {
     const ov = document.getElementById('wallOverlay');
+    const card = document.getElementById('wallCard');
+    if (card) card.style.display = '';
     if (ov) {
+        ov.onclick = null;
+        ov.style.cursor = '';
         ov.classList.add('hidden');
         ov.style.display = 'none';
     }
@@ -5870,23 +5902,26 @@ function hideWallOverlay() {
 window.showLoginWall = function() {
     clearInterval(_pingTimer);
     clearInterval(_tickTimer);
+    const ov = document.getElementById('wallOverlay');
+    const card = document.getElementById('wallCard');
     const body = document.getElementById('wallBody');
-    if (!body) return;
-    body.innerHTML = `
-        <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:3px; color:var(--accent); margin-bottom:10px;">GRIND // OS</div>
-        <h2 style="font-size:1.35rem; font-weight:800; margin-bottom:8px;">Sign In Required</h2>
-        <p style="font-size:0.78rem; color:var(--text-muted); line-height:1.6; margin-bottom:22px;">
-            Log in with Wallet, Google, or Email to load your personal workspace and Prime status.
-        </p>
-        <button class="wall-btn" onclick="window.openWalletModal && window.openWalletModal()">
-            <i class="fa-solid fa-right-to-bracket"></i> &nbsp; Sign In / Connect
-        </button>
-    `;
+    if (card) card.style.display = 'none';
+    if (body) body.innerHTML = '';
+    if (ov) {
+        ov.style.cursor = 'pointer';
+        ov.onclick = () => {
+            if (!window.currentWallet && window.openWalletModal) window.openWalletModal();
+        };
+    }
     showWallOverlay();
     updateTopbarBadge();
 };
 
 function renderPrimePaymentWall(mode, data) {
+    const ov = document.getElementById('wallOverlay');
+    const card = document.getElementById('wallCard');
+    if (ov) { ov.onclick = null; ov.style.cursor = ''; }
+    if (card) card.style.display = '';
     const body = document.getElementById('wallBody');
     if (!body) return;
 
@@ -5976,14 +6011,62 @@ window.copyTreasuryAddr = function() {
     toast('TRON address copied!');
 };
 
+function renderPrimeActiveModal() {
+    const ov = document.getElementById('wallOverlay');
+    const card = document.getElementById('wallCard');
+    const body = document.getElementById('wallBody');
+    if (!body) return;
+    if (ov) { ov.onclick = null; ov.style.cursor = ''; }
+    if (card) card.style.display = '';
+
+    const shortW = window.currentWallet ? (window.currentWallet.slice(0, 6) + '...' + window.currentWallet.slice(-4)) : '';
+    body.innerHTML = `
+        <div style="font-size:2rem; color:var(--green); margin-bottom:10px;"><i class="fa-solid fa-crown"></i></div>
+        <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:2.5px; color:var(--green); font-weight:800; margin-bottom:6px;">PRIME ACTIVE ✓</div>
+        <h2 style="font-size:1.25rem; font-weight:800; margin-bottom:8px;">Full Access Unlocked</h2>
+        <div style="background:rgba(0,255,136,0.06); border:1px solid rgba(0,255,136,0.2); border-radius:10px; padding:14px; font-family:var(--font-mono); font-size:0.75rem; margin:14px 0; line-height:1.8;">
+            <div>Account: <b style="color:var(--text-main);">${shortW}</b></div>
+            <div>Status: <b style="color:var(--green);">ACTIVE UNTIL ${fmtDateDDMMYY(_primeExpiresAt)}</b></div>
+        </div>
+        <button class="wall-btn" onclick="hideWallOverlay()">Continue</button>
+    `;
+    showWallOverlay();
+}
+
 window.openPrimeUpgrade = function() {
     if (!window.currentWallet) {
         showLoginWall();
         return;
     }
-    if (window.isPrimeActive) return;
+    if (window.isPrimeActive) {
+        renderPrimeActiveModal();
+        return;
+    }
     const mode = (_trialData && _trialData.phase === 'session') ? 'upgrade' : (_trialData?.phase || 'blocked');
     renderPrimePaymentWall(mode, _trialData);
+};
+
+// Device Sync modal hook
+const _origOpenModal = openModal;
+openModal = function(id) {
+    _origOpenModal(id);
+    if (id === 'qrModal') {
+        const img = document.getElementById('syncQrImg');
+        const txt = document.getElementById('syncStatusText');
+        if (img) img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&color=00ff88&bgcolor=0a0a0c&data=' + encodeURIComponent(location.origin);
+        if (txt) {
+            txt.textContent = window.currentWallet
+                ? `Cloud Sync Active · ${window.currentWallet.slice(0,6)}...${window.currentWallet.slice(-4)}`
+                : 'Sign in to enable Cloud Sync';
+        }
+    }
+};
+
+window.manualCloudSync = async function() {
+    if (!window.currentWallet) return;
+    pushUserStateToServer();
+    await syncSessionWithServer();
+    toast('✓ Synced across devices');
 };
 
 window.submitPrimeTx = async function() {
@@ -6017,6 +6100,7 @@ window.submitPrimeTx = async function() {
         if (!data.ok) throw new Error(data.error || 'Verification failed');
 
         window.isPrimeActive = true;
+        _primeExpiresAt = Number(data.primeExpiresAt || (Date.now() + 30 * 86400000));
         state.subscribed = true;
         _origSaveState();
         clearInterval(_pingTimer);
@@ -6092,12 +6176,14 @@ function applySessionResponse(data, restoreLayout) {
     }
 
     if (data.isPrime) {
+        const wasPrime = window.isPrimeActive;
+        _primeExpiresAt = Number(data.primeExpiresAt || 0);
         window.isPrimeActive = true;
         state.subscribed = true;
         clearInterval(_pingTimer);
         clearInterval(_tickTimer);
         if (restoreLayout) restoreUserStateFromServer(data.userState);
-        else renderGrid();
+        if (!wasPrime) renderGrid();
         hideWallOverlay();
         updateTopbarBadge();
         return;
@@ -6120,7 +6206,7 @@ function applySessionResponse(data, restoreLayout) {
     }
 }
 
-async function syncSessionWithServer() {
+async function syncSessionWithServer(restoreLayout = true) {
     if (!window.currentWallet) {
         showLoginWall();
         return;
@@ -6132,7 +6218,7 @@ async function syncSessionWithServer() {
             body: JSON.stringify({ wallet: window.currentWallet })
         });
         const data = await res.json();
-        if (data.ok) applySessionResponse(data, true);
+        if (data.ok) applySessionResponse(data, restoreLayout);
     } catch (e) {
         toast('Connection error · retrying...');
     }
@@ -6159,7 +6245,7 @@ window.onWalletDisconnected = function() {
 // Երբ օգտատերը վերադառնում է tab, միանգամից ճշտում ենք սերվերի հետ
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && window.currentWallet) {
-        syncSessionWithServer();
+        syncSessionWithServer(false);
     }
 });
 
@@ -6251,6 +6337,7 @@ modal.subscribeAccount((account) => {
         if (btnText) btnText.textContent = 'Connect Wallet';
         if (btn) btn.classList.remove('connected');
         if (menu) menu.classList.remove('open');
+        if (typeof onWalletDisconnected === 'function') onWalletDisconnected();
     }
 });
 
