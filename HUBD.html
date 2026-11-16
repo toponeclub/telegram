@@ -1869,6 +1869,7 @@ body.is-resizing .module { transition: none !important; }
         </div>
 
         <div class="top-right">
+            <button id="primeStatusBtn" onclick="openPrimeUpgrade()" style="display:none; align-items:center; gap:6px; padding:5px 10px; border-radius:6px; border:1px solid var(--border-thin); background:rgba(0,0,0,0.4); color:var(--accent); font-family:var(--font-mono); font-size:0.65rem; font-weight:800; cursor:pointer; letter-spacing:0.5px;"></button>
             <!-- WALLET -->
             <!-- ═══════ WALLET CONNECT (Reown AppKit) ═══════ -->
 <div class="wallet-wrap">
@@ -1996,11 +1997,9 @@ body.is-resizing .module { transition: none !important; }
 <div class="toasts" id="toasts"></div>
 
 <!-- ═══ PAYWALL OVERLAY (Մուտքի և Բլոկի էկրան) ═══ -->
-<div id="wallOverlay" class="modal-overlay active" style="z-index: 5000; display: flex; backdrop-filter: blur(15px);">
-    <div class="modal-content" id="wallCard" style="max-width: 460px; text-align: center;">
-        <div id="wallBody">
-            <!-- JS-ը կլրացնի սա -->
-        </div>
+<div id="wallOverlay" style="z-index: 5000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(16px);">
+    <div class="modal-content" id="wallCard" style="max-width: 460px; text-align: center; transform: none;">
+        <div id="wallBody"></div>
     </div>
 </div>
 
@@ -5714,6 +5713,474 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 else boot();
 
 
+/* ════════════════════════════════════════════════════════════
+   GRIND // OS · MANDATORY LOGIN + 2x15m REAL-USE TRIAL + TRC20 PRIME
+   ════════════════════════════════════════════════════════════ */
+const PRIME_API = 'https://grind-os-prime-api.t1prime.workers.dev';
+
+// Բոլոր /api/... հարցումները ուղղում ենք դեպի Cloudflare Worker
+const _nativeFetch = window.fetch.bind(window);
+window.fetch = (input, init) => {
+    if (typeof input === 'string' && /^\/api\/(user|prime|session|community)\b/.test(input)) {
+        return _nativeFetch(PRIME_API + input, init);
+    }
+    return _nativeFetch(input, init);
+};
+
+// Reown մուտքի պատուհանը միշտ ամենավերևում պահելու համար
+(() => {
+    const st = document.createElement('style');
+    st.textContent = `
+        w3m-modal, w3m-router, wui-modal { z-index: 999999 !important; }
+        #wallOverlay { z-index: 1500 !important; }
+    `;
+    document.head.appendChild(st);
+})();
+
+window.currentWallet = null;
+window.isPrimeActive = false;
+let _trialData = null;
+let _treasuryTron = '';
+let _pingTimer = null;
+let _tickTimer = null;
+let _pingFails = 0;
+let _saveStateTimer = null;
+let _restoringState = false;
+
+// Փրկում ենք դասավորությունը սերվերի վրա (առանց reset անելու)
+function pushUserStateToServer() {
+    if (!window.currentWallet || _restoringState) return;
+    const payload = {
+        widgets: state.widgets,
+        notes: localStorage.getItem(NOTES_KEY) || '',
+        tasks: getSavedTasks(),
+        goals: getSavedGoals(),
+        theme: document.body.className || ''
+    };
+    fetch('/api/user/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wallet: window.currentWallet, userState: payload })
+    }).catch(() => {});
+}
+
+function scheduleUserStateSync() {
+    if (!window.currentWallet || _restoringState) return;
+    clearTimeout(_saveStateTimer);
+    _saveStateTimer = setTimeout(pushUserStateToServer, 1200);
+}
+
+// Կապում ենք արդեն եղած save ֆունկցիաները սերվերի պահպանման հետ
+const _origSaveState = saveState;
+saveState = function() {
+    _origSaveState();
+    scheduleUserStateSync();
+};
+const _origSaveTasks = saveSavedTasks;
+saveSavedTasks = function(tasks) {
+    _origSaveTasks(tasks);
+    scheduleUserStateSync();
+};
+const _origSetTheme = setTheme;
+setTheme = function(theme) {
+    _origSetTheme(theme);
+    scheduleUserStateSync();
+};
+document.addEventListener('input', (e) => {
+    if (e.target && e.target.id === 'notesArea') scheduleUserStateSync();
+});
+
+// Արգելում ենք PRO վիջեթների անվճար unlock-ը
+window.toggleSubscription = function() {
+    if (window.isPrimeActive) return;
+    window.openPrimeUpgrade();
+};
+
+function restoreUserStateFromServer(uState) {
+    if (!uState || !Array.isArray(uState.widgets) || !uState.widgets.length) {
+        pushUserStateToServer();
+        return;
+    }
+    _restoringState = true;
+    try {
+        state.widgets = uState.widgets;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ widgets: state.widgets, subscribed: window.isPrimeActive }));
+        if (typeof uState.notes === 'string') localStorage.setItem(NOTES_KEY, uState.notes);
+        if (Array.isArray(uState.tasks)) localStorage.setItem(TASKS_KEY, JSON.stringify(uState.tasks));
+        if (Array.isArray(uState.goals)) localStorage.setItem(GOALS_KEY, JSON.stringify(uState.goals));
+        if (typeof uState.theme === 'string') document.body.className = uState.theme;
+        renderGrid();
+    } finally {
+        _restoringState = false;
+    }
+}
+
+function fmtMMSS(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function fmtHHMMSS(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function updateTopbarBadge() {
+    const btn = document.getElementById('primeStatusBtn');
+    if (!btn) return;
+    if (!window.currentWallet) {
+        btn.style.display = 'none';
+        return;
+    }
+    btn.style.display = 'inline-flex';
+    if (window.isPrimeActive) {
+        btn.innerHTML = `<i class="fa-solid fa-crown"></i> PRIME ✓`;
+        btn.style.color = 'var(--green)';
+        btn.style.borderColor = 'rgba(0,255,136,0.35)';
+    } else if (_trialData && _trialData.phase === 'session') {
+        btn.innerHTML = `<i class="fa-regular fa-clock"></i> TRIAL ${_trialData.sessionNum}/2 · ${fmtMMSS(_trialData.remainingMs)}`;
+        btn.style.color = 'var(--accent)';
+        btn.style.borderColor = 'var(--border-thin)';
+    } else {
+        btn.innerHTML = `<i class="fa-solid fa-lock"></i> ACTIVATE PRIME`;
+        btn.style.color = 'var(--gold)';
+        btn.style.borderColor = 'rgba(255,204,0,0.35)';
+    }
+}
+
+function showWallOverlay() {
+    const ov = document.getElementById('wallOverlay');
+    if (ov) {
+        ov.classList.remove('hidden');
+        ov.style.display = 'flex';
+    }
+}
+
+function hideWallOverlay() {
+    const ov = document.getElementById('wallOverlay');
+    if (ov) {
+        ov.classList.add('hidden');
+        ov.style.display = 'none';
+    }
+}
+
+window.showLoginWall = function() {
+    clearInterval(_pingTimer);
+    clearInterval(_tickTimer);
+    const body = document.getElementById('wallBody');
+    if (!body) return;
+    body.innerHTML = `
+        <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:3px; color:var(--accent); margin-bottom:10px;">GRIND // OS</div>
+        <h2 style="font-size:1.35rem; font-weight:800; margin-bottom:8px;">Sign In Required</h2>
+        <p style="font-size:0.78rem; color:var(--text-muted); line-height:1.6; margin-bottom:22px;">
+            Log in with Wallet, Google, or Email to load your personal workspace and Prime status.
+        </p>
+        <button class="wall-btn" onclick="window.openWalletModal && window.openWalletModal()">
+            <i class="fa-solid fa-right-to-bracket"></i> &nbsp; Sign In / Connect
+        </button>
+    `;
+    showWallOverlay();
+    updateTopbarBadge();
+};
+
+function renderPrimePaymentWall(mode, data) {
+    const body = document.getElementById('wallBody');
+    if (!body) return;
+
+    const shortW = window.currentWallet ? (window.currentWallet.slice(0, 6) + '...' + window.currentWallet.slice(-4)) : '';
+    const addr = _treasuryTron || data?.treasuryTron || 'Set TREASURY_TRON in Cloudflare';
+    const isCooldown = mode === 'cooldown';
+    const isUpgrade = mode === 'upgrade';
+
+    let cooldownHtml = '';
+    if (isCooldown && data?.cooldownEndsAt) {
+        const endDate = new Date(data.cooldownEndsAt);
+        const hhmm = `${String(endDate.getHours()).padStart(2,'0')}:${String(endDate.getMinutes()).padStart(2,'0')}`;
+        cooldownHtml = `
+            <div id="cooldownNote" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-thin); font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono);">
+                You can use it again at <b style="color:var(--accent);">${hhmm}</b> (<span id="cooldownTimer">--:--:--</span>)
+            </div>
+        `;
+    } else if (mode === 'blocked') {
+        cooldownHtml = `
+            <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-thin); font-size:0.7rem; color:var(--text-muted); font-family:var(--font-mono);">
+                Free 2×15m preview ended · Activate Prime for full 30-day access
+            </div>
+        `;
+    }
+
+    body.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-family:var(--font-mono); font-size:10px; letter-spacing:2px; color:var(--accent); font-weight:800;">ACTIVATE PRIME</span>
+            <span style="font-family:var(--font-mono); font-size:10px; padding:3px 8px; border-radius:4px; background:rgba(0,255,136,0.12); color:var(--green); font-weight:800;">$9 USDT · 30 DAYS</span>
+        </div>
+
+        <div style="font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono); margin-bottom:14px; text-align:left;">
+            Account: <b style="color:var(--text-main);">${shortW}</b> · <span style="color:var(--accent);">TRON (TRC20) ONLY</span>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.45); border:1px solid var(--border-thin); border-radius:10px; padding:12px; text-align:left; margin-bottom:12px;">
+            <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono); margin-bottom:6px;">SEND $9.00 USDT (TRC20) TO:</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <code id="tronTreasuryAddr" style="flex:1; font-family:var(--font-mono); font-size:11px; color:var(--accent); word-break:break-all;">${addr}</code>
+                <button onclick="copyTreasuryAddr()" style="background:var(--accent-dim); border:1px solid var(--accent); color:var(--accent); padding:5px 10px; border-radius:6px; font-size:10px; font-weight:800; cursor:pointer;">COPY</button>
+            </div>
+        </div>
+
+        <div style="text-align:left; margin-bottom:10px;">
+            <input id="txidInput" type="text" placeholder="Paste 64-char TRON TXID..." autocomplete="off" spellcheck="false"
+                style="width:100%; background:rgba(0,0,0,0.5); border:1px solid var(--border-thin); color:var(--text-main); padding:11px 12px; border-radius:8px; font-family:var(--font-mono); font-size:11px; outline:none;" />
+        </div>
+
+        <div id="txVerifyMsg" style="font-size:11px; font-family:var(--font-mono); min-height:16px; margin-bottom:6px;"></div>
+
+        <button id="verifyTxBtn" class="wall-btn" onclick="submitPrimeTx()">
+            <i class="fa-solid fa-bolt"></i> &nbsp; Verify TxID & Unlock Prime
+        </button>
+
+        ${isUpgrade ? `<button class="wall-btn secondary" onclick="hideWallOverlay()">Back to Preview</button>` : ''}
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:11px;">
+            <a href="/cryptopay.html" target="_blank" style="color:var(--accent); text-decoration:none;">How to buy & pay? ↗</a>
+            <button onclick="disconnectWallet()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:11px;">Switch Account</button>
+        </div>
+
+        ${cooldownHtml}
+    `;
+
+    showWallOverlay();
+
+    if (isCooldown && data?.cooldownEndsAt) {
+        clearInterval(_tickTimer);
+        const updateCd = () => {
+            const left = data.cooldownEndsAt - Date.now();
+            const el = document.getElementById('cooldownTimer');
+            if (left <= 0) {
+                clearInterval(_tickTimer);
+                syncSessionWithServer();
+                return;
+            }
+            if (el) el.textContent = fmtHHMMSS(left);
+        };
+        updateCd();
+        _tickTimer = setInterval(updateCd, 1000);
+    }
+}
+
+window.copyTreasuryAddr = function() {
+    if (!_treasuryTron) return;
+    navigator.clipboard.writeText(_treasuryTron);
+    toast('TRON address copied!');
+};
+
+window.openPrimeUpgrade = function() {
+    if (!window.currentWallet) {
+        showLoginWall();
+        return;
+    }
+    if (window.isPrimeActive) return;
+    const mode = (_trialData && _trialData.phase === 'session') ? 'upgrade' : (_trialData?.phase || 'blocked');
+    renderPrimePaymentWall(mode, _trialData);
+};
+
+window.submitPrimeTx = async function() {
+    const inp = document.getElementById('txidInput');
+    const btn = document.getElementById('verifyTxBtn');
+    const msg = document.getElementById('txVerifyMsg');
+    if (!inp || !btn || !msg) return;
+
+    const raw = inp.value.trim();
+    const match64 = raw.match(/[a-fA-F0-9]{64}/);
+    const txid = match64 ? match64[0] : raw;
+
+    if (!txid) {
+        msg.style.color = 'var(--red)';
+        msg.textContent = 'Paste your TRON TXID first.';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'VERIFYING ON TRON...';
+    msg.style.color = 'var(--accent)';
+    msg.textContent = 'Checking TronGrid USDT transfer...';
+
+    try {
+        const res = await fetch('/api/prime/verify-tx', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wallet: window.currentWallet, txid })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Verification failed');
+
+        window.isPrimeActive = true;
+        state.subscribed = true;
+        _origSaveState();
+        clearInterval(_pingTimer);
+        clearInterval(_tickTimer);
+        hideWallOverlay();
+        renderGrid();
+        updateTopbarBadge();
+        toast('✓ Prime Activated for 30 Days!');
+    } catch (err) {
+        msg.style.color = 'var(--red)';
+        msg.textContent = err.message || 'Verification failed';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-bolt"></i> &nbsp; Verify TxID & Unlock Prime';
+    }
+};
+
+function startSessionLoops() {
+    clearInterval(_pingTimer);
+    clearInterval(_tickTimer);
+
+    // Վիզուալ վայրկյանաչափ (միայն երբ էջը բաց է)
+    _tickTimer = setInterval(() => {
+        if (document.visibilityState !== 'visible' || window.isPrimeActive || !_trialData || _trialData.phase !== 'session') return;
+        _trialData.remainingMs = Math.max(0, _trialData.remainingMs - 1000);
+        updateTopbarBadge();
+        if (_trialData.remainingMs <= 0) {
+            sendSessionPing();
+        }
+    }, 1000);
+
+    // Սերվերային ստուգում ամեն 15 վայրկյանը մեկ (Real Use)
+    _pingTimer = setInterval(() => {
+        if (document.visibilityState !== 'visible' || window.isPrimeActive) return;
+        sendSessionPing();
+    }, 15000);
+}
+
+async function sendSessionPing() {
+    if (!window.currentWallet || window.isPrimeActive) return;
+    try {
+        const res = await fetch('/api/session/ping', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wallet: window.currentWallet })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error('Ping error');
+        _pingFails = 0;
+        applySessionResponse(data, false);
+    } catch (e) {
+        _pingFails++;
+        if (_pingFails >= 3) {
+            // Եթե ինչ-որ մեկը արգելափակի ping հարցումները DevTools-ից
+            const body = document.getElementById('wallBody');
+            if (body) {
+                body.innerHTML = `
+                    <h3 style="margin-bottom:8px;">Server Sync Interrupted</h3>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Reconnecting to GRIND // OS server...</p>
+                    <button class="wall-btn" onclick="syncSessionWithServer()">Reconnect</button>
+                `;
+                showWallOverlay();
+            }
+        }
+    }
+}
+
+function applySessionResponse(data, restoreLayout) {
+    if (data.treasuryTron) _treasuryTron = data.treasuryTron;
+
+    if (data.requireLogin) {
+        showLoginWall();
+        return;
+    }
+
+    if (data.isPrime) {
+        window.isPrimeActive = true;
+        state.subscribed = true;
+        clearInterval(_pingTimer);
+        clearInterval(_tickTimer);
+        if (restoreLayout) restoreUserStateFromServer(data.userState);
+        else renderGrid();
+        hideWallOverlay();
+        updateTopbarBadge();
+        return;
+    }
+
+    window.isPrimeActive = false;
+    state.subscribed = false;
+    _trialData = data;
+
+    if (restoreLayout) restoreUserStateFromServer(data.userState);
+
+    if (data.phase === 'session') {
+        hideWallOverlay();
+        updateTopbarBadge();
+        startSessionLoops();
+    } else {
+        clearInterval(_pingTimer);
+        renderPrimePaymentWall(data.phase, data);
+        updateTopbarBadge();
+    }
+}
+
+async function syncSessionWithServer() {
+    if (!window.currentWallet) {
+        showLoginWall();
+        return;
+    }
+    try {
+        const res = await fetch('/api/session/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wallet: window.currentWallet })
+        });
+        const data = await res.json();
+        if (data.ok) applySessionResponse(data, true);
+    } catch (e) {
+        toast('Connection error · retrying...');
+    }
+}
+
+window.onWalletConnected = function(address) {
+    const clean = String(address || '').trim();
+    if (!clean) return;
+    if (window.currentWallet === clean && _trialData) return;
+    window.currentWallet = clean;
+    localStorage.setItem('t1prime_wallet', JSON.stringify({ address: clean }));
+    syncSessionWithServer();
+};
+
+window.onWalletDisconnected = function() {
+    window.currentWallet = null;
+    window.isPrimeActive = false;
+    _trialData = null;
+    state.subscribed = false;
+    localStorage.removeItem('t1prime_wallet');
+    showLoginWall();
+};
+
+// Երբ օգտատերը վերադառնում է tab, միանգամից ճշտում ենք սերվերի հետ
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && window.currentWallet) {
+        syncSessionWithServer();
+    }
+});
+
+// Միացնում ենք Wallet կոճակի մենյուն (Copy / Disconnect)
+document.addEventListener('DOMContentLoaded', () => {
+    const wb = document.getElementById('wallet-btn');
+    if (wb) {
+        wb.removeAttribute('onclick');
+        wb.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.currentWallet) {
+                document.getElementById('walletMenu')?.classList.toggle('open');
+                wb.classList.toggle('open');
+            } else if (window.openWalletModal) {
+                window.openWalletModal();
+            }
+        });
+    }
+    if (!window.currentWallet) showLoginWall();
+});
+
 </script>
 <script type="module">
 import { createAppKit } from 'https://esm.sh/@reown/appkit?bundle';
@@ -5802,11 +6269,6 @@ window.addEventListener('load', () => {
     }, 800); // Կարճ ուշացում, որպեսզի Reown-ը լրիվ բեռնվի
 });
 </script>
-<!-- PRIME / LOGIN WALL -->
-<div class="modal-overlay" id="wallOverlay" style="z-index:5000; display:flex; backdrop-filter:blur(20px);">
-  <div class="modal-content" id="wallCard" style="max-width:460px;">
-    <div id="wallBody"></div>
-  </div>
-</div>
+
 </body>
 </html>
