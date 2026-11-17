@@ -6016,15 +6016,17 @@ window.showLoginWall = function() {
     if (card) card.style.display = 'none';
     if (body) body.innerHTML = '';
     if (ov) {
+        ov.style.background = '#020204';
         ov.style.cursor = 'pointer';
         ov.onclick = () => {
             if (!window.currentWallet && window.openWalletModal) window.openWalletModal();
         };
         if (!document.getElementById('loginSpinnerWrap')) {
             ov.insertAdjacentHTML('beforeend', `
-                <div id="loginSpinnerWrap" style="text-align:center; pointer-events:none;">
-                    <div style="font-size:34px; color:var(--accent); margin-bottom:14px;"><i class="fa-solid fa-crown fa-spin"></i></div>
-                    <div style="font:800 11px var(--mono); color:var(--accent); letter-spacing:.28em;">MOUNTING WORKSPACE...</div>
+                <div id="loginSpinnerWrap" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; text-align:center; pointer-events:none;">
+                    <div style="font-size:38px; color:#00f5b8;"><i class="fa-solid fa-crown fa-spin"></i></div>
+                    <div style="font:800 11.5px 'JetBrains Mono', monospace; color:#00f5b8; letter-spacing:.32em; text-transform:uppercase;">MOUNTING WORKSPACE...</div>
+                    <button id="loginTapHint" style="display:none; pointer-events:auto; margin-top:6px; padding:10px 22px; border-radius:8px; background:rgba(0,245,184,0.12); border:1px solid #00f5b8; color:#00f5b8; font:700 11px 'JetBrains Mono',monospace; letter-spacing:.14em; cursor:pointer;">SIGN IN →</button>
                 </div>
             `);
         }
@@ -6360,6 +6362,7 @@ function applySessionResponse(data, restoreLayout) {
 
     if (data.phase === 'session') {
         hideWallOverlay();
+        if (!window._tickerStarted) { window._tickerStarted = true; updateTicker(); }
         updateTopbarBadge();
         startSessionLoops();
     } else {
@@ -6381,9 +6384,21 @@ async function syncSessionWithServer(restoreLayout = true) {
             body: JSON.stringify({ wallet: window.currentWallet })
         });
         const data = await res.json();
-        if (data.ok) applySessionResponse(data, restoreLayout);
+        if (data.ok) {
+            applySessionResponse(data, restoreLayout);
+        } else if (data.requireLogin) {
+            showLoginWall();
+        } else {
+            throw new Error(data.error || 'Sync failed');
+        }
     } catch (e) {
-        toast('Connection error · retrying...');
+        const tap = document.getElementById('loginTapHint');
+        if (tap) {
+            tap.style.display = 'inline-block';
+            tap.textContent = 'RETRY CONNECTION →';
+            tap.onclick = (ev) => { ev.stopPropagation(); syncSessionWithServer(true); };
+        }
+        toast('Connection error · tap retry');
     }
 }
 
@@ -6448,7 +6463,7 @@ const arbitrum = {
 const modal = createAppKit({
     adapters: [new EthersAdapter()],
     networks: [mainnet, arbitrum],
-    metadata: { name: 'GRIND OS', description: 'Web3 Dashboard', url: 'https://t1prime.com', icons: [] },
+    metadata: { name: 'GRIND OS', description: 'Web3 Dashboard', url: window.location.origin, icons: [] },
     projectId: '9a4485f532467f3b0bb7584537697fd1',
     features: { analytics: false, email: true, socials: ['google'] } 
 });
@@ -6510,8 +6525,32 @@ modal.subscribeAccount((account) => {
 // Առաջինը ստուգում է՝ կա՞ արդեն սեսիա, նոր միայն անհրաժեշտության դեպքում բացում է Login-ը
 (() => {
     const hadSession = !!localStorage.getItem('t1prime_wallet');
-    const maxWaitMs = hadSession ? 2200 : 500;
+    const maxWaitMs = hadSession ? 2400 : 700;
     const startAt = Date.now();
+
+    const openReownSafely = async () => {
+        localStorage.removeItem('t1prime_wallet');
+        if (typeof showLoginWall === 'function') showLoginWall();
+        try {
+            if (typeof modal.ready === 'function') await modal.ready();
+        } catch(e) {}
+        const accNow = modal.getAccount();
+        if (accNow && accNow.isConnected) {
+            _wasConnected = true;
+            if (typeof onWalletConnected === 'function') onWalletConnected(accNow.address);
+            return;
+        }
+        try { await modal.open(); } catch(e) {}
+        setTimeout(() => {
+            if (!window.currentWallet) {
+                const hint = document.getElementById('loginTapHint');
+                if (hint) {
+                    hint.style.display = 'inline-block';
+                    hint.onclick = (e) => { e.stopPropagation(); modal.open(); };
+                }
+            }
+        }, 1200);
+    };
 
     const checkAuth = () => {
         const acc = modal.getAccount();
@@ -6525,9 +6564,7 @@ modal.subscribeAccount((account) => {
             setTimeout(checkAuth, 120);
             return;
         }
-        localStorage.removeItem('t1prime_wallet');
-        if (typeof showLoginWall === 'function') showLoginWall();
-        modal.open();
+        openReownSafely();
     };
 
     checkAuth();
