@@ -1724,6 +1724,110 @@ body.is-resizing .module { transition: none !important; }
 .wall-btn.secondary { background:transparent; color:var(--text-main);
   border:1px solid var(--border-thin); }
 .wall-btn.secondary:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ═══ PRIME PAYWALL UI/UX ═══ */
+#wallCard.prime-modal {
+    max-width: 450px !important;
+    width: 92% !important;
+    max-height: 92dvh;
+    overflow-y: auto;
+    padding: 26px 24px !important;
+    background: linear-gradient(180deg, #0d1211 0%, #07090b 100%) !important;
+    border: 1px solid rgba(0, 255, 136, 0.18) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.85), 0 0 40px rgba(0,255,136,0.06) !important;
+    text-align: left !important;
+}
+.pm-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.pm-kicker { font-family:var(--font-mono); font-size:10px; font-weight:800; letter-spacing:2px; color:var(--green); text-transform:uppercase; }
+.pm-acct { font-family:var(--font-mono); font-size:10px; color:var(--text-muted); background:rgba(255,255,255,0.04); padding:4px 9px; border-radius:999px; }
+
+.pm-hero {
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:16px; border-radius:14px;
+    background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,0.16);
+    margin-bottom:16px;
+}
+.pm-price-wrap { display:flex; align-items:baseline; gap:8px; }
+.pm-price { font-family:var(--font-mono); font-size:2.4rem; font-weight:800; color:#fff; line-height:1; letter-spacing:-1.5px; }
+.pm-unit { font-family:var(--font-mono); font-size:0.75rem; font-weight:700; color:var(--green); }
+.pm-sub { font-size:0.7rem; color:var(--text-hover); margin-top:4px; }
+.pm-net-badge {
+    font-family:var(--font-mono); font-size:9px; font-weight:800; letter-spacing:0.8px;
+    padding:5px 9px; border-radius:8px;
+    background:rgba(0,255,136,0.14); color:var(--green); border:1px solid rgba(0,255,136,0.3);
+    text-align:center; white-space:nowrap;
+}
+
+.pm-step {
+    background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06);
+    border-radius:12px; padding:13px 14px; margin-bottom:10px;
+}
+.pm-step-head { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.pm-num {
+    font-family:var(--font-mono); font-size:9px; font-weight:800;
+    width:20px; height:20px; border-radius:6px;
+    background:var(--green); color:#000;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.pm-step-title { font-size:0.78rem; font-weight:700; color:var(--text-main); }
+.pm-step-desc { font-size:0.68rem; color:var(--text-muted); line-height:1.45; margin-bottom:9px; }
+
+.pm-addr-box {
+    display:flex; align-items:center; gap:8px;
+    background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.08);
+    border-radius:9px; padding:9px 10px;
+}
+.pm-addr-box code { flex:1; font-family:var(--font-mono); font-size:11px; color:var(--green); word-break:break-all; }
+.pm-copy-btn {
+    background:rgba(0,255,136,0.12); border:1px solid rgba(0,255,136,0.4); color:var(--green);
+    padding:6px 11px; border-radius:7px; font-family:var(--font-mono); font-size:10px; font-weight:800;
+    cursor:pointer; transition:0.2s; white-space:nowrap;
+}
+.pm-copy-btn:hover { background:var(--green); color:#000; }
+
+.pm-input {
+    width:100%; background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.09);
+    color:#fff; padding:11px 12px; border-radius:9px;
+    font-family:var(--font-mono); font-size:11px; outline:none; transition:0.2s;
+}
+.pm-input:focus { border-color:var(--green); box-shadow:0 0 0 3px rgba(0,255,136,0.12); }
+
+.pm-submit {
+    width:100%; padding:13px; margin-top:6px; border:none; border-radius:11px;
+    background:linear-gradient(135deg, #00ff88 0%, #00d4aa 100%);
+    color:#000; font-family:var(--font-ui); font-size:0.8rem; font-weight:800;
+    letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+    box-shadow:0 10px 28px rgba(0,255,136,0.22); transition:0.2s;
+}
+.pm-submit:hover:not(:disabled) { transform:translateY(-1px); filter:brightness(1.08); }
+.pm-submit:disabled { opacity:0.6; cursor:not-allowed; }
+
+.pm-actions { display:flex; justify-content:space-between; align-items:center; margin-top:13px; gap:8px; }
+.pm-guide-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(0,255,136,0.08); border:1px solid rgba(0,255,136,0.25); color:var(--green);
+    padding:6px 11px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; transition:0.2s;
+}
+.pm-guide-btn:hover { background:rgba(0,255,136,0.16); }
+.pm-link-muted { background:none; border:none; color:var(--text-muted); font-size:11px; cursor:pointer; }
+.pm-link-muted:hover { color:var(--text-main); }
+
+.pm-cooldown {
+    margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06);
+    text-align:center; font-family:var(--font-mono); font-size:0.7rem; color:var(--text-muted);
+}
+
+/* Inline Guide View */
+.pm-guide-pane { display:none; flex-direction:column; height:min(72vh, 500px); }
+.pm-guide-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.pm-guide-back {
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+    color:var(--text-main); padding:6px 12px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;
+}
+.pm-guide-back:hover { border-color:var(--green); color:var(--green); }
+.pm-guide-frame { width:100%; flex:1; border:1px solid rgba(255,255,255,0.08); border-radius:12px; background:#020607; }
 </style>
 <script src="/_aistudio-iframe.js?v=1f94f900"></script></head>
 <body class="theme-emerald">
@@ -1825,9 +1929,6 @@ body.is-resizing .module { transition: none !important; }
             </div>
         </div>
     </div>
-</nav>
-
-    
 </nav>
 
 
@@ -3731,17 +3832,7 @@ function getSavedGoals() {
 }
 function saveSavedGoals(list) {
     try { localStorage.setItem(GOALS_KEY, JSON.stringify(list)); } catch(e) {}
-    if (window.currentWallet) {
-        fetch('/api/user/state', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ wallet: window.currentWallet, userState: { goals: list } })
-        }).catch(() => {});
-        saveSavedGoals = function(list) {
-    try { localStorage.setItem(GOALS_KEY, JSON.stringify(list)); } catch(e) {}
-    scheduleUserStateSync();
-};
-    }
+    if (typeof scheduleUserStateSync === 'function') scheduleUserStateSync();
 }
 
 
@@ -5920,70 +6011,92 @@ window.showLoginWall = function() {
 function renderPrimePaymentWall(mode, data) {
     const ov = document.getElementById('wallOverlay');
     const card = document.getElementById('wallCard');
-    if (ov) { ov.onclick = null; ov.style.cursor = ''; }
-    if (card) card.style.display = '';
     const body = document.getElementById('wallBody');
     if (!body) return;
 
+    if (ov) { ov.onclick = null; ov.style.cursor = ''; }
+    if (card) { card.style.display = ''; card.classList.add('prime-modal'); }
+
     const shortW = window.currentWallet ? (window.currentWallet.slice(0, 6) + '...' + window.currentWallet.slice(-4)) : '';
-    const addr = _treasuryTron || data?.treasuryTron || 'Set TREASURY_TRON in Cloudflare';
+    const addr = _treasuryTron || data?.treasuryTron || 'Loading...';
     const isCooldown = mode === 'cooldown';
     const isUpgrade = mode === 'upgrade';
 
-    let cooldownHtml = '';
+    let footerNote = '';
     if (isCooldown && data?.cooldownEndsAt) {
         const endDate = new Date(data.cooldownEndsAt);
         const hhmm = `${String(endDate.getHours()).padStart(2,'0')}:${String(endDate.getMinutes()).padStart(2,'0')}`;
-        cooldownHtml = `
-            <div id="cooldownNote" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-thin); font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono);">
-                You can use it again at <b style="color:var(--accent);">${hhmm}</b> (<span id="cooldownTimer">--:--:--</span>)
-            </div>
-        `;
+        footerNote = `<div class="pm-cooldown">You can use it again at <b style="color:var(--green);">${hhmm}</b> (<span id="cooldownTimer">--:--:--</span>)</div>`;
     } else if (mode === 'blocked') {
-        cooldownHtml = `
-            <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-thin); font-size:0.7rem; color:var(--text-muted); font-family:var(--font-mono);">
-                Free 2×15m preview ended · Activate Prime for full 30-day access
-            </div>
-        `;
+        footerNote = `<div class="pm-cooldown">Free preview finished · Activate Prime to continue</div>`;
     }
 
     body.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <span style="font-family:var(--font-mono); font-size:10px; letter-spacing:2px; color:var(--accent); font-weight:800;">ACTIVATE PRIME</span>
-            <span style="font-family:var(--font-mono); font-size:10px; padding:3px 8px; border-radius:4px; background:rgba(0,255,136,0.12); color:var(--green); font-weight:800;">$9 USDT · 30 DAYS</span>
-        </div>
-
-        <div style="font-size:0.72rem; color:var(--text-muted); font-family:var(--font-mono); margin-bottom:14px; text-align:left;">
-            Account: <b style="color:var(--text-main);">${shortW}</b> · <span style="color:var(--accent);">TRON (TRC20) ONLY</span>
-        </div>
-
-        <div style="background:rgba(0,0,0,0.45); border:1px solid var(--border-thin); border-radius:10px; padding:12px; text-align:left; margin-bottom:12px;">
-            <div style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono); margin-bottom:6px;">SEND $9.00 USDT (TRC20) TO:</div>
-            <div style="display:flex; align-items:center; gap:8px;">
-                <code id="tronTreasuryAddr" style="flex:1; font-family:var(--font-mono); font-size:11px; color:var(--accent); word-break:break-all;">${addr}</code>
-                <button onclick="copyTreasuryAddr()" style="background:var(--accent-dim); border:1px solid var(--accent); color:var(--accent); padding:5px 10px; border-radius:6px; font-size:10px; font-weight:800; cursor:pointer;">COPY</button>
+        <div id="primePayMain">
+            <div class="pm-top">
+                <span class="pm-kicker"><i class="fa-solid fa-crown"></i> ACTIVATE PRIME</span>
+                <span class="pm-acct">${shortW}</span>
             </div>
+
+            <div class="pm-hero">
+                <div>
+                    <div class="pm-price-wrap">
+                        <span class="pm-price">$9</span>
+                        <span class="pm-unit">USDT · 30 DAYS</span>
+                    </div>
+                    <div class="pm-sub">Full access · All PRO tools & cloud sync</div>
+                </div>
+                <div class="pm-net-badge">TRON<br>TRC20 ONLY</div>
+            </div>
+
+            <div class="pm-step">
+                <div class="pm-step-head">
+                    <span class="pm-num">1</span>
+                    <span class="pm-step-title">Send $9.00 USDT on TRON (TRC20)</span>
+                </div>
+                <div class="pm-step-desc">Copy this address and send <b>USDT</b> via <b>TRC20</b> network from Binance, Bybit, Trust Wallet or TronLink.</div>
+                <div class="pm-addr-box">
+                    <code id="tronTreasuryAddr">${addr}</code>
+                    <button id="copyAddrBtn" class="pm-copy-btn" onclick="copyTreasuryAddr()">COPY</button>
+                </div>
+            </div>
+
+            <div class="pm-step">
+                <div class="pm-step-head">
+                    <span class="pm-num">2</span>
+                    <span class="pm-step-title">Paste TXID to unlock instantly</span>
+                </div>
+                <div class="pm-step-desc">Wait ~15s for confirmation, copy the <b>TXID (Transaction Hash)</b> and paste below.</div>
+                <input id="txidInput" class="pm-input" type="text" placeholder="Paste 64-character TRON TXID here..." autocomplete="off" spellcheck="false" />
+            </div>
+
+            <div id="txVerifyMsg" style="font-size:11px; font-family:var(--font-mono); min-height:16px; margin:4px 0; text-align:center;"></div>
+
+            <button id="verifyTxBtn" class="pm-submit" onclick="submitPrimeTx()">
+                <i class="fa-solid fa-bolt"></i> &nbsp; Verify TxID & Unlock Prime
+            </button>
+
+            ${isUpgrade ? `<button class="wall-btn secondary" onclick="hideWallOverlay()" style="margin-top:8px; padding:10px; font-size:0.72rem;">Back to Workspace</button>` : ''}
+
+            <div class="pm-actions">
+                <button class="pm-guide-btn" onclick="openCryptoPayGuide()">
+                    <i class="fa-regular fa-circle-question"></i> How to Pay Crypto?
+                </button>
+                <button class="pm-link-muted" onclick="disconnectWallet()">Switch Account</button>
+            </div>
+
+            ${footerNote}
         </div>
 
-        <div style="text-align:left; margin-bottom:10px;">
-            <input id="txidInput" type="text" placeholder="Paste 64-char TRON TXID..." autocomplete="off" spellcheck="false"
-                style="width:100%; background:rgba(0,0,0,0.5); border:1px solid var(--border-thin); color:var(--text-main); padding:11px 12px; border-radius:8px; font-family:var(--font-mono); font-size:11px; outline:none;" />
+        <div id="primeGuidePane" class="pm-guide-pane">
+            <div class="pm-guide-bar">
+                <button class="pm-guide-back" onclick="closeCryptoPayGuide()">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Payment
+                </button>
+                <span style="font-family:var(--font-mono); font-size:10px; color:var(--green); font-weight:700;">CRYPTOPAY GUIDE</span>
+            </div>
+            <iframe id="cryptoGuideIframe" class="pm-guide-frame" src="about:blank"></iframe>
         </div>
-
-        <div id="txVerifyMsg" style="font-size:11px; font-family:var(--font-mono); min-height:16px; margin-bottom:6px;"></div>
-
-        <button id="verifyTxBtn" class="wall-btn" onclick="submitPrimeTx()">
-            <i class="fa-solid fa-bolt"></i> &nbsp; Verify TxID & Unlock Prime
-        </button>
-
-        ${isUpgrade ? `<button class="wall-btn secondary" onclick="hideWallOverlay()">Back to Preview</button>` : ''}
-
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-size:11px;">
-            <a href="/cryptopay.html" target="_blank" style="color:var(--accent); text-decoration:none;">How to buy & pay? ↗</a>
-            <button onclick="disconnectWallet()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:11px;">Switch Account</button>
-        </div>
-
-        ${cooldownHtml}
     `;
 
     showWallOverlay();
@@ -5995,7 +6108,7 @@ function renderPrimePaymentWall(mode, data) {
             const el = document.getElementById('cooldownTimer');
             if (left <= 0) {
                 clearInterval(_tickTimer);
-                syncSessionWithServer();
+                syncSessionWithServer(false);
                 return;
             }
             if (el) el.textContent = fmtHHMMSS(left);
@@ -6005,9 +6118,32 @@ function renderPrimePaymentWall(mode, data) {
     }
 }
 
+window.openCryptoPayGuide = function() {
+    const main = document.getElementById('primePayMain');
+    const pane = document.getElementById('primeGuidePane');
+    const frame = document.getElementById('cryptoGuideIframe');
+    if (main) main.style.display = 'none';
+    if (pane) pane.style.display = 'flex';
+    if (frame && frame.getAttribute('src') === 'about:blank') {
+        frame.src = '/cryptopay';
+    }
+};
+
+window.closeCryptoPayGuide = function() {
+    const main = document.getElementById('primePayMain');
+    const pane = document.getElementById('primeGuidePane');
+    if (pane) pane.style.display = 'none';
+    if (main) main.style.display = 'block';
+};
+
 window.copyTreasuryAddr = function() {
     if (!_treasuryTron) return;
     navigator.clipboard.writeText(_treasuryTron);
+    const btn = document.getElementById('copyAddrBtn');
+    if (btn) {
+        btn.textContent = 'COPIED ✓';
+        setTimeout(() => { if (btn) btn.textContent = 'COPY'; }, 1800);
+    }
     toast('TRON address copied!');
 };
 
@@ -6227,6 +6363,7 @@ async function syncSessionWithServer(restoreLayout = true) {
 window.onWalletConnected = function(address) {
     const clean = String(address || '').trim();
     if (!clean) return;
+    try { window.appKitModal?.close(); } catch(e) {}
     if (window.currentWallet === clean && _trialData) return;
     window.currentWallet = clean;
     localStorage.setItem('t1prime_wallet', JSON.stringify({ address: clean }));
@@ -6316,6 +6453,8 @@ window.viewOnExplorer = () => {
     document.getElementById('walletMenu')?.classList.remove('open');
 };
 
+let _wasConnected = false;
+
 // Լսում ենք Wallet-ի կարգավիճակը
 modal.subscribeAccount((account) => {
     const btnText = document.getElementById('wallet-text');
@@ -6324,12 +6463,13 @@ modal.subscribeAccount((account) => {
     const menu = document.getElementById('walletMenu');
 
     if (account?.isConnected) {
+        _wasConnected = true;
+        try { modal.close(); } catch(e) {}
         const short = account.address.slice(0, 6) + '...' + account.address.slice(-4);
         if (btnText) btnText.textContent = short;
         if (addrEl) addrEl.textContent = short;
         if (btn) btn.classList.add('connected');
-        
-        // Կանչում ենք մեր սեսիայի ֆունկցիան
+
         if (typeof onWalletConnected === 'function') {
             onWalletConnected(account.address);
         }
@@ -6337,23 +6477,37 @@ modal.subscribeAccount((account) => {
         if (btnText) btnText.textContent = 'Connect Wallet';
         if (btn) btn.classList.remove('connected');
         if (menu) menu.classList.remove('open');
-        if (typeof onWalletDisconnected === 'function') onWalletDisconnected();
+        if (_wasConnected) {
+            _wasConnected = false;
+            if (typeof onWalletDisconnected === 'function') onWalletDisconnected();
+        }
     }
 });
 
-// ═══ ★ ԱՄԵՆԱԿԱՐԵՎՈՐԸ՝ ԱՎՏՈՄԱՏ ՄՈՒՏՔ ԲԱՑԵԼՈՒ ՀԱՄԱՐ ═══
+// Առաջինը ստուգում է՝ կա՞ արդեն սեսիա, նոր միայն անհրաժեշտության դեպքում բացում է Login-ը
 window.addEventListener('load', () => {
-    setTimeout(() => {
+    const hadSession = !!localStorage.getItem('t1prime_wallet');
+    const maxWaitMs = hadSession ? 2600 : 900;
+    const startAt = Date.now();
+
+    const checkAuth = () => {
         const acc = modal.getAccount();
         if (acc && acc.isConnected) {
-            // Եթե արդեն մուտք գործած է, թույլ ենք տալիս ներս (onWalletConnected-ը կկանչվի վերևից)
+            _wasConnected = true;
+            try { modal.close(); } catch(e) {}
             if (typeof onWalletConnected === 'function') onWalletConnected(acc.address);
-        } else {
-            // Եթե մուտք գործած չէ, ստիպողաբար բացում ենք Reown-ի պատուհանը
-            if (typeof showLoginWall === 'function') showLoginWall();
-            modal.open();
+            return;
         }
-    }, 800); // Կարճ ուշացում, որպեսզի Reown-ը լրիվ բեռնվի
+        if (Date.now() - startAt < maxWaitMs) {
+            setTimeout(checkAuth, 150);
+            return;
+        }
+        localStorage.removeItem('t1prime_wallet');
+        if (typeof showLoginWall === 'function') showLoginWall();
+        modal.open();
+    };
+
+    checkAuth();
 });
 </script>
 
