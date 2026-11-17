@@ -528,6 +528,9 @@ margin-right:6px;
 <div class="ddi" data-panel="oi"><span><i class="fa-solid fa-chart-line"></i> Open Interest</span><i class="fa-solid fa-check chk"></i></div>
 <div class="ddi" data-panel="oid"><span><i class="fa-solid fa-right-left"></i> OI Delta</span><i class="fa-solid fa-check chk"></i></div>
 <div class="ddi" data-panel="bsd"><span><i class="fa-solid fa-layer-group"></i> B/S Delta</span><i class="fa-solid fa-check chk"></i></div>
+<!-- ★ ԱՎԵԼԱՑՐՈՒ ԱՅՍ ՏՈՂԸ ★ -->
+<div class="ddi" data-panel="pdelta"><span><i class="fa-solid fa-chart-column"></i> Price Delta</span><i class="fa-solid fa-check chk"></i></div>
+<!-- ★ ՎԵՐՋ ★ -->
 <div class="ddi" data-panel="lsr"><span><i class="fa-solid fa-scale-balanced"></i> L/S Ratio</span><i class="fa-solid fa-check chk"></i></div>
 <div class="ddi" data-panel="rsi"><span><i class="fa-solid fa-wave-square"></i> RSI (14)</span><i class="fa-solid fa-check chk"></i></div>
 <div class="ddsep"></div>
@@ -1168,6 +1171,13 @@ return { fut, spot };
 },
 render(o,d){ o.fut.setData(d.bsdFut); o.spot.setData(d.bsdSpot); }
 },
+// ★ ԱՎԵԼԱՑՐՈՒ ԱՅՍ ԲԼՈԿԸ ★
+pdelta:{ t:'PRICE DELTA', i:'fa-chart-column', c:C.UP,
+build(ch){ return { s: ch.addHistogramSeries({
+priceFormat:{ type:'custom', formatter:fmtP, minMove:1e-8 }, lastVisible:false, priceLineVisible:false
+}) }; },
+render(o,d){ o.s.setData(d.pdelta); }
+},
 lsr:{ t:'L/S RATIO', i:'fa-balance-scale', c:C.ACCENT,
 build(ch){ return { s: ch.addLineSeries({
 color:C.ACCENT, lineWidth:2, lastValueVisible:true, priceLineVisible:true, priceLineColor: C.UP,
@@ -1408,6 +1418,19 @@ const v = m.get(bucket);
 return v==null ? { time:p.time } : { time:p.time, value:v };
 });
 }
+// ★ ԱՎԵԼԱՑՐՈՒ ԱՅՍ ՖՈՒՆԿՑԻԱՆ ★
+function buildPDelta(){
+return S.prices.map(b => {
+    // ★ Մաքուր OHLC Դելտա (Առանց Volume-ի և կշիռների) ★
+    const d = (b.close - b.open) + (b.close - b.low) - (b.high - b.close); 
+    
+    return { 
+        time: b.time, 
+        value: d, 
+        color: d >= 0 ? C.UP : C.DN // Կանաչ, եթե դրական է, Մանուշակագույն, եթե բացասական
+    };
+});
+}
 function buildRSI(){
 const out = [];
 let aG=0, aL=0;
@@ -1434,6 +1457,7 @@ const d = {
 oi: buildOICandles(),
 oid: buildOID(),
 bsdFut: buildBSDFut(), bsdSpot: buildBSDSpot(),
+pdelta: buildPDelta(), // ★ ԱՎԵԼԱՑՐՈՒ ԱՅՍ ՏՈՂԸ ★
 lsr: buildLSR(), rsi: buildRSI()
 };
 const wasSyncing = S._syncing;
@@ -2667,7 +2691,18 @@ async function generateSnapImage(opts = {}) {
           o.fut.setData(_snapBuildBSDFut(d.bars));
           o.spot.setData(_snapBuildBSDSpot(d.bars, d.spotBars));
         },
+        
       },
+      pdelta: {
+title: 'PRICE DELTA', icon: 'chart-column', color: C.UP,
+build(ch) { return { s: ch.addHistogramSeries({
+priceFormat: { type: 'custom', formatter: fmtP, minMove: 1e-8 }, lastValueVisible: false, priceLineVisible: false,
+}) }; },
+render(o, d) { o.s.setData(d.bars.map(b => {
+const dlt = b.close - b.open;
+return { time: b.time, value: dlt, color: dlt >= 0 ? C.UP : C.DN };
+})); },
+},
     };
 
     const PANEL_BODY_H = PANEL_H - 22;
@@ -4373,7 +4408,7 @@ ENGINE.init();
     btn.type = 'button';
     btn.id = 'of-toggle';
     btn.title = 'OrderFlow Overlay · real Binance data';
-    btn.innerHTML = '<span class="dot"></span><span class="lbl">ORDERFLOW</span>';
+    btn.innerHTML = '<span class="dot"></span><span class="lbl">ORDERFLOW (beta)</span>';
     tfs.parentNode.insertBefore(btn, tfs.nextSibling);
     btn.addEventListener('click', toggleOF);
   }
