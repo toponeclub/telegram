@@ -1841,7 +1841,7 @@ body.is-resizing .module { transition: none !important; }
     .pm-price { font-size: 2rem; }
 }
 </style>
-<script src="/_aistudio-iframe.js?v=1f94f900"></script></head>
+</head>
 <body class="theme-emerald">
 
 <!-- ════════════════ SIDEBAR ════════════════ -->
@@ -6346,11 +6346,13 @@ function applySessionResponse(data, restoreLayout) {
         state.subscribed = true;
         clearInterval(_pingTimer);
         clearInterval(_tickTimer);
-        if (restoreLayout) restoreUserStateFromServer(data.userState);
-        if (!wasPrime) renderGrid();
         hideWallOverlay();
-        if (!window._tickerStarted) { window._tickerStarted = true; updateTicker(); }
         updateTopbarBadge();
+        try {
+            if (restoreLayout) restoreUserStateFromServer(data.userState);
+            if (!wasPrime) renderGrid();
+            if (!window._tickerStarted) { window._tickerStarted = true; updateTicker(); }
+        } catch (e) { console.error(e); }
         return;
     }
 
@@ -6358,15 +6360,17 @@ function applySessionResponse(data, restoreLayout) {
     state.subscribed = false;
     _trialData = data;
 
-    if (restoreLayout) restoreUserStateFromServer(data.userState);
-
     if (data.phase === 'session') {
         hideWallOverlay();
-        if (!window._tickerStarted) { window._tickerStarted = true; updateTicker(); }
         updateTopbarBadge();
         startSessionLoops();
+        try {
+            if (restoreLayout) restoreUserStateFromServer(data.userState);
+            if (!window._tickerStarted) { window._tickerStarted = true; updateTicker(); }
+        } catch (e) { console.error(e); }
     } else {
         clearInterval(_pingTimer);
+        if (restoreLayout) { try { restoreUserStateFromServer(data.userState); } catch(e) {} }
         renderPrimePaymentWall(data.phase, data);
         updateTopbarBadge();
     }
@@ -6444,131 +6448,111 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </script>
 <script type="module">
-import { createAppKit } from 'https://esm.sh/@reown/appkit?bundle';
-import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers?bundle';
+let modal = null;
+try {
+    const [{ createAppKit }, { EthersAdapter }] = await Promise.all([
+        import('https://esm.sh/@reown/appkit?bundle'),
+        import('https://esm.sh/@reown/appkit-adapter-ethers?bundle')
+    ]);
 
-const mainnet = { 
-    id: 1, name: 'Ethereum', 
-    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
-    rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } }, 
-    blockExplorers: { default: { name: 'Etherscan', url: 'https://etherscan.io' } } 
-};
-const arbitrum = { 
-    id: 42161, name: 'Arbitrum', 
-    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
-    rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } }, 
-    blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } } 
-};
-
-const modal = createAppKit({
-    adapters: [new EthersAdapter()],
-    networks: [mainnet, arbitrum],
-    metadata: { name: 'GRIND OS', description: 'Web3 Dashboard', url: window.location.origin, icons: [] },
-    projectId: '9a4485f532467f3b0bb7584537697fd1',
-    features: { analytics: false, email: true, socials: ['google'] } 
-});
-
-window.appKitModal = modal;
-
-// Միացնում ենք կոճակները
-window.openWalletModal = () => {
-    modal.open();
-};
-window.openNetworksModal = () => { modal.open({ view: 'Networks' }); document.getElementById('walletMenu')?.classList.remove('open'); };
-window.disconnectWallet = async () => { 
-    try { await modal.disconnect(); } catch(e) {}
-    localStorage.removeItem('t1prime_wallet');
-    window.location.href = '/';
-};
-window.copyWalletAddress = () => {
-    const address = modal.getAccount()?.address;
-    if (address) { navigator.clipboard.writeText(address); alert('Address copied!'); }
-    document.getElementById('walletMenu')?.classList.remove('open');
-};
-window.viewOnExplorer = () => {
-    const address = modal.getAccount()?.address;
-    if (address) window.open(`https://etherscan.io/address/${address}`, '_blank');
-    document.getElementById('walletMenu')?.classList.remove('open');
-};
-
-let _wasConnected = false;
-
-// Լսում ենք Wallet-ի կարգավիճակը
-modal.subscribeAccount((account) => {
-    const btnText = document.getElementById('wallet-text');
-    const btn = document.getElementById('wallet-btn');
-    const addrEl = document.getElementById('walletAddr');
-    const menu = document.getElementById('walletMenu');
-
-    if (account?.isConnected) {
-        _wasConnected = true;
-        try { modal.close(); } catch(e) {}
-        const short = account.address.slice(0, 6) + '...' + account.address.slice(-4);
-        if (btnText) btnText.textContent = short;
-        if (addrEl) addrEl.textContent = short;
-        if (btn) btn.classList.add('connected');
-
-        if (typeof onWalletConnected === 'function') {
-            onWalletConnected(account.address);
-        }
-    } else {
-        if (btnText) btnText.textContent = 'Connect Wallet';
-        if (btn) btn.classList.remove('connected');
-        if (menu) menu.classList.remove('open');
-        if (_wasConnected) {
-            _wasConnected = false;
-            if (typeof onWalletDisconnected === 'function') onWalletDisconnected();
-        }
-    }
-});
-
-// Առաջինը ստուգում է՝ կա՞ արդեն սեսիա, նոր միայն անհրաժեշտության դեպքում բացում է Login-ը
-(() => {
-    const hadSession = !!localStorage.getItem('t1prime_wallet');
-    const maxWaitMs = hadSession ? 2400 : 700;
-    const startAt = Date.now();
-
-    const openReownSafely = async () => {
-        localStorage.removeItem('t1prime_wallet');
-        if (typeof showLoginWall === 'function') showLoginWall();
-        try {
-            if (typeof modal.ready === 'function') await modal.ready();
-        } catch(e) {}
-        const accNow = modal.getAccount();
-        if (accNow && accNow.isConnected) {
-            _wasConnected = true;
-            if (typeof onWalletConnected === 'function') onWalletConnected(accNow.address);
-            return;
-        }
-        try { await modal.open(); } catch(e) {}
-        setTimeout(() => {
-            if (!window.currentWallet) {
-                const hint = document.getElementById('loginTapHint');
-                if (hint) {
-                    hint.style.display = 'inline-block';
-                    hint.onclick = (e) => { e.stopPropagation(); modal.open(); };
-                }
-            }
-        }, 1200);
+    const mainnet = { 
+        id: 1, name: 'Ethereum', 
+        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
+        rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } }, 
+        blockExplorers: { default: { name: 'Etherscan', url: 'https://etherscan.io' } } 
     };
+    const arbitrum = { 
+        id: 42161, name: 'Arbitrum', 
+        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
+        rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } }, 
+        blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } } 
+    };
+
+    modal = createAppKit({
+        adapters: [new EthersAdapter()],
+        networks: [mainnet, arbitrum],
+        metadata: { name: 'GRIND OS', description: 'Web3 Dashboard', url: window.location.origin, icons: [] },
+        projectId: '9a4485f532467f3b0bb7584537697fd1',
+        features: { analytics: false, email: true, socials: ['google'] } 
+    });
+
+    window.appKitModal = modal;
+    window.openWalletModal = () => modal.open();
+    window.openNetworksModal = () => { modal.open({ view: 'Networks' }); document.getElementById('walletMenu')?.classList.remove('open'); };
+    window.disconnectWallet = async () => { 
+        try { await modal.disconnect(); } catch(e) {}
+        localStorage.removeItem('t1prime_wallet');
+        window.location.href = '/';
+    };
+    window.copyWalletAddress = () => {
+        const address = modal.getAccount()?.address;
+        if (address) { navigator.clipboard.writeText(address); alert('Address copied!'); }
+        document.getElementById('walletMenu')?.classList.remove('open');
+    };
+    window.viewOnExplorer = () => {
+        const address = modal.getAccount()?.address;
+        if (address) window.open(`https://etherscan.io/address/${address}`, '_blank');
+        document.getElementById('walletMenu')?.classList.remove('open');
+    };
+
+    let _wasConnected = false;
+
+    modal.subscribeAccount((account) => {
+        const btnText = document.getElementById('wallet-text');
+        const btn = document.getElementById('wallet-btn');
+        const addrEl = document.getElementById('walletAddr');
+        const menu = document.getElementById('walletMenu');
+
+        if (account?.isConnected && account?.address) {
+            _wasConnected = true;
+            try { modal.close(); } catch(e) {}
+            const short = account.address.slice(0, 6) + '...' + account.address.slice(-4);
+            if (btnText) btnText.textContent = short;
+            if (addrEl) addrEl.textContent = short;
+            if (btn) btn.classList.add('connected');
+            if (typeof onWalletConnected === 'function') onWalletConnected(account.address);
+        } else {
+            if (btnText) btnText.textContent = 'Connect Wallet';
+            if (btn) btn.classList.remove('connected');
+            if (menu) menu.classList.remove('open');
+            if (_wasConnected) {
+                _wasConnected = false;
+                if (typeof onWalletDisconnected === 'function') onWalletDisconnected();
+            }
+        }
+    });
+
+    const hadSession = !!localStorage.getItem('t1prime_wallet');
+    const maxWaitMs = hadSession ? 2200 : 800;
+    const startAt = Date.now();
 
     const checkAuth = () => {
         const acc = modal.getAccount();
-        if (acc && acc.isConnected) {
+        if (acc && acc.isConnected && acc.address) {
             _wasConnected = true;
             try { modal.close(); } catch(e) {}
             if (typeof onWalletConnected === 'function') onWalletConnected(acc.address);
             return;
         }
         if (Date.now() - startAt < maxWaitMs) {
-            setTimeout(checkAuth, 120);
+            setTimeout(checkAuth, 150);
             return;
         }
-        openReownSafely();
+        localStorage.removeItem('t1prime_wallet');
+        if (typeof showLoginWall === 'function') showLoginWall();
+        try { modal.open(); } catch(e) {}
     };
 
     checkAuth();
-})();
+} catch (err) {
+    console.error('Reown load error:', err);
+    const hint = document.getElementById('loginTapHint');
+    if (hint) {
+        hint.style.display = 'inline-block';
+        hint.textContent = 'RELOAD LOGIN →';
+        hint.onclick = () => location.reload();
+    }
+}
 </script>
 
 </body>
