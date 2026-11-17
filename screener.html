@@ -2930,6 +2930,13 @@ function initBTCSparklineWidget(w, el) {
     ro.observe(els.canvas.parentElement);
     updateWidget(currentCoinId);
 
+     // ★ NEW · 120s refresh loop
+    const refreshInterval = setInterval(() => {
+        if (document.hidden) return;
+        pulseTimeStart = null;              // ← pulse-ը նորից սկսելու համար
+        updateWidget(currentCoinId);
+    }, 120000);
+
     widgetCleanup[w.id] = () => {
         ro.disconnect();
         if (pulseAnimationFrameId)   cancelAnimationFrame(pulseAnimationFrameId);
@@ -4285,7 +4292,7 @@ const miniWidget = (() => {
 
     startAutoRefresh();
     setTimeout(refreshMacroLoop, 5000);
-    setTimeout(refreshBTCSparkLoop, 10000);
+    
     setTimeout(refreshCorrelationLoop, 60000);
     setTimeout(refreshSparkCacheLoop, 300000);
 })();
