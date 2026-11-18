@@ -3275,9 +3275,7 @@ function onModuleDragLeave(e) {
 function onModuleDrop(e) {
     if (!draggingFromLibrary) return;
     e.preventDefault();
-    e.stopPropagation();
     this.classList.remove('drop-target');
-    document.body.classList.remove('is-lib-dragging');
     const type = e.dataTransfer.getData('widget-type');
     if (!type || !WIDGET_REGISTRY[type]) { draggingFromLibrary = false; return; }
     const targetId = this.dataset.widgetId;
@@ -3286,26 +3284,25 @@ function onModuleDrop(e) {
     draggingFromLibrary = false;
 }
 
+/* ─── Drop zone (grid + empty state) — THIS WAS MISSING ─── */
 function initDashboardDropZone() {
-    const dash = $('#dashboardView');
     const grid = $('#bentoGrid');
     const emptyState = $('#emptyDashboard');
-    if (!dash) return;
+    if (!grid) return;
 
     const onDragOver = (e) => {
         if (!draggingFromLibrary) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
-        if (emptyState && !emptyState.classList.contains('hidden')) emptyState.classList.add('highlight');
+        if (emptyState) emptyState.classList.add('highlight');
     };
     const onDragLeave = (e) => {
-        if (dash.contains(e.relatedTarget)) return;
+        if (grid.contains(e.relatedTarget)) return;
+        if (emptyState && emptyState.contains(e.relatedTarget)) return;
         if (emptyState) emptyState.classList.remove('highlight');
     };
     const onDrop = (e) => {
-        if (!draggingFromLibrary) return;
         e.preventDefault();
-        document.body.classList.remove('is-lib-dragging');
         if (emptyState) emptyState.classList.remove('highlight');
         const type = e.dataTransfer.getData('widget-type');
         if (!type || !WIDGET_REGISTRY[type]) { draggingFromLibrary = false; return; }
@@ -3313,11 +3310,139 @@ function initDashboardDropZone() {
         draggingFromLibrary = false;
     };
 
-    [dash, grid, emptyState].filter(Boolean).forEach(el => {
+    [grid, emptyState].filter(Boolean).forEach(el => {
         el.addEventListener('dragover', onDragOver);
         el.addEventListener('dragleave', onDragLeave);
         el.addEventListener('drop', onDrop);
     });
+}
+
+/* ════════════════════════════════════════════════════════════
+   DRAG-TO-RESIZE · Snaps to grid cells (like Apple widgets)
+   ════════════════════════════════════════════════════════════ */
+let resizeState = null;
+
+function getGridInfo() {
+    const grid = document.getElementById('bentoGrid');
+    if (!grid) return { cellW: 340, gap: 20, maxCols: 4 };
+    const cs = getComputedStyle(grid);
+    const gap = parseFloat(cs.columnGap) || 20;
+    const cols = (cs.gridTemplateColumns || '').split(' ').filter(s => s && s !== 'none').length || 1;
+    const totalW = grid.clientWidth;
+    const cellW = (totalW - (cols - 1) * gap) / cols;
+    return { cellW, gap, maxCols: Math.max(1, cols) };
+}
+
+function pickSizeKey(cols, rows) {
+    /* Catalog has: 1x1..4x1, 1x2..4x2, 1x3..3x3 */
+    if (rows === 1) cols = Math.min(cols, 4);
+    else if (rows === 2) cols = Math.min(cols, 4);
+    else if (rows >= 3) { rows = 3; cols = Math.min(cols, 3); }
+    return `${cols}x${rows}`;
+}
+
+function onResizeStart(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const handle = e.currentTarget;
+    const widget = handle.closest('.module');
+    if (!widget) return;
+
+    resizeState = {
+        widgetId: widget.dataset.widgetId,
+        element: widget,
+        handle,
+        startX: e.clientX,
+        startY: e.clientY,
+        startW: widget.offsetWidth,
+        startH: widget.offsetHeight,
+        pointerId: e.pointerId,
+        pendingSize: widget.dataset.size
+    };
+
+    /* Create floating hint */
+    let hint = document.getElementById('resizeHint');
+    if (!hint) {
+        hint = document.createElement('div');
+        hint.id = 'resizeHint';
+        hint.className = 'resize-hint';
+        document.body.appendChild(hint);
+    }
+    hint.textContent = (widget.dataset.size || '1x1').toUpperCase();
+
+    document.body.classList.add('is-resizing');
+    document.addEventListener('pointermove', onResizeMove);
+    document.addEventListener('pointerup', onResizeEnd);
+    document.addEventListener('pointercancel', onResizeEnd);
+}
+
+function onResizeMove(e) {
+    if (!resizeState) return;
+    const { startX, startY, startW, startH, element } = resizeState;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+
+    const newW = Math.max(200, startW + dx);
+    const newH = Math.max(140, startH + dy);
+
+    /* Snap to grid cells */
+    const g = getGridInfo();
+    const rawCols = (newW + g.gap) / (g.cellW + g.gap);
+    const cols = Math.max(1, Math.min(g.maxCols, Math.round(rawCols)));
+
+    /* Row height ~= 200px per row */
+    const ROW_H = 200;
+    const rows = Math.max(1, Math.min(3, Math.round((newH + 20) / ROW_H)));
+
+    const sizeKey = pickSizeKey(cols, rows);
+    resizeState.pendingSize = sizeKey;
+
+    /* Live preview */
+    element.style.width = newW + 'px';
+    element.style.height = newH + 'px';
+    element.style.zIndex = '20';
+    element.style.transform = 'none';
+    element.style.transition = 'none';
+    element.style.boxShadow = '0 24px 70px rgba(0,0,0,0.7), 0 0 0 2px var(--accent)';
+
+    /* Update hint */
+    const hint = document.getElementById('resizeHint');
+    if (hint) {
+        const meta = SIZE_CATALOG.find(s => s.key === sizeKey);
+        hint.textContent = `${sizeKey.toUpperCase()}${meta ? ' · ' + meta.desc : ''}`;
+        hint.style.left = (e.clientX + 18) + 'px';
+        hint.style.top = (e.clientY + 18) + 'px';
+    }
+}
+
+function onResizeEnd() {
+    if (!resizeState) return;
+    const { widgetId, element, pendingSize } = resizeState;
+
+    /* Restore */
+    element.style.width = '';
+    element.style.height = '';
+    element.style.zIndex = '';
+    element.style.transform = '';
+    element.style.transition = '';
+    element.style.boxShadow = '';
+
+    const hint = document.getElementById('resizeHint');
+    if (hint) hint.remove();
+
+    document.body.classList.remove('is-resizing');
+    document.removeEventListener('pointermove', onResizeMove);
+    document.removeEventListener('pointerup', onResizeEnd);
+    document.removeEventListener('pointercancel', onResizeEnd);
+
+    /* Apply the snapped size */
+    if (pendingSize) {
+        setWidgetSize(widgetId, pendingSize);
+    }
+
+    resizeState = null;
 }
 
 /* ─── Trash zone — THIS WAS MISSING ─── */
@@ -3665,81 +3790,18 @@ function initScreenerWidget(w, el) {
     widgetCleanup[w.id] = () => clearInterval(refreshInt);
 }
 
-const SIGNALS_FEED_KEY = 't1prime_signals_feed';
-
-function getSignalsFeed() {
-    try { return JSON.parse(localStorage.getItem(SIGNALS_FEED_KEY) || '[]'); }
-    catch(e) { return []; }
-}
-
-window.pushWatchlistSignal = function(sig) {
-    if (!sig || !sig.symbol) return;
-    const list = getSignalsFeed();
-    list.unshift({
-        symbol: String(sig.symbol).toUpperCase(),
-        text: String(sig.text || sig.msg || 'Trigger fired'),
-        side: sig.side || 'ALERT',
-        tf: sig.tf || '',
-        ts: sig.ts || Date.now()
-    });
-    localStorage.setItem(SIGNALS_FEED_KEY, JSON.stringify(list.slice(0, 50)));
-    window.dispatchEvent(new CustomEvent('t1prime_signal_added'));
-};
-
-window.addEventListener('message', (e) => {
-    if (e.data && e.data.type === 'WATCHLIST_SIGNAL') window.pushWatchlistSignal(e.data);
-});
-
-function renderSignalsWidget(w) {
+function renderSignalsWidget() {
     return `
         <div class="mod-header">
-            <div class="mod-title"><i class="fa-solid fa-satellite"></i> Signal Intel</div>
-            <span style="font-size:0.6rem; color:var(--accent); background:var(--accent-dim); padding:3px 9px; border-radius:10px; font-weight:700; letter-spacing:1px;">WATCHLIST</span>
+            <div class="mod-title"><i class="fa-solid fa-satellite"></i> Live Intel & Alerts</div>
+            <span style="font-size:0.6rem; color:var(--accent); background:var(--accent-dim); padding:3px 9px; border-radius:10px; font-weight:700; letter-spacing:1px;">PRO</span>
         </div>
-        <div id="sigList_${w.id}" style="flex:1; overflow-y:auto; font-family:var(--font-mono); font-size:0.72rem; line-height:1.7; min-height:0;"></div>`;
-}
-
-function initSignalsWidget(w, el) {
-    const box = el.querySelector(`#sigList_${w.id}`);
-    if (!box) return;
-
-    function draw() {
-        const list = getSignalsFeed();
-        if (!list.length) {
-            box.innerHTML = `<div style="text-align:center; padding:34px 10px; color:var(--text-muted); font-size:10px; opacity:0.7;">Waiting for Watchlist TG signals...</div>`;
-            return;
-        }
-        box.innerHTML = list.map(s => {
-            const t = new Date(s.ts).toTimeString().slice(0, 5);
-            const col = s.side === 'SHORT' || s.side === 'DOWN' ? 'var(--red)' : 'var(--accent)';
-            return `
-                <div class="sig-intel-row" data-sym="${s.symbol}" style="display:flex; align-items:center; gap:8px; padding:7px 6px; border-bottom:1px solid var(--border-thin); cursor:pointer; border-radius:6px;">
-                    <span style="color:${col}; background:rgba(0,255,213,0.08); padding:1px 6px; border-radius:4px; font-size:9px; font-weight:800;">${s.symbol.replace('USDT','')}</span>
-                    <span style="flex:1; color:var(--text-hover); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.text}</span>
-                    <span style="color:var(--text-muted); font-size:9px;">${t}</span>
-                </div>`;
-        }).join('');
-    }
-
-    box.addEventListener('click', (e) => {
-        const row = e.target.closest('.sig-intel-row');
-        if (!row) return;
-        e.stopPropagation();
-        const sym = row.dataset.sym;
-        localStorage.setItem('engine_symbol', sym.endsWith('USDT') ? sym : sym + 'USDT');
-        if (window.ENGINE_WIDGETS && Object.keys(window.ENGINE_WIDGETS).length) {
-            Object.values(window.ENGINE_WIDGETS).forEach(api => api.setSymbol(sym));
-            toast(`Engine → ${sym}`);
-        } else {
-            openIframeView(`https://t1prime.com/enginepro?symbol=${sym.endsWith('USDT') ? sym : sym + 'USDT'}`, sym);
-        }
-    });
-
-    const onUpd = () => draw();
-    window.addEventListener('t1prime_signal_added', onUpd);
-    window.addEventListener('storage', (e) => { if (e.key === SIGNALS_FEED_KEY) draw(); });
-    draw();
-    widgetCleanup[w.id] = () => window.removeEventListener('t1prime_signal_added', onUpd);
+        <div style="flex:1; overflow:hidden; font-family: var(--font-mono); font-size:0.72rem; line-height:1.9;">
+            <div><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">ALERT</span>BTC/USDT: OI Spike + Liq Cluster $68,200</div>
+            <div style="color:var(--gold);"><span style="background:rgba(255,204,0,0.1);color:#ffcc00;padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">INSIGHT</span>Tether Supply: +1B USD minted</div>
+            <div><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">SIGNAL</span>ETH/USDT: Whale Buy $20M at $3,500</div>
+            <div><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">ALERT</span>SOL/USDT: Breakout above $145</div>
+        </div>`;
 }
 
 function renderTerminalWidget() {
@@ -4341,11 +4403,8 @@ function renderClockWidget(w) {
     return `
         <div class="mod-header" style="margin-bottom:10px; padding-bottom:10px;">
             <div class="mod-title"><i class="fa-regular fa-clock"></i> TimeCenter</div>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <button id="clockTgBtn_${w.id}" title="Send alert to Telegram" style="padding:2px 7px; border-radius:6px; border:1px solid var(--accent); background:var(--accent-dim); color:var(--accent); font-family:var(--font-mono); font-size:9px; font-weight:800; cursor:pointer;">TG ✓</button>
-                <div id="alarmIndicator_${w.id}" style="display:none; color:var(--accent); font-size:12px; animation: pulseDot 1.5s infinite;"><i class="fa-solid fa-bell"></i></div>
-            </div>
-      
+            <div id="alarmIndicator_${w.id}" style="display:none; color:var(--accent); font-size:12px; animation: pulseDot 1.5s infinite;"><i class="fa-solid fa-bell"></i></div>
+        </div>
 
        <!-- Yndhanur Zhamy -->
 <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:15px; width:100%;">
@@ -4404,10 +4463,6 @@ function renderClockWidget(w) {
     <button class="preset-btn" data-time="180" data-wid="${w.id}">3h</button>
     <button class="preset-btn" data-time="240" data-wid="${w.id}">4h</button>
     <button class="preset-btn" data-time="480" data-wid="${w.id}">8h</button>
-    <button class="preset-btn" data-time="720" data-wid="${w.id}">12h</button>
-    <button class="preset-btn" data-time="1440" data-wid="${w.id}">24h</button>
-    <button class="preset-btn" data-time="2160" data-wid="${w.id}">36h</button>
-    <button class="preset-btn" data-time="2880" data-wid="${w.id}">48h</button>
 </div>
                 
                 <!-- Multi-Timers List -->
@@ -4429,47 +4484,6 @@ function initClockWidget(w, el) {
     let audioCtx = null;
 
     const fmtZero = (n) => String(n).padStart(2, '0');
-
-
-    let tgEnabled = localStorage.getItem(`grind_clock_tg_${id}`) !== '0';
-    const tgBtn = el.querySelector(`#clockTgBtn_${id}`);
-    const syncTgBtn = () => {
-        if (!tgBtn) return;
-        tgBtn.textContent = tgEnabled ? 'TG ✓' : 'TG OFF';
-        tgBtn.style.borderColor = tgEnabled ? 'var(--accent)' : 'var(--border-thin)';
-        tgBtn.style.background = tgEnabled ? 'var(--accent-dim)' : 'transparent';
-        tgBtn.style.color = tgEnabled ? 'var(--accent)' : 'var(--text-muted)';
-    };
-    syncTgBtn();
-    tgBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        tgEnabled = !tgEnabled;
-        localStorage.setItem(`grind_clock_tg_${id}`, tgEnabled ? '1' : '0');
-        syncTgBtn();
-    });
-
-    const fmtDuration = (secs) => {
-        const s = Math.max(0, Math.floor(secs));
-        if (s >= 3600) {
-            return `${fmtZero(Math.floor(s / 3600))}:${fmtZero(Math.floor((s % 3600) / 60))}:${fmtZero(s % 60)}`;
-        }
-        return `${fmtZero(Math.floor(s / 60))}:${fmtZero(s % 60)}`;
-    };
-
-    async function sendClockTG(kind, note, extra) {
-        if (!tgEnabled) return;
-        const c = HubTG.get();
-        if (!c.token || !c.chat) return;
-        const text = `<b>GRIND // OS · ${kind}</b>\n${extra ? extra + '\n' : ''}${note ? 'NOTE: ' + note : 'Time is up!'}`;
-        try {
-            await fetch(`https://api.telegram.org/bot${c.token}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: c.chat, text, parse_mode: 'HTML' })
-            });
-            toast(`✓ ${kind} sent to TG`);
-        } catch (e) {}
-    }
     
     // --- SAVE / LOAD LOGIKA ---
     const CLOCK_KEY = `grind_clock_${id}`;
@@ -4828,52 +4842,11 @@ function renderTvOthersWidget(w) {
     `;
 }
 
-const NOTES_MAP_KEY = 'grind_os_notes_map_v1';
-
-function getNotesMap() {
-    try { return JSON.parse(localStorage.getItem(NOTES_MAP_KEY) || '{}'); }
-    catch(e) { return {}; }
-}
-function saveNotesMap(map) {
-    try { localStorage.setItem(NOTES_MAP_KEY, JSON.stringify(map)); } catch(e) {}
-    if (typeof scheduleUserStateSync === 'function') scheduleUserStateSync();
-}
-function refreshNoteTitles() {
-    let n = 1;
-    state.widgets.forEach(x => {
-        if (x.type === 'notes') {
-            const lbl = document.querySelector(`[data-widget-id="${x.id}"] .note-title-num`);
-            if (lbl) lbl.textContent = `Notes ${n}`;
-            n++;
-        }
-    });
-}
-
-function renderNotesWidget(w) {
-    const map = getNotesMap();
-    if (map[w.id] === undefined) {
-        const legacy = localStorage.getItem(NOTES_KEY);
-        if (legacy && Object.keys(map).length === 0) {
-            map[w.id] = legacy;
-            saveNotesMap(map);
-        }
-    }
-    const idx = Math.max(1, state.widgets.filter(x => x.type === 'notes').findIndex(x => x.id === w.id) + 1);
-    const val = (map[w.id] || '').replace(/</g, '&lt;');
+function renderNotesWidget() {
+    const saved = localStorage.getItem(NOTES_KEY) || '';
     return `
-        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-note-sticky"></i> <span class="note-title-num">Notes ${idx}</span></div></div>
-        <textarea class="notes-area" id="notesArea_${w.id}" placeholder="Note ${idx}...">${val}</textarea>`;
-}
-
-function initNotesWidget(w, el) {
-    refreshNoteTitles();
-    const ta = el.querySelector(`#notesArea_${w.id}`);
-    if (!ta) return;
-    ta.addEventListener('input', () => {
-        const map = getNotesMap();
-        map[w.id] = ta.value;
-        saveNotesMap(map);
-    });
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-note-sticky"></i> Notes</div></div>
+        <textarea class="notes-area" id="notesArea" placeholder="Type anything...">${saved}</textarea>`;
 }
 
 function renderRadioWidget() {
@@ -5051,7 +5024,7 @@ function renderLibrary() {
     body.innerHTML = '';
 
     CATEGORIES.forEach(cat => {
-        const widgets = Object.values(WIDGET_REGISTRY).filter(w => w.category === cat && !w.hidden);
+        const widgets = Object.values(WIDGET_REGISTRY).filter(w => w.category === cat);
         if (!widgets.length) return;
 
         const catEl = document.createElement('div');
@@ -5079,14 +5052,12 @@ function renderLibrary() {
 
 function onLibraryDragStart(e) {
     draggingFromLibrary = true;
-    document.body.classList.add('is-lib-dragging');
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('widget-type', this.dataset.widgetType);
     this.classList.add('dragging');
 }
 function onLibraryDragEnd() {
     this.classList.remove('dragging');
-    document.body.classList.remove('is-lib-dragging');
     draggingFromLibrary = false;
     const ed = $('#emptyDashboard');
     if (ed) ed.classList.remove('highlight');
@@ -5244,7 +5215,6 @@ function toggleSidebar() {
     sidebar.classList.toggle('collapsed');
 }
 
-// 2. Ձախ կողային հարակից toggle-ը (Any State <-> Fully Closed)
 // 2. Ձախ կողային հարակից toggle-ը (Any State <-> Fully Closed)
 // 2. Ձախ կողային հարակից toggle-ը (Any State <-> Fully Closed)
 document.getElementById('left-toggle')?.addEventListener('click', function(e) {
