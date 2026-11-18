@@ -6448,38 +6448,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </script>
 <script type="module">
-let modal = null;
+async function loadReownLibs() {
+    try {
+        const [a, e] = await Promise.all([
+            import('https://esm.sh/@reown/appkit?bundle'),
+            import('https://esm.sh/@reown/appkit-adapter-ethers?bundle')
+        ]);
+        return { createAppKit: a.createAppKit, EthersAdapter: e.EthersAdapter };
+    } catch (e1) {
+        console.warn('esm.sh failed, trying jsdelivr...', e1);
+        const [a, e] = await Promise.all([
+            import('https://cdn.jsdelivr.net/npm/@reown/appkit/+esm'),
+            import('https://cdn.jsdelivr.net/npm/@reown/appkit-adapter-ethers/+esm')
+        ]);
+        return { createAppKit: a.createAppKit, EthersAdapter: e.EthersAdapter };
+    }
+}
+
 try {
-    const [{ createAppKit }, { EthersAdapter }] = await Promise.all([
-        import('https://esm.sh/@reown/appkit?bundle'),
-        import('https://esm.sh/@reown/appkit-adapter-ethers?bundle')
-    ]);
+    const { createAppKit, EthersAdapter } = await loadReownLibs();
 
-    const mainnet = { 
-        id: 1, name: 'Ethereum', 
-        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
-        rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } }, 
-        blockExplorers: { default: { name: 'Etherscan', url: 'https://etherscan.io' } } 
+    const mainnet = {
+        id: 1, name: 'Ethereum',
+        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } },
+        blockExplorers: { default: { name: 'Etherscan', url: 'https://etherscan.io' } }
     };
-    const arbitrum = { 
-        id: 42161, name: 'Arbitrum', 
-        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, 
-        rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } }, 
-        blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } } 
+    const arbitrum = {
+        id: 42161, name: 'Arbitrum',
+        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } },
+        blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } }
     };
 
-    modal = createAppKit({
+    const modal = createAppKit({
         adapters: [new EthersAdapter()],
         networks: [mainnet, arbitrum],
         metadata: { name: 'GRIND OS', description: 'Web3 Dashboard', url: window.location.origin, icons: [] },
         projectId: '9a4485f532467f3b0bb7584537697fd1',
-        features: { analytics: false, email: true, socials: ['google'] } 
+        features: { analytics: false, email: true, socials: ['google'] }
     });
 
     window.appKitModal = modal;
     window.openWalletModal = () => modal.open();
     window.openNetworksModal = () => { modal.open({ view: 'Networks' }); document.getElementById('walletMenu')?.classList.remove('open'); };
-    window.disconnectWallet = async () => { 
+    window.disconnectWallet = async () => {
         try { await modal.disconnect(); } catch(e) {}
         localStorage.removeItem('t1prime_wallet');
         window.location.href = '/';
@@ -6546,11 +6559,15 @@ try {
     checkAuth();
 } catch (err) {
     console.error('Reown load error:', err);
+    const wrap = document.getElementById('loginSpinnerWrap');
     const hint = document.getElementById('loginTapHint');
     if (hint) {
         hint.style.display = 'inline-block';
         hint.textContent = 'RELOAD LOGIN →';
         hint.onclick = () => location.reload();
+    }
+    if (wrap && !document.getElementById('reownErrNote')) {
+        wrap.insertAdjacentHTML('beforeend', `<div id="reownErrNote" style="margin-top:8px;font:600 10px monospace;color:#ff335f;max-width:300px;word-break:break-word;">${err?.message || err}</div>`);
     }
 }
 </script>
