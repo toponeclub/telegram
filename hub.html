@@ -2849,8 +2849,104 @@ function initEngineWidget(w, el) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   GRID RENDER
+   /* ════════════════════════════════════════════════════════════
+   GRID RENDER (CSS order · ZERO iframe reload on move/add/del/resize)
    ════════════════════════════════════════════════════════════ */
+function applyGridOrder() {
+    const grid = $('#bentoGrid');
+    if (!grid) return;
+    state.widgets.forEach((w, idx) => {
+        const el = grid.querySelector(`[data-widget-id="${w.id}"]`);
+        if (el) el.style.order = idx;
+    });
+}
+
+function mountWidgetElement(w, grid) {
+    const reg = WIDGET_REGISTRY[w.type];
+    if (!reg) return null;
+
+    const el = document.createElement('div');
+    el.className = 'module entering';
+    el.dataset.widgetId = w.id;
+    el.dataset.widgetType = w.type;
+
+    const finalSize = w.size || reg.defaultSize || reg.size || '1x1';
+    el.dataset.size = finalSize;
+    el.classList.add(`size-${finalSize.replace('+', '-plus')}`);
+
+    const locked = reg.premium && !state.subscribed;
+    const unlockedClass = locked ? '' : 'unlocked';
+
+    el.innerHTML = `
+        <div class="widget-controls">
+            <button class="widget-btn grip" title="Drag to move"><i class="fa-solid fa-grip-vertical"></i></button>
+            <button class="widget-btn size-btn" title="Change size"><i class="fa-solid fa-expand"></i></button>
+            <button class="widget-btn danger remove-btn" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        ${reg.premium ? `
+            <div class="blur-overlay blur-mod ${unlockedClass}">
+                <i class="fa-solid fa-lock lock-icon"></i>
+                <button class="unlock-btn" onclick="event.stopPropagation();toggleSubscription();">Unlock PRO</button>
+            </div>` : ''}
+        ${reg.render(w)}
+        <div class="resize-handle" title="Drag to resize"></div>
+    `;
+
+    grid.appendChild(el);
+
+    el.querySelector('.remove-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeWidget(w.id);
+    });
+
+    el.querySelector('.size-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openSizePicker(e.currentTarget, w.id);
+    });
+
+    const rh = el.querySelector('.resize-handle');
+    if (rh) rh.addEventListener('pointerdown', onResizeStart);
+
+    const grip = el.querySelector('.widget-btn.grip');
+    if (grip) grip.addEventListener('pointerdown', onGripPointerDown);
+
+    el.addEventListener('dragover', onModuleDragOver);
+    el.addEventListener('dragleave', onModuleDragLeave);
+    el.addEventListener('drop', onModuleDrop);
+
+    // Local widget behaviors scoped strictly to this card
+    const notes = el.querySelector('#notesArea');
+    if (notes) notes.addEventListener('input', () => localStorage.setItem(NOTES_KEY, notes.value));
+    el.querySelectorAll('.check-box').forEach(c => {
+        c.addEventListener('click', (e) => {
+            e.stopPropagation();
+            c.classList.toggle('done');
+            const text = c.parentElement.querySelector('.item-text');
+            if (text) text.classList.toggle('done');
+        });
+    });
+    el.querySelectorAll('.supp-tag').forEach(tag => {
+        tag.addEventListener('click', (e) => { e.stopPropagation(); tag.classList.toggle('active'); });
+    });
+    const playBtn = el.querySelector('#radioPlayBtn');
+    if (playBtn) {
+        playBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const icon = playBtn.querySelector('i');
+            const isPlaying = icon.classList.contains('fa-pause');
+            icon.classList.toggle('fa-play');
+            icon.classList.toggle('fa-pause');
+            toast(isPlaying ? 'Radio paused' : '▶ Now playing: Phonk Focus');
+        });
+    }
+
+    if (typeof reg.init === 'function') {
+        setTimeout(() => { try { reg.init(w, el); } catch(e) { console.warn('Widget init failed:', e); } }, 80);
+    }
+    setTimeout(() => el.classList.remove('entering'), 450);
+    return el;
+}
+
 function renderGrid() {
     Object.values(widgetCleanup).forEach(fn => { try { fn(); } catch(e) {} });
     Object.keys(widgetCleanup).forEach(k => delete widgetCleanup[k]);
@@ -2869,75 +2965,12 @@ function renderGrid() {
     grid.classList.remove('hidden');
     emptyState.classList.add('hidden');
 
-    state.widgets.forEach(w => {
-        const reg = WIDGET_REGISTRY[w.type];
-        if (!reg) return;
-
-        const el = document.createElement('div');
-        el.className = 'module entering';
-        el.dataset.widgetId = w.id;
-        el.dataset.widgetType = w.type;
-
-        // Ճիշտ չափսի ընտրություն
-        const finalSize = w.size || reg.defaultSize || reg.size || '1x1';
-        el.dataset.size = finalSize;
-        
-        // Ավելացնում ենք class-եր չափսերի համար
-        el.classList.add(`size-${finalSize.replace('+', '-plus')}`);
-
-        const locked = reg.premium && !state.subscribed;
-        const unlockedClass = locked ? '' : 'unlocked';
-
-        el.innerHTML = `
-            <div class="widget-controls">
-                <button class="widget-btn grip" title="Drag to move"><i class="fa-solid fa-grip-vertical"></i></button>
-                <button class="widget-btn size-btn" title="Change size"><i class="fa-solid fa-expand"></i></button>
-                <button class="widget-btn danger remove-btn" title="Remove"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            ${reg.premium ? `
-                <div class="blur-overlay blur-mod ${unlockedClass}">
-                    <i class="fa-solid fa-lock lock-icon"></i>
-                    <button class="unlock-btn" onclick="event.stopPropagation();toggleSubscription();">Unlock PRO</button>
-                </div>` : ''}
-            ${reg.render(w)}
-            <div class="resize-handle" title="Drag to resize"></div>
-        `;
-
-        grid.appendChild(el);
-
-        el.querySelector('.remove-btn').addEventListener('click', (e) => { 
-            e.stopPropagation(); 
-            removeWidget(w.id); 
-        });
-        
-        el.querySelector('.size-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            openSizePicker(e.currentTarget, w.id);
-        });
-
-        const rh = el.querySelector('.resize-handle');
-        if (rh) rh.addEventListener('pointerdown', onResizeStart);
-
-        const grip = el.querySelector('.widget-btn.grip');
-        if (grip) grip.addEventListener('pointerdown', onGripPointerDown);
-
-        el.addEventListener('dragover', onModuleDragOver);
-        el.addEventListener('dragleave', onModuleDragLeave);
-        el.addEventListener('drop', onModuleDrop);
-
-        if (typeof reg.init === 'function') {
-            setTimeout(() => { try { reg.init(w, el); } catch(e) { console.warn('Widget init failed:', e); } }, 80);
-        }
-        setTimeout(() => el.classList.remove('entering'), 450);
-    });
-
-    initWidgetBehaviors();
+    state.widgets.forEach(w => mountWidgetElement(w, grid));
+    applyGridOrder();
+    updateClock();
 }
 
 /* ─── SIZE CYCLE ─── */
-/* ════════════════════════════════════════════════════════════
-   WIDGET SIZE SYSTEM · 13 variants
-   ════════════════════════════════════════════════════════════ */
 const SIZE_CATALOG = [
     { key:'1x1',  label:'S',     desc:'Small'           },
     { key:'2x1',  label:'W',     desc:'Wide'            },
@@ -2954,7 +2987,6 @@ const SIZE_CATALOG = [
     { key:'hero', label:'HERO',  desc:'Full Width Tall' }
 ];
 
-/* Cycle order — sequential through catalogue */
 const SIZE_CYCLE = {
     '1x1':'2x1', '2x1':'3x1', '3x1':'4x1', '4x1':'1x2',
     '1x2':'2x2', '2x2':'3x2', '3x2':'4x2', '4x2':'1x3',
@@ -2980,7 +3012,6 @@ function cycleWidgetSize(widgetId) {
     setWidgetSize(widgetId, next);
 }
 
-/* ─── Size Picker Dropdown ─── */
 function openSizePicker(btn, widgetId) {
     closeSizePicker();
     const w = state.widgets.find(x => x.id === widgetId);
@@ -3030,8 +3061,8 @@ function renderImChatWidget(w) {
         ? `${IMCHAT_URL}${IMCHAT_URL.includes('?') ? '&' : '?'}wallet=${wallet}`
         : IMCHAT_URL;
     return `
-        <div class="mod-header">...</div>
-        <div style="...">
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-comments"></i> ImChat</div></div>
+        <div style="flex:1; position:relative; overflow:hidden; border-radius:8px;">
             <iframe class="imchat-iframe" src="${url}" allow="clipboard-write" style="width:100%; height:100%; border:none; display:block;"></iframe>
         </div>
     `;
@@ -3043,44 +3074,28 @@ function initImChatWidget(w, el) {
     if (!iframe) return;
 
     const sendInit = () => {
-    const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#00ffd5';
-    const walletAddr = window.currentWallet || null;
+        const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#00ffd5';
+        const walletAddr = window.currentWallet || null;
+        try {
+            iframe.contentWindow.postMessage({ type: 'hub_init', wallet: walletAddr, accent }, '*');
+        } catch (e) {}
+    };
 
-    try {
-        iframe.contentWindow.postMessage({
-            type: 'hub_init',
-            wallet: walletAddr, // փոխարինված է state.wallet-ի փոխարեն
-            accent
-        }, '*');
-    } catch (e) {}
-};
-
-    // Listen for messages FROM the iframe
     const onMsg = (e) => {
         if (!e.data || typeof e.data !== 'object' || !e.data.type) return;
-        // Only accept from our iframe
         if (iframe.contentWindow && e.source !== iframe.contentWindow) return;
-
-        if (e.data.type === 'imchat_ready') {
-            sendInit();
-        } else if (e.data.type === 'imchat_unread') {
+        if (e.data.type === 'imchat_ready') sendInit();
+        else if (e.data.type === 'imchat_unread') {
             const n = Number(e.data.count) || 0;
             if (badge) {
-                if (n > 0) {
-                    badge.textContent = n > 99 ? '99+' : String(n);
-                    badge.style.display = '';
-                } else {
-                    badge.style.display = 'none';
-                }
+                if (n > 0) { badge.textContent = n > 99 ? '99+' : String(n); badge.style.display = ''; }
+                else badge.style.display = 'none';
             }
         }
     };
     window.addEventListener('message', onMsg);
-
-    // Iframe loads → send init
     iframe.addEventListener('load', () => setTimeout(sendInit, 100));
 
-    // Track for theme / wallet broadcasts
     window._imchatWidgets = window._imchatWidgets || [];
     window._imchatWidgets.push({ iframe, id: w.id });
 
@@ -3090,7 +3105,7 @@ function initImChatWidget(w, el) {
     };
 }
 
-/* ─── ADD / REMOVE ─── */
+/* ─── ADD / REMOVE (Surgical — zero reload on existing widgets) ─── */
 function addWidget(type, position) {
     const reg = WIDGET_REGISTRY[type];
     if (!reg) return;
@@ -3102,7 +3117,16 @@ function addWidget(type, position) {
     else state.widgets.push(widget);
 
     saveState();
-    renderGrid();
+
+    const grid = $('#bentoGrid');
+    const emptyState = $('#emptyDashboard');
+    if (grid) {
+        grid.classList.remove('hidden');
+        if (emptyState) emptyState.classList.add('hidden');
+        mountWidgetElement(widget, grid);
+        applyGridOrder();
+    }
+
     toast(`Added: ${reg.name}`);
     closeLibrary();
 }
@@ -3121,9 +3145,16 @@ function removeWidget(widgetId) {
     }
 
     setTimeout(() => {
-        state.widgets.splice(idx, 1);
+        const curIdx = state.widgets.findIndex(x => x.id === widgetId);
+        if (curIdx !== -1) state.widgets.splice(curIdx, 1);
+        if (el) el.remove();
         saveState();
-        renderGrid();
+        applyGridOrder();
+
+        if (state.widgets.length === 0) {
+            $('#bentoGrid')?.classList.add('hidden');
+            $('#emptyDashboard')?.classList.remove('hidden');
+        }
         toast('Widget removed');
     }, 240);
 }
@@ -3207,7 +3238,8 @@ function activateDrag() {
     ghost.style.width = rect.width + 'px';
     ghost.style.height = rect.height + 'px';
     ghost.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0)`;
-    ghost.querySelectorAll('button, input, textarea, select, iframe, a').forEach(x => {
+    ghost.querySelectorAll('iframe').forEach(f => f.replaceWith(document.createElement('div')));
+    ghost.querySelectorAll('button, input, textarea, select, a').forEach(x => {
         x.setAttribute('tabindex', '-1');
         x.style.pointerEvents = 'none';
     });
@@ -3251,34 +3283,17 @@ function cleanupDrag() {
 }
 
 /* ════════════════════════════════════════════════════════════
-   REORDER · SURGICAL (DOM move, no rebuild)
+   REORDER · CSS ORDER ONLY (ZERO DOM move, ZERO iframe reload)
    ════════════════════════════════════════════════════════════ */
 function reorderWidget(fromId, toId) {
     const fromIdx = state.widgets.findIndex(w => w.id === fromId);
     const toIdx = state.widgets.findIndex(w => w.id === toId);
     if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
 
-    /* 1. Update state array */
     const [moved] = state.widgets.splice(fromIdx, 1);
     state.widgets.splice(toIdx, 0, moved);
     saveState();
-
-    /* 2. Move the existing DOM element — no rebuild */
-    const grid = $('#bentoGrid');
-    if (!grid) return;
-    const fromEl = grid.querySelector(`[data-widget-id="${fromId}"]`);
-    const toEl = grid.querySelector(`[data-widget-id="${toId}"]`);
-    if (!fromEl || !toEl) return;
-
-    if (fromIdx < toIdx) {
-        /* Dragged downward → insert after target */
-        toEl.parentNode.insertBefore(fromEl, toEl.nextSibling);
-    } else {
-        /* Dragged upward → insert before target */
-        toEl.parentNode.insertBefore(fromEl, toEl);
-    }
-
-    /* ★ NO renderGrid() call — iframes, charts, WS stay alive. */
+    applyGridOrder();
 }
 
 /* ─── Library → Dashboard drop ─── */
@@ -5209,6 +5224,7 @@ if (leftToggle && sidebar) {
 }
 
 function closeIframeView() {
+    document.getElementById('subNavBar')?.classList.add('hidden');
     const view    = $('#iframeView');
     const dash    = $('#dashboardView');
     const backBtn = $('#backBtn');
@@ -6074,6 +6090,7 @@ function renderPrimePaymentWall(mode, data) {
     if (!body) return;
 
     if (ov) { ov.onclick = null; ov.style.cursor = ''; }
+    if (ov) { ov.onclick = null; ov.style.cursor = ''; ov.style.background = ''; }
     if (card) { card.style.display = ''; card.classList.add('prime-modal'); }
 
     const shortW = window.currentWallet ? (window.currentWallet.slice(0, 6) + '...' + window.currentWallet.slice(-4)) : '';
