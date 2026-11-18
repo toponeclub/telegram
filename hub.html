@@ -1840,105 +1840,117 @@ body.is-resizing .module { transition: none !important; }
     .pm-hero { flex-direction: column; align-items: flex-start; gap: 8px; }
     .pm-price { font-size: 2rem; }
 }
+
+/* ═══ TOP HORIZONTAL SUB-NAVBAR ═══ */
+.sub-navbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 40px;
+    background: rgba(10, 10, 12, 0.92);
+    border-bottom: 1px solid var(--border-thin);
+    backdrop-filter: blur(12px);
+    overflow-x: auto;
+    flex-shrink: 0;
+    z-index: 88;
+    scrollbar-width: none;
+}
+.sub-navbar::-webkit-scrollbar { display: none; }
+.sub-navbar.hidden { display: none !important; }
+
+.sub-nav-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+.sub-nav-tab:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.03);
+}
+.sub-nav-tab.active {
+    color: var(--accent);
+    background: var(--accent-dim);
+    border-color: rgba(0, 255, 136, 0.3);
+}
+.sub-nav-badge {
+    font-size: 9px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-muted);
+}
+.sub-nav-tab.active .sub-nav-badge {
+    background: rgba(0, 255, 136, 0.16);
+    color: var(--accent);
+}
+
+/* Stealth "+" Button (invisible until mouse enters its zone) */
+.stealth-add-btn {
+    opacity: 0;
+    color: var(--text-muted);
+    transition: opacity 0.25s ease, color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+.stealth-add-btn:hover,
+.stealth-add-btn.active {
+    opacity: 1 !important;
+    color: var(--green) !important;
+    background: rgba(0, 255, 136, 0.14) !important;
+    box-shadow: 0 0 18px rgba(0, 255, 136, 0.3);
+}
+@media (max-width: 768px) {
+    .sub-navbar { padding: 7px 12px; gap: 4px; }
+    .sub-nav-tab { padding: 5px 10px; font-size: 0.62rem; }
+    .stealth-add-btn { opacity: 0.45; }
+}
 </style>
 </head>
 <body class="theme-emerald">
 
 <!-- ════════════════ SIDEBAR ════════════════ -->
-<nav class="sidebar" id="sidebar">
-    <button class="toggle-btn" onclick="toggleSidebar()" title="Toggle sidebar">
-        <i class="fa-solid fa-bars"></i>
-    </button>
-
-    <div class="nav-menu">
-        <!-- GENESIS -->
+<div class="nav-menu">
         <div class="nav-item active" data-nav="dashboard" onclick="onNavClick(event, 'dashboard')">
-            <div class="nav-item-content">
-                <i class="fa-solid fa-border-all"></i>
-                <span>GENESIS</span>
-            </div>
+            <div class="nav-item-content"><i class="fa-solid fa-border-all"></i><span>GENESIS</span></div>
         </div>
 
-        <!-- ACADEMY -->
-        <div class="nav-item" data-href="https://t1prime.com/coming" onclick="onNavClick(event, 'academy')">
-            <div class="nav-item-content">
-                <i class="fa-solid fa-graduation-cap"></i>
-                <span>ACADEMY</span>
-            </div>
+        <div class="nav-item" data-nav="academy" onclick="onNavClick(event, 'academy')">
+            <div class="nav-item-content"><i class="fa-solid fa-graduation-cap"></i><span>ACADEMY</span></div>
         </div>
 
-        <!-- TRADING -->
-        <div class="nav-item" data-sub="sub-trading" onclick="onNavClick(event, 'trading')">
-            <div class="nav-item-content">
-                <i class="fa-solid fa-chart-line"></i>
-                <span>Trading</span>
-            </div>
-            <i class="fa-solid fa-angle-down nav-angle"></i>
-        </div>
-        <div class="sub-menu" id="sub-trading">
-             <div class="sub-item" data-href="https://t1prime.com/enginepro" onclick="onSubClick(event)">Engine</div>
-    <div class="sub-item" data-href="https://t1prime.com/screener" onclick="onSubClick(event)">Screener / Markets</div>
-    <div class="sub-item" data-href="https://t1prime.com/backtester" onclick="onSubClick(event)">Backtester</div>
-    <div class="sub-item" data-href="https://t1prime.com/watchlist" onclick="onSubClick(event)">Watchlist</div>
-        <div class="sub-item" data-href="https://t1prime.com/phd" onclick="onSubClick(event)">Patterns</div>
+        <div class="nav-item" data-nav="trading" onclick="onNavClick(event, 'trading')">
+            <div class="nav-item-content"><i class="fa-solid fa-chart-line"></i><span>Trading</span></div>
         </div>
 
-        <!-- PRODUCTIVITY -->
-        <div class="nav-item" data-sub="sub-prod" onclick="onNavClick(event, 'productivity')">
-            <div class="nav-item-content">
-                <i class="fa-solid fa-crosshairs"></i>
-                <span>Productivity</span>
-            </div>
-            <i class="fa-solid fa-angle-down nav-angle"></i>
-        </div>
-        <div class="sub-menu" id="sub-prod">
-            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Biohacking</div>
-            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Goals</div>
-            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Focus</div>
-            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Journal</div>
-            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">365 Heatmap Tracker</div>
+        <div class="nav-item" data-nav="productivity" onclick="onNavClick(event, 'productivity')">
+            <div class="nav-item-content"><i class="fa-solid fa-crosshairs"></i><span>Productivity</span></div>
         </div>
 
-        <!-- SOCIAL MEDIA -->
-        <div class="nav-item" data-sub="sub-social" onclick="onNavClick(event, 'social')">
-            <div class="nav-item-content">
-                <i class="fa-solid fa-mobile-screen"></i>
-                <span>Social Media</span>
-            </div>
-            <i class="fa-solid fa-angle-down nav-angle"></i>
-        </div>
-        <div class="sub-menu" id="sub-social">
-            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">SM Boost</div>
-            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Content Mash</div>
+        <div class="nav-item" data-nav="social" onclick="onNavClick(event, 'social')">
+            <div class="nav-item-content"><i class="fa-solid fa-mobile-screen"></i><span>Social Media</span></div>
         </div>
 
-        <!-- NEXUS -->
-        <div class="nav-item" data-href="https://t1prime.com/imchat" onclick="onNavClick(event, 'nexus')">
-            <div class="nav-item-content">
-                <i class="fa-solid fa-paper-plane"></i>
-                <span>ImChat</span>
-            </div>
+        <div class="nav-item" data-nav="imchat" data-href="https://t1prime.com/imchat" onclick="onNavClick(event, 'imchat')">
+            <div class="nav-item-content"><i class="fa-solid fa-paper-plane"></i><span>ImChat</span></div>
         </div>
 
-        <!-- AFFILIATE -->
-        <div class="nav-item" data-sub="sub-aff" onclick="onNavClick(event, 'affiliate')">
-            <div class="nav-item-content">
-                <i class="fa-solid fa-share-nodes"></i>
-                <span>Affiliate</span>
-            </div>
-            <i class="fa-solid fa-angle-down nav-angle"></i>
-        </div>
-        <div class="sub-menu" id="sub-aff">
-            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Main Room & PNL</div>
-            <div class="sub-item" data-href="https://t1prime.com/coming" onclick="onSubClick(event)">Content Assets</div>
+        <div class="nav-item" data-nav="affiliate" onclick="onNavClick(event, 'affiliate')">
+            <div class="nav-item-content"><i class="fa-solid fa-share-nodes"></i><span>Affiliate</span></div>
         </div>
 
-        <!-- SYSTEM -->
         <div class="nav-item" style="margin-top: 24px; border-top: 1px solid var(--border-thin); padding-top: 20px;" onclick="openPrimeUpgrade()">
-            <div class="nav-item-content">
-                <i class="fa-solid fa-crown" style="color: var(--accent);"></i>
-                <span>Prime</span>
-            </div>
+            <div class="nav-item-content"><i class="fa-solid fa-crown" style="color: var(--accent);"></i><span>Prime</span></div>
         </div>
     </div>
 </nav>
@@ -1990,6 +2002,10 @@ body.is-resizing .module { transition: none !important; }
             </div>
             <div id="walletTrialLine" style="margin-top:4px; font-family:var(--font-mono); font-size:0.6rem; color:var(--text-muted);"></div>
         </div>
+        <div class="wallet-menu-item" onclick="closeWalletMenu(); openModal('qrModal');">
+            <i class="fa-solid fa-mobile-screen"></i> Device Sync
+        </div>
+        <div class="wallet-menu-divider"></div>
         <div class="wallet-menu-item danger" onclick="disconnectWallet()">
             <i class="fa-solid fa-right-from-bracket"></i> Log Out
         </div>
@@ -1999,19 +2015,21 @@ body.is-resizing .module { transition: none !important; }
 <!-- Reown AppKit auto-injects its own modal here -->
 <div id="appkit-modal-root"></div>
 
-            <button class="icon-btn" id="btnLibrary" title="Widget Library (⌘K)">
-                <i class="fa-solid fa-plus"></i>
-            </button>
-
-            <button class="icon-btn" onclick="openModal('qrModal')" title="Device Sync">
-                <i class="fa-solid fa-mobile-screen"></i>
+            <button class="icon-btn" onclick="openWorkspacePopout()" title="Open Clean Workspace (2nd Monitor)">
+                <i class="fa-regular fa-clone"></i>
             </button>
 
             <button class="icon-btn" onclick="openModal('settingsModal')" title="Settings">
                 <i class="fa-solid fa-gear"></i>
             </button>
+
+            <button class="icon-btn stealth-add-btn" id="btnLibrary" title="Add Widget (⌘K)">
+                <i class="fa-solid fa-plus"></i>
+            </button>
         </div>
     </header>
+
+    <div id="subNavBar" class="sub-navbar hidden"></div>
 
     
 
@@ -2161,7 +2179,10 @@ body.is-resizing .module { transition: none !important; }
    GRIND // OS · ENGINE v2.2
    ════════════════════════════════════════════════════════════ */
 
-const STORAGE_KEY = 'grind_os_layout_v2';
+const _urlParams = new URLSearchParams(location.search);
+const _isPopout = _urlParams.get('popout') === '1';
+const _wsId = _urlParams.get('ws') || '';
+const STORAGE_KEY = (_isPopout && _wsId) ? `grind_os_layout_${_wsId}` : 'grind_os_layout_v2';
 const NOTES_KEY = 'grind_os_notes_v1';
 const WALLET_KEY = 'grind_os_wallet';
 
@@ -5235,101 +5256,100 @@ document.getElementById('left-toggle').addEventListener('click', function() {
     }
 });
 /* ─── Nav click — handle both submenu items and normal navigation ─── */
+const TOP_SUB_MENUS = {
+    trading: [
+        { label: 'Engine',             href: 'https://t1prime.com/enginepro' },
+        { label: 'Screener / Markets', href: 'https://t1prime.com/screener' },
+        { label: 'Watchlist',          href: 'https://t1prime.com/watchlist' },
+        { label: 'Backtester',         href: 'https://t1prime.com/backtester' },
+        { label: 'Patterns',           href: 'https://t1prime.com/phd' }
+    ],
+    academy: [
+        { label: 'Trading',    href: 'https://t1prime.com/coming', badge: '0%' },
+        { label: 'Media',      href: 'https://t1prime.com/coming', badge: '0%' },
+        { label: 'Biohacking', href: 'https://t1prime.com/coming', badge: '0%' }
+    ],
+    productivity: [
+        { label: 'Overview',        href: 'https://t1prime.com/coming' },
+        { label: 'Biohacking',      href: 'https://t1prime.com/coming' },
+        { label: 'Goals',           href: 'https://t1prime.com/coming' },
+        { label: 'Focus',           href: 'https://t1prime.com/coming' },
+        { label: 'Journal',         href: 'https://t1prime.com/coming' },
+        { label: '365 Consistency', href: 'https://t1prime.com/coming' }
+    ],
+    social: [
+        { label: 'Content Mash (Coming Soon)', href: 'https://t1prime.com/coming' }
+    ],
+    affiliate: [
+        { label: 'Main Room & PNL', href: 'https://t1prime.com/coming' }
+    ]
+};
+
+function renderTopSubNav(categoryKey, autoOpenFirst = true) {
+    const bar = document.getElementById('subNavBar');
+    if (!bar) return;
+    const items = TOP_SUB_MENUS[categoryKey];
+    if (!items || !items.length) {
+        bar.classList.add('hidden');
+        bar.innerHTML = '';
+        return;
+    }
+    bar.innerHTML = items.map((it, idx) => `
+        <button class="sub-nav-tab ${idx === 0 ? 'active' : ''}" data-idx="${idx}" onclick="onTopSubTabClick('${categoryKey}', ${idx}, this)">
+            <span>${it.label}</span>
+            ${it.badge ? `<span class="sub-nav-badge">${it.badge}</span>` : ''}
+        </button>
+    `).join('');
+    bar.classList.remove('hidden');
+
+    if (autoOpenFirst && items[0].href) {
+        openIframeView(items[0].href, items[0].label);
+    }
+}
+
+window.onTopSubTabClick = function(categoryKey, idx, btnEl) {
+    const items = TOP_SUB_MENUS[categoryKey] || [];
+    const item = items[idx];
+    if (!item) return;
+    document.querySelectorAll('#subNavBar .sub-nav-tab').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    if (item.href) openIframeView(item.href, item.label);
+};
+
 function onNavClick(e, key) {
     e.stopPropagation();
-
     const item = e.currentTarget;
-    const sidebar = $('#sidebar');
-    const isCollapsed = sidebar.classList.contains('collapsed');
-    const subId = item.dataset.sub;
-    const href = item.dataset.href;
-    const nav = item.dataset.nav;
+    const sb = document.getElementById('sidebar');
 
-    // Clear all active states
-    $$('.nav-item, .sub-item').forEach(x => x.classList.remove('active'));
+    $$('.nav-item').forEach(x => x.classList.remove('active'));
+    item.classList.add('active');
 
-    // CASE 1: Has submenu
-    if (subId) {
-        item.classList.add('active');
+    // Ավտոմատ փոքրացնում է ձախ պանելը մինչև icon-only mode
+    if (sb && key !== 'dashboard') sb.classList.add('collapsed');
 
-        if (isCollapsed) {
-            // 1. Expand sidebar
-            sidebar.classList.remove('collapsed');
-
-            // 2. Close other submenus
-            $$('.sub-menu').forEach(m => {
-                if (m.id !== subId) {
-                    m.classList.remove('open');
-                    const parent = m.previousElementSibling;
-                    if (parent && parent.classList.contains('nav-item')) parent.classList.remove('open');
-                }
-            });
-
-            // 3. Open this submenu AFTER expansion animation
-            const sub = document.getElementById(subId);
-            if (sub) {
-                setTimeout(() => {
-                    sub.classList.add('open');
-                    item.classList.add('open');
-                }, 200);
-            }
-            return;
-        }
-
-        // Already expanded → just toggle
-        const sub = document.getElementById(subId);
-        if (sub) {
-            const wasOpen = sub.classList.contains('open');
-
-            // Close other submenus
-            $$('.sub-menu').forEach(m => {
-                if (m.id !== subId) {
-                    m.classList.remove('open');
-                    const parent = m.previousElementSibling;
-                    if (parent && parent.classList.contains('nav-item')) parent.classList.remove('open');
-                }
-            });
-
-            sub.classList.toggle('open');
-            item.classList.toggle('open');
-        }
+    if (key === 'dashboard') {
+        renderTopSubNav(null, false);
+        closeIframeView();
         return;
     }
 
-    // CASE 2: Normal nav item
-    item.classList.add('active');
-
-    if (href) {
-        openIframeView(href, nav || 'Module');
-    } else if (nav === 'dashboard') {
-        closeIframeView();
+    if (TOP_SUB_MENUS[key]) {
+        renderTopSubNav(key, true);
+        return;
     }
-}
 
-/* ─── Sub-item click ─── */
-function onSubClick(e) {
-    e.stopPropagation();
-    const item = e.currentTarget;
     const href = item.dataset.href;
-
-    $$('.nav-item, .sub-item').forEach(x => x.classList.remove('active'));
-    item.classList.add('active');
-
-    // Keep parent highlighted
-    const sub = item.closest('.sub-menu');
-    if (sub) {
-        const parent = sub.previousElementSibling;
-        if (parent && parent.classList.contains('nav-item')) parent.classList.add('active');
-    }
-
-    if (href) openIframeView(href, item.textContent.trim());
-
-    // Mobile → close sidebar
-    if (window.innerWidth <= 768) {
-        const sb = $('#sidebar');
-        if (sb) sb.classList.add('collapsed');
+    if (href) {
+        renderTopSubNav(null, false);
+        openIframeView(href, item.textContent.trim());
     }
 }
+
+window.openWorkspacePopout = function() {
+    const id = 'ws_' + Date.now();
+    const url = `${location.pathname}?popout=1&ws=${id}`;
+    window.open(url, id, 'width=1360,height=840,noopener');
+};
 
 /* ════════════════════════════════════════════════════════════
    WALLET — PROPER LOGIN/LOGOUT
@@ -5775,7 +5795,11 @@ function boot() {
         'background:linear-gradient(90deg,#00ffd5,#0099ff);color:#000;padding:6px 16px;border-radius:6px;font-weight:900;letter-spacing:3px;');
 
     const loaded = loadState();
-    if (!loaded || !Array.isArray(state.widgets)) {
+    if (_isPopout) {
+        if (!loaded) state.widgets = [];
+        const sb = document.getElementById('sidebar');
+        if (sb) sb.classList.add('collapsed');
+    } else if (!loaded || !Array.isArray(state.widgets)) {
         state.widgets = getDefaultLayout();
         saveState();
     }
@@ -5846,6 +5870,7 @@ let _restoringState = false;
 
 // Փրկում ենք դասավորությունը սերվերի վրա (առանց reset անելու)
 function pushUserStateToServer() {
+    if (_isPopout) { if (typeof renderGrid === 'function') renderGrid(); return; }
     if (!window.currentWallet || _restoringState) return;
     const payload = {
         widgets: state.widgets,
@@ -5894,6 +5919,7 @@ window.toggleSubscription = function() {
 };
 
 function restoreUserStateFromServer(uState) {
+    if (_isPopout) { if (typeof renderGrid === 'function') renderGrid(); return; }
     if (!uState || !Array.isArray(uState.widgets) || !uState.widgets.length) {
        if (!uState || !Array.isArray(uState.widgets) || !uState.widgets.length) {
         pushUserStateToServer();
