@@ -1915,6 +1915,34 @@ body.is-resizing .module { transition: none !important; }
     .sub-nav-tab { padding: 5px 10px; font-size: 0.62rem; }
     .stealth-add-btn { opacity: 0.45; }
 }
+
+body.is-lib-dragging iframe { pointer-events: none !important; }
+.add-widget-slot {
+    order: 999999;
+    height: 200px;
+    border-radius: 22px;
+    border: 1px dashed rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.008);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text-muted);
+    opacity: 0.22;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.add-widget-slot i { font-size: 1.5rem; }
+.add-widget-slot span { font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0; transition: opacity 0.25s; }
+.add-widget-slot:hover {
+    opacity: 1;
+    border-color: var(--green);
+    background: rgba(0, 255, 136, 0.05);
+    color: var(--green);
+    box-shadow: 0 0 28px rgba(0, 255, 136, 0.12);
+}
+.add-widget-slot:hover span { opacity: 1; }
 </style>
 </head>
 <body class="theme-emerald">
@@ -2028,7 +2056,7 @@ body.is-resizing .module { transition: none !important; }
                 <i class="fa-solid fa-gear"></i>
             </button>
 
-            <button class="icon-btn stealth-add-btn" id="btnLibrary" title="Add Widget (⌘K)">
+            <button class="icon-btn" id="btnLibrary" title="Widget Library (⌘K)">
                 <i class="fa-solid fa-plus"></i>
             </button>
         </div>
@@ -2201,65 +2229,30 @@ const $  = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
 /* ─── WIDGET REGISTRY ─── */
-const WIDGET_REGISTRY = { 
-    btc_chart:    { id:'btc_chart',    name:'BTC Chart',         desc:'Live BTC candles · TF switch', icon:'fa-chart-line',         size:'full', category:'Trading',      render: renderBTCChartWidget, init: initBTCChartWidget },
-    liquidations: { id:'liquidations', name:'Live Liquidations', desc:'Whale liq feed · real-time',   icon:'fa-water',              size:'1x2',  category:'Trading',      render: renderLiquidationsWidget, init: initLiquidationsWidget },
-    screener:     { id:'screener',     name:'Market Screener',   desc:'Multi-filter + search',        icon:'fa-radar',              size:'full', category:'Trading',      render: renderScreenerWidget, init: initScreenerWidget },
-    signals:      { id:'signals',      name:'Intel Signals',     desc:'Live trading alerts',          icon:'fa-satellite',          size:'2x2',  category:'Trading',      premium:true, render: renderSignalsWidget },
-    terminal:     { id:'terminal',     name:'Pro Terminal',      desc:'DCA · Grid · Risk',            icon:'fa-chart-candlestick',  size:'1x1',  category:'Trading',      premium:true, render: renderTerminalWidget },
-    heatmap:      { id:'heatmap',      name:'365 Consistency',   desc:'Yearly habit matrix',          icon:'fa-fire',               size:'full', category:'Trading',      render: renderHeatmapWidget },
-    goals:        { id:'goals',        name:'Active Goals',      desc:'Long-term objectives',         icon:'fa-bullseye',           size:'1x1',  category:'Productivity', render: renderGoalsWidget, init: initGoalsWidget },
-    biohacking:   { id:'biohacking',   name:'Bio-Sync Stack',    desc:'Supplement builder',           icon:'fa-dna',                size:'1x1',  category:'Productivity', render: renderBiohackingWidget },
-    tasks:        { id:'tasks',        name:'Today Tasks',       desc:'Daily checklist',              icon:'fa-list-check',         size:'1x1',  category:'Productivity', render: renderTasksWidget, init: initTasksWidget },
-    progress:     { id:'progress',     name:'Progress',          desc:'Weekly bars',                  icon:'fa-chart-simple',       size:'1x1',  category:'Productivity', render: renderProgressWidget },
-    clock:        { id:'clock',        name:'Alarm · Timer',     desc:'Alarm & countdown',            icon:'fa-bell',               size:'1x1',  category:'Productivity', render: renderClockWidget, init: initClockWidget },
-    quote:        { id:'quote',        name:'Quote',             desc:'Daily doctrine',               icon:'fa-quote-left',         size:'1x1',  category:'Productivity', render: renderQuoteWidget, init: initQuoteWidget },
-    notes:        { id:'notes',        name:'Notes',             desc:'Quick scratchpad',             icon:'fa-note-sticky',        size:'1x1',  category:'Productivity', render: renderNotesWidget },
-    community:    { id:'community',    name:'Community',         desc:'Live feed',                    icon:'fa-users',              size:'1x1',  category:'Social',       render: renderCommunityWidget, init: initCommunityWidget },
-    affiliate:    { id:'affiliate',    name:'Affiliate',         desc:'Referrals & earnings',         icon:'fa-share-nodes',        size:'1x1',  category:'Social',       render: renderAffiliateWidget },
-    clock: { id:'clock', name:'Desk Clock', desc:'Alarm & timer', icon:'fa-clock', size:'1x1', category:'Productivity', render: renderClockWidget, init: initClockWidget },
-    engine: {
-    id: 'engine',
-    name: 'Trading Engine',
-    desc: 'Charts · VP · Liq tracker',
-    icon: 'fa-bolt',
-    size: '2x2',
-    category: 'Trading',
-    render: renderEngineWidget,
-    init: initEngineWidget
-},
-tv_others: {
-        id: 'tv_others',
-        name: 'TV Others',
-        desc: 'TradingView Custom Chart',
-        icon: 'fa-chart-line',
-        size: '2x2',
-        category: 'Trading',
-        render: renderTvOthersWidget
-    },
+const WIDGET_REGISTRY = {
+    btc_chart:        { id:'btc_chart',        name:'BTC Chart',         desc:'Live BTC candles · TF switch', icon:'fa-chart-line',        size:'full', category:'Trading',      hidden:true, render: renderBTCChartWidget, init: initBTCChartWidget },
+    liquidations:     { id:'liquidations',     name:'Live Liquidations', desc:'Whale liq feed · real-time',   icon:'fa-water',             size:'1x2',  category:'Trading',      hidden:true, render: renderLiquidationsWidget, init: initLiquidationsWidget },
+    tv_others:        { id:'tv_others',        name:'TV Others',         desc:'TradingView Custom Chart',     icon:'fa-chart-line',        size:'2x2',  category:'Trading',      hidden:true, render: renderTvOthersWidget },
+    imchat:           { id:'imchat',           name:'ImChat',            desc:'P2P encrypted messenger',      icon:'fa-comments',          size:'2x2',  category:'Social',       hidden:true, render: renderImChatWidget, init: initImChatWidget },
+    terminal:         { id:'terminal',         name:'Pro Terminal',      desc:'DCA · Grid · Risk',            icon:'fa-chart-candlestick', size:'1x1',  category:'Trading',      hidden:true, render: renderTerminalWidget },
 
-    crypto_sparkline: { 
-        id:'crypto_sparkline', 
-        name:'Crypto Sparkline', 
-        desc:'Futuristic animated chart', 
-        icon:'fa-chart-area', 
-        size:'2x2', 
-        category:'Trading', 
-        render: renderCryptoSparklineWidget, 
-        init: initCryptoSparklineWidget 
-    },
-    quote: { id:'quote', name:'Quote', desc:'Daily doctrine', icon:'fa-quote-left', size:'1x1', category:'Productivity', render: renderQuoteWidget, init: initQuoteWidget },
-    imchat: {
-    id:'imchat',
-    name:'ImChat',
-    desc:'P2P encrypted messenger',
-    icon:'fa-comments',
-    size:'2x2',
-    category:'Social',
-    render: renderImChatWidget,
-    init: initImChatWidget
-},
-price_alert:  { id:'price_alert',  name:'Price Alerts', desc:'TG price triggers · multi',  icon:'fa-bell', size:'2x2', category:'Trading', render: renderPriceAlertWidget, init: initPriceAlertWidget },
+    engine:           { id:'engine',           name:'Trading Engine',    desc:'Charts · VP · Liq tracker',    icon:'fa-bolt',              size:'2x2',  category:'Trading',      render: renderEngineWidget, init: initEngineWidget },
+    crypto_sparkline: { id:'crypto_sparkline', name:'Crypto Sparkline',  desc:'Futuristic animated chart',    icon:'fa-chart-area',        size:'2x2',  category:'Trading',      render: renderCryptoSparklineWidget, init: initCryptoSparklineWidget },
+    screener:         { id:'screener',         name:'Market Screener',   desc:'Multi-filter + search',        icon:'fa-radar',             size:'full', category:'Trading',      render: renderScreenerWidget, init: initScreenerWidget },
+    signals:          { id:'signals',          name:'Signal Intel',      desc:'Watchlist TG feed · click',    icon:'fa-satellite',         size:'2x2',  category:'Trading',      render: renderSignalsWidget, init: initSignalsWidget },
+    price_alert:      { id:'price_alert',      name:'Price Alerts',      desc:'TG price triggers · multi',    icon:'fa-bell',              size:'2x2',  category:'Trading',      render: renderPriceAlertWidget, init: initPriceAlertWidget },
+
+    heatmap:          { id:'heatmap',          name:'365 Consistency',   desc:'Yearly habit matrix',          icon:'fa-fire',              size:'full', category:'Productivity', render: renderHeatmapWidget },
+    goals:            { id:'goals',            name:'Active Goals',      desc:'Long-term objectives',         icon:'fa-bullseye',          size:'1x1',  category:'Productivity', render: renderGoalsWidget, init: initGoalsWidget },
+    biohacking:       { id:'biohacking',       name:'Bio-Sync Stack',    desc:'Supplement builder',           icon:'fa-dna',               size:'1x1',  category:'Productivity', render: renderBiohackingWidget },
+    tasks:            { id:'tasks',            name:'Today Tasks',       desc:'Daily checklist',              icon:'fa-list-check',        size:'1x1',  category:'Productivity', render: renderTasksWidget, init: initTasksWidget },
+    progress:         { id:'progress',         name:'Progress',          desc:'Weekly bars',                  icon:'fa-chart-simple',      size:'1x1',  category:'Productivity', render: renderProgressWidget },
+    clock:            { id:'clock',            name:'Desk Clock',        desc:'Alarm & timer + TG',           icon:'fa-clock',             size:'1x1',  category:'Productivity', render: renderClockWidget, init: initClockWidget },
+    quote:            { id:'quote',            name:'Quote',             desc:'Daily doctrine',               icon:'fa-quote-left',        size:'1x1',  category:'Productivity', render: renderQuoteWidget, init: initQuoteWidget },
+    notes:            { id:'notes',            name:'Notes',             desc:'Multi-layer scratchpad',       icon:'fa-note-sticky',       size:'1x1',  category:'Productivity', render: renderNotesWidget, init: initNotesWidget },
+
+    community:        { id:'community',        name:'Community',         desc:'Open Prime chat',              icon:'fa-users',             size:'1x1',  category:'Social',       render: renderCommunityWidget, init: initCommunityWidget },
+    affiliate:        { id:'affiliate',        name:'Affiliate',         desc:'Referrals & earnings',         icon:'fa-share-nodes',       size:'1x1',  category:'Social',       render: renderAffiliateWidget }
 };
 
 const CATEGORIES = ['Trading', 'Productivity', 'Social'];
@@ -2849,104 +2842,8 @@ function initEngineWidget(w, el) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   /* ════════════════════════════════════════════════════════════
-   GRID RENDER (CSS order · ZERO iframe reload on move/add/del/resize)
+   GRID RENDER
    ════════════════════════════════════════════════════════════ */
-function applyGridOrder() {
-    const grid = $('#bentoGrid');
-    if (!grid) return;
-    state.widgets.forEach((w, idx) => {
-        const el = grid.querySelector(`[data-widget-id="${w.id}"]`);
-        if (el) el.style.order = idx;
-    });
-}
-
-function mountWidgetElement(w, grid) {
-    const reg = WIDGET_REGISTRY[w.type];
-    if (!reg) return null;
-
-    const el = document.createElement('div');
-    el.className = 'module entering';
-    el.dataset.widgetId = w.id;
-    el.dataset.widgetType = w.type;
-
-    const finalSize = w.size || reg.defaultSize || reg.size || '1x1';
-    el.dataset.size = finalSize;
-    el.classList.add(`size-${finalSize.replace('+', '-plus')}`);
-
-    const locked = reg.premium && !state.subscribed;
-    const unlockedClass = locked ? '' : 'unlocked';
-
-    el.innerHTML = `
-        <div class="widget-controls">
-            <button class="widget-btn grip" title="Drag to move"><i class="fa-solid fa-grip-vertical"></i></button>
-            <button class="widget-btn size-btn" title="Change size"><i class="fa-solid fa-expand"></i></button>
-            <button class="widget-btn danger remove-btn" title="Remove"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        ${reg.premium ? `
-            <div class="blur-overlay blur-mod ${unlockedClass}">
-                <i class="fa-solid fa-lock lock-icon"></i>
-                <button class="unlock-btn" onclick="event.stopPropagation();toggleSubscription();">Unlock PRO</button>
-            </div>` : ''}
-        ${reg.render(w)}
-        <div class="resize-handle" title="Drag to resize"></div>
-    `;
-
-    grid.appendChild(el);
-
-    el.querySelector('.remove-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        removeWidget(w.id);
-    });
-
-    el.querySelector('.size-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        openSizePicker(e.currentTarget, w.id);
-    });
-
-    const rh = el.querySelector('.resize-handle');
-    if (rh) rh.addEventListener('pointerdown', onResizeStart);
-
-    const grip = el.querySelector('.widget-btn.grip');
-    if (grip) grip.addEventListener('pointerdown', onGripPointerDown);
-
-    el.addEventListener('dragover', onModuleDragOver);
-    el.addEventListener('dragleave', onModuleDragLeave);
-    el.addEventListener('drop', onModuleDrop);
-
-    // Local widget behaviors scoped strictly to this card
-    const notes = el.querySelector('#notesArea');
-    if (notes) notes.addEventListener('input', () => localStorage.setItem(NOTES_KEY, notes.value));
-    el.querySelectorAll('.check-box').forEach(c => {
-        c.addEventListener('click', (e) => {
-            e.stopPropagation();
-            c.classList.toggle('done');
-            const text = c.parentElement.querySelector('.item-text');
-            if (text) text.classList.toggle('done');
-        });
-    });
-    el.querySelectorAll('.supp-tag').forEach(tag => {
-        tag.addEventListener('click', (e) => { e.stopPropagation(); tag.classList.toggle('active'); });
-    });
-    const playBtn = el.querySelector('#radioPlayBtn');
-    if (playBtn) {
-        playBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const icon = playBtn.querySelector('i');
-            const isPlaying = icon.classList.contains('fa-pause');
-            icon.classList.toggle('fa-play');
-            icon.classList.toggle('fa-pause');
-            toast(isPlaying ? 'Radio paused' : '▶ Now playing: Phonk Focus');
-        });
-    }
-
-    if (typeof reg.init === 'function') {
-        setTimeout(() => { try { reg.init(w, el); } catch(e) { console.warn('Widget init failed:', e); } }, 80);
-    }
-    setTimeout(() => el.classList.remove('entering'), 450);
-    return el;
-}
-
 function renderGrid() {
     Object.values(widgetCleanup).forEach(fn => { try { fn(); } catch(e) {} });
     Object.keys(widgetCleanup).forEach(k => delete widgetCleanup[k]);
@@ -2965,12 +2862,82 @@ function renderGrid() {
     grid.classList.remove('hidden');
     emptyState.classList.add('hidden');
 
-    state.widgets.forEach(w => mountWidgetElement(w, grid));
-    applyGridOrder();
-    updateClock();
+    state.widgets.forEach(w => {
+        const reg = WIDGET_REGISTRY[w.type];
+        if (!reg) return;
+
+        const el = document.createElement('div');
+        el.className = 'module entering';
+        el.dataset.widgetId = w.id;
+        el.dataset.widgetType = w.type;
+
+        // Ճիշտ չափսի ընտրություն
+        const finalSize = w.size || reg.defaultSize || reg.size || '1x1';
+        el.dataset.size = finalSize;
+        
+        // Ավելացնում ենք class-եր չափսերի համար
+        el.classList.add(`size-${finalSize.replace('+', '-plus')}`);
+
+        const locked = reg.premium && !state.subscribed;
+        const unlockedClass = locked ? '' : 'unlocked';
+
+        el.innerHTML = `
+            <div class="widget-controls">
+                <button class="widget-btn grip" title="Drag to move"><i class="fa-solid fa-grip-vertical"></i></button>
+                <button class="widget-btn size-btn" title="Change size"><i class="fa-solid fa-expand"></i></button>
+                <button class="widget-btn danger remove-btn" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            ${reg.premium ? `
+                <div class="blur-overlay blur-mod ${unlockedClass}">
+                    <i class="fa-solid fa-lock lock-icon"></i>
+                    <button class="unlock-btn" onclick="event.stopPropagation();toggleSubscription();">Unlock PRO</button>
+                </div>` : ''}
+            ${reg.render(w)}
+            <div class="resize-handle" title="Drag to resize"></div>
+        `;
+
+        grid.appendChild(el);
+
+        el.querySelector('.remove-btn').addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            removeWidget(w.id); 
+        });
+        
+        el.querySelector('.size-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openSizePicker(e.currentTarget, w.id);
+        });
+
+        const rh = el.querySelector('.resize-handle');
+        if (rh) rh.addEventListener('pointerdown', onResizeStart);
+
+        const grip = el.querySelector('.widget-btn.grip');
+        if (grip) grip.addEventListener('pointerdown', onGripPointerDown);
+
+        el.addEventListener('dragover', onModuleDragOver);
+        el.addEventListener('dragleave', onModuleDragLeave);
+        el.addEventListener('drop', onModuleDrop);
+
+        if (typeof reg.init === 'function') {
+            setTimeout(() => { try { reg.init(w, el); } catch(e) { console.warn('Widget init failed:', e); } }, 80);
+        }
+        setTimeout(() => el.classList.remove('entering'), 450);
+    });
+
+    const addSlot = document.createElement('div');
+    addSlot.className = 'add-widget-slot';
+    addSlot.title = 'Add Widget';
+    addSlot.innerHTML = `<i class="fa-solid fa-plus"></i><span>Add Widget</span>`;
+    addSlot.onclick = () => openLibrary();
+    grid.appendChild(addSlot);
+
+    initWidgetBehaviors();
 }
 
 /* ─── SIZE CYCLE ─── */
+/* ════════════════════════════════════════════════════════════
+   WIDGET SIZE SYSTEM · 13 variants
+   ════════════════════════════════════════════════════════════ */
 const SIZE_CATALOG = [
     { key:'1x1',  label:'S',     desc:'Small'           },
     { key:'2x1',  label:'W',     desc:'Wide'            },
@@ -2987,6 +2954,7 @@ const SIZE_CATALOG = [
     { key:'hero', label:'HERO',  desc:'Full Width Tall' }
 ];
 
+/* Cycle order — sequential through catalogue */
 const SIZE_CYCLE = {
     '1x1':'2x1', '2x1':'3x1', '3x1':'4x1', '4x1':'1x2',
     '1x2':'2x2', '2x2':'3x2', '3x2':'4x2', '4x2':'1x3',
@@ -3012,6 +2980,7 @@ function cycleWidgetSize(widgetId) {
     setWidgetSize(widgetId, next);
 }
 
+/* ─── Size Picker Dropdown ─── */
 function openSizePicker(btn, widgetId) {
     closeSizePicker();
     const w = state.widgets.find(x => x.id === widgetId);
@@ -3061,8 +3030,8 @@ function renderImChatWidget(w) {
         ? `${IMCHAT_URL}${IMCHAT_URL.includes('?') ? '&' : '?'}wallet=${wallet}`
         : IMCHAT_URL;
     return `
-        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-comments"></i> ImChat</div></div>
-        <div style="flex:1; position:relative; overflow:hidden; border-radius:8px;">
+        <div class="mod-header">...</div>
+        <div style="...">
             <iframe class="imchat-iframe" src="${url}" allow="clipboard-write" style="width:100%; height:100%; border:none; display:block;"></iframe>
         </div>
     `;
@@ -3074,28 +3043,44 @@ function initImChatWidget(w, el) {
     if (!iframe) return;
 
     const sendInit = () => {
-        const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#00ffd5';
-        const walletAddr = window.currentWallet || null;
-        try {
-            iframe.contentWindow.postMessage({ type: 'hub_init', wallet: walletAddr, accent }, '*');
-        } catch (e) {}
-    };
+    const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#00ffd5';
+    const walletAddr = window.currentWallet || null;
 
+    try {
+        iframe.contentWindow.postMessage({
+            type: 'hub_init',
+            wallet: walletAddr, // փոխարինված է state.wallet-ի փոխարեն
+            accent
+        }, '*');
+    } catch (e) {}
+};
+
+    // Listen for messages FROM the iframe
     const onMsg = (e) => {
         if (!e.data || typeof e.data !== 'object' || !e.data.type) return;
+        // Only accept from our iframe
         if (iframe.contentWindow && e.source !== iframe.contentWindow) return;
-        if (e.data.type === 'imchat_ready') sendInit();
-        else if (e.data.type === 'imchat_unread') {
+
+        if (e.data.type === 'imchat_ready') {
+            sendInit();
+        } else if (e.data.type === 'imchat_unread') {
             const n = Number(e.data.count) || 0;
             if (badge) {
-                if (n > 0) { badge.textContent = n > 99 ? '99+' : String(n); badge.style.display = ''; }
-                else badge.style.display = 'none';
+                if (n > 0) {
+                    badge.textContent = n > 99 ? '99+' : String(n);
+                    badge.style.display = '';
+                } else {
+                    badge.style.display = 'none';
+                }
             }
         }
     };
     window.addEventListener('message', onMsg);
+
+    // Iframe loads → send init
     iframe.addEventListener('load', () => setTimeout(sendInit, 100));
 
+    // Track for theme / wallet broadcasts
     window._imchatWidgets = window._imchatWidgets || [];
     window._imchatWidgets.push({ iframe, id: w.id });
 
@@ -3105,7 +3090,7 @@ function initImChatWidget(w, el) {
     };
 }
 
-/* ─── ADD / REMOVE (Surgical — zero reload on existing widgets) ─── */
+/* ─── ADD / REMOVE ─── */
 function addWidget(type, position) {
     const reg = WIDGET_REGISTRY[type];
     if (!reg) return;
@@ -3117,16 +3102,7 @@ function addWidget(type, position) {
     else state.widgets.push(widget);
 
     saveState();
-
-    const grid = $('#bentoGrid');
-    const emptyState = $('#emptyDashboard');
-    if (grid) {
-        grid.classList.remove('hidden');
-        if (emptyState) emptyState.classList.add('hidden');
-        mountWidgetElement(widget, grid);
-        applyGridOrder();
-    }
-
+    renderGrid();
     toast(`Added: ${reg.name}`);
     closeLibrary();
 }
@@ -3145,16 +3121,9 @@ function removeWidget(widgetId) {
     }
 
     setTimeout(() => {
-        const curIdx = state.widgets.findIndex(x => x.id === widgetId);
-        if (curIdx !== -1) state.widgets.splice(curIdx, 1);
-        if (el) el.remove();
+        state.widgets.splice(idx, 1);
         saveState();
-        applyGridOrder();
-
-        if (state.widgets.length === 0) {
-            $('#bentoGrid')?.classList.add('hidden');
-            $('#emptyDashboard')?.classList.remove('hidden');
-        }
+        renderGrid();
         toast('Widget removed');
     }, 240);
 }
@@ -3238,8 +3207,7 @@ function activateDrag() {
     ghost.style.width = rect.width + 'px';
     ghost.style.height = rect.height + 'px';
     ghost.style.transform = `translate3d(${rect.left}px, ${rect.top}px, 0)`;
-    ghost.querySelectorAll('iframe').forEach(f => f.replaceWith(document.createElement('div')));
-    ghost.querySelectorAll('button, input, textarea, select, a').forEach(x => {
+    ghost.querySelectorAll('button, input, textarea, select, iframe, a').forEach(x => {
         x.setAttribute('tabindex', '-1');
         x.style.pointerEvents = 'none';
     });
@@ -3283,17 +3251,34 @@ function cleanupDrag() {
 }
 
 /* ════════════════════════════════════════════════════════════
-   REORDER · CSS ORDER ONLY (ZERO DOM move, ZERO iframe reload)
+   REORDER · SURGICAL (DOM move, no rebuild)
    ════════════════════════════════════════════════════════════ */
 function reorderWidget(fromId, toId) {
     const fromIdx = state.widgets.findIndex(w => w.id === fromId);
     const toIdx = state.widgets.findIndex(w => w.id === toId);
     if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return;
 
+    /* 1. Update state array */
     const [moved] = state.widgets.splice(fromIdx, 1);
     state.widgets.splice(toIdx, 0, moved);
     saveState();
-    applyGridOrder();
+
+    /* 2. Move the existing DOM element — no rebuild */
+    const grid = $('#bentoGrid');
+    if (!grid) return;
+    const fromEl = grid.querySelector(`[data-widget-id="${fromId}"]`);
+    const toEl = grid.querySelector(`[data-widget-id="${toId}"]`);
+    if (!fromEl || !toEl) return;
+
+    if (fromIdx < toIdx) {
+        /* Dragged downward → insert after target */
+        toEl.parentNode.insertBefore(fromEl, toEl.nextSibling);
+    } else {
+        /* Dragged upward → insert before target */
+        toEl.parentNode.insertBefore(fromEl, toEl);
+    }
+
+    /* ★ NO renderGrid() call — iframes, charts, WS stay alive. */
 }
 
 /* ─── Library → Dashboard drop ─── */
@@ -3309,7 +3294,9 @@ function onModuleDragLeave(e) {
 function onModuleDrop(e) {
     if (!draggingFromLibrary) return;
     e.preventDefault();
+    e.stopPropagation();
     this.classList.remove('drop-target');
+    document.body.classList.remove('is-lib-dragging');
     const type = e.dataTransfer.getData('widget-type');
     if (!type || !WIDGET_REGISTRY[type]) { draggingFromLibrary = false; return; }
     const targetId = this.dataset.widgetId;
@@ -3318,25 +3305,26 @@ function onModuleDrop(e) {
     draggingFromLibrary = false;
 }
 
-/* ─── Drop zone (grid + empty state) — THIS WAS MISSING ─── */
 function initDashboardDropZone() {
+    const dash = $('#dashboardView');
     const grid = $('#bentoGrid');
     const emptyState = $('#emptyDashboard');
-    if (!grid) return;
+    if (!dash) return;
 
     const onDragOver = (e) => {
         if (!draggingFromLibrary) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
-        if (emptyState) emptyState.classList.add('highlight');
+        if (emptyState && !emptyState.classList.contains('hidden')) emptyState.classList.add('highlight');
     };
     const onDragLeave = (e) => {
-        if (grid.contains(e.relatedTarget)) return;
-        if (emptyState && emptyState.contains(e.relatedTarget)) return;
+        if (dash.contains(e.relatedTarget)) return;
         if (emptyState) emptyState.classList.remove('highlight');
     };
     const onDrop = (e) => {
+        if (!draggingFromLibrary) return;
         e.preventDefault();
+        document.body.classList.remove('is-lib-dragging');
         if (emptyState) emptyState.classList.remove('highlight');
         const type = e.dataTransfer.getData('widget-type');
         if (!type || !WIDGET_REGISTRY[type]) { draggingFromLibrary = false; return; }
@@ -3344,7 +3332,7 @@ function initDashboardDropZone() {
         draggingFromLibrary = false;
     };
 
-    [grid, emptyState].filter(Boolean).forEach(el => {
+    [dash, grid, emptyState].filter(Boolean).forEach(el => {
         el.addEventListener('dragover', onDragOver);
         el.addEventListener('dragleave', onDragLeave);
         el.addEventListener('drop', onDrop);
@@ -3824,18 +3812,75 @@ function initScreenerWidget(w, el) {
     widgetCleanup[w.id] = () => clearInterval(refreshInt);
 }
 
-function renderSignalsWidget() {
+const SCREENER_4D_KEY = 't1prime_4d_signals';
+
+window.pushScreener4DSignal = function(sig) {
+    if (!sig || !sig.symbol) return;
+    let list = [];
+    try { list = JSON.parse(localStorage.getItem(SCREENER_4D_KEY) || '[]'); } catch(e) {}
+    list.unshift({
+        symbol: String(sig.symbol).toUpperCase(),
+        text: String(sig.text || sig.msg || '4D Scanner Signal'),
+        side: sig.side || 'UP',
+        ts: sig.ts || Date.now()
+    });
+    localStorage.setItem(SCREENER_4D_KEY, JSON.stringify(list.slice(0, 60)));
+    window.dispatchEvent(new CustomEvent('t1prime_4d_added'));
+};
+
+window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'SCREENER_4D_SIGNAL') window.pushScreener4DSignal(e.data);
+});
+
+function renderSignalsWidget(w) {
     return `
         <div class="mod-header">
-            <div class="mod-title"><i class="fa-solid fa-satellite"></i> Live Intel & Alerts</div>
-            <span style="font-size:0.6rem; color:var(--accent); background:var(--accent-dim); padding:3px 9px; border-radius:10px; font-weight:700; letter-spacing:1px;">PRO</span>
+            <div class="mod-title"><i class="fa-solid fa-satellite"></i> Signal Intel</div>
+            <span style="font-size:0.6rem; color:var(--accent); background:var(--accent-dim); padding:3px 9px; border-radius:10px; font-weight:700; letter-spacing:1px;">4D SCANNER</span>
         </div>
-        <div style="flex:1; overflow:hidden; font-family: var(--font-mono); font-size:0.72rem; line-height:1.9;">
-            <div><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">ALERT</span>BTC/USDT: OI Spike + Liq Cluster $68,200</div>
-            <div style="color:var(--gold);"><span style="background:rgba(255,204,0,0.1);color:#ffcc00;padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">INSIGHT</span>Tether Supply: +1B USD minted</div>
-            <div><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">SIGNAL</span>ETH/USDT: Whale Buy $20M at $3,500</div>
-            <div><span style="color:var(--accent);background:rgba(0,255,213,0.1);padding:1px 7px;border-radius:3px;margin-right:8px;font-size:9px;">ALERT</span>SOL/USDT: Breakout above $145</div>
-        </div>`;
+        <div id="sigList_${w.id}" style="flex:1; overflow-y:auto; font-family:var(--font-mono); font-size:0.72rem; line-height:1.7; min-height:0;"></div>`;
+}
+
+function initSignalsWidget(w, el) {
+    const box = el.querySelector(`#sigList_${w.id}`);
+    if (!box) return;
+    function draw() {
+        let list = [];
+        try { list = JSON.parse(localStorage.getItem(SCREENER_4D_KEY) || '[]'); } catch(e) {}
+        if (!list.length) {
+            box.innerHTML = `<div style="text-align:center; padding:34px 10px; color:var(--text-muted); font-size:10px; opacity:0.7;">Listening to 4D Scanner signals...</div>`;
+            return;
+        }
+        box.innerHTML = list.map(s => {
+            const t = new Date(s.ts).toTimeString().slice(0, 5);
+            const col = s.side === 'DOWN' || s.side === 'SHORT' ? 'var(--red)' : 'var(--accent)';
+            return `
+                <div class="sig-intel-row" data-sym="${s.symbol}" style="display:flex; align-items:center; gap:8px; padding:7px 6px; border-bottom:1px solid var(--border-thin); cursor:pointer; border-radius:6px;">
+                    <span style="color:${col}; background:rgba(0,255,213,0.08); padding:1px 6px; border-radius:4px; font-size:9px; font-weight:800;">${s.symbol.replace('USDT','')}</span>
+                    <span style="flex:1; color:var(--text-hover); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.text}</span>
+                    <span style="color:var(--text-muted); font-size:9px;">${t}</span>
+                </div>`;
+        }).join('');
+    }
+    box.addEventListener('click', (e) => {
+        const row = e.target.closest('.sig-intel-row');
+        if (!row) return;
+        e.stopPropagation();
+        const sym = row.dataset.sym;
+        const full = sym.endsWith('USDT') ? sym : sym + 'USDT';
+        localStorage.setItem('engine_symbol', full);
+        if (window.ENGINE_WIDGETS && Object.keys(window.ENGINE_WIDGETS).length) {
+            Object.values(window.ENGINE_WIDGETS).forEach(api => api.setSymbol(full));
+            toast(`Engine → ${full}`);
+        } else {
+            openIframeView(`https://t1prime.com/enginepro?symbol=${full}`, full);
+        }
+    });
+    const onUpd = () => draw();
+    window.addEventListener('t1prime_4d_added', onUpd);
+    window.addEventListener('storage', (e) => { if (e.key === SCREENER_4D_KEY) draw(); });
+    draw();
+    widgetCleanup[w.id] = () => window.removeEventListener('t1prime_4d_added', onUpd);
 }
 
 function renderTerminalWidget() {
@@ -4437,7 +4482,10 @@ function renderClockWidget(w) {
     return `
         <div class="mod-header" style="margin-bottom:10px; padding-bottom:10px;">
             <div class="mod-title"><i class="fa-regular fa-clock"></i> TimeCenter</div>
-            <div id="alarmIndicator_${w.id}" style="display:none; color:var(--accent); font-size:12px; animation: pulseDot 1.5s infinite;"><i class="fa-solid fa-bell"></i></div>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <button id="clockTgBtn_${w.id}" title="Send to Telegram" style="padding:2px 7px; border-radius:6px; border:1px solid var(--accent); background:var(--accent-dim); color:var(--accent); font-family:var(--font-mono); font-size:9px; font-weight:800; cursor:pointer;">TG ✓</button>
+                <div id="alarmIndicator_${w.id}" style="display:none; color:var(--accent); font-size:12px; animation: pulseDot 1.5s infinite;"><i class="fa-solid fa-bell"></i></div>
+            </div> style="display:none; color:var(--accent); font-size:12px; animation: pulseDot 1.5s infinite;"><i class="fa-solid fa-bell"></i></div>
         </div>
 
        <!-- Yndhanur Zhamy -->
@@ -4497,6 +4545,10 @@ function renderClockWidget(w) {
     <button class="preset-btn" data-time="180" data-wid="${w.id}">3h</button>
     <button class="preset-btn" data-time="240" data-wid="${w.id}">4h</button>
     <button class="preset-btn" data-time="480" data-wid="${w.id}">8h</button>
+    <button class="preset-btn" data-time="720" data-wid="${w.id}">12h</button>
+    <button class="preset-btn" data-time="1440" data-wid="${w.id}">24h</button>
+    <button class="preset-btn" data-time="2160" data-wid="${w.id}">36h</button>
+    <button class="preset-btn" data-time="2880" data-wid="${w.id}">48h</button>
 </div>
                 
                 <!-- Multi-Timers List -->
@@ -4518,6 +4570,42 @@ function initClockWidget(w, el) {
     let audioCtx = null;
 
     const fmtZero = (n) => String(n).padStart(2, '0');
+
+    let tgEnabled = localStorage.getItem(`grind_clock_tg_${id}`) !== '0';
+    const tgBtn = el.querySelector(`#clockTgBtn_${id}`);
+    const syncTgBtn = () => {
+        if (!tgBtn) return;
+        tgBtn.textContent = tgEnabled ? 'TG ✓' : 'TG OFF';
+        tgBtn.style.borderColor = tgEnabled ? 'var(--accent)' : 'var(--border-thin)';
+        tgBtn.style.background = tgEnabled ? 'var(--accent-dim)' : 'transparent';
+        tgBtn.style.color = tgEnabled ? 'var(--accent)' : 'var(--text-muted)';
+    };
+    syncTgBtn();
+    tgBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        tgEnabled = !tgEnabled;
+        localStorage.setItem(`grind_clock_tg_${id}`, tgEnabled ? '1' : '0');
+        syncTgBtn();
+    });
+    const fmtDuration = (secs) => {
+        const s = Math.max(0, Math.floor(secs));
+        return s >= 3600
+            ? `${fmtZero(Math.floor(s/3600))}:${fmtZero(Math.floor((s%3600)/60))}:${fmtZero(s%60)}`
+            : `${fmtZero(Math.floor(s/60))}:${fmtZero(s%60)}`;
+    };
+    async function sendClockTG(kind, note, extra) {
+        if (!tgEnabled) return;
+        const c = HubTG.get();
+        if (!c.token || !c.chat) return;
+        const text = `<b>GRIND // OS · ${kind}</b>\n${extra ? extra + '\n' : ''}${note ? 'NOTE: ' + note : 'Time is up!'}`;
+        try {
+            await fetch(`https://api.telegram.org/bot${c.token}/sendMessage`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: c.chat, text, parse_mode: 'HTML' })
+            });
+            toast(`✓ ${kind} sent to TG`);
+        } catch (e) {}
+    }
     
     // --- SAVE / LOAD LOGIKA ---
     const CLOCK_KEY = `grind_clock_${id}`;
@@ -4615,14 +4703,15 @@ function initClockWidget(w, el) {
     });
 
     // 4. MULTI-TIMER LOGIKA
+// 4. MULTI-TIMER LOGIKA
     function renderActiveTimers() {
         activeTimersContainer.innerHTML = activeTimers.map(t => {
             const prog = t.total > 0 ? (t.remaining/t.total) : 0;
             let color = 'var(--accent)';
             if(prog < 0.2) color = 'var(--red)';
             else if(prog < 0.5) color = 'var(--gold)';
-            const timeStr = `${fmtZero(Math.floor(t.remaining/60))}:${fmtZero(t.remaining%60)}`;
-            
+            const timeStr = fmtDuration(t.remaining);
+
             return `
             <div data-tid="${t.id}" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:10px; display:flex; align-items:center; gap:12px; animation: cardIn 0.3s ease;">
                 <div style="position:relative; width:38px; height:38px; flex-shrink:0;">
@@ -4672,17 +4761,19 @@ function initClockWidget(w, el) {
     // 5. YNDHANUR TICK (Alarm + Timers)
     const tickInt = setInterval(() => {
         const now = Date.now();
-        
+
         // Alarm check
         if(alarmTarget && !alarmFired && now >= alarmTarget) {
-            alarmFired = true; ringAlarm(); alarmStat.textContent = 'RINGING...'; alarmStat.style.color = 'var(--red)'; 
+            alarmFired = true; ringAlarm();
+            sendClockTG('ALARM', currentAlarmNote, alarmIn.value);
+            alarmStat.textContent = 'RINGING...'; alarmStat.style.color = 'var(--red)';
             alarmInd.style.animation = 'pulseDot 0.2s infinite';
-            
+
             toast(currentAlarmNote ? `ALARM: ${currentAlarmNote}` : 'ALARM: Time is up!');
 
-            setTimeout(() => { 
-                alarmTarget = null; alarmStat.textContent = 'INACTIVE'; alarmStat.style.color = 'var(--text-muted)'; 
-                alarmToggle.classList.replace('stop', 'play'); alarmToggle.innerHTML = '<i class="fa-solid fa-bell"></i>'; 
+            setTimeout(() => {
+                alarmTarget = null; alarmStat.textContent = 'INACTIVE'; alarmStat.style.color = 'var(--text-muted)';
+                alarmToggle.classList.replace('stop', 'play'); alarmToggle.innerHTML = '<i class="fa-solid fa-bell"></i>';
                 alarmInd.style.display = 'none'; alarmInd.style.animation = 'pulseDot 1.5s infinite';
                 saveTimeState();
             }, 8000);
@@ -4690,22 +4781,19 @@ function initClockWidget(w, el) {
         }
 
         // Multi-timer check
-        let timersUpdated = false;
         activeTimers.forEach(t => {
             if(t.fired) return;
             const newRemaining = Math.max(0, Math.round((t.end - now)/1000));
             if(newRemaining !== t.remaining) {
                 t.remaining = newRemaining;
-                timersUpdated = true;
-                
                 const row = activeTimersContainer.querySelector(`[data-tid="${t.id}"]`);
                 if(row) {
                     const prog = t.total > 0 ? (t.remaining/t.total) : 0;
                     let color = 'var(--accent)';
                     if(prog < 0.2) color = 'var(--red)';
                     else if(prog < 0.5) color = 'var(--gold)';
-                    
-                    row.querySelector('.timer-val').textContent = `${fmtZero(Math.floor(t.remaining/60))}:${fmtZero(t.remaining%60)}`;
+
+                    row.querySelector('.timer-val').textContent = fmtDuration(t.remaining);
                     row.querySelector('.timer-val').style.color = color;
                     row.querySelector('.timer-ring').style.strokeDashoffset = 276 * (1 - prog);
                     row.querySelector('.timer-ring').style.stroke = color;
@@ -4715,6 +4803,7 @@ function initClockWidget(w, el) {
             if(t.remaining <= 0 && !t.fired) {
                 t.fired = true;
                 ringAlarm();
+                sendClockTG('TIMER', t.note, `${Math.round(t.total / 60)}m done`);
                 toast(t.note ? `TIMER: ${t.note}` : 'TIMER: Time is up!');
                 setTimeout(() => {
                     activeTimers = activeTimers.filter(x => x.id !== t.id);
@@ -4724,21 +4813,12 @@ function initClockWidget(w, el) {
                 saveTimeState();
             }
         });
-        
-        // Save if any timer remaining time shifted drastically (optional, but robust)
-        if(timersUpdated && activeTimers.length > 0) {
-            // we don't spam localStorage every second, only when needed, 
-            // but for UI sync across tabs it's fine.
-        }
-
     }, 500);
 
-    // BAAART
     loadTimeState();
     renderActiveTimers();
 
     widgetCleanup[w.id] = () => { clearInterval(liveInt); clearInterval(tickInt); if(audioCtx) try{ audioCtx.close(); }catch(e){} };
-}
 
 
 const QUOTES = [
@@ -4876,11 +4956,32 @@ function renderTvOthersWidget(w) {
     `;
 }
 
-function renderNotesWidget() {
-    const saved = localStorage.getItem(NOTES_KEY) || '';
+const NOTES_MAP_KEY = 'grind_os_notes_map_v1';
+function getNotesMap() { try { return JSON.parse(localStorage.getItem(NOTES_MAP_KEY) || '{}'); } catch(e) { return {}; } }
+function saveNotesMap(map) {
+    try { localStorage.setItem(NOTES_MAP_KEY, JSON.stringify(map)); } catch(e) {}
+    if (typeof scheduleUserStateSync === 'function') scheduleUserStateSync();
+}
+function renderNotesWidget(w) {
+    const map = getNotesMap();
+    if (map[w.id] === undefined) {
+        const old = localStorage.getItem(NOTES_KEY);
+        if (old && Object.keys(map).length === 0) { map[w.id] = old; saveNotesMap(map); }
+    }
+    const idx = Math.max(1, state.widgets.filter(x => x.type === 'notes').findIndex(x => x.id === w.id) + 1);
+    const val = (map[w.id] || '').replace(/</g, '&lt;');
     return `
-        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-note-sticky"></i> Notes</div></div>
-        <textarea class="notes-area" id="notesArea" placeholder="Type anything...">${saved}</textarea>`;
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-note-sticky"></i> <span class="note-title-num">Notes ${idx}</span></div></div>
+        <textarea class="notes-area" id="notesArea_${w.id}" placeholder="Note ${idx}...">${val}</textarea>`;
+}
+function initNotesWidget(w, el) {
+    const ta = el.querySelector(`#notesArea_${w.id}`);
+    if (!ta) return;
+    ta.addEventListener('input', () => {
+        const map = getNotesMap();
+        map[w.id] = ta.value;
+        saveNotesMap(map);
+    });
 }
 
 function renderRadioWidget() {
@@ -5086,12 +5187,14 @@ function renderLibrary() {
 
 function onLibraryDragStart(e) {
     draggingFromLibrary = true;
+    document.body.classList.add('is-lib-dragging');
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('widget-type', this.dataset.widgetType);
     this.classList.add('dragging');
 }
 function onLibraryDragEnd() {
     this.classList.remove('dragging');
+    document.body.classList.remove('is-lib-dragging');
     draggingFromLibrary = false;
     const ed = $('#emptyDashboard');
     if (ed) ed.classList.remove('highlight');
@@ -5172,18 +5275,7 @@ try {
         return;
     }
 
-    const leftToggle = document.getElementById('left-toggle');
-const leftToggleIcon = document.getElementById('left-toggle-icon');
-const sidebar = document.getElementById('sidebar');
-
-if (leftToggle && sidebar) {
-    leftToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('fully-closed');
-        const isClosed = sidebar.classList.contains('fully-closed');
-        leftToggleIcon.className = isClosed ? 'fa-solid fa-chevron-right' : 'fa-solid fa-chevron-left';
-        setTimeout(() => window.dispatchEvent(new Event('resize')), 350);
-    });
-}
+    
 
     /* ★ CACHE MISS — create new iframe */
     const wrapper = document.createElement('div');
@@ -5261,13 +5353,14 @@ function toggleSidebar() {
 }
 
 // 2. Ձախ կողային հարակից toggle-ը (Any State <-> Fully Closed)
-document.getElementById('left-toggle').addEventListener('click', function() {
+// 2. Ձախ կողային հարակից toggle-ը (Any State <-> Fully Closed)
+document.getElementById('left-toggle').addEventListener('click', function(e) {
+    e.stopPropagation();
     const sidebar = document.getElementById('sidebar');
     const icon = document.getElementById('left-toggle-icon');
-    
+
     sidebar.classList.toggle('fully-closed');
-    
-    // Սլաքի ուղղության փոփոխություն ըստ վիճակի
+
     if (sidebar.classList.contains('fully-closed')) {
         icon.classList.remove('fa-chevron-left');
         icon.classList.add('fa-chevron-right');
@@ -5275,6 +5368,7 @@ document.getElementById('left-toggle').addEventListener('click', function() {
         icon.classList.remove('fa-chevron-right');
         icon.classList.add('fa-chevron-left');
     }
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 350);
 });
 /* ─── Nav click — handle both submenu items and normal navigation ─── */
 const TOP_SUB_MENUS = {
@@ -5891,11 +5985,11 @@ let _restoringState = false;
 
 // Փրկում ենք դասավորությունը սերվերի վրա (առանց reset անելու)
 function pushUserStateToServer() {
-    if (_isPopout) { if (typeof renderGrid === 'function') renderGrid(); return; }
-    if (!window.currentWallet || _restoringState) return;
+    if (_isPopout || !window.currentWallet || _restoringState) return;
     const payload = {
         widgets: state.widgets,
         notes: localStorage.getItem(NOTES_KEY) || '',
+        notesMap: getNotesMap(),
         tasks: getSavedTasks(),
         goals: getSavedGoals(),
         theme: document.body.className || ''
@@ -5942,17 +6036,16 @@ window.toggleSubscription = function() {
 function restoreUserStateFromServer(uState) {
     if (_isPopout) { if (typeof renderGrid === 'function') renderGrid(); return; }
     if (!uState || !Array.isArray(uState.widgets) || !uState.widgets.length) {
-       if (!uState || !Array.isArray(uState.widgets) || !uState.widgets.length) {
         pushUserStateToServer();
         renderGrid();
         return;
-    }
     }
     _restoringState = true;
     try {
         state.widgets = uState.widgets;
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ widgets: state.widgets, subscribed: window.isPrimeActive }));
         if (typeof uState.notes === 'string') localStorage.setItem(NOTES_KEY, uState.notes);
+        if (uState.notesMap && typeof uState.notesMap === 'object') localStorage.setItem(NOTES_MAP_KEY, JSON.stringify(uState.notesMap));
         if (Array.isArray(uState.tasks)) localStorage.setItem(TASKS_KEY, JSON.stringify(uState.tasks));
         if (Array.isArray(uState.goals)) localStorage.setItem(GOALS_KEY, JSON.stringify(uState.goals));
         if (typeof uState.theme === 'string') document.body.className = uState.theme;
@@ -6454,19 +6547,23 @@ async function syncSessionWithServer(restoreLayout = true) {
     }
 }
 
+let _syncStartedFor = '';
 window.onWalletConnected = function(address) {
     const clean = String(address || '').trim();
     if (!clean) return;
     try { window.appKitModal?.close(); } catch(e) {}
-    if (window.currentWallet === clean && _trialData) return;
+    if (_syncStartedFor === clean) return;
+    _syncStartedFor = clean;
     window.currentWallet = clean;
     localStorage.setItem('t1prime_wallet', JSON.stringify({ address: clean }));
-    syncSessionWithServer();
+    syncSessionWithServer(true);
 };
 
 window.onWalletDisconnected = function() {
+    _syncStartedFor = '';
     localStorage.removeItem('t1prime_wallet');
     window.location.href = '/';
+    
 };
 
 // Երբ օգտատերը վերադառնում է tab, միանգամից ճշտում ենք սերվերի հետ
