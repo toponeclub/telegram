@@ -288,7 +288,48 @@ body {
     z-index: 90; flex-shrink: 0;
 }
 .top-left { display: flex; align-items: center; gap: 20px; }
-.brand { font-size: 1.1rem; font-weight: 800; letter-spacing: 3px; color: #fff; }
+.brand {
+    display: flex;
+    align-items: center;
+    font: 800 12.5px 'JetBrains Mono', monospace;
+    letter-spacing: 0.28em;
+    color: #f0f2f5;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.brand b { color: #ffffff; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+.brand > i { color: #00f5b8; font-style: normal; opacity: 0.7; font-family: 'JetBrains Mono', monospace; }
+
+#primeStatusBtn {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background: transparent;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+#primeStatusBtn.is-active { color: #00f5b8; }
+#primeStatusBtn.is-active i { filter: drop-shadow(0 0 8px rgba(0, 245, 184, 0.5)); }
+#primeStatusBtn.is-active:hover {
+    border-color: rgba(0, 245, 184, 0.45);
+    background: rgba(0, 245, 184, 0.08);
+    box-shadow: 0 0 14px rgba(0, 245, 184, 0.2);
+}
+#primeStatusBtn.is-inactive { color: var(--red); }
+#primeStatusBtn.is-inactive i { filter: drop-shadow(0 0 8px rgba(255, 42, 95, 0.45)); }
+#primeStatusBtn.is-inactive:hover {
+    border-color: rgba(255, 42, 95, 0.45);
+    background: rgba(255, 42, 95, 0.08);
+    box-shadow: 0 0 14px rgba(255, 42, 95, 0.2);
+}
 
 .lang-selector {
     display: flex; align-items: center; gap: 5px;           /* 8px → 5px */
@@ -1841,22 +1882,26 @@ body.is-resizing .module { transition: none !important; }
     .pm-price { font-size: 2rem; }
 }
 
-/* ═══ TOP HORIZONTAL SUB-NAVBAR ═══ */
+/* ═══ TOP HORIZONTAL SUB-NAVBAR (Inside Main Header) ═══ */
 .sub-navbar {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 40px;
-    background: rgba(10, 10, 12, 0.92);
-    border-bottom: 1px solid var(--border-thin);
-    backdrop-filter: blur(12px);
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    gap: 4px;
+    padding: 0 14px;
+    background: transparent;
+    border-bottom: none;
     overflow-x: auto;
-    flex-shrink: 0;
-    z-index: 88;
     scrollbar-width: none;
 }
 .sub-navbar::-webkit-scrollbar { display: none; }
 .sub-navbar.hidden { display: none !important; }
+@media (max-width: 768px) {
+    .topbar { flex-wrap: wrap; height: auto !important; min-height: 46px; padding-top: 6px !important; padding-bottom: 6px !important; gap: 6px; }
+    .sub-navbar { order: 3; flex: 0 0 100%; justify-content: flex-start; border-top: 1px solid var(--border-thin); padding: 6px 0 0; }
+}
 
 .sub-nav-tab {
     display: inline-flex;
@@ -2028,7 +2073,7 @@ body.is-lib-dragging iframe { pointer-events: none !important; }
         <div class="top-left">
             
 
-            <div class="brand">GRIND // OS</div>
+            <div class="brand"><b>GRIND</b><i>//</i><b>OS</b></div>
 
             <button class="back-btn hidden" id="backBtn" onclick="closeIframeView()">
                 <i class="fa-solid fa-arrow-left"></i>
@@ -2039,8 +2084,10 @@ body.is-lib-dragging iframe { pointer-events: none !important; }
             </div>
         </div>
 
+        <div id="subNavBar" class="sub-navbar hidden"></div>
+
         <div class="top-right">
-            <button id="primeStatusBtn" onclick="openPrimeUpgrade()" style="display:none; align-items:center; gap:6px; padding:5px 10px; border-radius:6px; border:1px solid var(--border-thin); background:rgba(0,0,0,0.4); color:var(--accent); font-family:var(--font-mono); font-size:0.65rem; font-weight:800; cursor:pointer; letter-spacing:0.5px;"></button>
+            <button id="primeStatusBtn" onclick="openPrimeUpgrade()"></button>
             <!-- WALLET -->
             <!-- ═══════ WALLET CONNECT (Reown AppKit) ═══════ -->
 <div class="wallet-wrap" id="walletWrap">
@@ -2087,8 +2134,6 @@ body.is-lib-dragging iframe { pointer-events: none !important; }
             </button>
         </div>
     </header>
-
-    <div id="subNavBar" class="sub-navbar hidden"></div>
 
     
 
@@ -2377,8 +2422,35 @@ const CATEGORIES = ['Trading', 'Productivity', 'Social'];
 let state = { widgets: [],  subscribed: false, wallet: null, connecting: false }; 
 const widgetCleanup = {};
 
+const POPOUTS_KEY = 'grind_os_popouts_v1';
+window._openPopouts = window._openPopouts || {};
+
+function getPopoutsData() {
+    try {
+        const d = JSON.parse(localStorage.getItem(POPOUTS_KEY) || 'null');
+        return d && Array.isArray(d.ids) ? d : { ids: [], layouts: {} };
+    } catch(e) { return { ids: [], layouts: {} }; }
+}
+function savePopoutsData(d, sync = true) {
+    try { localStorage.setItem(POPOUTS_KEY, JSON.stringify(d)); } catch(e) {}
+    if (sync && typeof scheduleUserStateSync === 'function') scheduleUserStateSync();
+}
+
 function saveState() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ widgets: state.widgets, subscribed: state.subscribed })); } catch (e) {}
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ widgets: state.widgets, subscribed: state.subscribed }));
+        if (_isPopout && _wsId) {
+            const p = getPopoutsData();
+            if (state.widgets.length > 0) {
+                if (!p.ids.includes(_wsId)) p.ids.push(_wsId);
+                p.layouts[_wsId] = state.widgets;
+            } else {
+                p.ids = p.ids.filter(x => x !== _wsId);
+                delete p.layouts[_wsId];
+            }
+            savePopoutsData(p, false);
+        }
+    } catch (e) {}
 }
 function loadState() {
     try {
@@ -5372,6 +5444,7 @@ const _iframeCache = new Map();
 let _activeIframeUrl = null;
 
 function openIframeView(url, title) {
+    document.getElementById('productivityView')?.classList.add('hidden');
     const view    = $('#iframeView');
     const dash    = $('#dashboardView');
     const backBtn = $('#backBtn');
@@ -5769,10 +5842,40 @@ function onNavClick(e, key) {
     }
 }
 
-window.openWorkspacePopout = function() {
-    const id = 'ws_' + Date.now();
-    const url = `${location.pathname}?popout=1&ws=${id}`;
-    window.open(url, id, 'width=1360,height=840,noopener');
+window.openWorkspacePopout = function(forcedId) {
+    const p = getPopoutsData();
+    let targetId = forcedId;
+
+    // Եթե կան պահպանված, բայց փակված մոնիտորներ՝ նախ վերաբացում է դրանք իրենց վիջեթներով
+    if (!targetId) {
+        targetId = p.ids.find(id => !window._openPopouts[id] || window._openPopouts[id].closed);
+    }
+    if (!targetId) {
+        targetId = 'ws_' + Date.now();
+        p.ids.push(targetId);
+        p.layouts[targetId] = [];
+        savePopoutsData(p, true);
+    }
+
+    const url = `${location.pathname}?popout=1&ws=${targetId}`;
+    const win = window.open(url, targetId, 'width=1360,height=840');
+    if (win) window._openPopouts[targetId] = win;
+    return win;
+};
+
+window.restoreSavedPopouts = function() {
+    if (_isPopout) return;
+    const p = getPopoutsData();
+    if (!p.ids.length) return;
+    let blocked = false;
+    p.ids.forEach(id => {
+        if (window._openPopouts[id] && !window._openPopouts[id].closed) return;
+        const win = window.openWorkspacePopout(id);
+        if (!win) blocked = true;
+    });
+    if (blocked) {
+        toast('Click ⧉ (top-right) to restore saved 2nd monitor');
+    }
 };
 
 /* ════════════════════════════════════════════════════════════
@@ -6302,6 +6405,7 @@ function pushUserStateToServer() {
         tasks: getSavedTasks(),
         goals: getSavedGoals(),
         prod: getProdData(),
+        popouts: getPopoutsData(),
         theme: document.body.className || ''
     };
     fetch('/api/user/state', {
@@ -6344,7 +6448,22 @@ window.toggleSubscription = function() {
 };
 
 function restoreUserStateFromServer(uState) {
-    if (_isPopout) { if (typeof renderGrid === 'function') renderGrid(); return; }
+    if (_isPopout) {
+        const p = getPopoutsData();
+        if (_wsId && p.layouts && Array.isArray(p.layouts[_wsId])) {
+            state.widgets = p.layouts[_wsId];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ widgets: state.widgets, subscribed: window.isPrimeActive }));
+        }
+        if (typeof renderGrid === 'function') renderGrid();
+        return;
+    }
+    if (uState && uState.popouts && Array.isArray(uState.popouts.ids)) {
+        savePopoutsData(uState.popouts, false);
+        Object.entries(uState.popouts.layouts || {}).forEach(([id, wList]) => {
+            localStorage.setItem(`grind_os_layout_${id}`, JSON.stringify({ widgets: wList, subscribed: window.isPrimeActive }));
+        });
+        setTimeout(() => window.restoreSavedPopouts(), 600);
+    }
     if (!uState || !Array.isArray(uState.widgets) || !uState.widgets.length) {
         pushUserStateToServer();
         renderGrid();
@@ -6396,20 +6515,9 @@ function updateTopbarBadge() {
             btn.style.display = 'none';
         } else {
             btn.style.display = 'inline-flex';
-            btn.style.borderRadius = '999px';
-            btn.style.padding = '5px 13px';
             btn.innerHTML = `<i class="fa-solid fa-crown"></i> PRIME`;
-            if (window.isPrimeActive) {
-                btn.style.color = 'var(--green)';
-                btn.style.borderColor = 'var(--green)';
-                btn.style.background = 'rgba(0,255,136,0.08)';
-                btn.style.boxShadow = '0 0 12px rgba(0,255,136,0.18)';
-            } else {
-                btn.style.color = 'var(--red)';
-                btn.style.borderColor = 'var(--red)';
-                btn.style.background = 'rgba(255,42,95,0.08)';
-                btn.style.boxShadow = '0 0 12px rgba(255,42,95,0.15)';
-            }
+            btn.classList.toggle('is-active', !!window.isPrimeActive);
+            btn.classList.toggle('is-inactive', !window.isPrimeActive);
         }
     }
 
@@ -6879,6 +6987,10 @@ window.onWalletDisconnected = function() {
 };
 
 // Երբ օգտատերը վերադառնում է tab, միանգամից ճշտում ենք սերվերի հետ
+window.addEventListener('storage', (e) => {
+    if (!_isPopout && e.key === POPOUTS_KEY) scheduleUserStateSync();
+});
+
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && window.currentWallet) {
         syncSessionWithServer(false);
