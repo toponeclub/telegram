@@ -4819,6 +4819,7 @@ function initClockWidget(w, el) {
     renderActiveTimers();
 
     widgetCleanup[w.id] = () => { clearInterval(liveInt); clearInterval(tickInt); if(audioCtx) try{ audioCtx.close(); }catch(e){} };
+}
 
 
 const QUOTES = [
