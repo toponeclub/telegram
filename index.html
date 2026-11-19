@@ -116,10 +116,9 @@ nav.top-bar {
   color: var(--text); text-decoration: none; text-transform: uppercase;
 }
 .logo-icon {
-  width: 26px; height: 26px; border-radius: 6px;
-  background: linear-gradient(135deg, var(--accent), #00b88a);
-  display: grid; place-items: center; color: #021410; font-size: 11px;
-  box-shadow: 0 0 20px rgba(0, 245, 184, 0.5);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--accent); font-size: 15px;
+  filter: drop-shadow(0 0 10px rgba(0, 245, 184, 0.45));
 }
 .logo-wrap i { color: var(--accent); font-style: normal; opacity: .7; }
 
@@ -168,11 +167,8 @@ nav.top-bar {
 @media (max-width: 1024px) { .hero-split { grid-template-columns: 1fr; gap: 36px; } }
 
 .sys-status-tag {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 5px 12px; border-radius: 999px;
-  background: rgba(0, 245, 184, 0.08); border: 1px solid rgba(0, 245, 184, 0.28);
-  font: 700 10px var(--mono); letter-spacing: .18em; color: var(--accent);
-  text-transform: uppercase; margin-bottom: 22px;
+  display: inline-flex; height: 27px; margin-bottom: 22px;
+  background: transparent; border: none; padding: 0; pointer-events: none;
 }
 
 h1.hero-title {
@@ -536,7 +532,34 @@ h1.hero-title .line-2 {
 
 .mini-bio { display: flex; flex-direction: column; gap: 8px; font-size: 10px; }
 .bio-tags-row { display: flex; gap: 4px; flex-wrap: wrap; }
-.bio-chip { padding: 3px 6px; border-radius: 4px; font-size: 8.5px; font-weight: 700; background: rgba(0,245,184,0.1); color: var(--accent); border: 1px solid rgba(0,245,184,0.22); }
+.bio-chip {
+  padding: 3px 6px; border-radius: 4px; font-size: 8.5px; font-weight: 700;
+  background: rgba(255,255,255,0.03); color: var(--text-2); border: 1px solid rgba(255,255,255,0.1);
+  transition: background .25s ease, color .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.bio-chip.active {
+  background: rgba(0,245,184,0.14); color: var(--accent);
+  border-color: var(--accent); box-shadow: 0 0 10px rgba(0,245,184,0.2);
+}
+
+.mw-tile {
+  border: 1px dashed rgba(255,255,255,0.14); border-radius: 6px;
+  display: grid; place-items: center; font-size: 9px; color: var(--text-2);
+  transition: border-color .25s ease, background .25s ease, color .25s ease, transform .25s var(--ease);
+}
+.mw-tile.active {
+  border-style: solid; border-color: var(--accent);
+  background: rgba(0,245,184,0.09); color: var(--accent); font-weight: 700;
+}
+.mw-tile.swap { transform: scale(0.94); opacity: 0.7; }
+
+.onramp-box {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 8px; border-radius: 5px; transition: all .3s var(--ease);
+}
+.onramp-net { transition: color .25s ease; }
+.onramp-net.active { color: var(--accent); font-weight: 800; }
+
 .mini-bar { display: flex; flex-direction: column; gap: 3px; }
 .mini-bar-lbl { display: flex; justify-content: space-between; color: var(--text-2); font-weight: 600; font-size: 9.5px; }
 .mini-bar-lbl b { color: var(--accent); font-weight: 800; }
@@ -554,6 +577,7 @@ h1.hero-title .line-2 {
 
 .chat-bubble {
   padding: 5px 9px; border-radius: 8px; max-width: 88%; font-size: 10.5px; font-family: var(--ui); line-height: 1.35;
+  animation: slideInRow .26s var(--ease);
 }
 .chat-bubble.them { align-self: flex-start; background: rgba(255,255,255,0.05); color: #d1d5db; border: 1px solid rgba(255,255,255,0.07); }
 .chat-bubble.me { align-self: flex-end; background: rgba(0,245,184,0.12); color: var(--accent); border: 1px solid rgba(0,245,184,0.26); }
@@ -699,10 +723,10 @@ h1.hero-title .line-2 {
   <div class="wrap">
     <div class="lobby-head">
       <div>
-        <div class="lobby-kicker">LIVE COMMAND DECK</div>
-        <h2>Inspect every layer before you log in.</h2>
+        <div class="lobby-kicker">COMMAND DECK</div>
+        <h2>Live workspace preview.</h2>
       </div>
-      <div class="lobby-hint">SWITCH TABS · CLICK CONTROLS · TEST REPLAY</div>
+      <div class="lobby-hint">SWITCH · CLICK · TEST</div>
     </div>
 
     <div class="os-window">
@@ -712,7 +736,7 @@ h1.hero-title .line-2 {
           <button type="button" class="os-tab active" data-pane="hub"><i class="fa-solid fa-border-all"></i> Hub Genesis</button>
           <button type="button" class="os-tab" data-pane="engine"><i class="fa-solid fa-bolt"></i> Trading Engine</button>
           <button type="button" class="os-tab" data-pane="backtest"><i class="fa-solid fa-flask"></i> Backtester</button>
-          <button type="button" class="os-tab" data-pane="screener"><i class="fa-solid fa-radar"></i> 500+ Screener</button>
+          <button type="button" class="os-tab" data-pane="screener"><i class="fa-solid fa-satellite-dish"></i> 500+ Screener</button>
           <button type="button" class="os-tab" data-pane="watchlist"><i class="fa-solid fa-eye"></i> Watchlist</button>
           <button type="button" class="os-tab" data-pane="academy"><i class="fa-solid fa-graduation-cap"></i> Academy & Onramp</button>
         </div>
@@ -952,7 +976,7 @@ h1.hero-title .line-2 {
       <!-- 3. 500+ Screener (Exact values from grindindex) -->
       <div class="mod" onclick="launchApp()">
         <div class="mod-head">
-          <div class="mod-icon"><i class="fa-solid fa-radar"></i></div>
+          <div class="mod-icon"><i class="fa-solid fa-satellite-dish"></i></div>
           <div class="mod-title">500+ Screener</div>
           <div class="mod-cat">Trading</div>
         </div>
@@ -1016,9 +1040,9 @@ h1.hero-title .line-2 {
           <div class="mod-cat">Productivity</div>
         </div>
         <div class="mod-preview">
-          <div class="mini-bio">
+          <div class="mini-bio" id="modBio">
             <div class="bio-tags-row">
-              <span class="bio-chip">Creatine</span><span class="bio-chip">Omega-3</span><span class="bio-chip">Mg</span><span class="bio-chip">D3</span><span class="bio-chip">L-Theanine</span>
+              <span class="bio-chip active">Creatine</span><span class="bio-chip active">Omega-3</span><span class="bio-chip">Mg</span><span class="bio-chip">D3</span><span class="bio-chip">L-Theanine</span>
             </div>
             <div class="mini-bar"><div class="mini-bar-lbl"><span>Focus</span><b data-mbv="0">89%</b></div><div class="mini-bar-track"><div class="mini-bar-fill" data-mbf="0" style="width:89%"></div></div></div>
             <div class="mini-bar"><div class="mini-bar-lbl"><span>Energy</span><b data-mbv="1">78%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt2" data-mbf="1" style="width:78%"></div></div></div>
@@ -1037,10 +1061,10 @@ h1.hero-title .line-2 {
         </div>
         <div class="mod-preview">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;flex:1;" id="modWidgets">
-            <div style="border:1px solid var(--accent);background:rgba(0,245,184,0.08);border-radius:6px;display:grid;place-items:center;font-size:9px;color:var(--accent);font-weight:700;">CHART</div>
-            <div style="border:1px dashed rgba(255,255,255,0.14);border-radius:6px;display:grid;place-items:center;font-size:9px;color:var(--text-2);">SIGNALS</div>
-            <div style="border:1px dashed rgba(255,255,255,0.14);border-radius:6px;display:grid;place-items:center;font-size:9px;color:var(--text-2);">WATCHLIST</div>
-            <div style="border:1px dashed rgba(255,255,255,0.14);border-radius:6px;display:grid;place-items:center;font-size:9px;color:var(--text-2);">ALERTS</div>
+            <div class="mw-tile active">CHART</div>
+            <div class="mw-tile">SIGNALS</div>
+            <div class="mw-tile">WATCHLIST</div>
+            <div class="mw-tile">ALERTS</div>
           </div>
         </div>
         <p class="mod-cap">Drag, resize, save presets. Layout synced automatically across all devices.</p>
@@ -1053,10 +1077,10 @@ h1.hero-title .line-2 {
           <div class="mod-title">Academy</div>
           <div class="mod-cat">Beyond Crypto</div>
         </div>
-        <div class="mod-preview" style="gap:9px;">
-          <div class="mini-bar"><div class="mini-bar-lbl"><span>Trading Setups</span><b>88%</b></div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:88%"></div></div></div>
-          <div class="mini-bar"><div class="mini-bar-lbl"><span>Social Media Algorithms</span><b>64%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt1" style="width:64%"></div></div></div>
-          <div class="mini-bar"><div class="mini-bar-lbl"><span>Business Systems</span><b>76%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt2" style="width:76%"></div></div></div>
+        <div class="mod-preview" style="gap:9px;" id="modAcademy">
+          <div class="mini-bar"><div class="mini-bar-lbl"><span>Trading Setups</span><b data-acv="0">88%</b></div><div class="mini-bar-track"><div class="mini-bar-fill" data-acf="0" style="width:88%"></div></div></div>
+          <div class="mini-bar"><div class="mini-bar-lbl"><span>Social Media Algorithms</span><b data-acv="1">64%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt1" data-acf="1" style="width:64%"></div></div></div>
+          <div class="mini-bar"><div class="mini-bar-lbl"><span>Business Systems</span><b data-acv="2">76%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt2" data-acf="2" style="width:76%"></div></div></div>
         </div>
         <p class="mod-cap">Trading setups, social media growth, and online business execution roadmaps.</p>
       </div>
@@ -1066,17 +1090,21 @@ h1.hero-title .line-2 {
         <div class="mod-head">
           <div class="mod-icon"><i class="fa-solid fa-credit-card"></i></div>
           <div class="mod-title">Crypto Onramp</div>
-          <div class="mod-cat">Buy Crypto</div>
+          <div class="mod-cat" id="onrampModeTag">BUY</div>
         </div>
-        <div class="mod-preview" style="gap:6px;font-size:10px;">
-          <div style="display:flex;justify-content:space-between;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:5px;">
-            <span style="color:var(--muted);">SOURCE</span><b style="color:#fff;">CARD / BANK</b>
+        <div class="mod-preview" style="gap:6px;font-size:10px;" id="modOnramp">
+          <div class="onramp-box" id="onrampTop" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+            <span id="onrampTopLbl" style="color:var(--muted);">CARD / BANK</span><b id="onrampTopVal" style="color:#fff;">USD · EUR</b>
           </div>
-          <div style="display:flex;justify-content:space-between;padding:6px 8px;background:rgba(0,245,184,0.08);border:1px solid rgba(0,245,184,0.22);border-radius:5px;">
-            <span style="color:var(--accent);">RECEIVE</span><b style="color:var(--accent);">USDT · USDC</b>
+          <div style="text-align:center;color:var(--accent);font-size:10px;line-height:1;" id="onrampArrow">
+            <i class="fa-solid fa-arrow-down-up-across-line"></i>
+          </div>
+          <div class="onramp-box" id="onrampBot" style="background:rgba(0,245,184,0.08);border:1px solid rgba(0,245,184,0.22);">
+            <span id="onrampBotLbl" style="color:var(--accent);">WALLET</span><b id="onrampBotVal" style="color:var(--accent);">USDT · USDC</b>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);padding-top:2px;">
-            <span>TRC20 · ARB · SOL</span><span>DIRECT TO WALLET</span>
+            <span><span class="onramp-net active">TRC20</span> · <span class="onramp-net">ARB</span> · <span class="onramp-net">SOL</span></span>
+            <span>INSTANT BRIDGE</span>
           </div>
         </div>
         <p class="mod-cap">Built-in fiat-to-crypto onboarding guide & direct wallet funding routes.</p>
@@ -1089,7 +1117,7 @@ h1.hero-title .line-2 {
           <div class="mod-title">ImChat P2P</div>
           <div class="mod-cat">Encrypted</div>
         </div>
-        <div class="mod-preview" style="gap:6px;justify-content:flex-end;">
+        <div class="mod-preview" style="gap:6px;justify-content:flex-end;" id="modChat">
           <div class="chat-bubble them">Setup confirmed?</div>
           <div class="chat-bubble me">Locked BTC long @ 67,400 🔒</div>
           <div class="chat-bubble them">OI + vol aligned on 5m</div>
@@ -1623,24 +1651,54 @@ document.querySelectorAll('#lobbyTasks .task-row').forEach(row => {
     { prc: 88, vol: 91, oi: 96, liq: 84, liqTxt: '$510K', hot: ['prc', 'vol', 'oi', 'liq'], trig: '4/4 ARMED' }
   ];
 
+  const modGridEl = document.querySelector('#modules .mod-grid');
+  if (modGridEl) visObserver.observe(modGridEl);
+
+  const sigFeed = document.getElementById('modSignals');
+  const sigPool = [
+    { dir: '↑', col: 'var(--up)', sym: 'SOL · Vol Spike', meta: '6.2x vol · Telegram', val: '+5.1%' },
+    { dir: '↓', col: 'var(--purple)', sym: 'DOGE · Funding Flip', meta: 'F -0.03% · 15M', val: '-2.2%' },
+    { dir: '↑', col: 'var(--up)', sym: 'PEPE · OI Surge', meta: 'OI +4.8% · 5M Snap', val: '+7.4%' },
+    { dir: '↑', col: 'var(--up)', sym: 'BTC · Breakout', meta: 'OI +4.2% · 15M Snap', val: '+3.1%' },
+    { dir: '↓', col: 'var(--purple)', sym: 'ETH · Liq Cluster', meta: '$4.2M wiped · 5M', val: '-1.9%' }
+  ];
+
+  const chatEl = document.getElementById('modChat');
+  const chatPool = [
+    { side: 'me', text: 'Tight stop below 67,150' },
+    { side: 'them', text: 'Watching 67,800 POC break 👀' },
+    { side: 'me', text: 'TP1 hit +2.4R clean 🎯' },
+    { side: 'them', text: 'Sent 5m snapshot to Telegram' },
+    { side: 'them', text: 'Setup confirmed?' },
+    { side: 'me', text: 'Locked BTC long @ 67,400 🔒' },
+    { side: 'them', text: 'OI + vol aligned on 5m' }
+  ];
+
+  const bioStates = [
+    { chips: 2, vals: [82, 74, 85] },
+    { chips: 3, vals: [86, 78, 88] },
+    { chips: 4, vals: [89, 82, 90] },
+    { chips: 5, vals: [94, 87, 92] },
+    { chips: 1, vals: [76, 70, 81] }
+  ];
+
+  const acadSteps = [
+    [68, 44, 58],
+    [76, 52, 66],
+    [88, 64, 76],
+    [94, 78, 86]
+  ];
+
   if (!reducedMotion) {
     setInterval(() => {
-      if (document.hidden) return;
+      if (document.hidden || (modGridEl && !visibleSet.has(modGridEl))) return;
       tick++;
 
-      ['engine', 'backtester'].forEach(id => {
-        const cv = document.querySelector(`[data-mod-canvas="${id}"]`);
-        if (cv && visibleSet.has(cv)) {
-          const cs = states[id], last = cs[cs.length - 1];
-          const nc = last.c + Math.sin(tick * 0.85) * 45;
-          cs[cs.length - 1] = { o: last.o, c: nc, h: Math.max(last.h, nc), l: Math.min(last.l, nc) };
-          drawMod(id);
-        }
-      });
-
+      // 1. Screener (untouched logic)
       const scrRows = document.querySelectorAll('#modScreener .mini-scr-row');
       scrRows.forEach((r, i) => { r.style.background = i === tick % scrRows.length ? 'rgba(0,245,184,0.08)' : 'transparent'; });
 
+      // 2. Watchlist (untouched logic)
       const ws = wlSeq[tick % wlSeq.length];
       ['prc', 'vol', 'oi', 'liq'].forEach(k => {
         const f = document.querySelector(`[data-mwf="${k}"]`);
@@ -1651,6 +1709,80 @@ document.querySelectorAll('#lobbyTasks .task-row').forEach(row => {
       });
       const wt = document.getElementById('modWlTrig');
       if (wt) wt.textContent = ws.trig;
+
+      // 3. Signals & Snaps (incoming live signals)
+      if (sigFeed) {
+        const s = sigPool[tick % sigPool.length];
+        const row = document.createElement('div');
+        row.className = 'sig-row';
+        row.innerHTML = `<span style="color:${s.col};font-weight:800;">${s.dir}</span><div><div style="color:#fff;font-weight:700;">${s.sym}</div><div style="color:var(--muted);font-size:8.5px;">${s.meta}</div></div><span style="color:${s.col};font-weight:800;">${s.val}</span>`;
+        sigFeed.prepend(row);
+        while (sigFeed.children.length > 2) sigFeed.lastChild.remove();
+      }
+
+      // 4. Bio-Sync (supplements select one-by-one + bars adjust)
+      const bioEl = document.getElementById('modBio');
+      if (bioEl) {
+        const bs = bioStates[tick % bioStates.length];
+        bioEl.querySelectorAll('.bio-chip').forEach((c, idx) => c.classList.toggle('active', idx < bs.chips));
+        bs.vals.forEach((v, idx) => {
+          const bf = bioEl.querySelector(`[data-mbf="${idx}"]`);
+          const bv = bioEl.querySelector(`[data-mbv="${idx}"]`);
+          if (bf) bf.style.width = v + '%';
+          if (bv) bv.textContent = v + '%';
+        });
+      }
+
+      // 5. Modular Widgets (tiles physically swap places & highlight)
+      const mwWrap = document.getElementById('modWidgets');
+      if (mwWrap && mwWrap.children.length >= 4) {
+        const tiles = [...mwWrap.children];
+        tiles.forEach(t => t.classList.remove('active', 'swap'));
+        const first = tiles[0];
+        first.classList.add('swap');
+        setTimeout(() => {
+          mwWrap.appendChild(first);
+          const cur = [...mwWrap.children];
+          cur.forEach(t => t.classList.remove('swap'));
+          cur[0].classList.add('active');
+        }, 160);
+      }
+
+      // 6. Academy (metrics climb smoothly)
+      const acStep = acadSteps[tick % acadSteps.length];
+      acStep.forEach((v, idx) => {
+        const af = document.querySelector(`[data-acf="${idx}"]`);
+        const av = document.querySelector(`[data-acv="${idx}"]`);
+        if (af) af.style.width = v + '%';
+        if (av) av.textContent = v + '%';
+      });
+
+      // 7. Crypto Onramp (Buy: Card->USDT / Sell: USDT->Card + network cycle)
+      const isBuy = tick % 2 === 0;
+      const modeTag = document.getElementById('onrampModeTag');
+      const topLbl = document.getElementById('onrampTopLbl');
+      const topVal = document.getElementById('onrampTopVal');
+      const botLbl = document.getElementById('onrampBotLbl');
+      const botVal = document.getElementById('onrampBotVal');
+      if (modeTag && topLbl && topVal && botLbl && botVal) {
+        modeTag.textContent = isBuy ? 'BUY CRYPTO' : 'CASH OUT';
+        topLbl.textContent = isBuy ? 'CARD / BANK' : 'WALLET';
+        topVal.textContent = isBuy ? 'USD · EUR' : 'USDT · USDC';
+        botLbl.textContent = isBuy ? 'WALLET' : 'CARD / BANK';
+        botVal.textContent = isBuy ? 'USDT · USDC' : 'USD · EUR';
+      }
+      const nets = document.querySelectorAll('.onramp-net');
+      nets.forEach((n, i) => n.classList.toggle('active', i === tick % nets.length));
+
+      // 8. ImChat P2P (live English conversation flow)
+      if (chatEl) {
+        const m = chatPool[tick % chatPool.length];
+        const b = document.createElement('div');
+        b.className = 'chat-bubble ' + m.side;
+        b.textContent = m.text;
+        chatEl.appendChild(b);
+        while (chatEl.children.length > 3) chatEl.firstChild.remove();
+      }
     }, 2000);
   }
 })();
