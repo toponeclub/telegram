@@ -1943,6 +1943,32 @@ body.is-lib-dragging iframe { pointer-events: none !important; }
     box-shadow: 0 0 28px rgba(0, 255, 136, 0.12);
 }
 .add-widget-slot:hover span { opacity: 1; }
+/* ═══ PRODUCTIVITY HUB UI ═══ */
+.prod-wrap { max-width: 1300px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.prod-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 1024px) { .prod-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .prod-grid { grid-template-columns: 1fr; } }
+.prod-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.025) 0%, rgba(0,0,0,0.22) 100%);
+    border: 1px solid var(--border-thin); border-radius: 18px; padding: 20px;
+}
+.prod-card.span2 { grid-column: span 2; }
+.prod-card.span4 { grid-column: 1 / -1; }
+@media (max-width: 1024px) { .prod-card.span4 { grid-column: span 2; } }
+@media (max-width: 640px)  { .prod-card.span2, .prod-card.span4 { grid-column: span 1; } }
+.prod-kicker { font-family: var(--font-mono); font-size: 10px; font-weight: 800; letter-spacing: 1.8px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+.prod-big { font-family: var(--font-mono); font-size: 1.8rem; font-weight: 800; color: var(--accent); line-height: 1.1; }
+.prod-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; }
+.goal-offer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.goal-offer-btn {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border-thin);
+    background: rgba(0,0,0,0.35); color: var(--text-hover); cursor: pointer;
+    font-size: 0.78rem; text-align: left; transition: all 0.2s;
+}
+.goal-offer-btn:hover { border-color: var(--accent); color: var(--text-main); }
+.goal-offer-btn.picked { border-color: var(--green); background: rgba(0,255,136,0.08); color: var(--green); }
+.bio-range { width: 100%; accent-color: var(--accent); cursor: pointer; }
 </style>
 </head>
 <body class="theme-emerald">
@@ -2105,6 +2131,9 @@ body.is-lib-dragging iframe { pointer-events: none !important; }
         </div>
     </main>
 
+    <!-- PRODUCTIVITY VIEW (Built-in, zero iframe) -->
+    <section class="dynamic-view hidden" id="productivityView"></section>
+
     <!-- IFRAME VIEW -->
     <div class="iframe-view" id="iframeView">
         <div class="iframe-body" id="iframeBody">
@@ -2218,6 +2247,93 @@ const _wsId = _urlParams.get('ws') || '';
 const STORAGE_KEY = (_isPopout && _wsId) ? `grind_os_layout_${_wsId}` : 'grind_os_layout_v2';
 const NOTES_KEY = 'grind_os_notes_v1';
 const WALLET_KEY = 'grind_os_wallet';
+const PROD_KEY = 'grind_os_prod_v1';
+
+const CURATED_GOALS = [
+    { id: 'cg_1', title: '14/90 Affiliate Challenge', status: 'Active' },
+    { id: 'cg_2', title: 'DCA Grid Deployment', status: 'Active' },
+    { id: 'cg_3', title: '4h Deep Work Protocol', status: 'Daily' },
+    { id: 'cg_4', title: 'Backtest 20 Setups / Week', status: 'Weekly' },
+    { id: 'cg_5', title: 'Zero Missed Days (365)', status: 'Daily' },
+    { id: 'cg_6', title: 'Complete Academy 100%', status: 'Learning' },
+    { id: 'cg_7', title: 'Morning Bio-Sync Stack', status: 'Daily' },
+    { id: 'cg_8', title: 'Publish 30 Content Pieces', status: 'Monthly' }
+];
+
+const BIO_SUPPS_CATALOG = [
+    'L-Theanine 200mg', 'Caffeine 100mg', 'Magnesium Threonate',
+    'Creatine 5g', 'Omega-3 EPA/DHA', 'Vitamin D3 + K2', 'Ashwagandha'
+];
+
+function todayYMD() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getProdData() {
+    const def = {
+        totalSec: 0, genesisSec: 0, tradingSec: 0, actions: 0,
+        loginDays: [], bioSupps: ['L-Theanine 200mg', 'Caffeine 100mg'],
+        sleepPct: 84, focusPct: 89, energyPct: 78
+    };
+    try {
+        const raw = JSON.parse(localStorage.getItem(PROD_KEY) || 'null');
+        return raw ? { ...def, ...raw } : def;
+    } catch(e) { return def; }
+}
+
+function saveProdData(data, sync = true) {
+    try { localStorage.setItem(PROD_KEY, JSON.stringify(data)); } catch(e) {}
+    if (sync && typeof scheduleUserStateSync === 'function') scheduleUserStateSync();
+}
+
+function markTodayConsistency() {
+    const p = getProdData();
+    const today = todayYMD();
+    if (!p.loginDays.includes(today)) {
+        p.loginDays.push(today);
+        if (p.loginDays.length > 400) p.loginDays = p.loginDays.slice(-400);
+        saveProdData(p, true);
+    }
+}
+
+window.trackAction = function() {
+    const p = getProdData();
+    p.actions = (p.actions || 0) + 1;
+    saveProdData(p, true);
+};
+
+function fmtHoursMins(sec) {
+    const s = Math.max(0, Math.floor(sec || 0));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function getAcademyPercent() {
+    try {
+        const a = JSON.parse(localStorage.getItem('grind_os_academy_v1') || '{}');
+        if (typeof a.overallPct === 'number') return a.overallPct;
+    } catch(e) {}
+    return 0;
+}
+
+let _activeSectionKey = 'dashboard';
+let _activeProdTab = 'overview';
+
+setInterval(() => {
+    if (document.visibilityState !== 'visible' || !window.currentWallet) return;
+    const p = getProdData();
+    p.totalSec = (p.totalSec || 0) + 10;
+    if (_activeSectionKey === 'dashboard') p.genesisSec = (p.genesisSec || 0) + 10;
+    if (_activeSectionKey === 'trading') p.tradingSec = (p.tradingSec || 0) + 10;
+    const today = todayYMD();
+    if (!p.loginDays.includes(today)) p.loginDays.push(today);
+    saveProdData(p, true);
+    if (!document.getElementById('productivityView')?.classList.contains('hidden')) {
+        renderProductivityPage(_activeProdTab);
+    }
+}, 10000);
 
 
 
@@ -3893,21 +4009,29 @@ function renderTerminalWidget() {
         </div>`;
 }
 
-function renderHeatmapWidget() {
+function buildConsistencyCells(daysCount) {
+    const p = getProdData();
+    const set = new Set(p.loginDays || []);
+    const now = new Date();
     let cells = '';
-    const seed = Math.random();
-    for (let i = 0; i < 182; i++) {
-        const r = Math.abs((Math.sin(i * 12.9898 + seed * 78.233) * 43758.5453) % 1);
-        let bg = 'rgba(255,255,255,0.05)', glow = '';
-        if (r > 0.85) { bg = 'var(--accent)'; glow = 'box-shadow:0 0 5px var(--accent);'; }
-        else if (r > 0.65) bg = 'rgba(0,255,213,0.55)';
-        else if (r > 0.45) bg = 'rgba(0,255,213,0.25)';
-        cells += `<div style="width:100%; aspect-ratio:1; background:${bg}; border-radius:2px;${glow}"></div>`;
+    for (let i = daysCount - 1; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const active = set.has(key);
+        const bg = active ? 'var(--accent)' : 'rgba(255,255,255,0.05)';
+        const glow = active ? 'box-shadow:0 0 5px var(--accent);' : '';
+        cells += `<div title="${key}${active ? ' ✓' : ''}" style="width:100%; aspect-ratio:1; background:${bg}; border-radius:2px;${glow}"></div>`;
     }
+    return { cells, count: set.size };
+}
+
+function renderHeatmapWidget() {
+    const { cells, count } = buildConsistencyCells(182);
     return `
         <div class="mod-header">
             <div class="mod-title"><i class="fa-solid fa-fire"></i> 365 Consistency Matrix</div>
-            <span style="font-size:0.75rem; color:var(--accent); font-weight:700; font-family:var(--font-mono);">DAY 114/365</span>
+            <span style="font-size:0.75rem; color:var(--accent); font-weight:700; font-family:var(--font-mono);">${count}/365 DAYS</span>
         </div>
         <div style="display:grid; grid-template-columns: repeat(26, 1fr); gap:3px; margin-top:6px; flex:1; align-content:start;">${cells}</div>`;
 }
@@ -4005,17 +4129,31 @@ function initGoalsWidget(w, el) {
 }
 
 function renderBiohackingWidget() {
+    const p = getProdData();
+    const active = new Set(p.bioSupps || []);
+    const tags = BIO_SUPPS_CATALOG.slice(0, 4).map(name =>
+        `<span class="supp-tag ${active.has(name) ? 'active' : ''}" onclick="event.stopPropagation(); toggleBioSupp('${name}')">${name}</span>`
+    ).join('');
     return `
         <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-dna"></i> Bio-Sync Stack</div></div>
-        <div style="margin-bottom: 15px;">
-            <span class="supp-tag active">L-Theanine 200mg</span>
-            <span class="supp-tag active">Caffeine 100mg</span>
-            <span class="supp-tag">Magnesium Threonate</span>
-        </div>
-        <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px; margin-top: auto;">
-            <i class="fa-solid fa-circle-check" style="color: var(--accent);"></i> Protocol Initialized
+        <div style="margin-bottom: 10px;">${tags}</div>
+        <div style="font-size: 0.68rem; color: var(--text-muted); display: flex; justify-content:space-between; align-items: center; margin-top: auto; font-family:var(--font-mono);">
+            <span><i class="fa-solid fa-circle-check" style="color: var(--accent);"></i> ${active.size} Active</span>
+            <span style="color:var(--green);">Sleep ${p.sleepPct || 84}%</span>
         </div>`;
 }
+
+window.toggleBioSupp = function(name) {
+    const p = getProdData();
+    const arr = p.bioSupps || [];
+    const idx = arr.indexOf(name);
+    if (idx >= 0) arr.splice(idx, 1);
+    else arr.push(name);
+    p.bioSupps = arr;
+    p.actions = (p.actions || 0) + 1;
+    saveProdData(p, true);
+    if (!document.getElementById('productivityView')?.classList.contains('hidden')) renderProductivityPage(_activeProdTab);
+};
 
 /* ════════════════════════════════════════════════════════════
    DAILY TASKS WIDGET (Fully Editable: Add / Delete / Check)
@@ -4117,12 +4255,19 @@ function initTasksWidget(w, el) {
 }
 
 function renderProgressWidget() {
+    const p = getProdData();
+    const timePct = Math.min(100, Math.round((p.totalSec / 14400) * 100)); // 4h target
+    const actPct = Math.min(100, Math.round(((p.actions || 0) / 50) * 100));
+    const trdPct = p.totalSec > 0 ? Math.round((p.tradingSec / p.totalSec) * 100) : 0;
+    const learnPct = getAcademyPercent();
     const items = [
-        { label: 'Biohacking', pct: 78 }, { label: 'Trading', pct: 45 },
-        { label: 'Content', pct: 92 }, { label: 'Learning', pct: 60 }
+        { label: `Time (${fmtHoursMins(p.totalSec)})`, pct: timePct },
+        { label: `Actions (${p.actions || 0})`, pct: actPct },
+        { label: `Trading Focus`, pct: trdPct },
+        { label: 'Learning (Academy)', pct: learnPct }
     ];
     return `
-        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-chart-simple"></i> Weekly Progress</div></div>
+        <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-chart-simple"></i> Progress</div></div>
         <div>${items.map(x => `
             <div class="progress-bar-wrap">
                 <div class="progress-bar-label"><span>${x.label}</span><span style="font-family:var(--font-mono);">${x.pct}%</span></div>
@@ -5316,8 +5461,164 @@ try {
     }
 }
 
+function closeAllSubViews() {
+    document.getElementById('productivityView')?.classList.add('hidden');
+    const iv = document.getElementById('iframeView');
+    if (iv) iv.classList.remove('active');
+}
+
+function openProductivityView(tabKey) {
+    _activeProdTab = tabKey || 'overview';
+    closeAllSubViews();
+    document.getElementById('dashboardView')?.classList.add('hidden');
+    document.getElementById('backBtn')?.classList.remove('hidden');
+    const pv = document.getElementById('productivityView');
+    if (pv) {
+        pv.classList.remove('hidden');
+        renderProductivityPage(_activeProdTab);
+    }
+    document.title = `T1PRIME · Productivity`;
+}
+
+function renderProductivityPage(tab) {
+    const pv = document.getElementById('productivityView');
+    if (!pv) return;
+    const p = getProdData();
+    const { cells, count } = buildConsistencyCells(364);
+    const timePct = Math.min(100, Math.round((p.totalSec / 14400) * 100));
+    const actPct = Math.min(100, Math.round(((p.actions || 0) / 50) * 100));
+    const learnPct = getAcademyPercent();
+
+    if (tab === 'goals') {
+        const picked = new Set((getSavedGoals() || []).map(g => g.title));
+        pv.innerHTML = `
+            <div class="prod-wrap">
+                <div class="prod-card span4">
+                    <div class="prod-kicker"><span>Select Your Active Goals</span><span>${picked.size} Selected</span></div>
+                    <p class="prod-sub" style="margin-bottom:16px;">Pick from protocol goals below — they automatically appear in your Genesis <b>Active Goals</b> widget.</p>
+                    <div class="goal-offer-grid">
+                        ${CURATED_GOALS.map(g => {
+                            const on = picked.has(g.title);
+                            return `<button class="goal-offer-btn ${on ? 'picked' : ''}" onclick="toggleCuratedGoal('${g.title.replace(/'/g,"\\'")}', '${g.status}')">
+                                <span><b>${g.title}</b><br><small style="color:var(--text-muted);">${g.status}</small></span>
+                                <i class="fa-solid ${on ? 'fa-circle-check' : 'fa-plus'}"></i>
+                            </button>`;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>`;
+        return;
+    }
+
+    if (tab === 'bio') {
+        const active = new Set(p.bioSupps || []);
+        pv.innerHTML = `
+            <div class="prod-wrap">
+                <div class="prod-grid">
+                    <div class="prod-card span2">
+                        <div class="prod-kicker"><span>Brain / Nootrop Setup · Supplements</span><span>${active.size} Active</span></div>
+                        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+                            ${BIO_SUPPS_CATALOG.map(s => `<span class="supp-tag ${active.has(s) ? 'active' : ''}" onclick="toggleBioSupp('${s}')">${s}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="prod-card span2">
+                        <div class="prod-kicker"><span>Recovery & Readiness</span><span>SYNCED TO GENESIS</span></div>
+                        <div class="progress-bar-wrap">
+                            <div class="progress-bar-label"><span>Sleep Recovery</span><b>${p.sleepPct}%</b></div>
+                            <input class="bio-range" type="range" min="0" max="100" value="${p.sleepPct}" onchange="updateBioMetric('sleepPct', this.value)">
+                        </div>
+                        <div class="progress-bar-wrap">
+                            <div class="progress-bar-label"><span>Focus Level</span><b>${p.focusPct}%</b></div>
+                            <input class="bio-range" type="range" min="0" max="100" value="${p.focusPct}" onchange="updateBioMetric('focusPct', this.value)">
+                        </div>
+                        <div class="progress-bar-wrap">
+                            <div class="progress-bar-label"><span>Energy</span><b>${p.energyPct}%</b></div>
+                            <input class="bio-range" type="range" min="0" max="100" value="${p.energyPct}" onchange="updateBioMetric('energyPct', this.value)">
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        return;
+    }
+
+    if (tab === 'heatmap') {
+        pv.innerHTML = `
+            <div class="prod-wrap">
+                <div class="prod-card span4">
+                    <div class="prod-kicker"><span>365 Consistency Tracker</span><span>${count} / 365 DAYS LOGGED IN</span></div>
+                    <p class="prod-sub" style="margin-bottom:14px;">Every day you log in to GRIND // OS is permanently synced to your account.</p>
+                    <div style="display:grid; grid-template-columns: repeat(52, 1fr); gap:3px;">${cells}</div>
+                </div>
+            </div>`;
+        return;
+    }
+
+    if (tab === 'focus' || tab === 'journal') {
+        pv.innerHTML = `
+            <div class="prod-wrap">
+                <div class="prod-card span4" style="text-align:center; padding:60px 20px;">
+                    <div class="prod-kicker" style="justify-content:center;">${tab.toUpperCase()} MODULE</div>
+                    <div class="prod-big" style="font-size:1.3rem;">Next Update</div>
+                    <p class="prod-sub">Module layout reserved in header.</p>
+                </div>
+            </div>`;
+        return;
+    }
+
+    // Default: Overview
+    pv.innerHTML = `
+        <div class="prod-wrap">
+            <div class="prod-grid">
+                <div class="prod-card">
+                    <div class="prod-kicker">Total App Time</div>
+                    <div class="prod-big">${fmtHoursMins(p.totalSec)}</div>
+                    <div class="prod-sub">Time Progress: ${timePct}%</div>
+                </div>
+                <div class="prod-card">
+                    <div class="prod-kicker">Genesis vs Trading</div>
+                    <div class="prod-big" style="font-size:1.25rem;">${fmtHoursMins(p.genesisSec)} / ${fmtHoursMins(p.tradingSec)}</div>
+                    <div class="prod-sub">Workspace vs Charts</div>
+                </div>
+                <div class="prod-card">
+                    <div class="prod-kicker">Action Progress</div>
+                    <div class="prod-big">${p.actions || 0}</div>
+                    <div class="prod-sub">Actions logged · ${actPct}%</div>
+                </div>
+                <div class="prod-card">
+                    <div class="prod-kicker">Learning Progress</div>
+                    <div class="prod-big">${learnPct}%</div>
+                    <div class="prod-sub">Synced with Academy</div>
+                </div>
+                <div class="prod-card span4">
+                    <div class="prod-kicker"><span>365 Consistency Matrix</span><span>${count} DAYS ACTIVE</span></div>
+                    <div style="display:grid; grid-template-columns: repeat(52, 1fr); gap:3px;">${cells}</div>
+                </div>
+            </div>
+        </div>`;
+}
+
+window.toggleCuratedGoal = function(title, status) {
+    let goals = getSavedGoals();
+    const exists = goals.find(g => g.title === title);
+    if (exists) goals = goals.filter(g => g.title !== title);
+    else goals.push({ id: 'g_' + Date.now(), title, status });
+    saveSavedGoals(goals);
+    window.trackAction();
+    renderProductivityPage('goals');
+};
+
+window.updateBioMetric = function(key, val) {
+    const p = getProdData();
+    p[key] = Number(val);
+    p.actions = (p.actions || 0) + 1;
+    saveProdData(p, true);
+    renderProductivityPage('bio');
+};
+
 function closeIframeView() {
     document.getElementById('subNavBar')?.classList.add('hidden');
+    document.getElementById('productivityView')?.classList.add('hidden');
+    _activeSectionKey = 'dashboard';
     const view    = $('#iframeView');
     const dash    = $('#dashboardView');
     const backBtn = $('#backBtn');
@@ -5386,12 +5687,12 @@ const TOP_SUB_MENUS = {
         { label: 'Biohacking', href: 'https://t1prime.com/coming', badge: '0%' }
     ],
     productivity: [
-        { label: 'Overview',        href: 'https://t1prime.com/coming' },
-        { label: 'Biohacking',      href: 'https://t1prime.com/coming' },
-        { label: 'Goals',           href: 'https://t1prime.com/coming' },
-        { label: 'Focus',           href: 'https://t1prime.com/coming' },
-        { label: 'Journal',         href: 'https://t1prime.com/coming' },
-        { label: '365 Consistency', href: 'https://t1prime.com/coming' }
+        { label: 'Overview',        localView: 'overview' },
+        { label: 'Biohacking',      localView: 'bio' },
+        { label: 'Goals',           localView: 'goals' },
+        { label: 'Focus',           localView: 'focus' },
+        { label: 'Journal',         localView: 'journal' },
+        { label: '365 Consistency', localView: 'heatmap' }
     ],
     social: [
         { label: 'Content Mash (Coming Soon)', href: 'https://t1prime.com/coming' }
@@ -5418,8 +5719,9 @@ function renderTopSubNav(categoryKey, autoOpenFirst = true) {
     `).join('');
     bar.classList.remove('hidden');
 
-    if (autoOpenFirst && items[0].href) {
-        openIframeView(items[0].href, items[0].label);
+    if (autoOpenFirst) {
+        if (items[0].localView) openProductivityView(items[0].localView);
+        else if (items[0].href) openIframeView(items[0].href, items[0].label);
     }
 }
 
@@ -5429,18 +5731,24 @@ window.onTopSubTabClick = function(categoryKey, idx, btnEl) {
     if (!item) return;
     document.querySelectorAll('#subNavBar .sub-nav-tab').forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
-    if (item.href) openIframeView(item.href, item.label);
+    window.trackAction();
+    if (item.localView) {
+        openProductivityView(item.localView);
+    } else if (item.href) {
+        document.getElementById('productivityView')?.classList.add('hidden');
+        openIframeView(item.href, item.label);
+    }
 };
 
 function onNavClick(e, key) {
     e.stopPropagation();
+    _activeSectionKey = key;
     const item = e.currentTarget;
     const sb = document.getElementById('sidebar');
 
     $$('.nav-item').forEach(x => x.classList.remove('active'));
     item.classList.add('active');
 
-    // Ավտոմատ փոքրացնում է ձախ պանելը մինչև icon-only mode
     if (sb && key !== 'dashboard') sb.classList.add('collapsed');
 
     if (key === 'dashboard') {
@@ -5993,6 +6301,7 @@ function pushUserStateToServer() {
         notesMap: getNotesMap(),
         tasks: getSavedTasks(),
         goals: getSavedGoals(),
+        prod: getProdData(),
         theme: document.body.className || ''
     };
     fetch('/api/user/state', {
@@ -6049,7 +6358,9 @@ function restoreUserStateFromServer(uState) {
         if (uState.notesMap && typeof uState.notesMap === 'object') localStorage.setItem(NOTES_MAP_KEY, JSON.stringify(uState.notesMap));
         if (Array.isArray(uState.tasks)) localStorage.setItem(TASKS_KEY, JSON.stringify(uState.tasks));
         if (Array.isArray(uState.goals)) localStorage.setItem(GOALS_KEY, JSON.stringify(uState.goals));
+        if (uState.prod && typeof uState.prod === 'object') saveProdData(uState.prod, false);
         if (typeof uState.theme === 'string') document.body.className = uState.theme;
+        markTodayConsistency();
         renderGrid();
     } finally {
         _restoringState = false;
