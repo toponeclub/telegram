@@ -2653,9 +2653,9 @@ async function exportQuote(id, action) {
     if(!el || !window.html2canvas) return;
 
     // Ստեղծում ենք վիրտուալ շրջանակ Reel/Story-ի չափով
-    // Padding: 120px - 3% (116px)
+    // Վերև/ներքև 116px, Կողքերից 95px
     const frame = document.createElement('div');
-    frame.style.cssText = 'position:fixed; left:-9999px; width:1080px; height:1920px; background:#030303; color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:116px; font-family:"Inter", sans-serif; text-align:center;';
+    frame.style.cssText = 'position:fixed; left:-9999px; width:1080px; height:1920px; background:#030303; color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:116px 95px; font-family:"Inter", sans-serif; text-align:center;';
     
     const qText = el.querySelector('.quote-widget-text').innerText;
     const qAuth = el.querySelector('.quote-widget-author').innerText;
@@ -2664,11 +2664,11 @@ async function exportQuote(id, action) {
     const qSize = getQuoteExportFontSize(qText);
 
     frame.innerHTML = `
-        <!-- Չակերտը և Watermark-ը խմբավորված են իրար կպած -->
+        <!-- Չակերտը և Watermark-ը խմբավորված են, Site-y վերևում ա -->
         <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:50px;">
-            <div style="font-size:160px; color:#00ffd5; opacity:0.3; line-height:0.5; font-family:var(--font-mono);">"</div>
             <!-- T1PRIME.COM · 25%-ով փոքրացված (28px * 0.75 = 21px) -->
-            <div style="font-size:21px; color:#444; font-family:var(--font-mono); font-weight:800; letter-spacing:2px; margin-top:25px;">T1PRIME.COM</div>
+            <div style="font-size:21px; color:#444; font-family:var(--font-mono); font-weight:800; letter-spacing:2px; margin-bottom:25px;">T1PRIME.COM</div>
+            <div style="font-size:160px; color:#00ffd5; opacity:0.3; line-height:0.5; font-family:var(--font-mono);">"</div>
         </div>
         
         <!-- Մնացածը 1:1 օրիգինալ -->
@@ -2709,17 +2709,17 @@ function shareQuoteLink(e, id) {
     document.getElementById(`shareMenu_${id}`).classList.remove('open');
 }
 
-/* ─── ՆՈՐ Դինամիկ չափսեր · 56px-ից 3px քայլերով ─── */
+/* ─── 54px-ից 3px քայլերով ─── */
 function getQuoteExportFontSize(text) {
     const len = (text || '').trim().length;
-    if (len <= 60)  return 56; // Մաքսիմալ չափս (շատ կարճ)
-    if (len <= 90)  return 53; // -3px
-    if (len <= 120) return 50; // -3px
-    if (len <= 150) return 47; // -3px
-    if (len <= 190) return 44; // -3px
-    if (len <= 240) return 41; // -3px
-    if (len <= 300) return 38; // -3px
-    return 35;                 // Ծայրահեղ երկարների համար
+    if (len <= 60)  return 54; // Մաքսիմալ չափս
+    if (len <= 90)  return 51; // -3px
+    if (len <= 120) return 48; // -3px
+    if (len <= 150) return 45; // -3px
+    if (len <= 190) return 42; // -3px
+    if (len <= 240) return 39; // -3px
+    if (len <= 300) return 36; // -3px
+    return 33;                 // Ծայրահեղ երկարների համար
 }
 function initQuoteWidget(w, el) {
     const controls = el.querySelector('.widget-controls');
