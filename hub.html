@@ -2652,22 +2652,21 @@ async function exportQuote(id, action) {
     const el = document.getElementById(`quoteContent_${id}`);
     if(!el || !window.html2canvas) return;
 
+    // Ստեղծում ենք վիրտուալ շրջանակ Reel/Story-ի չափով (ՕՐԻԳԻՆԱԼ)
+    const frame = document.createElement('div');
+    frame.style.cssText = 'position:fixed; left:-9999px; width:1080px; height:1920px; background:#030303; color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:120px; font-family:"Inter", sans-serif; text-align:center;';
+    
     const qText = el.querySelector('.quote-widget-text').innerText;
     const qAuth = el.querySelector('.quote-widget-author').innerText;
 
-    // ★ Dynamic sizing · միայն quote text-ի համար
-    const qSize    = getQuoteExportFontSize(qText);
-    const markSize = Math.min(180, Math.round(qSize * 2));
-
-    // Ստեղծում ենք վիրտուալ շրջանակ Reel/Story-ի չափով
-    const frame = document.createElement('div');
-    frame.style.cssText = 'position:fixed; left:-9999px; width:1080px; height:1920px; background:#030303; color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:120px; box-sizing:border-box; overflow:hidden; font-family:"Inter", sans-serif; text-align:center;';
+    // ★ ՄԻԱՅՆ ԱՅՍ ՏՈՂՆ Է ՓՈԽՎԱԾ (60px-ի փոխարեն դինամիկ չափս)
+    const qSize = getQuoteExportFontSize(qText);
 
     frame.innerHTML = `
-        <div style="position:absolute; top:120px; left:0; right:0; text-align:center; font-size:28px; color:#444; font-family:var(--font-mono); font-weight:800; letter-spacing:2px;">T1PRIME.COM</div>
-        <div style="font-size:${markSize}px; color:#00ffd5; opacity:0.3; margin-bottom:${Math.round(qSize * 0.55)}px; line-height:0.5; font-family:var(--font-mono);">"</div>
-        <div style="font-size:${qSize}px; font-weight:300; font-style:italic; line-height:1.5; margin-bottom:${Math.round(qSize * 0.75)}px; max-width:100%; word-wrap:break-word; overflow-wrap:break-word; font-family:var(--font-ui);">${qText}</div>
+        <div style="font-size:160px; color:#00ffd5; opacity:0.3; margin-bottom:50px; line-height:0.5; font-family:var(--font-mono);">"</div>
+        <div style="font-size:${qSize}px; font-weight:300; font-style:italic; line-height:1.5; margin-bottom:60px; font-family:var(--font-ui);">${qText}</div>
         <div style="font-size:32px; color:#666; letter-spacing:6px; text-transform:uppercase; font-weight:600; font-family:var(--font-ui);">${qAuth}</div>
+        <div style="position:absolute; bottom:120px; font-size:28px; color:#444; font-family:var(--font-mono); font-weight:800; letter-spacing:2px;">T1PRIME.COM</div>
     `;
     document.body.appendChild(frame);
 
@@ -2688,9 +2687,20 @@ async function exportQuote(id, action) {
             });
         }
     } catch(e) {
-        if (frame.parentNode) document.body.removeChild(frame);
+        if (frame.parentNode) document.body.removeChild(frame); // Փոքրիկ ֆիքս, որ սխալի դեպքում frame-ը էջում չմնա
         toast('Export failed');
     }
+}
+
+/* ─── ՄԻԱՅՆ ՌԵԴՈՒԿՑԻԱ · Դեֆոլտ 60px ─── */
+function getQuoteExportFontSize(text) {
+    const len = (text || '').trim().length;
+    if (len <= 110) return 57;  // Օրիգինալ չափսը (եթե քիչ ա՝ մնում ա 60)
+    if (len <= 160) return 52;  // Մի քիչ ա փոքրանում
+    if (len <= 220) return 46;  // Միջին երկարություն
+    if (len <= 300) return 40;  // Երկար
+    if (len <= 400) return 34;  // Շատ երկար
+    return 30;                  // Ծայրահեղ երկար (եթե 500+ սիմվոլ ա)
 }
 
 /* ─── Dynamic font size · tier helper ─── */
