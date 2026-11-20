@@ -2650,66 +2650,24 @@ document.addEventListener('click', () => {
 
 async function exportQuote(id, action) {
     const el = document.getElementById(`quoteContent_${id}`);
-    if (!el || !window.html2canvas) return;
+    if(!el || !window.html2canvas) return;
 
-    const qText = (el.querySelector('.quote-widget-text').innerText || '').trim();
-    const qAuth = (el.querySelector('.quote-widget-author').innerText || '').trim();
+    const qText = el.querySelector('.quote-widget-text').innerText;
+    const qAuth = el.querySelector('.quote-widget-author').innerText;
 
-    // ★ Quote text — dynamic (փոփոխվում ա ըստ երկարության)
+    // ★ Dynamic sizing · միայն quote text-ի համար
     const qSize    = getQuoteExportFontSize(qText);
     const markSize = Math.min(180, Math.round(qSize * 2));
 
+    // Ստեղծում ենք վիրտուալ շրջանակ Reel/Story-ի չափով
     const frame = document.createElement('div');
-    frame.style.cssText = `
-        position:fixed; left:-9999px; top:0;
-        width:1080px; height:1920px;
-        background:#030303; color:#fff;
-        display:flex; flex-direction:column;
-        justify-content:center; align-items:center;
-        padding:120px; box-sizing:border-box;
-        overflow:hidden;
-        font-family:"Inter", sans-serif; text-align:center;
-    `;
+    frame.style.cssText = 'position:fixed; left:-9999px; width:1080px; height:1920px; background:#030303; color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:120px; box-sizing:border-box; overflow:hidden; font-family:"Inter", sans-serif; text-align:center;';
 
     frame.innerHTML = `
-        <!-- ═══ WATERMARK · TOP · visible above IG reply bar ═══ -->
-        <div style="
-            position:absolute; top:120px; left:0; right:0;
-            text-align:center;
-            font-size:26px; color:#00ffd5;
-            font-family:'JetBrains Mono', monospace;
-            font-weight:800; letter-spacing:8px;
-            opacity:0.55;
-        ">T1PRIME.COM</div>
-
-        <!-- Opening quote mark -->
-        <div style="
-            font-size:${markSize}px;
-            color:#00ffd5; opacity:0.3;
-            margin-bottom:${Math.round(qSize * 0.55)}px;
-            line-height:0.5;
-            font-family:'JetBrains Mono', monospace;
-        ">"</div>
-
-        <!-- Quote text — DYNAMIC -->
-        <div style="
-            font-size:${qSize}px;
-            font-weight:300; font-style:italic;
-            line-height:1.5;
-            margin-bottom:${Math.round(qSize * 0.75)}px;
-            max-width:100%;
-            word-wrap:break-word;
-            overflow-wrap:break-word;
-            font-family:'Inter', sans-serif;
-        ">${qText}</div>
-
-        <!-- Author — FIXED 32px · consistent always -->
-        <div style="
-            font-size:32px;
-            color:#666; letter-spacing:6px;
-            text-transform:uppercase; font-weight:600;
-            font-family:'Inter', sans-serif;
-        ">${qAuth}</div>
+        <div style="position:absolute; top:120px; left:0; right:0; text-align:center; font-size:28px; color:#444; font-family:var(--font-mono); font-weight:800; letter-spacing:2px;">T1PRIME.COM</div>
+        <div style="font-size:${markSize}px; color:#00ffd5; opacity:0.3; margin-bottom:${Math.round(qSize * 0.55)}px; line-height:0.5; font-family:var(--font-mono);">"</div>
+        <div style="font-size:${qSize}px; font-weight:300; font-style:italic; line-height:1.5; margin-bottom:${Math.round(qSize * 0.75)}px; max-width:100%; word-wrap:break-word; overflow-wrap:break-word; font-family:var(--font-ui);">${qText}</div>
+        <div style="font-size:32px; color:#666; letter-spacing:6px; text-transform:uppercase; font-weight:600; font-family:var(--font-ui);">${qAuth}</div>
     `;
     document.body.appendChild(frame);
 
@@ -2717,22 +2675,34 @@ async function exportQuote(id, action) {
         const canvas = await html2canvas(frame, { scale: 1, backgroundColor: '#030303' });
         document.body.removeChild(frame);
 
-        if (action === 'save') {
+        if(action === 'save') {
             const link = document.createElement('a');
             link.download = `GRIND_Quote_${Date.now()}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
-            toast(`Saved · ${qSize}px tier`);
-        } else if (action === 'copy') {
+            toast('Image Saved (Story Format)');
+        } else if(action === 'copy') {
             canvas.toBlob(async blob => {
                 await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
-                toast(`Copied · ${qSize}px tier`);
+                toast('Image Copied to Clipboard');
             });
         }
-    } catch (e) {
+    } catch(e) {
         if (frame.parentNode) document.body.removeChild(frame);
         toast('Export failed');
     }
+}
+
+/* ─── Dynamic font size · tier helper ─── */
+function getQuoteExportFontSize(text) {
+    const len = (text || '').trim().length;
+    if (len <= 130) return 88;
+    if (len <= 190) return 76;
+    if (len <= 280) return 64;
+    if (len <= 390) return 54;
+    if (len <= 520) return 46;
+    if (len <= 700) return 38;
+    return 32;
 }
 
 function shareQuoteLink(e, id) {
