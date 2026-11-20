@@ -2678,6 +2678,38 @@ document.addEventListener('click', () => {
     document.querySelectorAll('.share-menu').forEach(m => m.classList.remove('open'));
 });
 
+function renderQuoteWidget(w) {
+    const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    return `
+        <button class="quote-share-btn" onclick="toggleShareMenu(event, '${w.id}')"><i class="fa-solid fa-share-nodes"></i></button>
+        <div class="share-menu" id="shareMenu_${w.id}">
+            <div class="share-item" onclick="exportQuote('${w.id}', 'save')"><i class="fa-solid fa-download"></i> Save Image (9:16)</div>
+            <div class="share-item" onclick="exportQuote('${w.id}', 'copy')"><i class="fa-solid fa-copy"></i> Copy Image</div>
+            <div class="share-item" onclick="shareQuoteLink(event, '${w.id}')"><i class="fa-solid fa-link"></i> Get Link</div>
+        </div>
+        <div class="mod-header" style="justify-content:center;"><div class="mod-title"><i class="fa-solid fa-quote-left"></i> Daily Doctrine</div></div>
+        <div class="quote-content" id="quoteContent_${w.id}">
+            <div class="quote-mark">"</div>
+            <div class="quote-widget-text">${q.text}</div>
+            <div class="quote-widget-author">— ${q.author}</div>
+        </div>`;
+}
+
+function toggleShareMenu(e, id) {
+    e.stopPropagation();
+    document.querySelectorAll('.share-menu').forEach(m => {
+        if(m.id !== `shareMenu_${id}`) m.classList.remove('open');
+    });
+    const menu = document.getElementById(`shareMenu_${id}`);
+    if(menu) menu.classList.toggle('open');
+}
+
+document.addEventListener('click', () => {
+    document.querySelectorAll('.share-menu').forEach(m => {
+        m.classList.remove('open');
+    });
+});
+
 async function exportQuote(id, action) {
     const el = document.getElementById(`quoteContent_${id}`);
     if(!el || !window.html2canvas) return;
@@ -2690,10 +2722,12 @@ async function exportQuote(id, action) {
     const qAuth = el.querySelector('.quote-widget-author').innerText;
 
     frame.innerHTML = `
-        <div style="font-size:23px; color:#444; font-family:var(--font-mono); font-weight:800; letter-spacing:2px; margin-bottom:142px;">T1PRIME.COM</div>
-        <div style="font-size:160px; color:#00ffd5; opacity:0.3; margin-bottom:50px; line-height:0.5; font-family:var(--font-mono);">"</div>
-        <div style="font-size:53px; font-weight:300; font-style:italic; line-height:1.5; margin-bottom:60px; font-family:var(--font-ui);">${qText}</div>
-        <div style="font-size:32px; color:#00ffd5; letter-spacing:6px; text-transform:uppercase; font-weight:600; font-family:var(--font-ui);">${qAuth}</div>
+        <div style="position:absolute; top:480px; left:0; right:0; font-size:23px; color:#444; font-family:var(--font-mono); font-weight:800; letter-spacing:2px; text-align:center;">T1PRIME.COM</div>
+        <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; width:100%;">
+            <div style="font-size:160px; color:#00ffd5; opacity:0.3; margin-bottom:50px; line-height:0.5; font-family:var(--font-mono);">"</div>
+            <div style="font-size:53px; font-weight:300; font-style:italic; line-height:1.5; margin-bottom:60px; font-family:var(--font-ui);">${qText}</div>
+            <div style="font-size:32px; color:#00ffd5; letter-spacing:6px; text-transform:uppercase; font-weight:600; font-family:var(--font-ui);">${qAuth}</div>
+        </div>
     `;
     document.body.appendChild(frame);
 
@@ -2745,18 +2779,6 @@ function shareQuoteLink(e, id) {
     navigator.clipboard.writeText(link);
     toast('Link Copied to Clipboard');
     document.getElementById(`shareMenu_${id}`).classList.remove('open');
-}
-function initQuoteWidget(w, el) {
-    const controls = el.querySelector('.widget-controls');
-    if (controls) {
-        const shareBtn = document.createElement('button');
-        shareBtn.className = 'widget-btn';
-        shareBtn.title = 'Share Quote';
-        shareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
-        shareBtn.onclick = (e) => toggleShareMenu(e, w.id);
-        
-        controls.insertBefore(shareBtn, controls.querySelector('.remove-btn'));
-    }
 }
 function initQuoteWidget(w, el) {
     const controls = el.querySelector('.widget-controls');
