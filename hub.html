@@ -2014,6 +2014,28 @@ body.is-lib-dragging iframe { pointer-events: none !important; }
 .goal-offer-btn:hover { border-color: var(--accent); color: var(--text-main); }
 .goal-offer-btn.picked { border-color: var(--green); background: rgba(0,255,136,0.08); color: var(--green); }
 .bio-range { width: 100%; accent-color: var(--accent); cursor: pointer; }
+
+/* ═══ ACADEMY UI ═══ */
+.acad-list { display: flex; flex-direction: column; gap: 10px; }
+.acad-mod {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 15px 18px; border-radius: 14px;
+    background: rgba(0,0,0,0.35); border: 1px solid var(--border-thin);
+    cursor: pointer; transition: all 0.2s;
+}
+.acad-mod:hover { border-color: var(--accent); background: rgba(0,255,136,0.03); }
+.acad-mod.done { border-color: rgba(0,255,136,0.35); }
+.acad-mod.locked { opacity: 0.72; }
+.acad-mod.locked:hover { border-color: var(--gold); }
+.acad-num {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    background: var(--accent-dim); color: var(--accent);
+    font-family: var(--font-mono); font-size: 11px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+}
+.acad-mod.done .acad-num { background: var(--green); color: #000; }
+.acad-mod.locked .acad-num { background: rgba(255,204,0,0.1); color: var(--gold); }
+.acad-reader { background: rgba(0,0,0,0.4); border: 1px solid var(--border-thin); border-radius: 16px; padding: 24px; }
 </style>
 </head>
 <body class="theme-emerald">
@@ -2176,8 +2198,9 @@ body.is-lib-dragging iframe { pointer-events: none !important; }
         </div>
     </main>
 
-    <!-- PRODUCTIVITY VIEW (Built-in, zero iframe) -->
+    <!-- PRODUCTIVITY & ACADEMY VIEWS (Built-in) -->
     <section class="dynamic-view hidden" id="productivityView"></section>
+    <section class="dynamic-view hidden" id="academyView"></section>
 
     <!-- IFRAME VIEW -->
     <div class="iframe-view" id="iframeView">
@@ -2355,13 +2378,56 @@ function fmtHoursMins(sec) {
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-function getAcademyPercent() {
+const ACADEMY_KEY = 'grind_os_academy_v1';
+const ACADEMY_TRACKS = {
+    trading: [
+        { id: 'tr_1', title: 'Module 01 · Market Structure & Liquidity Foundations', body: 'Learn how orderflow, liquidity sweeps, and 4-metric alignment (Price, Vol, OI, Liq) form high-probability setups.' },
+        { id: 'tr_2', title: 'Module 02 · Tape Reading & Liquidation Clusters', body: 'How to read live forced orders, spot trap squeezes, and execute with Trading Engine + Volume Profile.' },
+        { id: 'tr_3', title: 'Module 03 · 4D Scanner & Watchlist Triggers', body: 'Building multi-condition scanner filters and automating Telegram chart snapshots.' },
+        { id: 'tr_4', title: 'Module 04 · Backtester Execution & Risk Math', body: 'Validating edge across 100+ historical bars before risking live capital.' }
+    ],
+    media: [
+        { id: 'md_1', title: 'Module 01 · SM Strategies: Attention & Hook Architecture', body: 'Core framework for short-form hooks, retention curves, and turning views into traffic.' },
+        { id: 'md_2', title: 'Module 02 · Algorithm Mechanics & Viral Loops', body: 'Watch-time velocity, shares/saves triggers, and multi-platform distribution systems.' },
+        { id: 'md_3', title: 'Module 03 · Content Mash & Daily Leverage', body: 'Batching and repurposing clips into consistent daily output without burnout.' }
+    ],
+    biohacking: [
+        { id: 'bh_1', title: 'Module 01 · Circadian Rhythm & Baseline Energy', body: 'Morning light timing, caffeine delay, and deep-work focus blocks.' },
+        { id: 'bh_2', title: 'Module 02 · Nootropic Stack & Stress Tolerance', body: 'L-Theanine, Magnesium Threonate, Creatine dosing and recovery tracking.' },
+        { id: 'bh_3', title: 'Module 03 · Sleep Architecture Optimization', body: 'Maximizing REM/Deep sleep so cognitive performance stays sharp under market volatility.' }
+    ]
+};
+
+function getAcademyState() {
     try {
-        const a = JSON.parse(localStorage.getItem('grind_os_academy_v1') || '{}');
-        if (typeof a.overallPct === 'number') return a.overallPct;
-    } catch(e) {}
-    return 0;
+        const a = JSON.parse(localStorage.getItem(ACADEMY_KEY) || 'null');
+        return a && Array.isArray(a.completed) ? a : { completed: [], overallPct: 0 };
+    } catch(e) { return { completed: [], overallPct: 0 }; }
 }
+
+function calcTrackPct(trackKey, completedArr) {
+    const mods = ACADEMY_TRACKS[trackKey] || [];
+    if (!mods.length) return 0;
+    const set = new Set(completedArr || []);
+    const done = mods.filter(m => set.has(m.id)).length;
+    return Math.round((done / mods.length) * 100);
+}
+
+function saveAcademyState(a, sync = true) {
+    const allMods = Object.values(ACADEMY_TRACKS).flat();
+    const set = new Set(a.completed || []);
+    const doneTotal = allMods.filter(m => set.has(m.id)).length;
+    a.overallPct = allMods.length ? Math.round((doneTotal / allMods.length) * 100) : 0;
+    try { localStorage.setItem(ACADEMY_KEY, JSON.stringify(a)); } catch(e) {}
+    if (sync && typeof scheduleUserStateSync === 'function') scheduleUserStateSync();
+}
+
+function getAcademyPercent() {
+    return getAcademyState().overallPct || 0;
+}
+
+let _activeAcadTrack = 'trading';
+let _openAcadIdx = null;
 
 let _activeSectionKey = 'dashboard';
 let _activeProdTab = 'overview';
@@ -5701,101 +5767,126 @@ function renderRadioWidget() {
         </div>`;
 }
 
+async function exportCommunityMessage(user, text) {
+    if (!window.html2canvas) return;
+    const frame = document.createElement('div');
+    frame.style.cssText = 'position:fixed; left:-9999px; width:1080px; height:1920px; background:#030709; color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:110px; font-family:"Inter",sans-serif; text-align:center;';
+    const safeUser = String(user).replace(/</g, '&lt;');
+    const safeText = String(text).replace(/</g, '&lt;');
+    frame.innerHTML = `
+        <div style="font-size:34px; color:#00f5b8; font-family:'JetBrains Mono',monospace; font-weight:800; letter-spacing:3px; margin-bottom:46px;">USER ${safeUser}:</div>
+        <div style="font-size:56px; font-weight:400; line-height:1.45; margin-bottom:60px; color:#f0f2f5;">"${safeText}"</div>
+        <div style="position:absolute; bottom:120px; font-size:28px; color:#00f5b8; opacity:0.65; font-family:'JetBrains Mono',monospace; font-weight:800; letter-spacing:4px;">T1PRIME.COM · COMMUNITY</div>
+    `;
+    document.body.appendChild(frame);
+    try {
+        const canvas = await html2canvas(frame, { scale: 1, backgroundColor: '#030709' });
+        document.body.removeChild(frame);
+        const link = document.createElement('a');
+        link.download = `GRIND_Community_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        toast('Story Image Saved!');
+    } catch(e) {
+        if (frame.parentNode) frame.parentNode.removeChild(frame);
+        toast('Export failed');
+    }
+}
+
 function renderCommunityWidget(w) {
     return `
         <div class="mod-header">
             <div class="mod-title"><i class="fa-solid fa-users"></i> Community</div>
-            <span id="commStatus_${w.id}" style="font-size:0.6rem; color:var(--accent); font-family:var(--font-mono); font-weight:700;">LIVE FEED</span>
+            <span id="commStatus_${w.id}" style="font-size:0.6rem; color:var(--accent); font-family:var(--font-mono); font-weight:700;">PRIME CHAT</span>
         </div>
-        <div id="commAuthBanner_${w.id}" style="margin-bottom:8px;"></div>
+        <div id="commLock_${w.id}" class="blur-overlay" style="display:none;">
+            <i class="fa-solid fa-lock lock-icon"></i>
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:12px;">Open Chat is exclusive to Prime members</div>
+            <button class="unlock-btn" onclick="event.stopPropagation(); openPrimeUpgrade();">Unlock Prime</button>
+        </div>
         <div id="commFeed_${w.id}" style="flex:1; overflow-y:auto; min-height:0; display:flex; flex-direction:column; gap:4px;"></div>
         <div id="commInputBox_${w.id}" style="margin-top:8px; display:flex; gap:6px;">
-            <input type="text" id="commMsgInput_${w.id}" placeholder="Share alpha / progress..." style="flex:1; background:rgba(0,0,0,0.35); border:1px solid var(--border-thin); color:var(--text-main); padding:6px 10px; border-radius:6px; font-size:11px; outline:none;" />
+            <input type="text" id="commMsgInput_${w.id}" placeholder="type your message..." style="flex:1; background:rgba(0,0,0,0.35); border:1px solid var(--border-thin); color:var(--text-main); padding:6px 10px; border-radius:6px; font-size:11px; outline:none;" />
             <button id="commSendBtn_${w.id}" class="widget-btn" style="width:28px; height:28px; border-radius:6px; background:var(--accent-dim); color:var(--accent); border-color:var(--accent);" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
         </div>`;
 }
 
 function initCommunityWidget(w, el) {
     const feedEl = el.querySelector(`#commFeed_${w.id}`);
-    const bannerEl = el.querySelector(`#commAuthBanner_${w.id}`);
-    const statusEl = el.querySelector(`#commStatus_${w.id}`);
+    const lockEl = el.querySelector(`#commLock_${w.id}`);
     const inputEl = el.querySelector(`#commMsgInput_${w.id}`);
     const sendBtn = el.querySelector(`#commSendBtn_${w.id}`);
     if (!feedEl) return;
 
-    let localMsgs = [
-        { user: '0x0sd...0125', text: 'Locked in 4h deep work block + Morning Bio-Sync complete.', time: '2m' },
-        { user: '0x001...0142', text: 'OTHERS 3H structure breaking out cleanly above range.', time: '12m' },
-        { user: '0x8fa...49b1', text: 'Day 42 on 365 Consistency Matrix. Zero missed entries.', time: '28m' },
-        { user: '0x12a...99e1', text: 'Just connected to GRIND // OS Genesis.', time: '1h' }
-    ];
+    let msgs = [];
 
     async function loadFeed() {
+        if (!window.isPrimeActive || !window.currentWallet) {
+            if (lockEl) lockEl.style.display = 'flex';
+            return;
+        }
+        if (lockEl) lockEl.style.display = 'none';
         try {
-            const r = await fetch('/api/community/feed');
-            if (r.ok) {
-                const j = await r.json();
-                if (j.ok && Array.isArray(j.messages) && j.messages.length) {
-                    localMsgs = j.messages.map(m => ({
-                        user: m.display_user || (m.walletAddress ? (m.walletAddress.slice(0, 5) + '...' + m.walletAddress.slice(-4)) : 'Member'),
-                        text: m.message,
-                        time: m.created_at ? new Date(m.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'now'
-                    }));
-                }
+            const r = await fetch(`/api/community/feed?wallet=${encodeURIComponent(window.currentWallet)}`);
+            const j = await r.json();
+            if (r.ok && j.ok && Array.isArray(j.messages)) {
+                msgs = j.messages;
+                render();
             }
         } catch (_) {}
-        render();
     }
 
     function render() {
-        const isAuth = !!window.currentWallet;
-        if (statusEl) {
-            statusEl.textContent = isAuth ? 'SYNCED' : 'LIVE FEED';
-            statusEl.style.color = isAuth ? 'var(--green)' : 'var(--accent)';
+        if (!msgs.length) {
+            feedEl.innerHTML = `<div style="text-align:center; padding:24px 0; font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">Be the first to speak...</div>`;
+            return;
         }
-        if (bannerEl) {
-            if (isAuth) {
-                bannerEl.innerHTML = `<div style="font-size:9px; font-family:var(--font-mono); color:var(--green); background:rgba(0,255,136,0.08); padding:3px 8px; border-radius:4px; border:1px solid rgba(0,255,136,0.2); display:flex; justify-content:space-between; align-items:center;"><span>CONNECTED: <b>${window.currentWallet.slice(0, 6)}...${window.currentWallet.slice(-4)}</b></span><span style="color:var(--accent);">● ONLINE</span></div>`;
-            } else {
-                bannerEl.innerHTML = `<div style="font-size:9px; font-family:var(--font-mono); color:var(--text-muted); background:rgba(255,255,255,0.02); padding:3px 8px; border-radius:4px; border:1px solid var(--border-thin); display:flex; justify-content:space-between; align-items:center;"><span>Viewer mode</span><button onclick="openWalletModal()" style="background:none; border:none; color:var(--accent); cursor:pointer; font-size:9px; font-weight:700; text-transform:uppercase;">Connect Wallet →</button></div>`;
-            }
-        }
-        feedEl.innerHTML = localMsgs.map(f => `
-            <div class="feed-item" style="padding:6px 0; border-bottom:1px solid var(--border-thin);">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span class="feed-user" style="font-family:var(--font-mono); font-size:9px; color:var(--accent); font-weight:700;">${f.user}</span>
-                    <span style="color:var(--text-muted); font-size:8px; opacity:0.6;">${f.time}</span>
+        feedEl.innerHTML = msgs.map((m, idx) => {
+            const u = (m.display_user || 'User').replace(/</g, '&lt;');
+            const t = (m.message || '').replace(/</g, '&lt;');
+            return `
+            <div class="feed-item" style="padding:7px 0; border-bottom:1px solid var(--border-thin); display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+                <div style="min-width:0; flex:1; font-size:11px; line-height:1.45;">
+                    <span class="feed-user">${u} says:</span>
+                    <span style="color:var(--text-main); margin-left:4px; word-break:break-word;">${t}</span>
                 </div>
-                <div class="feed-text" style="font-size:11px; margin-top:2px; color:var(--text-hover);">${f.text}</div>
-            </div>
-        `).join('');
+                <button class="comm-share-btn" data-idx="${idx}" title="Export Story Image" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:10px; padding:2px 4px; flex-shrink:0;"><i class="fa-solid fa-share-nodes"></i></button>
+            </div>`;
+        }).join('');
     }
 
-    async function sendMsg() {
-        const msg = (inputEl.value || '').trim();
-        if (!msg) return;
-        const shortUser = window.currentWallet ? (window.currentWallet.slice(0, 5) + '...' + window.currentWallet.slice(-4)) : '0x' + Math.random().toString(36).slice(2, 6);
-        localMsgs.unshift({ user: shortUser, text: msg, time: 'Just now' });
-        inputEl.value = '';
-        render();
+    feedEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('.comm-share-btn');
+        if (!btn) return;
+        e.stopPropagation();
+        const m = msgs[Number(btn.dataset.idx)];
+        if (m) exportCommunityMessage(m.display_user, m.message);
+    });
 
-        if (window.currentWallet) {
-            try {
-                await fetch('/api/community/post', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ wallet: window.currentWallet, message: msg })
-                });
-            } catch (_) {}
-        }
-        toast('Message posted');
+    async function sendMsg() {
+        if (!window.isPrimeActive) { openPrimeUpgrade(); return; }
+        const text = (inputEl.value || '').trim();
+        if (!text) return;
+        inputEl.value = '';
+        try {
+            const r = await fetch('/api/community/post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ wallet: window.currentWallet, message: text })
+            });
+            const j = await r.json();
+            if (!j.ok) throw new Error(j.error || 'Failed');
+            msgs.unshift({ display_user: j.displayUser, message: j.message, created_at: j.created_at });
+            render();
+            window.trackAction();
+        } catch (err) { toast(err.message || 'Send failed'); }
     }
 
     sendBtn?.addEventListener('click', (e) => { e.stopPropagation(); sendMsg(); });
     inputEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); sendMsg(); } });
 
     loadFeed();
-    const interval = setInterval(loadFeed, 30000);
+    const interval = setInterval(loadFeed, 12000);
     widgetCleanup[w.id] = () => clearInterval(interval);
 }
 
@@ -5932,6 +6023,7 @@ let _activeIframeUrl = null;
 
 function openIframeView(url, title) {
     document.getElementById('productivityView')?.classList.add('hidden');
+    document.getElementById('academyView')?.classList.add('hidden');
     const view    = $('#iframeView');
     const dash    = $('#dashboardView');
     const backBtn = $('#backBtn');
@@ -6023,9 +6115,117 @@ try {
 
 function closeAllSubViews() {
     document.getElementById('productivityView')?.classList.add('hidden');
+    document.getElementById('academyView')?.classList.add('hidden');
     const iv = document.getElementById('iframeView');
     if (iv) iv.classList.remove('active');
 }
+
+function openAcademyView(trackKey) {
+    _activeAcadTrack = trackKey || 'trading';
+    _openAcadIdx = null;
+    closeAllSubViews();
+    document.getElementById('dashboardView')?.classList.add('hidden');
+    document.getElementById('backBtn')?.classList.remove('hidden');
+    const av = document.getElementById('academyView');
+    if (av) {
+        av.classList.remove('hidden');
+        renderAcademyPage();
+    }
+    document.title = `T1PRIME · Academy`;
+}
+
+function refreshAcademyBadges() {
+    const a = getAcademyState();
+    (TOP_SUB_MENUS.academy || []).forEach((it, idx) => {
+        const pct = calcTrackPct(it.academyTrack, a.completed);
+        it.badge = `${pct}%`;
+        const bEl = document.querySelector(`#subNavBar .sub-nav-tab[data-idx="${idx}"] .sub-nav-badge`);
+        if (bEl && _activeSectionKey === 'academy') bEl.textContent = `${pct}%`;
+    });
+}
+
+function renderAcademyPage() {
+    const av = document.getElementById('academyView');
+    if (!av) return;
+    const mods = ACADEMY_TRACKS[_activeAcadTrack] || [];
+    const a = getAcademyState();
+    const doneSet = new Set(a.completed || []);
+    const trackPct = calcTrackPct(_activeAcadTrack, a.completed);
+
+    if (_openAcadIdx !== null && mods[_openAcadIdx]) {
+        const m = mods[_openAcadIdx];
+        const isDone = doneSet.has(m.id);
+        const nextIdx = _openAcadIdx + 1;
+        const hasNext = nextIdx < mods.length;
+        av.innerHTML = `
+            <div class="prod-wrap">
+                <div class="acad-reader">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                        <button class="hub-btn" onclick="_openAcadIdx=null; renderAcademyPage();"><i class="fa-solid fa-arrow-left"></i> Back to Modules</button>
+                        <span style="font-family:var(--font-mono); font-size:10px; color:var(--accent);">${_activeAcadTrack.toUpperCase()} · ${trackPct}%</span>
+                    </div>
+                    <h2 style="font-size:1.2rem; font-weight:800; margin-bottom:12px;">${m.title}</h2>
+                    <p style="font-size:0.85rem; color:var(--text-hover); line-height:1.7; margin-bottom:22px;">${m.body}</p>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="hub-btn primary" onclick="toggleAcademyModule('${m.id}')">${isDone ? '✓ Completed' : 'Mark Complete'}</button>
+                        ${hasNext ? `<button class="hub-btn" onclick="openAcademyModule(${nextIdx})">Next Chapter →</button>` : ''}
+                    </div>
+                </div>
+            </div>`;
+        return;
+    }
+
+    av.innerHTML = `
+        <div class="prod-wrap">
+            <div class="prod-card span4">
+                <div class="prod-kicker">
+                    <span>ACADEMY · ${_activeAcadTrack.toUpperCase()} TRACK</span>
+                    <span style="color:var(--accent);">${trackPct}% TRACK · ${a.overallPct}% TOTAL LEARNING</span>
+                </div>
+                <div class="progress-bar" style="margin-bottom:18px;"><div class="progress-bar-fill" style="width:${trackPct}%"></div></div>
+                <div class="acad-list">
+                    ${mods.map((m, i) => {
+                        const locked = i > 0 && !window.isPrimeActive;
+                        const done = doneSet.has(m.id);
+                        return `
+                        <div class="acad-mod ${done ? 'done' : ''} ${locked ? 'locked' : ''}" onclick="openAcademyModule(${i})">
+                            <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                                <div class="acad-num">${done ? '✓' : (i + 1)}</div>
+                                <div style="min-width:0;">
+                                    <div style="font-size:0.82rem; font-weight:700; color:var(--text-main);">${m.title}</div>
+                                    <div style="font-size:0.68rem; color:var(--text-muted);">${i === 0 ? 'FREE PREVIEW' : (locked ? 'PRIME REQUIRED' : 'UNLOCKED')}</div>
+                                </div>
+                            </div>
+                            <span style="font-family:var(--font-mono); font-size:10px; font-weight:800; color:${locked ? 'var(--gold)' : (done ? 'var(--green)' : 'var(--accent)')};">
+                                ${locked ? '<i class="fa-solid fa-lock"></i> PRIME' : (done ? 'DONE ✓' : 'OPEN →')}
+                            </span>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        </div>`;
+}
+
+window.openAcademyModule = function(idx) {
+    if (idx > 0 && !window.isPrimeActive) {
+        openPrimeUpgrade();
+        return;
+    }
+    _openAcadIdx = idx;
+    window.trackAction();
+    renderAcademyPage();
+};
+
+window.toggleAcademyModule = function(modId) {
+    const a = getAcademyState();
+    const i = a.completed.indexOf(modId);
+    if (i >= 0) a.completed.splice(i, 1);
+    else a.completed.push(modId);
+    saveAcademyState(a, true);
+    window.trackAction();
+    refreshAcademyBadges();
+    renderAcademyPage();
+};
 
 function openProductivityView(tabKey) {
     _activeProdTab = tabKey || 'overview';
@@ -6178,6 +6378,7 @@ window.updateBioMetric = function(key, val) {
 function closeIframeView() {
     document.getElementById('subNavBar')?.classList.add('hidden');
     document.getElementById('productivityView')?.classList.add('hidden');
+    document.getElementById('academyView')?.classList.add('hidden');
     _activeSectionKey = 'dashboard';
     const view    = $('#iframeView');
     const dash    = $('#dashboardView');
@@ -6242,9 +6443,9 @@ const TOP_SUB_MENUS = {
         { label: 'Patterns',           href: 'https://t1prime.com/phd' }
     ],
     academy: [
-        { label: 'Trading',    href: 'https://t1prime.com/coming', badge: '0%' },
-        { label: 'Media',      href: 'https://t1prime.com/coming', badge: '0%' },
-        { label: 'Biohacking', href: 'https://t1prime.com/coming', badge: '0%' }
+        { label: 'Trading',    academyTrack: 'trading',    badge: '0%' },
+        { label: 'Media',      academyTrack: 'media',      badge: '0%' },
+        { label: 'Biohacking', academyTrack: 'biohacking', badge: '0%' }
     ],
     productivity: [
         { label: 'Overview',        localView: 'overview' },
@@ -6279,8 +6480,10 @@ function renderTopSubNav(categoryKey, autoOpenFirst = true) {
     `).join('');
     bar.classList.remove('hidden');
 
+    if (categoryKey === 'academy') refreshAcademyBadges();
     if (autoOpenFirst) {
         if (items[0].localView) openProductivityView(items[0].localView);
+        else if (items[0].academyTrack) openAcademyView(items[0].academyTrack);
         else if (items[0].href) openIframeView(items[0].href, items[0].label);
     }
 }
@@ -6294,8 +6497,11 @@ window.onTopSubTabClick = function(categoryKey, idx, btnEl) {
     window.trackAction();
     if (item.localView) {
         openProductivityView(item.localView);
+    } else if (item.academyTrack) {
+        openAcademyView(item.academyTrack);
     } else if (item.href) {
         document.getElementById('productivityView')?.classList.add('hidden');
+        document.getElementById('academyView')?.classList.add('hidden');
         openIframeView(item.href, item.label);
     }
 };
@@ -6892,6 +7098,7 @@ function pushUserStateToServer() {
         tasks: getSavedTasks(),
         goals: getSavedGoals(),
         prod: getProdData(),
+        academy: getAcademyState(),
         popouts: getPopoutsData(),
         theme: document.body.className || ''
     };
@@ -6965,6 +7172,7 @@ function restoreUserStateFromServer(uState) {
         if (Array.isArray(uState.tasks)) localStorage.setItem(TASKS_KEY, JSON.stringify(uState.tasks));
         if (Array.isArray(uState.goals)) localStorage.setItem(GOALS_KEY, JSON.stringify(uState.goals));
         if (uState.prod && typeof uState.prod === 'object') saveProdData(uState.prod, false);
+        if (uState.academy && Array.isArray(uState.academy.completed)) saveAcademyState(uState.academy, false);
         if (typeof uState.theme === 'string') document.body.className = uState.theme;
         markTodayConsistency();
         renderGrid();
