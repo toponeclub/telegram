@@ -2695,25 +2695,15 @@ async function exportQuote(id, action) {
 /* ─── ՄԻԱՅՆ ՌԵԴՈՒԿՑԻԱ · Դեֆոլտ 60px ─── */
 function getQuoteExportFontSize(text) {
     const len = (text || '').trim().length;
-    if (len <= 110) return 57;  // Օրիգինալ չափսը (եթե քիչ ա՝ մնում ա 60)
-    if (len <= 160) return 52;  // Մի քիչ ա փոքրանում
+    if (len <= 110) return 54;  // Օրիգինալ չափսը (եթե քիչ ա՝ մնում ա 60)
+    if (len <= 160) return 50;  // Մի քիչ ա փոքրանում
     if (len <= 220) return 46;  // Միջին երկարություն
     if (len <= 300) return 40;  // Երկար
-    if (len <= 400) return 34;  // Շատ երկար
-    return 30;                  // Ծայրահեղ երկար (եթե 500+ սիմվոլ ա)
+    if (len <= 400) return 36;  // Շատ երկար
+    return 32;                  // Ծայրահեղ երկար (եթե 500+ սիմվոլ ա)
 }
 
-/* ─── Dynamic font size · tier helper ─── */
-function getQuoteExportFontSize(text) {
-    const len = (text || '').trim().length;
-    if (len <= 130) return 88;
-    if (len <= 190) return 76;
-    if (len <= 280) return 64;
-    if (len <= 390) return 54;
-    if (len <= 520) return 46;
-    if (len <= 700) return 38;
-    return 32;
-}
+
 
 function shareQuoteLink(e, id) {
     e.stopPropagation();
