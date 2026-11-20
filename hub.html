@@ -5864,7 +5864,7 @@ function renderLibrary() {
     body.innerHTML = '';
 
     CATEGORIES.forEach(cat => {
-        const widgets = Object.values(WIDGET_REGISTRY).filter(w => w.category === cat);
+        const widgets = Object.values(WIDGET_REGISTRY).filter(w => w.category === cat && !w.hidden);
         if (!widgets.length) return;
 
         const catEl = document.createElement('div');
