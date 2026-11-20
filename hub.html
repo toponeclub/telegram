@@ -2648,92 +2648,87 @@ document.addEventListener('click', () => {
     document.querySelectorAll('.share-menu').forEach(m => m.classList.remove('open'));
 });
 
+function renderQuoteWidget(w) {
+    const q = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    return `
+        <button class="quote-share-btn" onclick="toggleShareMenu(event, '${w.id}')"><i class="fa-solid fa-share-nodes"></i></button>
+        <div class="share-menu" id="shareMenu_${w.id}">
+            <div class="share-item" onclick="exportQuote('${w.id}', 'save')"><i class="fa-solid fa-download"></i> Save Image (9:16)</div>
+            <div class="share-item" onclick="exportQuote('${w.id}', 'copy')"><i class="fa-solid fa-copy"></i> Copy Image</div>
+            <div class="share-item" onclick="shareQuoteLink(event, '${w.id}')"><i class="fa-solid fa-link"></i> Get Link</div>
+        </div>
+        <div class="mod-header" style="justify-content:center;"><div class="mod-title"><i class="fa-solid fa-quote-left"></i> Daily Doctrine</div></div>
+        <div class="quote-content" id="quoteContent_${w.id}">
+            <div class="quote-mark">"</div>
+            <div class="quote-widget-text">${q.text}</div>
+            <div class="quote-widget-author">— ${q.author}</div>
+        </div>`;
+}
+
+function toggleShareMenu(e, id) {
+    e.stopPropagation();
+    document.querySelectorAll('.share-menu').forEach(m => {
+        if(m.id !== `shareMenu_${id}`) m.classList.remove('open');
+    });
+    const menu = document.getElementById(`shareMenu_${id}`);
+    if(menu) menu.classList.toggle('open');
+}
+
+document.addEventListener('click', () => {
+    document.querySelectorAll('.share-menu').forEach(m => m.classList.remove('open'));
+});
+
 async function exportQuote(id, action) {
     const el = document.getElementById(`quoteContent_${id}`);
     if(!el || !window.html2canvas) return;
 
     // Ստեղծում ենք վիրտուալ շրջանակ Reel/Story-ի չափով
-    // Padding: 116px վերև/ներքև, 60px կողքերից
     const frame = document.createElement('div');
-    frame.style.cssText = 'position:fixed; left:-9999px; width:1080px; height:1920px; background:#030303; color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:116px 60px; font-family:"Inter", sans-serif; text-align:center;';
+    frame.style.cssText = 'position:fixed; left:-9999px; width:1080px; height:1920px; background:#030303; color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:120px 162px; font-family:"Inter", sans-serif; text-align:center;';
     
     const qText = el.querySelector('.quote-widget-text').innerText;
     const qAuth = el.querySelector('.quote-widget-author').innerText;
 
-    // ★ Դինամիկ չափսի հաշվարկ
-    const qSize = getQuoteExportFontSize(qText);
-
     frame.innerHTML = `
-        <!-- Չակերտը և Watermark-ը խմբավորված են, 20px հեռավորությամբ -->
-        <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:50px;">
-            <!-- T1PRIME.COM · 25%-ով փոքրացված (21px) · 20px հեռավորություն չակերտից -->
-            <div style="font-size:21px; color:#444; font-family:var(--font-mono); font-weight:800; letter-spacing:2px; margin-bottom:20px;">T1PRIME.COM</div>
-            <div style="font-size:160px; color:#00ffd5; opacity:0.3; line-height:0.5; font-family:var(--font-mono);">"</div>
-        </div>
-        
-        <!-- Մնացածը 1:1 օրիգինալ -->
-        <div style="font-size:${qSize}px; font-weight:300; font-style:italic; line-height:1.5; margin-bottom:60px; font-family:var(--font-ui);">${qText}</div>
-        
-        <!-- Հեղինակը accent գույնով -->
-        <div style="font-size:32px; color:var(--accent); opacity:0.9; letter-spacing:6px; text-transform:uppercase; font-weight:600; font-family:var(--font-ui);">${qAuth}</div>
+        <div style="font-size:23px; color:#444; font-family:var(--font-mono); font-weight:800; letter-spacing:2px; margin-bottom:65px;">T1PRIME.COM</div>
+        <div style="font-size:160px; color:#00ffd5; opacity:0.3; margin-bottom:50px; line-height:0.5; font-family:var(--font-mono);">"</div>
+        <div style="font-size:54px; font-weight:300; font-style:italic; line-height:1.5; margin-bottom:60px; font-family:var(--font-ui);">${qText}</div>
+        <div style="font-size:32px; color:#00ff88; letter-spacing:6px; text-transform:uppercase; font-weight:600; font-family:var(--font-ui);">${qAuth}</div>
     `;
     document.body.appendChild(frame);
 
     try {
-        const canvas = await html2canvas(frame, { scale: 1, backgroundColor: '#030303' });
-        document.body.removeChild(frame);
-
         if(action === 'save') {
+            const canvas = await html2canvas(frame, { scale: 1, backgroundColor: '#030303' });
+            document.body.removeChild(frame);
+
             const link = document.createElement('a');
             link.download = `GRIND_Quote_${Date.now()}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
             toast('Image Saved (Story Format)');
-            
         } else if(action === 'copy') {
-            
-            // ═══ ՍԱՐՔԵՐԻ ՍՏՈՒԳՈՒՄ ═══
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            // Mobile Safari / Chrome (iOS & Android) fix: Promise-ը պետք է փոխանցվի անմիջապես ClipboardItem-ին
+            const makeImagePromise = async () => {
+                const canvas = await html2canvas(frame, { scale: 1, backgroundColor: '#030303' });
+                if (frame.parentNode) document.body.removeChild(frame);
+                return new Promise((resolve, reject) => {
+                    canvas.toBlob(blob => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('Blob creation failed'));
+                    }, 'image/png');
+                });
+            };
 
-            if (isMobile) {
-                canvas.toBlob(async blob => {
-                    const file = new File([blob], `GRIND_Quote_${Date.now()}.png`, { type: 'image/png' });
-                    
-                    // Հեռախոսների համար (Share)
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({
-                                files: [file],
-                                title: 'GRIND Quote',
-                                text: 'Share this quote'
-                            });
-                            toast('Shared successfully');
-                        } catch (err) {
-                            toast('Share cancelled');
-                        }
-                    } else {
-                        // Եթե Share չկա, ներբեռնում ենք
-                        const link = document.createElement('a');
-                        link.download = `GRIND_Quote_${Date.now()}.png`;
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
-                        toast('Image Saved (Long-press to copy)');
-                    }
-                });
+            if (navigator.clipboard && window.ClipboardItem) {
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': makeImagePromise() })
+                ]);
+                toast('Image Copied to Clipboard');
             } else {
-                // Համակարգչի համար (Օրիգինալ Copy)
-                canvas.toBlob(async blob => {
-                    try {
-                        await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
-                        toast('Image Copied to Clipboard');
-                    } catch (err) {
-                        const link = document.createElement('a');
-                        link.download = `GRIND_Quote_${Date.now()}.png`;
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
-                        toast('Copy failed, Saved instead');
-                    }
-                });
+                const blob = await makeImagePromise();
+                await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+                toast('Image Copied to Clipboard');
             }
         }
     } catch(e) {
@@ -2751,18 +2746,17 @@ function shareQuoteLink(e, id) {
     toast('Link Copied to Clipboard');
     document.getElementById(`shareMenu_${id}`).classList.remove('open');
 }
-
-/* ─── 50px-ից 3px քայլերով ─── */
-function getQuoteExportFontSize(text) {
-    const len = (text || '').trim().length;
-    if (len <= 60)  return 50; // Մաքսիմալ չափս
-    if (len <= 90)  return 47; // -3px
-    if (len <= 120) return 44; // -3px
-    if (len <= 150) return 41; // -3px
-    if (len <= 190) return 38; // -3px
-    if (len <= 240) return 35; // -3px
-    if (len <= 300) return 32; // -3px
-    return 29;                 // Ծայրահեղ երկարների համար
+function initQuoteWidget(w, el) {
+    const controls = el.querySelector('.widget-controls');
+    if (controls) {
+        const shareBtn = document.createElement('button');
+        shareBtn.className = 'widget-btn';
+        shareBtn.title = 'Share Quote';
+        shareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
+        shareBtn.onclick = (e) => toggleShareMenu(e, w.id);
+        
+        controls.insertBefore(shareBtn, controls.querySelector('.remove-btn'));
+    }
 }
 function initQuoteWidget(w, el) {
     const controls = el.querySelector('.widget-controls');
