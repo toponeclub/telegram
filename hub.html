@@ -2201,6 +2201,7 @@ body.is-lib-dragging iframe { pointer-events: none !important; }
     <!-- PRODUCTIVITY & ACADEMY VIEWS (Built-in) -->
     <section class="dynamic-view hidden" id="productivityView"></section>
     <section class="dynamic-view hidden" id="academyView"></section>
+    <section class="dynamic-view hidden" id="affiliateView"></section>
 
     <!-- IFRAME VIEW -->
     <div class="iframe-view" id="iframeView">
@@ -2479,7 +2480,7 @@ const WIDGET_REGISTRY = {
     notes:            { id:'notes',            name:'Notes',             desc:'Multi-layer scratchpad',       icon:'fa-note-sticky',       size:'1x1',  category:'Productivity', render: renderNotesWidget, init: initNotesWidget },
 
     community:        { id:'community',        name:'Community',         desc:'Open Prime chat',              icon:'fa-users',             size:'1x1',  category:'Social',       render: renderCommunityWidget, init: initCommunityWidget },
-    affiliate:        { id:'affiliate',        name:'Affiliate',         desc:'Referrals & earnings',         icon:'fa-share-nodes',       size:'1x1',  category:'Social',       render: renderAffiliateWidget }
+    affiliate:        { id:'affiliate',        name:'Affiliate',         desc:'Referrals & earnings',         icon:'fa-share-nodes',       size:'1x1',  category:'Social',       render: renderAffiliateWidget, init: initAffiliateWidget }
 };
 
 const CATEGORIES = ['Trading', 'Productivity', 'Social'];
@@ -5890,16 +5891,33 @@ function initCommunityWidget(w, el) {
     widgetCleanup[w.id] = () => clearInterval(interval);
 }
 
-function renderAffiliateWidget() {
+function getMyRefLink() {
+    return window.currentWallet ? `${location.origin}/?ref=${window.currentWallet}` : `${location.origin}/`;
+}
+
+function renderAffiliateWidget(w) {
     return `
         <div class="mod-header"><div class="mod-title"><i class="fa-solid fa-share-nodes"></i> Affiliate</div></div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
-            <div><div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; font-weight:600;">Referrals</div><div class="affiliate-stat">47</div></div>
-            <div><div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; font-weight:600;">Earned</div><div class="affiliate-stat green">$892</div></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+            <div><div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; font-weight:600;">Referrals</div><div class="affiliate-stat" id="affRefCnt_${w.id}">0</div></div>
+            <div><div style="font-size:0.6rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; font-weight:600;">Earned</div><div class="affiliate-stat green" id="affEarn_${w.id}">$0</div></div>
         </div>
-        <div style="padding:10px; background:rgba(0,0,0,0.35); border-radius:8px; font-family:var(--font-mono); font-size:0.65rem; color:var(--text-hover); margin-bottom:10px; word-break:break-all;">
-            grind.os/r/GRIND-A7X9K2
+        <div id="affLink_${w.id}" onclick="navigator.clipboard.writeText(getMyRefLink()); toast('Referral link copied!');" title="Click to copy" style="padding:8px 10px; background:rgba(0,0,0,0.35); border-radius:8px; font-family:var(--font-mono); font-size:0.62rem; color:var(--accent); word-break:break-all; cursor:pointer;">
+            ${getMyRefLink()}
         </div>`;
+}
+
+async function initAffiliateWidget(w, el) {
+    if (!window.currentWallet) return;
+    try {
+        const r = await fetch(`/api/affiliate/stats?wallet=${encodeURIComponent(window.currentWallet)}`);
+        const d = await r.json();
+        if (!d.ok) return;
+        const cEl = el.querySelector(`#affRefCnt_${w.id}`);
+        const eEl = el.querySelector(`#affEarn_${w.id}`);
+        if (cEl) cEl.textContent = d.referralsCount;
+        if (eEl) eEl.textContent = `$${d.earnedUsdt.toFixed(2)}`;
+    } catch(_) {}
 }
 
 /* ─── WIDGET BEHAVIOURS ─── */
@@ -6024,6 +6042,7 @@ let _activeIframeUrl = null;
 function openIframeView(url, title) {
     document.getElementById('productivityView')?.classList.add('hidden');
     document.getElementById('academyView')?.classList.add('hidden');
+    document.getElementById('affiliateView')?.classList.add('hidden');
     const view    = $('#iframeView');
     const dash    = $('#dashboardView');
     const backBtn = $('#backBtn');
@@ -6116,6 +6135,7 @@ try {
 function closeAllSubViews() {
     document.getElementById('productivityView')?.classList.add('hidden');
     document.getElementById('academyView')?.classList.add('hidden');
+    document.getElementById('affiliateView')?.classList.add('hidden');
     const iv = document.getElementById('iframeView');
     if (iv) iv.classList.remove('active');
 }
@@ -6379,6 +6399,7 @@ function closeIframeView() {
     document.getElementById('subNavBar')?.classList.add('hidden');
     document.getElementById('productivityView')?.classList.add('hidden');
     document.getElementById('academyView')?.classList.add('hidden');
+    document.getElementById('affiliateView')?.classList.add('hidden');
     _activeSectionKey = 'dashboard';
     const view    = $('#iframeView');
     const dash    = $('#dashboardView');
@@ -6459,7 +6480,7 @@ const TOP_SUB_MENUS = {
         { label: 'Content Mash (Coming Soon)', href: 'https://t1prime.com/coming' }
     ],
     affiliate: [
-        { label: 'Main Room & PNL', href: 'https://t1prime.com/coming' }
+        { label: 'Main Room & PNL', affiliateView: true }
     ]
 };
 
@@ -6484,6 +6505,7 @@ function renderTopSubNav(categoryKey, autoOpenFirst = true) {
     if (autoOpenFirst) {
         if (items[0].localView) openProductivityView(items[0].localView);
         else if (items[0].academyTrack) openAcademyView(items[0].academyTrack);
+        else if (items[0].affiliateView) openAffiliateView();
         else if (items[0].href) openIframeView(items[0].href, items[0].label);
     }
 }
@@ -6499,11 +6521,97 @@ window.onTopSubTabClick = function(categoryKey, idx, btnEl) {
         openProductivityView(item.localView);
     } else if (item.academyTrack) {
         openAcademyView(item.academyTrack);
+    } else if (item.affiliateView) {
+        openAffiliateView();
     } else if (item.href) {
-        document.getElementById('productivityView')?.classList.add('hidden');
-        document.getElementById('academyView')?.classList.add('hidden');
+        closeAllSubViews();
         openIframeView(item.href, item.label);
     }
+};
+
+async function openAffiliateView() {
+    closeAllSubViews();
+    document.getElementById('dashboardView')?.classList.add('hidden');
+    document.getElementById('backBtn')?.classList.remove('hidden');
+    const av = document.getElementById('affiliateView');
+    if (!av) return;
+    av.classList.remove('hidden');
+    document.title = 'T1PRIME · Affiliate';
+
+    const link = getMyRefLink();
+    av.innerHTML = `<div class="prod-wrap"><div class="prod-card span4" style="text-align:center;color:var(--text-muted);">Loading partner room...</div></div>`;
+
+    let d = { referralsCount: 0, paidCount: 0, earnedUsdt: 0, commissionPct: 30, payoutTron: '', history: [] };
+    if (window.currentWallet) {
+        try {
+            const r = await fetch(`/api/affiliate/stats?wallet=${encodeURIComponent(window.currentWallet)}`);
+            const j = await r.json();
+            if (j.ok) d = j;
+        } catch(_) {}
+    }
+
+    av.innerHTML = `
+        <div class="prod-wrap">
+            <div class="prod-grid">
+                <div class="prod-card">
+                    <div class="prod-kicker">Total Referrals</div>
+                    <div class="prod-big">${d.referralsCount}</div>
+                    <div class="prod-sub">Registered via your link</div>
+                </div>
+                <div class="prod-card">
+                    <div class="prod-kicker">Prime Conversions</div>
+                    <div class="prod-big">${d.paidCount}</div>
+                    <div class="prod-sub">${d.commissionPct}% partner commission</div>
+                </div>
+                <div class="prod-card span2">
+                    <div class="prod-kicker">Total Earned (USDT)</div>
+                    <div class="prod-big" style="color:var(--green);">$${d.earnedUsdt.toFixed(2)}</div>
+                    <div class="prod-sub">Automatically tracked per verified TXID</div>
+                </div>
+
+                <div class="prod-card span2">
+                    <div class="prod-kicker">Your Referral Link</div>
+                    <div class="pm-addr-box" style="margin-top:8px;">
+                        <code style="font-size:11px;">${link}</code>
+                        <button class="pm-copy-btn" onclick="navigator.clipboard.writeText('${link}'); toast('Link copied!');">COPY</button>
+                    </div>
+                </div>
+
+                <div class="prod-card span2">
+                    <div class="prod-kicker">Partner Payout TRON (TRC20) Address</div>
+                    <div style="display:flex; gap:8px; margin-top:8px;">
+                        <input id="affTronInp" class="hub-inp" style="margin:0; flex:1;" placeholder="T... (Your TRC20 USDT wallet)" value="${d.payoutTron}" />
+                        <button class="hub-btn primary" onclick="saveAffTron()">Save</button>
+                    </div>
+                </div>
+
+                <div class="prod-card span4">
+                    <div class="prod-kicker">Commission History</div>
+                    ${d.history.length ? d.history.map(h => `
+                        <div class="goal-row">
+                            <span style="font-family:var(--font-mono);">${h.user}</span>
+                            <span style="color:var(--green); font-family:var(--font-mono); font-weight:700;">+$${h.amount.toFixed(2)} USDT</span>
+                            <span style="font-family:var(--font-mono); font-size:10px; color:var(--accent); text-transform:uppercase;">${h.status}</span>
+                        </div>
+                    `).join('') : `<div style="font-size:0.75rem; color:var(--text-muted);">No paid referrals yet. Share your link to start earning ${d.commissionPct}% per Prime signup.</div>`}
+                </div>
+            </div>
+        </div>`;
+}
+
+window.saveAffTron = async function() {
+    const val = (document.getElementById('affTronInp')?.value || '').trim();
+    if (!val) return;
+    try {
+        const r = await fetch('/api/affiliate/payout-wallet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ wallet: window.currentWallet, tronAddress: val })
+        });
+        const j = await r.json();
+        if (!j.ok) throw new Error(j.error || 'Failed');
+        toast('✓ Payout TRON address saved');
+    } catch(err) { toast('✗ ' + err.message); }
 };
 
 function onNavClick(e, key) {
@@ -7061,7 +7169,7 @@ const PRIME_API = 'https://grind-os-prime-api.t1prime.workers.dev';
 // Բոլոր /api/... հարցումները ուղղում ենք դեպի Cloudflare Worker
 const _nativeFetch = window.fetch.bind(window);
 window.fetch = (input, init) => {
-    if (typeof input === 'string' && /^\/api\/(user|prime|session|community)\b/.test(input)) {
+    if (typeof input === 'string' && /^\/api\/(user|prime|session|community|affiliate)\b/.test(input)) {
         return _nativeFetch(PRIME_API + input, init);
     }
     return _nativeFetch(input, init);
@@ -7638,10 +7746,14 @@ async function syncSessionWithServer(restoreLayout = true) {
         return;
     }
     try {
+        try {
+            const _r = new URLSearchParams(location.search).get('ref');
+            if (_r && _r.length >= 10 && !localStorage.getItem('t1prime_ref')) localStorage.setItem('t1prime_ref', _r.trim());
+        } catch(_) {}
         const res = await fetch('/api/session/sync', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ wallet: window.currentWallet })
+            body: JSON.stringify({ wallet: window.currentWallet, ref: localStorage.getItem('t1prime_ref') || '' })
         });
         const data = await res.json();
         if (data.ok) {
