@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>How to pay with USDT (TRON / TRC20)</title>
+<title>Buy & Sell Crypto · Onramp & Offramp</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
 <style>
@@ -114,10 +114,10 @@ h1{font-size:clamp(16px,4.6vw,21px);font-weight:800;letter-spacing:-.02em}
 
 <div class="head">
   <div>
-    <h1>Pay $10.50 with USDT</h1>
-    <div class="sub">No crypto experience needed. Follow the 4 steps.</div>
+    <h1>Buy &amp; Sell Crypto</h1>
+    <div class="sub">No crypto experience needed. Buy with card or cash out anytime.</div>
   </div>
-  <span class="net-tag">TRON · TRC20</span>
+  <span class="net-tag">ONRAMP · OFFRAMP</span>
 </div>
 
 <div class="steps">
@@ -127,7 +127,7 @@ h1{font-size:clamp(16px,4.6vw,21px);font-weight:800;letter-spacing:-.02em}
       <div class="step-top"><span class="num">1</span><h3>Get a crypto wallet</h3></div>
       <p>A wallet is a free app that holds your digital dollars (USDT). Install one, tap <b>Create new wallet</b>, and write the 12 secret words on paper. Never share them with anyone.</p>
       <div class="wallets" id="wallets"></div>
-      <a class="skip" href="#step3">Already have USDT in a wallet? Skip to step 3</a>
+      <a class="skip" href="#step2">Already have a wallet? Skip to step 2</a>
     </div>
     <div class="anim seq">
       <div class="row"><i class="fa-solid fa-download"></i> Install the app</div>
@@ -136,10 +136,11 @@ h1{font-size:clamp(16px,4.6vw,21px);font-weight:800;letter-spacing:-.02em}
     </div>
   </div>
 
-  <div class="step">
+  <div class="step" id="step2">
     <div>
-      <div class="step-top"><span class="num">2</span><h3>Buy USDT with your card</h3></div>
-      <p>Tap the button, choose <b>USDT on TRON</b> and pay. When it asks for your wallet address, open your wallet, tap <b>Receive</b> (or <b>Deposit</b>), pick <b>USDT (TRON)</b>, copy the address that starts with <b>T</b> and paste it in.</p>
+      <div class="step-top"><span class="num">2</span><h3>Buy or Sell Crypto with Card / Bank</h3></div>
+      <p><b>To Buy (On-ramp):</b> Tap the button below, select the crypto you want (e.g. <b>USDT on TRON</b>), open your wallet → tap <b>Receive</b>, copy your address and paste it in.</p>
+      <p><b>To Cash Out (Off-ramp):</b> Switch to <b>Sell</b> inside the window, enter your bank/card details and send crypto from your wallet.</p>
       <div class="pay" aria-label="Accepted: Apple Pay, Google Pay, Visa, Mastercard">
         <i class="fa-brands fa-apple-pay" title="Apple Pay"></i>
         <i class="fa-brands fa-google-pay" title="Google Pay"></i>
@@ -147,66 +148,36 @@ h1{font-size:clamp(16px,4.6vw,21px);font-weight:800;letter-spacing:-.02em}
         <i class="fa-brands fa-cc-mastercard" title="Mastercard"></i>
       </div>
       <div class="btns">
-        <button class="btn main" id="buyBtn" type="button"><i class="fa-regular fa-credit-card"></i> Buy USDT</button>
+        <button class="btn main" id="buyBtn" type="button"><i class="fa-regular fa-credit-card"></i> Buy / Sell Crypto</button>
       </div>
     </div>
     <div class="anim">
-      <div class="row"><i class="fa-regular fa-credit-card"></i> Card, Apple Pay, Google Pay <b>$10.50</b></div>
+      <div class="row"><i class="fa-regular fa-credit-card"></i> Card / Apple Pay / Bank <b>FIAT</b></div>
       <div class="flow"></div>
-      <div class="row ok"><i class="fa-solid fa-wallet"></i> USDT in your wallet <b><i class="fa-solid fa-check"></i></b></div>
-    </div>
-  </div>
-
-  <div class="step" id="step3">
-    <div>
-      <div class="step-top"><span class="num">3</span><h3>Send USDT to our address</h3></div>
-      <p>In your wallet tap <b>Send</b>, choose <b>USDT</b>, paste our address, set the network to <b>TRON (TRC20)</b>, enter <b>10.50</b> and confirm.</p>
-      <p>Wallets charge a small network fee in TRX, so keep a few TRX in your wallet.</p>
-      <div class="addr" id="addrBox" hidden>
-        <code id="addrText"></code>
-        <button class="btn" id="copyBtn" type="button"><i class="fa-regular fa-copy"></i> Copy</button>
-      </div>
-    </div>
-    <div class="anim">
-      <div class="row"><i class="fa-solid fa-wallet"></i> Your wallet</div>
-      <div class="flow"></div>
-      <div class="row ok"><i class="fa-solid fa-location-dot"></i> Our address (T...)</div>
-      <div class="pill">Network: TRON (TRC20)</div>
-    </div>
-  </div>
-
-  <div class="step">
-    <div>
-      <div class="step-top"><span class="num">4</span><h3>Paste the TXID and click Verify</h3></div>
-      <p>Wait up to 3 minutes for the transfer to finish. In your wallet open the transaction and copy the <b>TXID</b> (also called transaction hash), a code of 64 characters.</p>
-      <p>Paste it in the box below and click <b>Verify TxID</b>. Your access unlocks right away.</p>
-    </div>
-    <div class="anim">
-      <div class="hash">8f94a2c8...e71b40d9</div>
-      <div class="badge"><i class="fa-solid fa-bolt"></i> Unlocked</div>
+      <div class="row ok"><i class="fa-solid fa-wallet"></i> Self-custody Wallet <b><i class="fa-solid fa-right-left"></i></b></div>
+      <div class="pill">On-ramp &amp; Off-ramp</div>
     </div>
   </div>
 </div>
 
 <div class="tips">
-  <div class="tip warn"><i class="fa-solid fa-triangle-exclamation"></i><div><b>Use only the TRON (TRC20) network.</b> Funds sent on any other network are lost.</div></div>
-  <div class="tip info"><i class="fa-solid fa-circle-info"></i><div>Small fee deductions are accepted automatically. If you send from an exchange, withdraw $10.50 net so the fee does not leave you short.</div></div>
+  <div class="tip warn"><i class="fa-solid fa-triangle-exclamation"></i><div><b>Always match the network.</b> For example, if you buy USDT (TRC20), copy your TRON address starting with <b>T...</b>.</div></div>
+  <div class="tip info"><i class="fa-solid fa-shield-halved"></i><div><b>Self-Custody:</b> Your funds go directly to/from your personal wallet. Keep your 12 recovery words offline and never share them.</div></div>
 </div>
 </div>
 
-<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Buy USDT">
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Buy & Sell Crypto">
   <div class="box">
-    <div class="box-head"><span>Buy USDT with card</span><button class="x" id="closeBtn" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
-    <div class="box-note">Choose USDT on TRON, then paste your own wallet address from step 1. Not loading? <a id="newTab" href="#" target="_blank" rel="noopener">Open in a new tab</a></div>
-    <iframe id="frame" title="Buy USDT" allow="payments *; clipboard-write; camera; microphone; fullscreen"></iframe>
+    <div class="box-head"><span>Buy &amp; Sell Crypto</span><button class="x" id="closeBtn" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
+    <div class="box-note">Choose Buy or Sell, select your asset &amp; network, and paste your wallet address from step 1. Not loading? <a id="newTab" href="#" target="_blank" rel="noopener">Open in a new tab</a></div>
+    <iframe id="frame" title="Buy & Sell Crypto" allow="payments *; clipboard-write; camera; microphone; fullscreen"></iframe>
   </div>
 </div>
 
 <script>
-/* ---- SETTINGS: edit these two lines ---- */
-var PAY_ADDRESS = '';  // your full TRON address (34 characters, starts with T)
-var BUY_URL = 'https://buy.onramper.com/?apiKey=YOUR_ONRAMPER_API_KEY&defaultCrypto=usdt_tron&onlyCryptos=usdt_tron&defaultFiat=usd&defaultAmount=11'; // your onramp / affiliate link
-/* ---------------------------------------- */
+/* ---- SETTINGS: paste your Guardarian Partner Calculator URL here ---- */
+var BUY_URL = 'https://guardarian.com/calculator/v2'; // replace with your partner link from Guardarian Cabinet
+/* ------------------------------------------------------------------- */
 
 /* wallets: [name, favicon domain, download link, note] */
 var WALLETS = [
@@ -241,16 +212,7 @@ document.getElementById('closeBtn').onclick = closeBuy;
 modal.addEventListener('click', function(e){ if(e.target === modal) closeBuy(); });
 document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeBuy(); });
 
-/* our address: shown only if it is a valid TRON address, so a typo can never be copied */
-if (/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(PAY_ADDRESS)) {
-  document.getElementById('addrBox').hidden = false;
-  document.getElementById('addrText').textContent = PAY_ADDRESS;
-  document.getElementById('copyBtn').onclick = function(){
-    var b = this;
-    function done(){ b.innerHTML = '<i class="fa-solid fa-check"></i> Copied'; setTimeout(function(){ b.innerHTML = '<i class="fa-regular fa-copy"></i> Copy'; }, 1800); }
-    try { navigator.clipboard.writeText(PAY_ADDRESS).then(done); } catch(e) {}
-  };
-}
+
 </script>
 </body>
 </html>
