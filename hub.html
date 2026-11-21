@@ -7828,46 +7828,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </script>
 <script type="module">
-async function loadReownLibs() {
+const REOWN_PROJECT_ID = '9a4485f532467f3b0bb7584537697fd1';
+
+const mainnet = {
+    id: 1,
+    chainNamespace: 'eip155',
+    caipNetworkId: 'eip155:1',
+    name: 'Ethereum',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } },
+    blockExplorers: { default: { name: 'Etherscan', url: 'https://etherscan.io' } }
+};
+const arbitrum = {
+    id: 42161,
+    chainNamespace: 'eip155',
+    caipNetworkId: 'eip155:42161',
+    name: 'Arbitrum',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } },
+    blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } }
+};
+
+async function initReownModal() {
+    const networks = [mainnet, arbitrum];
+    const metadata = { name: 'GRIND OS', description: 'Web3 Dashboard', url: window.location.origin, icons: [] };
+    const features = { analytics: false, email: true, socials: ['google'] };
+
     try {
         const [a, e] = await Promise.all([
-            import('https://esm.sh/@reown/appkit?bundle'),
-            import('https://esm.sh/@reown/appkit-adapter-ethers?bundle')
+            import('https://esm.sh/@reown/appkit@1.8.23'),
+            import('https://esm.sh/@reown/appkit-adapter-ethers@1.8.23?deps=@reown/appkit@1.8.23')
         ]);
-        return { createAppKit: a.createAppKit, EthersAdapter: e.EthersAdapter };
+        return a.createAppKit({
+            adapters: [new e.EthersAdapter()],
+            networks, metadata, projectId: REOWN_PROJECT_ID, features
+        });
     } catch (e1) {
-        console.warn('esm.sh failed, trying jsdelivr...', e1);
-        const [a, e] = await Promise.all([
-            import('https://cdn.jsdelivr.net/npm/@reown/appkit/+esm'),
-            import('https://cdn.jsdelivr.net/npm/@reown/appkit-adapter-ethers/+esm')
-        ]);
-        return { createAppKit: a.createAppKit, EthersAdapter: e.EthersAdapter };
+        console.warn('esm.sh failed, loading single CDN bundle...', e1);
+        const cdn = await import('https://cdn.jsdelivr.net/npm/@reown/appkit-cdn@1.4.1/dist/appkit.min.js');
+        const wagmiAdapter = new cdn.WagmiAdapter({ projectId: REOWN_PROJECT_ID, networks });
+        return cdn.createAppKit({
+            adapters: [wagmiAdapter],
+            networks, metadata, projectId: REOWN_PROJECT_ID, features
+        });
     }
 }
 
 try {
-    const { createAppKit, EthersAdapter } = await loadReownLibs();
-
-    const mainnet = {
-        id: 1, name: 'Ethereum',
-        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } },
-        blockExplorers: { default: { name: 'Etherscan', url: 'https://etherscan.io' } }
-    };
-    const arbitrum = {
-        id: 42161, name: 'Arbitrum',
-        nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } },
-        blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } }
-    };
-
-    const modal = createAppKit({
-        adapters: [new EthersAdapter()],
-        networks: [mainnet, arbitrum],
-        metadata: { name: 'GRIND OS', description: 'Web3 Dashboard', url: window.location.origin, icons: [] },
-        projectId: '9a4485f532467f3b0bb7584537697fd1',
-        features: { analytics: false, email: true, socials: ['google'] }
-    });
+    const modal = await initReownModal();
 
     window.appKitModal = modal;
     window.openWalletModal = () => modal.open();
