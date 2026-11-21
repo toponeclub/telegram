@@ -1158,6 +1158,12 @@ h1.hero-title .line-2 {
 </div>
 
 <script>
+try {
+  const _ref = new URLSearchParams(location.search).get('ref');
+  if (_ref && _ref.length >= 10 && !localStorage.getItem('t1prime_ref')) {
+    localStorage.setItem('t1prime_ref', _ref.trim());
+  }
+} catch(_) {}
 const WORKSPACE_URL = '/hub';
 const CF_WORKER_API = 'https://grind-os-prime-api.t1prime.workers.dev';
 const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
