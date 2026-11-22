@@ -1237,7 +1237,8 @@ body.is-resizing .module { transition: none !important; }
                     opacity 0.35s ease;
     }
     body.iframe-active .left-toggle-btn {
-        display: none !important;
+        display: flex !important;
+        left: 0 !important;
     }
     body.iframe-active .preset-wrapper {
         display: none;   /* iframe-ին ուղղահայաց տարածք խնայելու համար */
@@ -1311,24 +1312,32 @@ body.is-resizing .module { transition: none !important; }
     }
 }
 .left-toggle-btn {
-    position: absolute;
-    left: 0;
+    position: fixed;
+    left: 240px;
     top: 50%;
     transform: translateY(-50%);
-    width: 14px;
-    height: 48px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-thin);
+    width: 18px;
+    height: 54px;
+    background: rgba(10, 14, 16, 0.94);
+    border: 1px solid rgba(0, 255, 136, 0.35);
     border-left: none;
-    border-radius: 0 5px 5px 0;
-    color: var(--text-muted);
+    border-radius: 0 8px 8px 0;
+    color: var(--accent);
     cursor: pointer;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
-    z-index: 900;
+    z-index: 940;
     font-size: 10px;
-    transition: var(--transition-smooth);
+    box-shadow: 0 0 14px rgba(0, 255, 136, 0.16);
+    transition: left 0.25s ease, background 0.2s ease, color 0.2s ease;
+}
+#sidebar.collapsed + .main-wrapper .left-toggle-btn { left: 60px; }
+#sidebar.fully-closed + .main-wrapper .left-toggle-btn { left: 0; }
+@media (max-width: 768px) {
+    .left-toggle-btn { left: 260px; }
+    #sidebar.collapsed + .main-wrapper .left-toggle-btn { left: 60px; }
+    #sidebar.fully-closed + .main-wrapper .left-toggle-btn { left: 0; }
 }
 .left-toggle-btn:hover {
     color: var(--accent);
@@ -2071,15 +2080,19 @@ body.is-lib-dragging iframe { pointer-events: none !important; }
             <div class="nav-item-content"><i class="fa-solid fa-paper-plane"></i><span>ImChat</span></div>
         </div>
 
+        <div style="border-top: 1px solid var(--border-thin); margin: 12px 6px;"></div>
+
         <div class="nav-item" data-nav="buycrypto" data-href="https://t1prime.com/cryptopay" onclick="onNavClick(event, 'buycrypto')">
-            <div class="nav-item-content"><i class="fa-solid fa-credit-card"></i><span>Buy Crypto</span></div>
+            <div class="nav-item-content"><i class="fa-solid fa-credit-card" style="color: var(--accent);"></i><span>Buy Crypto</span></div>
         </div>
+
+        <div style="border-top: 1px solid var(--border-thin); margin: 12px 6px;"></div>
 
         <div class="nav-item" data-nav="affiliate" onclick="onNavClick(event, 'affiliate')">
             <div class="nav-item-content"><i class="fa-solid fa-share-nodes"></i><span>Affiliate</span></div>
         </div>
 
-        <div class="nav-item" style="margin-top: 24px; border-top: 1px solid var(--border-thin); padding-top: 20px;" onclick="openPrimeUpgrade()">
+        <div class="nav-item" onclick="openPrimeUpgrade()">
             <div class="nav-item-content"><i class="fa-solid fa-crown" style="color: var(--accent);"></i><span>Prime</span></div>
         </div>
     </div>
@@ -6446,15 +6459,19 @@ document.getElementById('left-toggle').addEventListener('click', function(e) {
     e.stopPropagation();
     const sidebar = document.getElementById('sidebar');
     const icon = document.getElementById('left-toggle-icon');
+    if (!sidebar) return;
 
-    sidebar.classList.toggle('fully-closed');
-
-    if (sidebar.classList.contains('fully-closed')) {
-        icon.classList.remove('fa-chevron-left');
-        icon.classList.add('fa-chevron-right');
+    if (window.innerWidth <= 768 && document.body.classList.contains('iframe-active')) {
+        document.body.classList.remove('iframe-active');
+        sidebar.classList.remove('fully-closed', 'collapsed');
     } else {
-        icon.classList.remove('fa-chevron-right');
-        icon.classList.add('fa-chevron-left');
+        sidebar.classList.toggle('fully-closed');
+    }
+
+    const closed = sidebar.classList.contains('fully-closed');
+    if (icon) {
+        icon.classList.toggle('fa-chevron-left', !closed);
+        icon.classList.toggle('fa-chevron-right', closed);
     }
     setTimeout(() => window.dispatchEvent(new Event('resize')), 350);
 });
