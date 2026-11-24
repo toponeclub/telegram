@@ -120,7 +120,7 @@ nav.top-bar {
   color: var(--accent); font-size: 15px;
   filter: drop-shadow(0 0 10px rgba(0, 245, 184, 0.45));
 }
-.logo-wrap i { color: var(--accent); font-style: normal; opacity: .7; }
+.logo-wrap > i { color: var(--accent); font-style: normal; opacity: .7; }
 
 .hud-center {
   display: flex; align-items: center; gap: 18px;
@@ -1165,7 +1165,7 @@ h1.hero-title .line-2 {
         <button type="button" onclick="closeBuyCryptoGuide()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:2px 6px;">✕</button>
       </div>
     </div>
-    <iframe id="cryptoGuideFrame" src="about:blank" allow="payments *; clipboard-write; camera; microphone; fullscreen" style="flex:1;width:100%;border:none;background:#020607;"></iframe>
+    <iframe id="cryptoGuideFrame" src="about:blank" allow="payment *; clipboard-write; camera; microphone; fullscreen" style="flex:1;width:100%;border:none;background:#020607;"></iframe>
   </div>
 </div>
 
