@@ -148,7 +148,7 @@ h1{font-size:clamp(16px,4.6vw,21px);font-weight:800;letter-spacing:-.02em}
         <i class="fa-brands fa-cc-mastercard" title="Mastercard"></i>
       </div>
       <div class="btns">
-        <button class="btn main" id="buyBtn" type="button"><i class="fa-regular fa-credit-card"></i> Buy / Sell Crypto</button>
+        <a class="btn main" id="buyBtn" href="https://changenow.io/embeds/exchange-widget/v2/widget.html?amount=0.1&amountFiat=1000&backgroundColor=000000&darkMode=true&from=btc&fromFiat=eur&horizontal=false&isFiat=true&lang=en-US&link_id=5ffbb45565fa6d&locales=true&logo=false&primaryColor=00ffd5&to=eth&toFiat=usdttrc20&toTheMoon=true" target="_blank" rel="noopener noreferrer"><i class="fa-regular fa-credit-card"></i> Buy / Sell Crypto</a>
       </div>
     </div>
     <div class="anim">
@@ -206,12 +206,8 @@ WALLETS.forEach(function(w){
 
 /* buy window */
 var modal = document.getElementById('modal'), frame = document.getElementById('iframe-widget');
-function openBuy(){ if(!frame.getAttribute('src')) frame.src = BUY_URL; document.getElementById('newTab').href = BUY_URL; modal.classList.add('open'); }
-function closeBuy(){ modal.classList.remove('open'); }
-document.getElementById('buyBtn').onclick = openBuy;
-document.getElementById('closeBtn').onclick = closeBuy;
-modal.addEventListener('click', function(e){ if(e.target === modal) closeBuy(); });
-document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeBuy(); });
+var buyBtn = document.getElementById('buyBtn');
+if (buyBtn && typeof BUY_URL === 'string') buyBtn.href = BUY_URL;
 
 
 </script>
