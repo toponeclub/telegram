@@ -3,184 +3,251 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Buy & Sell Crypto · Onramp & Offramp</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+<meta name="theme-color" content="#030709">
+<title>GRIND // OS · Buy & Sell Crypto</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
 :root{
-  --bg:#020607;--surface:#071114;--border:rgba(0,255,136,.14);
-  --accent:#00ff88;--gold:#ffcc00;--text:#eafff9;--muted:#8aa69d;
-  --font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+  --bg:#030709;
+  --surface:#071114;
+  --border:rgba(0,245,184,.16);
+  --accent:#00f5b8;
+  --gold:#ffcc00;
+  --text:#f0f2f5;
+  --muted:#8aa69d;
+  --font:'Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
 body{
-  background:radial-gradient(ellipse 90% 60% at 50% 0%,rgba(0,255,136,.10),transparent 65%),var(--bg);
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 0%,rgba(0,245,184,.11),transparent 65%),
+    linear-gradient(180deg,#030709 0%,#050b0f 55%,#030709 100%);
   color:var(--text);font-family:var(--font);min-height:100vh;min-height:100dvh;
-  padding:clamp(12px,3vw,24px);padding-bottom:max(clamp(12px,3vw,24px),env(safe-area-inset-bottom));
-  overflow-wrap:anywhere;
+  padding:clamp(14px,3vw,28px);
+  padding-bottom:max(clamp(16px,3vw,28px),env(safe-area-inset-bottom));
 }
-.wrap{width:100%;max-width:780px;margin:0 auto}
+.wrap{width:100%;max-width:940px;margin:0 auto}
 a{color:var(--accent)}
-.head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:16px}
-.head>div{min-width:0;flex:1 1 220px}
-h1{font-size:clamp(16px,4.6vw,21px);font-weight:800;letter-spacing:-.02em}
-.sub{font-size:12px;color:var(--muted);margin-top:3px}
-.net-tag{font:700 11px var(--mono);color:#001a0d;background:var(--accent);padding:5px 10px;border-radius:6px;white-space:nowrap}
 
-.steps{container-type:inline-size;display:grid;gap:12px}
-.step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:clamp(12px,3vw,18px);display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,210px);gap:clamp(12px,3vw,18px);align-items:center}
-.step>*{min-width:0}
-@container (max-width:540px){.step{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:560px){.step{grid-template-columns:minmax(0,1fr)}}
-.step-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-.num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#001a0d;font:800 13px var(--font);display:grid;place-items:center}
-.step h3{font-size:clamp(14px,3.8vw,15.5px);font-weight:700;line-height:1.3}
-.step p{font-size:clamp(12.5px,3.3vw,13.5px);color:var(--muted);line-height:1.6}
-.step p b{color:var(--text)}
-.step p+p{margin-top:6px}
-.label{font-size:12px;font-weight:600;color:var(--text);margin:12px 0 6px}
-.skip{display:inline-block;margin-top:10px;font-size:12.5px;font-weight:600}
-
-.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:9px 14px;border-radius:8px;
-  font:700 13px var(--font);text-decoration:none;cursor:pointer;border:1px solid var(--border);
-  background:rgba(0,255,136,.06);color:var(--text);
+/* Top Header */
+.head{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
+  padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:18px;
 }
-.btn:hover{border-color:var(--accent)}
-.btn.main{background:var(--accent);color:#001a0d;border-color:var(--accent);font-size:15px;padding:11px 20px}
-.btn.main:hover{filter:brightness(1.1)}
-@media(max-width:420px){.btn.main{width:100%}}
-:is(.btn,a,button):focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.logo-wrap{
+  display:flex;align-items:center;gap:10px;
+  font:800 12.5px var(--mono);letter-spacing:.28em;
+  color:var(--text);text-decoration:none;text-transform:uppercase;
+}
+.logo-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  color:var(--accent);font-size:15px;
+  filter:drop-shadow(0 0 10px rgba(0,245,184,.45));
+}
+.logo-wrap b{color:#fff;font-weight:800}
+.logo-wrap > i{color:var(--accent);font-style:normal;opacity:.7}
 
-/* wallets */
-.wallets{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:8px;margin-top:10px}
-.w{display:flex;align-items:center;gap:9px;min-height:44px;padding:7px 10px;border-radius:9px;border:1px solid var(--border);background:rgba(0,255,136,.04);color:var(--text);text-decoration:none;font-size:12.5px;font-weight:600;min-width:0}
-.w:hover{border-color:var(--accent)}
+.head-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.net-tag{
+  font:800 10.5px var(--mono);letter-spacing:.1em;color:#021a13;
+  background:var(--accent);padding:5px 10px;border-radius:6px;white-space:nowrap;
+}
+.back-link{
+  font:700 11px var(--mono);color:var(--muted);text-decoration:none;
+  padding:6px 11px;border-radius:6px;border:1px solid var(--border);transition:.2s;
+}
+.back-link:hover{color:var(--accent);border-color:var(--accent)}
+
+.title-row{margin-bottom:16px}
+.title-row h1{font-size:clamp(20px,4.5vw,26px);font-weight:800;letter-spacing:-.02em}
+.sub{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* Steps Layout */
+.steps{display:grid;gap:14px}
+.step{
+  background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:clamp(14px,3vw,22px);
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(180px,240px);
+  gap:clamp(14px,3vw,22px);align-items:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.45);
+}
+.step.step-embed{
+  grid-template-columns:minmax(0,1fr) minmax(320px,420px);
+  align-items:start;
+}
+@media(max-width:780px){
+  .step,.step.step-embed{grid-template-columns:minmax(0,1fr)}
+}
+.step>*{min-width:0}
+
+.step-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.num{
+  flex:none;width:26px;height:26px;border-radius:50%;
+  background:var(--accent);color:#021a13;
+  font:800 13px var(--mono);display:grid;place-items:center;
+}
+.step h3{font-size:clamp(15px,3.8vw,17px);font-weight:700;line-height:1.3}
+.step p{font-size:13.5px;color:var(--muted);line-height:1.6}
+.step p b{color:var(--text)}
+.step p+p{margin-top:8px}
+.skip{display:inline-block;margin-top:12px;font-size:12.5px;font-weight:600;text-decoration:none}
+.skip:hover{text-decoration:underline}
+
+/* Wallets */
+.wallets{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:12px}
+.w{
+  display:flex;align-items:center;gap:9px;min-height:44px;padding:7px 10px;
+  border-radius:9px;border:1px solid var(--border);
+  background:rgba(0,245,184,.04);color:var(--text);text-decoration:none;
+  font-size:12.5px;font-weight:600;transition:.18s;
+}
+.w:hover{border-color:var(--accent);background:rgba(0,245,184,.09)}
 .w img,.w>i{flex:none;width:24px;height:24px;border-radius:6px;object-fit:contain;background:#fff;padding:2px}
-.w>i{background:rgba(0,255,136,.12);color:var(--accent);display:grid;place-items:center;font-size:13px;padding:0}
+.w>i{background:rgba(0,245,184,.12);color:var(--accent);display:grid;place-items:center;font-size:13px;padding:0}
 .w span{min-width:0;line-height:1.2}
 .w small{display:block;font-size:10px;font-weight:500;color:var(--muted)}
 
-/* payment logos */
-.pay{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:10px;font-size:clamp(30px,9vw,40px);line-height:1}
+/* Payment logos & direct button */
+.pay{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:14px;font-size:clamp(30px,8vw,38px);line-height:1}
 .pay i{color:var(--text)}
 
-.addr{margin-top:10px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;border:1px dashed rgba(0,255,136,.35);background:rgba(0,0,0,.4)}
-.addr code{flex:1 1 200px;font:600 clamp(11px,3vw,12.5px) var(--mono);color:var(--accent);word-break:break-all}
-.addr[hidden]{display:none}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:42px;padding:10px 16px;border-radius:9px;margin-top:14px;
+  font:700 12.5px var(--mono);text-decoration:none;cursor:pointer;
+  border:1px solid var(--accent);background:rgba(0,245,184,.1);color:var(--accent);
+  transition:.2s;
+}
+.btn:hover{background:var(--accent);color:#021a13}
 
-/* animation boxes */
-.anim{min-height:112px;border-radius:9px;background:rgba(0,0,0,.45);border:1px solid rgba(0,255,136,.12);padding:10px;display:flex;flex-direction:column;justify-content:center;gap:7px;overflow:hidden;font-size:11px}
-.row{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid transparent;min-width:0}
+/* Direct Embedded Widget Frame */
+.embed-shell{
+  border-radius:12px;
+  border:1px solid rgba(0,245,184,.28);
+  background:#071114;
+  overflow:hidden;
+  box-shadow:0 0 36px rgba(0,245,184,.08);
+}
+.embed-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.06);
+  font:700 10px var(--mono);letter-spacing:.12em;color:var(--accent);
+  background:rgba(0,0,0,.35);
+}
+.embed-shell iframe{
+  width:100%;height:375px;border:none;display:block;background:#071114;
+}
+
+/* Step 1 Sequence Animation */
+.anim{
+  min-height:122px;border-radius:10px;background:rgba(0,0,0,.45);
+  border:1px solid rgba(0,245,184,.12);padding:12px;
+  display:flex;flex-direction:column;justify-content:center;gap:8px;font-size:11.5px;
+}
+.row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid transparent}
 .row i{flex:none;width:14px;text-align:center;color:var(--muted)}
-.row b{margin-left:auto;flex:none}
-.flow{height:2px;background:rgba(0,255,136,.18);position:relative;overflow:hidden;border-radius:2px;margin:0 4px;flex:none}
-.flow::after{content:'';position:absolute;top:0;left:-40%;width:40%;height:100%;background:var(--accent);animation:slide 1.5s infinite linear}
-@keyframes slide{to{left:100%}}
 .seq .row{animation:hl 6s infinite}
 .seq .row:nth-child(2){animation-delay:2s}
 .seq .row:nth-child(3){animation-delay:4s}
-@keyframes hl{0%,30%{border-color:var(--accent);background:rgba(0,255,136,.14);color:var(--accent)}36%,100%{border-color:transparent;background:rgba(255,255,255,.04);color:var(--text)}}
-.ok,.row.ok i{color:var(--accent)}
-.pill{text-align:center;padding:6px;border-radius:6px;font-weight:800;font-size:11px;border:1px solid var(--accent);color:var(--accent);background:rgba(0,255,136,.12)}
-.hash{padding:7px 9px;border-radius:6px;background:rgba(0,0,0,.6);border:1px dashed rgba(0,255,136,.35);font:500 10.5px var(--mono);color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.badge{align-self:flex-start;display:inline-flex;gap:6px;align-items:center;padding:5px 9px;border-radius:5px;background:rgba(0,255,136,.15);color:var(--accent);font-weight:700;animation:pulse 1.8s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+@keyframes hl{
+  0%,30%{border-color:var(--accent);background:rgba(0,245,184,.14);color:var(--accent)}
+  36%,100%{border-color:transparent;background:rgba(255,255,255,.04);color:var(--text)}
+}
 
-.tips{margin-top:12px;display:grid;gap:8px}
-.tip{padding:10px 12px;border-radius:9px;font-size:12.5px;line-height:1.55;display:flex;gap:10px;align-items:flex-start}
+/* Tips */
+.tips{margin-top:14px;display:grid;gap:8px}
+.tip{padding:11px 14px;border-radius:10px;font-size:12.5px;line-height:1.55;display:flex;gap:10px;align-items:flex-start}
 .tip i{margin-top:3px;flex:none}
 .tip.warn{background:rgba(255,204,0,.06);border:1px solid rgba(255,204,0,.22);color:#e6d58e}
 .tip.warn i{color:var(--gold)}
-.tip.info{background:rgba(0,255,136,.05);border:1px solid var(--border);color:var(--muted)}
+.tip.info{background:rgba(0,245,184,.05);border:1px solid var(--border);color:var(--muted)}
 .tip.info i{color:var(--accent)}
-
-/* buy window */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;padding:14px;z-index:10}
-.modal.open{display:flex}
-.box{width:100%;max-width:480px;height:min(740px,100%);background:var(--surface);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column;overflow:hidden}
-.box-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700}
-.box-head .x{background:none;border:0;color:var(--text);font-size:20px;cursor:pointer;min-width:40px;min-height:40px}
-.box-note{padding:8px 14px;font-size:11.5px;color:var(--muted);line-height:1.5;border-bottom:1px solid var(--border)}
-.box iframe{flex:1;border:0;width:100%;background:#000000}
-@media(max-width:520px){.modal{padding:0}.box{max-width:none;height:100vh;height:100dvh;border-radius:0;border:0}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<div class="head">
-  <div>
+  <div class="head">
+    <a href="/" class="logo-wrap">
+      <span class="logo-icon"><i class="fa-solid fa-crown"></i></span>
+      <b>GRIND</b><i>//</i><b>OS</b>
+    </a>
+    <div class="head-right">
+      <span class="net-tag">ONRAMP · OFFRAMP</span>
+      <a href="/hub" class="back-link"><i class="fa-solid fa-arrow-left"></i> Hub</a>
+    </div>
+  </div>
+
+  <div class="title-row">
     <h1>Buy &amp; Sell Crypto</h1>
-    <div class="sub">No crypto experience needed. Buy with card or cash out anytime.</div>
-  </div>
-  <span class="net-tag">ONRAMP · OFFRAMP</span>
-</div>
-
-<div class="steps">
-
-  <div class="step">
-    <div>
-      <div class="step-top"><span class="num">1</span><h3>Get a crypto wallet</h3></div>
-      <p>A wallet is a free app that holds your digital dollars (USDT). Install one, tap <b>Create new wallet</b>, and write the 12 secret words on paper. Never share them with anyone.</p>
-      <div class="wallets" id="wallets"></div>
-      <a class="skip" href="#step2">Already have a wallet? Skip to step 2</a>
-    </div>
-    <div class="anim seq">
-      <div class="row"><i class="fa-solid fa-download"></i> Install the app</div>
-      <div class="row"><i class="fa-solid fa-plus"></i> Create new wallet</div>
-      <div class="row"><i class="fa-solid fa-key"></i> Save 12 words</div>
-    </div>
+    <div class="sub">No crypto experience needed. Buy with card or cash out directly to your bank.</div>
   </div>
 
-  <div class="step" id="step2">
-    <div>
-      <div class="step-top"><span class="num">2</span><h3>Buy or Sell Crypto with Card / Bank</h3></div>
-      <p><b>To Buy (On-ramp):</b> Tap the button below, select the crypto you want (e.g. <b>USDT on TRON</b>), open your wallet → tap <b>Receive</b>, copy your address and paste it in.</p>
-      <p><b>To Cash Out (Off-ramp):</b> Switch to <b>Sell</b> inside the window, enter your bank/card details and send crypto from your wallet.</p>
-      <div class="pay" aria-label="Accepted: Apple Pay, Google Pay, Visa, Mastercard">
-        <i class="fa-brands fa-apple-pay" title="Apple Pay"></i>
-        <i class="fa-brands fa-google-pay" title="Google Pay"></i>
-        <i class="fa-brands fa-cc-visa" title="Visa"></i>
-        <i class="fa-brands fa-cc-mastercard" title="Mastercard"></i>
+  <div class="steps">
+
+    <div class="step">
+      <div>
+        <div class="step-top"><span class="num">1</span><h3>Get a crypto wallet</h3></div>
+        <p>A wallet is a free app that holds your digital dollars (USDT). Install one, tap <b>Create new wallet</b>, and write the 12 secret words on paper. Never share them with anyone.</p>
+        <div class="wallets" id="wallets"></div>
+        <a class="skip" href="#step2">Already have a wallet? Go to Step 2 →</a>
       </div>
-      <div class="btns">
-        <a class="btn main" id="buyBtn" href="https://changenow.io/embeds/exchange-widget/v2/widget.html?amount=0.1&amountFiat=1000&backgroundColor=000000&darkMode=true&from=btc&fromFiat=eur&horizontal=false&isFiat=true&lang=en-US&link_id=5ffbb45565fa6d&locales=true&logo=false&primaryColor=00ffd5&to=eth&toFiat=usdttrc20&toTheMoon=true" target="_blank" rel="noopener noreferrer"><i class="fa-regular fa-credit-card"></i> Buy / Sell Crypto</a>
+      <div class="anim seq">
+        <div class="row"><i class="fa-solid fa-download"></i> Install the app</div>
+        <div class="row"><i class="fa-solid fa-plus"></i> Create new wallet</div>
+        <div class="row"><i class="fa-solid fa-key"></i> Save 12 words</div>
       </div>
     </div>
-    <div class="anim">
-      <div class="row"><i class="fa-regular fa-credit-card"></i> Card / Apple Pay / Bank <b>FIAT</b></div>
-      <div class="flow"></div>
-      <div class="row ok"><i class="fa-solid fa-wallet"></i> Self-custody Wallet <b><i class="fa-solid fa-right-left"></i></b></div>
-      <div class="pill">On-ramp &amp; Off-ramp</div>
+
+    <div class="step step-embed" id="step2">
+      <div>
+        <div class="step-top"><span class="num">2</span><h3>Buy or Sell Crypto with Card / Bank</h3></div>
+        <p><b>To Buy (On-ramp):</b> Select the currency and crypto on the right (default: <b>EUR → USDT TRC20</b>), open your wallet → tap <b>Receive</b>, copy your address and paste it in.</p>
+        <p><b>To Cash Out (Off-ramp):</b> Switch to <b>Sell</b> inside the panel, enter your bank/card details and send crypto from your wallet.</p>
+        <div class="pay" aria-label="Accepted: Apple Pay, Google Pay, Visa, Mastercard">
+          <i class="fa-brands fa-apple-pay" title="Apple Pay"></i>
+          <i class="fa-brands fa-google-pay" title="Google Pay"></i>
+          <i class="fa-brands fa-cc-visa" title="Visa"></i>
+          <i class="fa-brands fa-cc-mastercard" title="Mastercard"></i>
+        </div>
+        <a class="btn" id="directBtn" href="#" target="_blank" rel="noopener noreferrer">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Checkout
+        </a>
+      </div>
+
+      <div class="embed-shell">
+        <div class="embed-bar">
+          <span><i class="fa-solid fa-bolt"></i> INSTANT GATEWAY</span>
+          <span>EUR · USD → USDT</span>
+        </div>
+        <iframe id="cn-widget" title="Buy & Sell Crypto" referrerpolicy="origin" allow="payment *; clipboard-write; camera; microphone; fullscreen"></iframe>
+      </div>
     </div>
-  </div>
-</div>
 
-<div class="tips">
-  <div class="tip warn"><i class="fa-solid fa-triangle-exclamation"></i><div><b>Always match the network.</b> For example, if you buy USDT (TRC20), copy your TRON address starting with <b>T...</b>.</div></div>
-  <div class="tip info"><i class="fa-solid fa-shield-halved"></i><div><b>Self-Custody:</b> Your funds go directly to/from your personal wallet. Keep your 12 recovery words offline and never share them.</div></div>
-</div>
-</div>
-
-<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Buy & Sell Crypto">
-  <div class="box">
-    <div class="box-head"><span>Buy &amp; Sell Crypto</span><button class="x" id="closeBtn" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button></div>
-    <div class="box-note">Choose Buy or Sell, select your asset &amp; network, and paste your wallet address from step 1. Not loading? <a id="newTab" href="#" target="_blank" rel="noopener">Open in a new tab</a></div>
-    <iframe id="iframe-widget" title="Buy & Sell Crypto" allow="payments *; clipboard-write; camera; microphone; fullscreen"></iframe>
   </div>
+
+  <div class="tips">
+    <div class="tip warn"><i class="fa-solid fa-triangle-exclamation"></i><div><b>Always match the network.</b> For example, if you buy USDT (TRC20), copy your TRON address starting with <b>T...</b>.</div></div>
+    <div class="tip info"><i class="fa-solid fa-shield-halved"></i><div><b>Self-Custody:</b> Your funds go directly to/from your personal wallet. Keep your 12 recovery words offline and never share them.</div></div>
+  </div>
+
 </div>
-<script defer type="text/javascript" src="https://changenow.io/embeds/exchange-widget/v2/stepper-connector.js"></script>
 
 <script>
-/* ---- SETTINGS: ChangeNOW Partner Widget URL ---- */
-var BUY_URL = 'https://changenow.io/embeds/exchange-widget/v2/widget.html?amount=0.1&amountFiat=1000&backgroundColor=000000&darkMode=true&from=btc&fromFiat=eur&horizontal=false&isFiat=true&lang=en-US&link_id=5ffbb45565fa6d&locales=true&logo=false&primaryColor=00ffd5&to=eth&toFiat=usdttrc20&toTheMoon=true';
-/* ------------------------------------------------ */
+/* ---- ChangeNOW Partner Widget URL (Single-Layer Direct Embed) ---- */
+var BUY_URL = 'https://changenow.io/embeds/exchange-widget/v2/widget.html'
+  + '?amount=0.1&amountFiat=1000&backgroundColor=071114&darkMode=true'
+  + '&from=btc&fromFiat=eur&horizontal=false&isFiat=true&lang=en-US'
+  + '&link_id=5ffbb45565fa6d&locales=true&logo=false'
+  + '&primaryColor=00f5b8&to=eth&toFiat=usdttrc20&toTheMoon=true';
 
-/* wallets: [name, favicon domain, download link, note] */
+document.getElementById('cn-widget').src = BUY_URL;
+document.getElementById('directBtn').href = BUY_URL;
+
 var WALLETS = [
   ['Trust Wallet','trustwallet.com','https://trustwallet.com/download'],
   ['TronLink','tronlink.org','https://www.tronlink.org/'],
@@ -203,13 +270,6 @@ WALLETS.forEach(function(w){
   if (w[3]) { var m = document.createElement('small'); m.textContent = w[3]; s.appendChild(m); }
   a.appendChild(img); a.appendChild(s); wl.appendChild(a);
 });
-
-/* buy window */
-var modal = document.getElementById('modal'), frame = document.getElementById('iframe-widget');
-var buyBtn = document.getElementById('buyBtn');
-if (buyBtn && typeof BUY_URL === 'string') buyBtn.href = BUY_URL;
-
-
 </script>
 </body>
 </html>
