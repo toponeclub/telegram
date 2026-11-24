@@ -4602,22 +4602,8 @@ function initCryptoSparklineWidget(w, el) {
     async function fetchChartData(symbol, interval, limit) {
         els.loading.style.display = 'block';
         try {
-            // Connect to t1prime sparkline endpoint first, with automatic Binance API fallback
-            let data = null;
-            try {
-                const r = await fetch(`/api/sparkline?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-                if (r.ok) data = await r.json();
-            } catch (_) {}
-            if (!data || !Array.isArray(data) || !data.length) {
-                try {
-                    const r2 = await fetch(`https://t1prime.com/api/sparkline?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-                    if (r2.ok) data = await r2.json();
-                } catch (_) {}
-            }
-            if (!data || !Array.isArray(data) || !data.length) {
-                const r3 = await fetch(`${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-                if (r3.ok) data = await r3.json();
-            }
+            const r = await fetch(`${API_BASE}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+            const data = r.ok ? await r.json() : [];
             els.loading.style.display = 'none';
             if (Array.isArray(data)) {
                 return data.map(k => [parseInt(k[0]), parseFloat(k[4]), parseFloat(k[7])]);
