@@ -1188,16 +1188,9 @@ const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-m
 
 /* ════════ LAUNCH ANIMATION (Spinning Crown -> Hub) ════════ */
 function openBuyCryptoGuide() {
-  const m = document.getElementById('cryptoGuideModal');
-  const f = document.getElementById('cryptoGuideFrame');
-  if (f && f.getAttribute('src') === 'about:blank') f.src = '/cryptopay';
-  if (m) m.style.display = 'flex';
+  window.open('/cryptopay', '_blank', 'noopener');
 }
-function closeBuyCryptoGuide() {
-  const m = document.getElementById('cryptoGuideModal');
-  if (m) m.style.display = 'none';
-}
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeBuyCryptoGuide(); });
+function closeBuyCryptoGuide() {}
 
 function launchApp() {
   if (typeof gtag === 'function') gtag('event', 'login_clicked', { event_category: 'engagement' });
