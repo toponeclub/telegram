@@ -114,6 +114,7 @@ nav.top-bar {
   display: flex; align-items: center; gap: 10px;
   font: 800 12.5px var(--mono); letter-spacing: .28em;
   color: var(--text); text-decoration: none; text-transform: uppercase;
+  flex-shrink: 0;
 }
 .logo-icon {
   display: inline-flex; align-items: center; justify-content: center;
@@ -122,28 +123,36 @@ nav.top-bar {
 }
 .logo-wrap > i { color: var(--accent); font-style: normal; opacity: .7; }
 
-.hud-center {
-  display: flex; align-items: center; gap: 18px;
-  font: 600 10.5px var(--mono); letter-spacing: .14em; color: var(--muted);
-  text-transform: uppercase;
+/* Center Hub Menu (Flex Centered) */
+.nav-center {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  flex: 1; margin: 0 16px;
 }
-.hud-center span { display: inline-flex; align-items: center; gap: 7px; }
-.hud-center b { color: var(--text); font-weight: 700; }
-.pulse-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--accent); box-shadow: 0 0 10px var(--accent);
-  animation: pulseLive 1.6s infinite;
-}
-@keyframes pulseLive { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
-@media (max-width: 900px) { .hud-center { display: none; } }
-
-.nav-actions { display: flex; align-items: center; gap: 12px; }
 .nav-link {
   font: 700 10.5px var(--mono); letter-spacing: .12em; color: var(--text-2);
-  text-decoration: none; text-transform: uppercase; transition: color .18s;
+  text-decoration: none; text-transform: uppercase; transition: all .18s ease;
+  background: none; border: none; cursor: pointer; padding: 5px 8px;
+  white-space: nowrap;
 }
 .nav-link:hover { color: var(--accent); }
-@media (max-width: 640px) { .nav-link { display: none; } }
+.nav-link.buy-btn-link {
+  color: var(--accent);
+  border: 1px solid rgba(0, 245, 184, 0.3);
+  padding: 5px 11px; border-radius: 6px;
+  background: rgba(0, 245, 184, 0.08);
+}
+.nav-link.buy-btn-link:hover {
+  background: rgba(0, 245, 184, 0.18);
+  border-color: var(--accent);
+}
+
+.nav-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  nav.top-bar { padding-left: 14px; padding-right: 14px; }
+  .nav-link:not(.buy-btn-link) { display: none; }
+  .nav-center { justify-content: flex-end; margin: 0 8px; }
+}
 
 .btn-login-sm {
   padding: 8px 18px; border-radius: 7px;
@@ -629,14 +638,15 @@ h1.hero-title .line-2 {
     <b>GRIND</b><i>//</i><b>OS</b>
   </a>
 
-  <div class="hud-center">
-   
+  <div class="nav-center">
+    <a href="#lobby" class="nav-link">Systems</a>
+    <a href="#modules" class="nav-link">Modules</a>
+    <button type="button" class="nav-link buy-btn-link" onclick="openBuyCryptoGuide()">
+      <i class="fa-solid fa-credit-card"></i> Buy Crypto
+    </button>
   </div>
 
   <div class="nav-actions">
-    <a href="#lobby" class="nav-link">Systems</a>
-    <a href="#modules" class="nav-link">Modules</a>
-    <button type="button" class="nav-link" style="background:none;border:none;cursor:pointer;" onclick="openBuyCryptoGuide()">Buy Crypto</button>
     <button type="button" class="btn-login-sm" onclick="launchApp()">
       LOG IN <i class="fa-solid fa-arrow-right"></i>
     </button>
@@ -946,8 +956,8 @@ h1.hero-title .line-2 {
             </div>
           </div>
 
-          <div class="hw">
-            <div class="hw-head"><span><i class="fa-solid fa-money-bill-transfer"></i> CRYPTO ONRAMP · BUY GUIDE</span><span style="color:var(--accent);">DIRECT BRIDGE</span></div>
+          <div class="hw" style="cursor:pointer;" onclick="openBuyCryptoGuide()" title="Open Buy/Sell Crypto">
+            <div class="hw-head"><span><i class="fa-solid fa-money-bill-transfer"></i> CRYPTO ONRAMP</span><span style="color:var(--accent);">OPEN GATEWAY ↗</span></div>
             <div style="display:flex;flex-direction:column;gap:10px;font-family:var(--mono);font-size:11px;margin:auto 0;">
               <div style="display:flex;justify-content:space-between;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;">
                 <span style="color:var(--muted);">FIAT / CARD</span><b style="color:#fff;">USD · EUR → USDT / USDC</b>
@@ -956,10 +966,10 @@ h1.hero-title .line-2 {
                 <span style="color:var(--muted);">NETWORKS</span><b style="color:var(--accent);">TRC20 · ARBITRUM · SOL</b>
               </div>
               <div style="display:flex;justify-content:space-between;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;">
-                <span style="color:var(--muted);">STEP-BY-STEP</span><b style="color:#fff;">BINANCE · BYBIT · TRUST</b>
+                <span style="color:var(--muted);">GATEWAY</span><b style="color:#fff;">INSTANT CARD ONRAMP</b>
               </div>
-              <button type="button" class="btn-login-sm" style="width:100%;justify-content:center;padding:10px;" onclick="openBuyCryptoGuide()">
-                <i class="fa-regular fa-credit-card"></i> BUY / SELL CRYPTO NOW
+              <button type="button" class="btn-login-sm" style="width:100%;justify-content:center;padding:10px;">
+                <i class="fa-regular fa-credit-card"></i> BUY / SELL CRYPTO NOW ↗
               </button>
             </div>
           </div>
@@ -1247,18 +1257,19 @@ const visObserver = new IntersectionObserver((entries) => {
     seedP = close;
   }
 
-  function getLiqs(list) {
+ function getLiqs(list) {
+    // Long Liqs -> տեղի են ունենում հատակներում (Dips/Lows), գույնը՝ կանաչ, մոմից ներքև
     const longs = [
-      { idx: 6, usd: '$4.8M', big: true },
-      { idx: 15, usd: '$480K', big: true },
-      { idx: 27, usd: '$3.4M', big: true },
-      { idx: 35, usd: '$892K', big: false }
+       { idx: 13, usd: '$2.3M', big: true },
+       { idx: 27, usd: '$5.6M', big: true },
+     
     ];
+    // Short Liqs -> տեղի են ունենում գագաթներում (Peaks/Highs), գույնը՝ կարմիր, մոմից վերև
     const shorts = [
-      { idx: 10, usd: '$2.3M', big: true },
-      { idx: 20, usd: '$5.6M', big: true },
-      { idx: 31, usd: '$1.4M', big: false },
-      { idx: 39, usd: '$3.8M', big: true }
+      { idx: 7, usd: '$4.8M', big: true },
+     { idx: 22, usd: '$3.4M', big: true },
+     
+      { idx: 38, usd: '$3.8M', big: true }
     ];
     const out = [];
     longs.forEach(l => { if (list[l.idx]) out.push({ ...l, side: 'long', price: list[l.idx].low }); });
@@ -1306,7 +1317,9 @@ const visObserver = new IntersectionObserver((entries) => {
       const x = pad + l.idx * cw + cw / 2;
       const y = toY(l.price);
       const isLong = l.side === 'long';
-      const col = isLong ? '#ff335f' : '#00f5b8';
+      // Short: մոմից վերև, կարմիր, սլաքը ցույց է տալիս ներքև
+      // Long: մոմից ներքև, կանաչ, սլաքը ցույց է տալիս վերև
+      const col = isLong ? '#00f5b8' : '#ff335f';
       const off = isLong ? 8 : -8;
 
       ctx.strokeStyle = col; ctx.globalAlpha = 0.4; ctx.setLineDash([2, 3]);
@@ -1316,16 +1329,22 @@ const visObserver = new IntersectionObserver((entries) => {
       ctx.fillStyle = col;
       ctx.beginPath();
       if (isLong) {
-        ctx.moveTo(x - 3.8, y + off); ctx.lineTo(x + 3.8, y + off); ctx.lineTo(x, y + off + 5.5);
+        // Մոմից ներքև է (off > 0), սլաքը ուղղված է դեպի վերև (մոմի low-ի ուղղությամբ)
+        ctx.moveTo(x - 3.8, y + off + 5.5);
+        ctx.lineTo(x + 3.8, y + off + 5.5);
+        ctx.lineTo(x, y + off);
       } else {
-        ctx.moveTo(x - 3.8, y + off); ctx.lineTo(x + 3.8, y + off); ctx.lineTo(x, y + off - 5.5);
+        // Մոմից վերև է (off < 0), սլաքը ուղղված է դեպի ներքև (մոմի high-ի ուղղությամբ)
+        ctx.moveTo(x - 3.8, y + off - 5.5);
+        ctx.lineTo(x + 3.8, y + off - 5.5);
+        ctx.lineTo(x, y + off);
       }
       ctx.closePath(); ctx.fill();
 
-      if (l.big && !(W < 420 && l.idx === 20)) {
+      if (l.big) {
         ctx.font = '700 9px JetBrains Mono, monospace';
         ctx.fillStyle = col; ctx.textAlign = 'center';
-        ctx.fillText(l.usd, x, isLong ? y + off + 15 : y + off - 11);
+        ctx.fillText(l.usd, x, isLong ? y + off + 16 : y + off - 11);
       }
     });
 
@@ -1335,8 +1354,7 @@ const visObserver = new IntersectionObserver((entries) => {
     ctx.beginPath(); ctx.moveTo(0, yLast); ctx.lineTo(W, yLast); ctx.stroke();
     ctx.setLineDash([]);
 
-    ctx.fillStyle = '#00f5b8';
-    ctx.beginPath(); ctx.arc(W - pad, yLast, 3.2, 0, Math.PI * 2); ctx.fill();
+   
 
     const chg = ((last.close - shifted[0].open) / shifted[0].open) * 100;
     const pEl = document.getElementById('heroLivePrice');
