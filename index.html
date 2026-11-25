@@ -338,45 +338,93 @@ h1.hero-title .line-2 {
 .os-pane.active { display: flex; flex-direction: column; }
 @media (max-width: 768px) { .os-pane { min-height: 440px; } }
 
-/* ─── LOBBY PANE 1: HUB GENESIS ─── */
-.hub-shell { display: flex; flex: 1; min-height: 520px; }
+/* ─── LOBBY PANE 1: REAL HUBDL REPLICA ─── */
+#lobby { border-top: 1px solid var(--border); }
+.hub-shell { display: flex; flex: 1; min-height: 560px; background: #030303; }
 .hub-sidebar {
-  width: 175px; background: #090a0d; border-right: 1px solid rgba(255,255,255,0.05);
-  padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0;
+  width: 185px; background: #0a0a0c; border-right: 1px solid rgba(255,255,255,0.04);
+  display: flex; flex-direction: column; flex-shrink: 0;
 }
-@media (max-width: 820px) { .hub-sidebar { width: 48px; padding: 10px 4px; } }
+.hub-sb-toggle {
+  height: 38px; display: flex; align-items: center; justify-content: flex-end; padding: 0 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.04); color: #666; font-size: 12px;
+}
+.hub-sb-menu { padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+@media (max-width: 820px) { .hub-sidebar { width: 52px; } .hub-sb-toggle { justify-content: center; padding: 0; } }
 .hub-nav-item {
-  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px;
-  color: #777; font: 600 11px var(--ui); cursor: pointer; transition: .15s;
+  display: flex; align-items: center; gap: 11px; padding: 8px 10px; border-radius: 7px;
+  color: #666; font: 500 11px var(--ui); cursor: pointer; transition: .2s;
 }
-.hub-nav-item i { width: 14px; text-align: center; font-size: 11px; }
-.hub-nav-item.active { background: rgba(0, 245, 184, 0.1); color: var(--accent); }
-.hub-nav-item:hover:not(.active) { color: #fff; background: rgba(255,255,255,0.03); }
-@media (max-width: 820px) { .hub-nav-item span { display: none; } .hub-nav-item { justify-content: center; } }
+.hub-nav-item i { width: 15px; text-align: center; font-size: 12px; }
+.hub-nav-item.active { background: rgba(0, 255, 136, 0.08); color: #f0f0f0; }
+.hub-nav-item.active i { color: #00ff88; }
+.hub-nav-item:hover:not(.active) { color: #f0f0f0; background: rgba(255,255,255,0.02); }
+.hub-nav-item:hover i { color: #00ff88; }
+@media (max-width: 820px) { .hub-nav-item span { display: none; } .hub-nav-item { justify-content: center; padding: 10px 0; } }
 
-.hub-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.hub-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #030303; }
+.hub-topbar {
+  height: 38px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  padding: 0 16px; display: flex; justify-content: space-between; align-items: center;
+  background: rgba(3,3,3,0.85);
+}
+.hub-brand {
+  font: 800 11px var(--mono); letter-spacing: .24em; color: #fff; text-transform: uppercase;
+}
+.hub-brand i { color: #00f5b8; font-style: normal; opacity: .7; }
+.hub-tb-right { display: flex; align-items: center; gap: 8px; }
+.hub-prime-pill {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px;
+  font: 800 9px var(--mono); color: #00f5b8; background: rgba(0,245,184,0.08);
+  border: 1px solid rgba(0,245,184,0.3); letter-spacing: .08em;
+}
+.hub-wallet-pill {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 6px;
+  font: 700 9.5px var(--mono); color: #00ff88;
+}
+.hub-tb-icon { color: #666; font-size: 11px; padding: 3px; }
+
 .hub-preset-bar {
-  display: flex; align-items: center; gap: 4px; padding: 6px 14px;
-  background: #0b0d10; border-bottom: 1px solid rgba(255,255,255,0.05); overflow-x: auto;
+  display: flex; align-items: center; justify-content: center; gap: 2px; padding: 4px 12px;
+  background: #0d0d0d; border-bottom: 1px solid #1f1f1f; overflow-x: auto;
 }
 .preset-pill {
-  background: #13161b; border: 1px solid #22262e; color: #888;
-  font: 700 9px var(--mono); letter-spacing: .08em; text-transform: uppercase;
-  padding: 4px 10px; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: .15s;
+  background: #141414; border: 1px solid #222; color: #888;
+  font: 600 8.5px var(--mono); letter-spacing: .6px; text-transform: uppercase;
+  padding: 3px 9px; height: 21px; border-radius: 0; cursor: pointer; white-space: nowrap; transition: .18s;
 }
-.preset-pill.active { background: rgba(0, 245, 184, 0.12); color: var(--accent); border-color: rgba(0, 245, 184, 0.45); }
+.preset-pill:hover { background: #191f1b; color: #4ade80; border-color: rgba(74,222,128,0.25); }
+.preset-pill.active { background: #16261d; color: #4ade80; border-color: rgba(74,222,128,0.5); }
 
 .hub-grid {
-  flex: 1; padding: 14px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  flex: 1; padding: 14px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px;
 }
-@media (max-width: 960px) { .hub-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 960px) { .hub-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .hub-grid { grid-template-columns: 1fr; } }
 
+/* Apple-Style Glass Cards (1:1 HubDL) */
 .hw {
-  background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(0,0,0,0.22));
-  border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.028) 0%, rgba(0,0,0,0.18) 100%);
+  border: 1px solid rgba(255,255,255,0.05); border-radius: 18px; padding: 15px;
   display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden; transition: border-color .25s, transform .25s, box-shadow .25s;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 10px 30px rgba(0,0,0,0.35);
 }
+.hw::before {
+  content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.09), transparent); pointer-events: none;
+}
+.hw:hover { border-color: rgba(0,255,136,0.25); transform: translateY(-2px); box-shadow: 0 16px 40px rgba(0,0,0,0.55); }
+.hw-ctrl {
+  position: absolute; top: 10px; right: 12px; display: flex; gap: 4px;
+  opacity: 0; transition: opacity .2s; font-size: 9px; color: #666;
+}
+.hw:hover .hw-ctrl { opacity: 1; }
+.hw-ctrl span {
+  width: 18px; height: 18px; border-radius: 4px; background: rgba(0,0,0,0.65);
+  border: 1px solid rgba(255,255,255,0.06); display: grid; place-items: center;
+}
+
 .hw.s2 { grid-column: span 2; }
 .hw.s4 { grid-column: span 4; }
 @media (max-width: 960px) { .hw.s4 { grid-column: span 2; } }
@@ -384,22 +432,50 @@ h1.hero-title .line-2 {
 
 .hw-head {
   display: flex; justify-content: space-between; align-items: center;
-  font: 700 9.5px var(--mono); letter-spacing: .12em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 10px;
+  font: 700 9px var(--mono); letter-spacing: .15em; text-transform: uppercase;
+  color: #666; margin-bottom: 10px; padding-right: 40px;
 }
-.hw-head i { color: var(--accent); }
+.hw-head i { color: #00ff88; }
+
+.hub-mac-seg {
+  display: flex; background: rgba(0,0,0,0.45); border-radius: 9px; padding: 3px;
+  width: 100%; max-width: 170px; margin: 8px auto 6px;
+}
+.hub-mac-btn {
+  flex: 1; padding: 4px 0; font: 700 9px var(--mono); color: #666;
+  background: transparent; border: none; border-radius: 6px; cursor: pointer; text-transform: uppercase;
+}
+.hub-mac-btn.active { background: rgba(255,255,255,0.1); color: #f0f0f0; }
+
+.hw-add-slot {
+  border-radius: 18px; border: 1px dashed rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.008); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px; color: #555; min-height: 110px;
+  font: 700 9px var(--mono); letter-spacing: 1.5px; cursor: pointer; transition: .2s;
+}
+.hw-add-slot:hover { border-color: #00ff88; color: #00ff88; background: rgba(0,255,136,0.04); }
+
+.hub-ticker {
+  height: 28px; background: #121214; border-top: 1px solid rgba(255,255,255,0.04);
+  display: flex; align-items: center; overflow: hidden; white-space: nowrap;
+  font: 700 9.5px var(--mono); color: #666;
+}
+.hub-ticker-track { display: inline-block; animation: marqueeScroll 35s linear infinite; }
+.hub-ticker-track span { margin-right: 26px; }
+.hub-ticker-track b.up { color: #00ffd5; margin-left: 5px; }
+.hub-ticker-track b.dn { color: #a855f7; margin-left: 5px; }
 
 .task-row {
-  display: flex; align-items: center; gap: 9px; padding: 5px 0;
-  border: none; background: none; color: var(--text); font: 500 12px var(--ui);
+  display: flex; align-items: center; gap: 9px; padding: 4px 0;
+  border: none; background: none; color: var(--text); font: 500 11.5px var(--ui);
   text-align: left; cursor: pointer; width: 100%;
 }
 .t-chk {
-  width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid #444;
-  display: grid; place-items: center; font-size: 9px; font-weight: 900; flex-shrink: 0;
+  width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid #444;
+  display: grid; place-items: center; font-size: 8.5px; font-weight: 900; flex-shrink: 0;
 }
-.task-row.done .t-chk { background: var(--accent); border-color: var(--accent); color: #021a13; }
-.task-row.done span:last-child { text-decoration: line-through; color: var(--muted); }
+.task-row.done .t-chk { background: #00ff88; border-color: #00ff88; color: #021a13; }
+.task-row.done span:last-child { text-decoration: line-through; color: #666; }
 
 /* ─── LOBBY PANE 2: TAPE ENGINE PRO ─── */
 .eng-shell { display: flex; flex: 1; min-height: 520px; background: #070a0f; }
@@ -754,59 +830,93 @@ h1.hero-title .line-2 {
         <button type="button" class="btn-login-sm" style="padding:5px 12px;font-size:10px;" onclick="launchApp()">ENTER <i class="fa-solid fa-bolt"></i></button>
       </div>
 
-      <!-- PANE 1: HUB GENESIS -->
+      <!-- PANE 1: HUB GENESIS (1:1 HubDL Replica) -->
       <div class="os-pane active" id="pane-hub">
         <div class="hub-shell">
           <div class="hub-sidebar">
-            <div class="hub-nav-item active"><i class="fa-solid fa-border-all"></i><span>GENESIS</span></div>
-            <div class="hub-nav-item"><i class="fa-solid fa-graduation-cap"></i><span>ACADEMY</span></div>
-            <div class="hub-nav-item"><i class="fa-solid fa-chart-line"></i><span>Trading</span></div>
-            <div class="hub-nav-item"><i class="fa-solid fa-crosshairs"></i><span>Productivity</span></div>
-            <div class="hub-nav-item"><i class="fa-solid fa-mobile-screen"></i><span>Social Media</span></div>
-            <div class="hub-nav-item"><i class="fa-solid fa-paper-plane"></i><span>ImChat</span></div>
-            <div class="hub-nav-item"><i class="fa-solid fa-share-nodes"></i><span>Affiliate</span></div>
+            <div class="hub-sb-toggle"><i class="fa-solid fa-bars"></i></div>
+            <div class="hub-sb-menu">
+              <div class="hub-nav-item active" data-jump="hub"><i class="fa-solid fa-border-all"></i><span>GENESIS</span></div>
+              <div class="hub-nav-item" data-jump="academy"><i class="fa-solid fa-graduation-cap"></i><span>ACADEMY</span></div>
+              <div class="hub-nav-item" data-jump="engine"><i class="fa-solid fa-chart-line"></i><span>Trading</span></div>
+              <div class="hub-nav-item" data-jump="hub"><i class="fa-solid fa-crosshairs"></i><span>Productivity</span></div>
+              <div class="hub-nav-item" data-jump="hub"><i class="fa-solid fa-mobile-screen"></i><span>Social Media</span></div>
+              <div class="hub-nav-item" onclick="launchApp()"><i class="fa-solid fa-paper-plane"></i><span>ImChat</span></div>
+              <div class="hub-nav-item" onclick="openBuyCryptoGuide()"><i class="fa-solid fa-credit-card"></i><span>Buy Crypto</span></div>
+              <div class="hub-nav-item" onclick="launchApp()"><i class="fa-solid fa-share-nodes"></i><span>Affiliate</span></div>
+              <div class="hub-nav-item" style="margin-top:auto;border-top:1px solid rgba(255,255,255,0.04);padding-top:10px;" onclick="launchApp()"><i class="fa-solid fa-crown" style="color:#00ff88;"></i><span>Prime</span></div>
+            </div>
           </div>
 
           <div class="hub-main">
+            <div class="hub-topbar">
+              <div class="hub-brand"><b>GRIND</b><i>//</i><b>OS</b></div>
+              <div class="hub-tb-right">
+                <span class="hub-prime-pill"><i class="fa-solid fa-crown"></i> PRIME</span>
+                <span class="hub-wallet-pill"><i class="fa-solid fa-wallet"></i> 0x9196...6C31</span>
+                <span class="hub-tb-icon"><i class="fa-regular fa-clone"></i></span>
+                <span class="hub-tb-icon"><i class="fa-solid fa-gear"></i></span>
+                <span class="hub-tb-icon"><i class="fa-solid fa-plus"></i></span>
+              </div>
+            </div>
+
             <div class="hub-preset-bar" id="hubPresetBar">
-              <button type="button" class="preset-pill active" data-preset="genesis">GENESIS</button>
-              <button type="button" class="preset-pill" data-preset="trading">TRADING PRO</button>
-              <button type="button" class="preset-pill" data-preset="bio">BIOHACKING</button>
-              <button type="button" class="preset-pill" data-preset="social">SOCIAL MEDIA</button>
-              <button type="button" class="preset-pill" data-preset="business">BUSINESS</button>
+              <button type="button" class="preset-pill active" data-preset="genesis"><i class="fa-solid fa-cube"></i> GENESIS</button>
+              <button type="button" class="preset-pill" data-preset="trading"><i class="fa-solid fa-chart-line"></i> TRADING PRO</button>
+              <button type="button" class="preset-pill" data-preset="bio"><i class="fa-solid fa-dna"></i> BIOHACKING</button>
+              <button type="button" class="preset-pill" data-preset="social"><i class="fa-solid fa-users"></i> SOCIAL MEDIA</button>
+              <button type="button" class="preset-pill" data-preset="business"><i class="fa-solid fa-briefcase"></i> BUSINESS</button>
             </div>
 
             <div class="hub-grid">
-              <div class="hw s4" style="text-align:center;padding:12px 16px;">
-                <div id="hubQuoteDisplay" style="font-size:13px;font-style:italic;color:#e6e7ea;">
+              <div class="hw s4" style="text-align:center;padding:11px 16px;">
+                <div class="hw-ctrl"><span><i class="fa-solid fa-grip-vertical"></i></span><span><i class="fa-solid fa-expand"></i></span></div>
+                <div id="hubQuoteDisplay" style="font-size:12.5px;font-style:italic;color:#e6e7ea;">
                   "Focus is the new IQ. Whoever can focus 4 hours straight, owns the market."
                 </div>
               </div>
 
               <div class="hw s2">
-                <div class="hw-head"><span>BTC/USDT · SPARKLINE</span><span style="color:var(--up);">+3.84%</span></div>
-                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
-                  <span style="font:800 22px var(--mono);color:#fff;">$68,420</span>
-                  <span style="font:700 10px var(--mono);color:var(--muted);">24H HIGH $68,910</span>
+                <div class="hw-ctrl"><span><i class="fa-solid fa-grip-vertical"></i></span><span><i class="fa-solid fa-expand"></i></span></div>
+                <div class="hw-head"><span><i class="fa-solid fa-bolt"></i> BTCUSDT · LIVE</span><span style="color:#00ffc8;">+3.84%</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+                  <span style="font:800 21px var(--mono);color:#00ffc8;">$68,420.00</span>
+                  <span style="font:700 9.5px var(--mono);color:#666;">H: $68,910 · L: $66,120</span>
                 </div>
-                <canvas id="lobbySparkCanvas" style="width:100%;height:70px;display:block;"></canvas>
+                <canvas id="lobbySparkCanvas" style="width:100%;height:68px;display:block;"></canvas>
               </div>
 
               <div class="hw">
-                <div class="hw-head"><span><i class="fa-regular fa-clock"></i> TIMECENTER</span><span>LIVE</span></div>
+                <div class="hw-ctrl"><span><i class="fa-solid fa-grip-vertical"></i></span><span><i class="fa-solid fa-expand"></i></span></div>
+                <div class="hw-head"><span><i class="fa-regular fa-clock"></i> TIMECENTER</span><span style="color:#00ff88;font-size:8px;border:1px solid #00ff88;padding:1px 5px;border-radius:4px;">TG ✓</span></div>
                 <div style="text-align:center;margin:auto 0;">
-                  <div id="lobbyClock" style="font:800 24px var(--mono);color:var(--accent);line-height:1;">--:--:--</div>
-                  <div style="font:700 9px var(--mono);color:var(--muted);margin-top:6px;">ALARM · MULTI-TIMER</div>
+                  <div id="lobbyClock" style="font:800 22px var(--mono);color:#f0f0f0;line-height:1;">--:--:--</div>
+                  <div class="hub-mac-seg" id="hubClockSeg">
+                    <button type="button" class="hub-mac-btn active" data-cm="ARMED · 07:00">Alarm</button>
+                    <button type="button" class="hub-mac-btn" data-cm="25:00 · DEEP WORK">Timers</button>
+                  </div>
+                  <div id="hubClockSub" style="font:700 8.5px var(--mono);color:#00ff88;letter-spacing:1px;">ARMED · 07:00</div>
                 </div>
               </div>
 
               <div class="hw">
-                <div class="hw-head"><span><i class="fa-solid fa-fire"></i> 365 MATRIX</span><span style="color:var(--accent);">DAY 114</span></div>
-                <div id="lobbyHeatmap" style="display:grid;grid-template-columns:repeat(13,1fr);gap:3px;margin:auto 0;"></div>
+                <div class="hw-ctrl"><span><i class="fa-solid fa-grip-vertical"></i></span><span><i class="fa-solid fa-expand"></i></span></div>
+                <div class="hw-head"><span><i class="fa-solid fa-bell"></i> PRICE ALERTS</span><span style="color:#00ff88;">2 ON</span></div>
+                <div style="display:flex;flex-direction:column;gap:6px;font:700 9.5px var(--mono);margin:auto 0;">
+                  <div style="padding:6px 8px;background:rgba(0,0,0,0.35);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>BTCUSDT</span><span style="color:#00ff88;">↑ $70,000</span></div>
+                    <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;"><div style="width:82%;height:100%;background:#00ff88;"></div></div>
+                  </div>
+                  <div style="padding:6px 8px;background:rgba(0,0,0,0.35);border-radius:8px;border:1px solid rgba(255,255,255,0.05);">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span>SOLUSDT</span><span style="color:#ff2a5f;">↓ $175.0</span></div>
+                    <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;"><div style="width:56%;height:100%;background:#00f5b8;"></div></div>
+                  </div>
+                </div>
               </div>
 
               <div class="hw s2">
-                <div class="hw-head"><span><i class="fa-solid fa-list-check"></i> TODAY TASKS</span><span id="lobbyTaskCnt" style="color:var(--accent);">2/4</span></div>
+                <div class="hw-ctrl"><span><i class="fa-solid fa-grip-vertical"></i></span><span><i class="fa-solid fa-expand"></i></span></div>
+                <div class="hw-head"><span><i class="fa-solid fa-list-check"></i> TODAY</span><span id="lobbyTaskCnt" style="color:#00ff88;">2/4</span></div>
                 <div id="lobbyTasks">
                   <button type="button" class="task-row done"><span class="t-chk">✓</span><span>Morning Bio-Sync stack</span></button>
                   <button type="button" class="task-row done"><span class="t-chk">✓</span><span>5M Tape liquidation sweep review</span></button>
@@ -815,12 +925,28 @@ h1.hero-title .line-2 {
                 </div>
               </div>
 
-              <div class="hw s2">
-                <div class="hw-head"><span><i class="fa-solid fa-dna"></i> BIO-SYNC</span><span style="color:var(--accent);">OPTIMAL</span></div>
-                <div class="bio-tags-row" style="margin-bottom:10px;">
-                  <span class="bio-chip">Creatine</span><span class="bio-chip">Omega-3</span><span class="bio-chip">Mg</span><span class="bio-chip">D3</span><span class="bio-chip">L-Theanine</span>
-                </div>
-                <div class="mini-bar"><div class="mini-bar-lbl"><span>Focus</span><b>89%</b></div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:89%"></div></div></div>
+              <div class="hw">
+                <div class="hw-ctrl"><span><i class="fa-solid fa-grip-vertical"></i></span><span><i class="fa-solid fa-expand"></i></span></div>
+                <div class="hw-head"><span><i class="fa-solid fa-fire"></i> 365 MATRIX</span><span style="color:#00ff88;">114 DAYS</span></div>
+                <div id="lobbyHeatmap" style="display:grid;grid-template-columns:repeat(13,1fr);gap:3px;margin:auto 0;"></div>
+              </div>
+
+              <div class="hw-add-slot" onclick="launchApp()">
+                <i class="fa-solid fa-plus" style="font-size:16px;"></i>
+                <span>ADD WIDGET</span>
+              </div>
+            </div>
+
+            <div class="hub-ticker">
+              <div class="hub-ticker-track">
+                <span>BTC/USDT <b class="up">$68,420 ▲</b></span>
+                <span>ETH/USDT <b class="dn">$3,540 ▼</b></span>
+                <span>SOL/USDT <b class="up">$182.45 ▲</b></span>
+                <span>PEPE/USDT <b class="up">$0.0142 ▲</b></span>
+                <span>DOGE/USDT <b class="dn">$0.164 ▼</b></span>
+                <span>BTC/USDT <b class="up">$68,420 ▲</b></span>
+                <span>ETH/USDT <b class="dn">$3,540 ▼</b></span>
+                <span>SOL/USDT <b class="up">$182.45 ▲</b></span>
               </div>
             </div>
           </div>
@@ -1433,6 +1559,22 @@ document.querySelectorAll('#lobbyTasks .task-row').forEach(row => {
     const all = document.querySelectorAll('#lobbyTasks .task-row').length;
     const chk = document.querySelectorAll('#lobbyTasks .task-row.done').length;
     document.getElementById('lobbyTaskCnt').textContent = chk + '/' + all;
+  });
+});
+
+document.querySelectorAll('#hubClockSeg .hub-mac-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#hubClockSeg .hub-mac-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const sub = document.getElementById('hubClockSub');
+    if (sub) sub.textContent = btn.dataset.cm;
+  });
+});
+
+document.querySelectorAll('#pane-hub .hub-nav-item[data-jump]').forEach(nav => {
+  nav.addEventListener('click', () => {
+    const targetTab = document.querySelector(`#lobbyTabs .os-tab[data-pane="${nav.dataset.jump}"]`);
+    if (targetTab) targetTab.click();
   });
 });
 
