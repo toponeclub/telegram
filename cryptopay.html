@@ -32,34 +32,7 @@ body{
 .wrap{width:100%;max-width:940px;margin:0 auto}
 a{color:var(--accent)}
 
-/* Top Header */
-.head{
-  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
-  padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:18px;
-}
-.logo-wrap{
-  display:flex;align-items:center;gap:10px;
-  font:800 12.5px var(--mono);letter-spacing:.28em;
-  color:var(--text);text-decoration:none;text-transform:uppercase;
-}
-.logo-icon{
-  display:inline-flex;align-items:center;justify-content:center;
-  color:var(--accent);font-size:15px;
-  filter:drop-shadow(0 0 10px rgba(0,245,184,.45));
-}
-.logo-wrap b{color:#fff;font-weight:800}
-.logo-wrap > i{color:var(--accent);font-style:normal;opacity:.7}
 
-.head-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.net-tag{
-  font:800 10.5px var(--mono);letter-spacing:.1em;color:#021a13;
-  background:var(--accent);padding:5px 10px;border-radius:6px;white-space:nowrap;
-}
-.back-link{
-  font:700 11px var(--mono);color:var(--muted);text-decoration:none;
-  padding:6px 11px;border-radius:6px;border:1px solid var(--border);transition:.2s;
-}
-.back-link:hover{color:var(--accent);border-color:var(--accent)}
 
 .title-row{margin-bottom:16px}
 .title-row h1{font-size:clamp(20px,4.5vw,26px);font-weight:800;letter-spacing:-.02em}
@@ -96,6 +69,8 @@ a{color:var(--accent)}
 .skip{display:inline-block;margin-top:12px;font-size:12.5px;font-weight:600;text-decoration:none}
 .skip:hover{text-decoration:underline}
 
+.wallets-focused{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+@media(max-width:480px){.wallets-focused{grid-template-columns:1fr}}
 .w-card{
   display:flex;align-items:center;gap:10px;padding:11px 14px;
   border-radius:10px;border:1px solid var(--border);
@@ -169,15 +144,7 @@ a{color:var(--accent)}
 <body>
 <div class="wrap">
 
-  <div class="head">
-    <a href="/" class="logo-wrap">
-      <span class="logo-icon"><i class="fa-solid fa-crown"></i></span>
-      <b>GRIND</b><i>//</i><b>OS</b>
-    </a>
-    <div class="head-right">
-      <a href="/hub" class="back-link"><i class="fa-solid fa-arrow-left"></i> Hub</a>
-    </div>
-  </div>
+  
 
   <div class="title-row">
     <h1>Buy &amp; Sell Crypto</h1>
@@ -185,7 +152,11 @@ a{color:var(--accent)}
 
   <div class="steps">
 
-    <div class="wallets-focused">
+    <div class="step">
+      <div>
+        <div class="step-top"><span class="num">1</span><h3>Get a wallet</h3></div>
+        <p>Install/Create your wallet, and <b>save 12 recovery words.</b></p>
+        <div class="wallets-focused">
           <a class="w-card" href="https://web3.bgw.live/share/2gIeJL?inviteCode=UelQJFPq" target="_blank" rel="noopener">
             <img src="https://www.google.com/s2/favicons?domain=bitget.com&sz=64" alt="Bitget Wallet" loading="lazy">
             <strong>Bitget Wallet</strong>
@@ -197,6 +168,8 @@ a{color:var(--accent)}
             <i class="fa-solid fa-arrow-up-right-from-square"></i>
           </a>
         </div>
+        <a class="skip" href="#step2">Already have a wallet? Go to Step 2 →</a>
+      </div>
       <div class="anim seq">
         <div class="row"><i class="fa-solid fa-download"></i> Install the app</div>
         <div class="row"><i class="fa-solid fa-plus"></i> Create new wallet</div>
@@ -245,28 +218,7 @@ var BUY_URL = 'https://changenow.io/embeds/exchange-widget/v2/widget.html'
 
 document.getElementById('cn-widget').src = BUY_URL;
 
-var WALLETS = [
-  ['Trust Wallet','trustwallet.com','https://trustwallet.com/download'],
-  ['TronLink','tronlink.org','https://www.tronlink.org/'],
-  ['Exodus','exodus.com','https://www.exodus.com/download/'],
-  ['OKX Wallet','okx.com','https://www.okx.com/download'],
-  ['Bitget Wallet','bitget.com','https://web3.bitget.com/en/wallet-download'],
-  ['SafePal','safepal.com','https://www.safepal.com/en/download'],
-  ['Binance','binance.com','https://www.binance.com/en/download','exchange'],
-  ['Bybit','bybit.com','https://www.bybit.com/en/download','exchange']
-];
-var wl = document.getElementById('wallets');
-WALLETS.forEach(function(w){
-  var a = document.createElement('a');
-  a.className = 'w'; a.href = w[2]; a.target = '_blank'; a.rel = 'noopener';
-  var img = document.createElement('img');
-  img.alt = ''; img.loading = 'lazy';
-  img.src = 'https://www.google.com/s2/favicons?domain=' + w[1] + '&sz=64';
-  img.onerror = function(){ var i = document.createElement('i'); i.className = 'fa-solid fa-wallet'; a.replaceChild(i, img); };
-  var s = document.createElement('span'); s.textContent = w[0];
-  if (w[3]) { var m = document.createElement('small'); m.textContent = w[3]; s.appendChild(m); }
-  a.appendChild(img); a.appendChild(s); wl.appendChild(a);
-});
+
 </script>
 </body>
 </html>
