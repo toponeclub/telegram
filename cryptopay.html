@@ -96,19 +96,17 @@ a{color:var(--accent)}
 .skip{display:inline-block;margin-top:12px;font-size:12.5px;font-weight:600;text-decoration:none}
 .skip:hover{text-decoration:underline}
 
-/* Wallets */
-.wallets{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:12px}
-.w{
-  display:flex;align-items:center;gap:9px;min-height:44px;padding:7px 10px;
-  border-radius:9px;border:1px solid var(--border);
+.w-card{
+  display:flex;align-items:center;gap:10px;padding:11px 14px;
+  border-radius:10px;border:1px solid var(--border);
   background:rgba(0,245,184,.04);color:var(--text);text-decoration:none;
-  font-size:12.5px;font-weight:600;transition:.18s;
+  transition:.2s;
 }
-.w:hover{border-color:var(--accent);background:rgba(0,245,184,.09)}
-.w img,.w>i{flex:none;width:24px;height:24px;border-radius:6px;object-fit:contain;background:#fff;padding:2px}
-.w>i{background:rgba(0,245,184,.12);color:var(--accent);display:grid;place-items:center;font-size:13px;padding:0}
-.w span{min-width:0;line-height:1.2}
-.w small{display:block;font-size:10px;font-weight:500;color:var(--muted)}
+.w-card:hover{border-color:var(--accent);background:rgba(0,245,184,.09);transform:translateY(-1px)}
+.w-card img{width:26px;height:26px;border-radius:6px;object-fit:contain;background:#fff;padding:2px;flex:none}
+.w-card strong{font-size:13px;font-weight:700;flex:1}
+.w-card i{font-size:10px;color:var(--muted);transition:.2s}
+.w-card:hover i{color:var(--accent)}
 
 /* Payment logos & direct button */
 .pay{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:14px;font-size:clamp(30px,8vw,38px);line-height:1}
@@ -177,25 +175,28 @@ a{color:var(--accent)}
       <b>GRIND</b><i>//</i><b>OS</b>
     </a>
     <div class="head-right">
-      <span class="net-tag">ONRAMP · OFFRAMP</span>
       <a href="/hub" class="back-link"><i class="fa-solid fa-arrow-left"></i> Hub</a>
     </div>
   </div>
 
   <div class="title-row">
     <h1>Buy &amp; Sell Crypto</h1>
-    <div class="sub">No crypto experience needed. Buy with card or cash out directly to your bank.</div>
   </div>
 
   <div class="steps">
 
-    <div class="step">
-      <div>
-        <div class="step-top"><span class="num">1</span><h3>Get a crypto wallet</h3></div>
-        <p>A wallet is a free app that holds your digital dollars (USDT). Install one, tap <b>Create new wallet</b>, and write the 12 secret words on paper. Never share them with anyone.</p>
-        <div class="wallets" id="wallets"></div>
-        <a class="skip" href="#step2">Already have a wallet? Go to Step 2 →</a>
-      </div>
+    <div class="wallets-focused">
+          <a class="w-card" href="https://web3.bgw.live/share/2gIeJL?inviteCode=UelQJFPq" target="_blank" rel="noopener">
+            <img src="https://www.google.com/s2/favicons?domain=bitget.com&sz=64" alt="Bitget Wallet" loading="lazy">
+            <strong>Bitget Wallet</strong>
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+          <a class="w-card" href="https://web3.okx.com/join/UELQJFPQ" target="_blank" rel="noopener">
+            <img src="https://www.google.com/s2/favicons?domain=okx.com&sz=64" alt="OKX Wallet" loading="lazy">
+            <strong>OKX Wallet</strong>
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+        </div>
       <div class="anim seq">
         <div class="row"><i class="fa-solid fa-download"></i> Install the app</div>
         <div class="row"><i class="fa-solid fa-plus"></i> Create new wallet</div>
@@ -205,18 +206,15 @@ a{color:var(--accent)}
 
     <div class="step step-embed" id="step2">
       <div>
-        <div class="step-top"><span class="num">2</span><h3>Buy or Sell Crypto with Card / Bank</h3></div>
-        <p><b>To Buy (On-ramp):</b> Select the currency and crypto on the right (default: <b>EUR → USDT TRC20</b>), open your wallet → tap <b>Receive</b>, copy your address and paste it in.</p>
-        <p><b>To Cash Out (Off-ramp):</b> Switch to <b>Sell</b> inside the panel, enter your bank/card details and send crypto from your wallet.</p>
+        <div class="step-top"><span class="num">2</span><h3>Buy or Sell Crypto</h3></div>
+        <p>Select your currency and crypto asset, paste your wallet address, and pay via Card, Apple Pay, Google Pay or Bank.</p>
         <div class="pay" aria-label="Accepted: Apple Pay, Google Pay, Visa, Mastercard">
           <i class="fa-brands fa-apple-pay" title="Apple Pay"></i>
           <i class="fa-brands fa-google-pay" title="Google Pay"></i>
           <i class="fa-brands fa-cc-visa" title="Visa"></i>
           <i class="fa-brands fa-cc-mastercard" title="Mastercard"></i>
         </div>
-        <a class="btn" id="directBtn" href="#" target="_blank" rel="noopener noreferrer">
-          <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Checkout
-        </a>
+        
       </div>
 
       <div class="embed-shell">
@@ -246,7 +244,6 @@ var BUY_URL = 'https://changenow.io/embeds/exchange-widget/v2/widget.html'
   + '&primaryColor=00f5b8&to=eth&toFiat=usdttrc20&toTheMoon=true';
 
 document.getElementById('cn-widget').src = BUY_URL;
-document.getElementById('directBtn').href = BUY_URL;
 
 var WALLETS = [
   ['Trust Wallet','trustwallet.com','https://trustwallet.com/download'],
