@@ -805,6 +805,167 @@ h1.hero-title .line-2 {
   </div>
 </section>
 
+<!-- ════════ CORE MODULES BENTO MATRIX (SHOW, DON'T SAY) ════════ -->
+<section id="modules">
+  <div class="wrap">
+    <div class="mod-grid">
+
+      <!-- 3. 500+ Screener (Exact values from grindindex) -->
+      <div class="mod" onclick="launchApp()">
+        <div class="mod-head">
+          <div class="mod-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+          <div class="mod-title">500+ Screener</div>
+          <div class="mod-cat">Trading</div>
+        </div>
+        <div class="mod-preview">
+          <div class="mini-scr" id="modScreener">
+            <div class="mini-scr-row"><span class="s">BTC</span><span class="p">$67,420</span><span class="c up">+2.14%</span></div>
+            <div class="mini-scr-row"><span class="s">SOL</span><span class="p">$182.45</span><span class="c up">+6.12%</span></div>
+            <div class="mini-scr-row"><span class="s">DOGE</span><span class="p">$0.164</span><span class="c dn">-1.08%</span></div>
+            <div class="mini-scr-row"><span class="s">PEPE</span><span class="p">$0.0142</span><span class="c up">+12.4%</span></div>
+          </div>
+        </div>
+        <p class="mod-cap">Funding rates, 24h volume ranks, volatility leaders, and instant DEX/CEX routing.</p>
+      </div>
+
+      <!-- 4. Watchlist (Exact values from prompt) -->
+      <div class="mod" onclick="launchApp()">
+        <div class="mod-head">
+          <div class="mod-icon" style="color:var(--red);border-color:rgba(255,51,95,.3);background:rgba(255,51,95,.1)"><i class="fa-solid fa-eye"></i></div>
+          <div class="mod-title">Watchlist</div>
+          <div class="mod-cat">Trading</div>
+        </div>
+        <div class="mod-preview">
+          <div class="mini-wl">
+            <div class="mini-wl-head"><span class="sym">SOL</span><span class="trig" id="modWlTrig">2/4 TRIG</span></div>
+            <div class="mini-wl-metric"><span class="lbl">PRC</span><div class="mini-wl-bar"><div class="mini-wl-fill hot" data-mwf="prc" style="width:76%"></div></div><span class="val hot" data-mwv="prc">76%</span></div>
+            <div class="mini-wl-metric"><span class="lbl">VOL</span><div class="mini-wl-bar"><div class="mini-wl-fill hot" data-mwf="vol" style="width:82%"></div></div><span class="val hot" data-mwv="vol">82%</span></div>
+            <div class="mini-wl-metric"><span class="lbl">OI</span><div class="mini-wl-bar"><div class="mini-wl-fill hot" data-mwf="oi" style="width:92%"></div></div><span class="val hot" data-mwv="oi">92%</span></div>
+            <div class="mini-wl-metric"><span class="lbl">LIQ</span><div class="mini-wl-bar"><div class="mini-wl-fill" data-mwf="liq" style="width:64%"></div></div><span class="val" data-mwv="liq">$390K</span></div>
+          </div>
+        </div>
+        <p class="mod-cap">4 metrics per coin: price, volume, OI, liquidations. Pinged when 2+ spike together.</p>
+      </div>
+
+      <!-- 5. Signals & Snaps -->
+      <div class="mod" onclick="launchApp()">
+        <div class="mod-head">
+          <div class="mod-icon" style="color:var(--blue);border-color:rgba(56,189,248,.3);background:rgba(56,189,248,.1)"><i class="fa-brands fa-telegram"></i></div>
+          <div class="mod-title">Signals & Snaps</div>
+          <div class="mod-cat">Alerts</div>
+        </div>
+        <div class="mod-preview" style="gap:6px;" id="modSignals">
+          <div class="sig-row">
+            <span style="color:var(--up);font-weight:800;">↑</span>
+            <div><div style="color:#fff;font-weight:700;">BTC · Breakout</div><div style="color:var(--muted);font-size:8.5px;">OI +4.2% · 15M Snap</div></div>
+            <span style="color:var(--up);font-weight:800;">+3.1%</span>
+          </div>
+          <div class="sig-row">
+            <span style="color:var(--purple);font-weight:800;">↓</span>
+            <div><div style="color:#fff;font-weight:700;">ETH · Liq Cluster</div><div style="color:var(--muted);font-size:8.5px;">$4.2M wiped · 5M</div></div>
+            <span style="color:var(--purple);font-weight:800;">-1.9%</span>
+          </div>
+        </div>
+        <p class="mod-cap">OI spikes and liquidation sweeps with instant headless chart snapshots straight to Telegram.</p>
+      </div>
+
+      <!-- 6. Bio-Sync (Exact values from prompt) -->
+      <div class="mod" onclick="launchApp()">
+        <div class="mod-head">
+          <div class="mod-icon"><i class="fa-solid fa-dna"></i></div>
+          <div class="mod-title">Bio-Sync</div>
+          <div class="mod-cat">Productivity</div>
+        </div>
+        <div class="mod-preview">
+          <div class="mini-bio" id="modBio">
+            <div class="bio-tags-row">
+              <span class="bio-chip active">Creatine</span><span class="bio-chip active">Omega-3</span><span class="bio-chip">Mg</span><span class="bio-chip">D3</span><span class="bio-chip">L-Theanine</span>
+            </div>
+            <div class="mini-bar"><div class="mini-bar-lbl"><span>Focus</span><b data-mbv="0">89%</b></div><div class="mini-bar-track"><div class="mini-bar-fill" data-mbf="0" style="width:89%"></div></div></div>
+            <div class="mini-bar"><div class="mini-bar-lbl"><span>Energy</span><b data-mbv="1">78%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt2" data-mbf="1" style="width:78%"></div></div></div>
+            <div class="mini-bar"><div class="mini-bar-lbl"><span>Sleep Recovery</span><b data-mbv="2">88%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt1" data-mbf="2" style="width:88%"></div></div></div>
+          </div>
+        </div>
+        <p class="mod-cap">Supplement stack builder, focus & sleep recovery tracking, circadian readiness.</p>
+      </div>
+
+      <!-- 7. Modular Widgets -->
+      <div class="mod" onclick="launchApp()">
+        <div class="mod-head">
+          <div class="mod-icon"><i class="fa-solid fa-shapes"></i></div>
+          <div class="mod-title">Modular Widgets</div>
+          <div class="mod-cat">Workspace</div>
+        </div>
+        <div class="mod-preview">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;flex:1;" id="modWidgets">
+            <div class="mw-tile active">CHART</div>
+            <div class="mw-tile">SIGNALS</div>
+            <div class="mw-tile">WATCHLIST</div>
+            <div class="mw-tile">ALERTS</div>
+          </div>
+        </div>
+        <p class="mod-cap">Drag, resize, save presets. Layout synced automatically across all devices.</p>
+      </div>
+
+      <!-- 8. Academy -->
+      <div class="mod" onclick="launchApp()">
+        <div class="mod-head">
+          <div class="mod-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+          <div class="mod-title">Academy</div>
+          <div class="mod-cat">Beyond Crypto</div>
+        </div>
+        <div class="mod-preview" style="gap:9px;" id="modAcademy">
+          <div class="mini-bar"><div class="mini-bar-lbl"><span>Trading Setups</span><b data-acv="0">88%</b></div><div class="mini-bar-track"><div class="mini-bar-fill" data-acf="0" style="width:88%"></div></div></div>
+          <div class="mini-bar"><div class="mini-bar-lbl"><span>Social Media Algorithms</span><b data-acv="1">64%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt1" data-acf="1" style="width:64%"></div></div></div>
+          <div class="mini-bar"><div class="mini-bar-lbl"><span>Business Systems</span><b data-acv="2">76%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt2" data-acf="2" style="width:76%"></div></div></div>
+        </div>
+        <p class="mod-cap">Trading setups, social media growth, and online business execution roadmaps.</p>
+      </div>
+
+      <!-- 9. Crypto Onramp -->
+      <div class="mod" onclick="openBuyCryptoGuide()">
+        <div class="mod-head">
+          <div class="mod-icon"><i class="fa-solid fa-credit-card"></i></div>
+          <div class="mod-title">Crypto Onramp</div>
+          <div class="mod-cat" id="onrampModeTag">BUY</div>
+        </div>
+        <div class="mod-preview" style="gap:6px;font-size:10px;" id="modOnramp">
+          <div class="onramp-box" id="onrampTop" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+            <span id="onrampTopLbl" style="color:var(--muted);">CARD / BANK</span><b id="onrampTopVal" style="color:#fff;">USD · EUR</b>
+          </div>
+          <div style="text-align:center;color:var(--accent);font-size:10px;line-height:1;" id="onrampArrow">
+            <i class="fa-solid fa-arrow-down-up-across-line"></i>
+          </div>
+          <div class="onramp-box" id="onrampBot" style="background:rgba(0,245,184,0.08);border:1px solid rgba(0,245,184,0.22);">
+            <span id="onrampBotLbl" style="color:var(--accent);">WALLET</span><b id="onrampBotVal" style="color:var(--accent);">USDT · USDC</b>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);padding-top:2px;">
+            <span><span class="onramp-net active">TRC20</span> · <span class="onramp-net">ARB</span> · <span class="onramp-net">SOL</span></span>
+            <span>INSTANT BRIDGE</span>
+          </div>
+        </div>
+        <p class="mod-cap">Built-in fiat-to-crypto onboarding guide & direct wallet funding routes.</p>
+      </div>
+
+      <!-- 10. ImChat P2P -->
+      <div class="mod" onclick="launchApp()">
+        <div class="mod-head">
+          <div class="mod-icon"><i class="fa-solid fa-comments"></i></div>
+          <div class="mod-title">ImChat P2P</div>
+          <div class="mod-cat">Encrypted</div>
+        </div>
+        <div class="mod-preview" style="gap:6px;justify-content:flex-end;" id="modChat">
+          <div class="chat-bubble them">Setup confirmed?</div>
+          <div class="chat-bubble me">Locked BTC long @ 67,400 🔒</div>
+          <div class="chat-bubble them">OI + vol aligned on 5m</div>
+        </div>
+        <p class="mod-cap">Zero centralized servers. Your Web3 wallet is your ID. Direct encrypted P2P chat.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <!-- ════════ GAME LOBBY INTERACTIVE CONSOLE (#lobby) ════════ -->
 <section id="lobby">
   <div class="wrap">
@@ -1106,168 +1267,7 @@ h1.hero-title .line-2 {
   </div>
 </section>
 
-<!-- ════════ CORE MODULES BENTO MATRIX (SHOW, DON'T SAY) ════════ -->
-<section id="modules">
-  <div class="wrap">
-    <div class="mod-grid">
 
-    
-
-      <!-- 3. 500+ Screener (Exact values from grindindex) -->
-      <div class="mod" onclick="launchApp()">
-        <div class="mod-head">
-          <div class="mod-icon"><i class="fa-solid fa-satellite-dish"></i></div>
-          <div class="mod-title">500+ Screener</div>
-          <div class="mod-cat">Trading</div>
-        </div>
-        <div class="mod-preview">
-          <div class="mini-scr" id="modScreener">
-            <div class="mini-scr-row"><span class="s">BTC</span><span class="p">$67,420</span><span class="c up">+2.14%</span></div>
-            <div class="mini-scr-row"><span class="s">SOL</span><span class="p">$182.45</span><span class="c up">+6.12%</span></div>
-            <div class="mini-scr-row"><span class="s">DOGE</span><span class="p">$0.164</span><span class="c dn">-1.08%</span></div>
-            <div class="mini-scr-row"><span class="s">PEPE</span><span class="p">$0.0142</span><span class="c up">+12.4%</span></div>
-          </div>
-        </div>
-        <p class="mod-cap">Funding rates, 24h volume ranks, volatility leaders, and instant DEX/CEX routing.</p>
-      </div>
-
-      <!-- 4. Watchlist (Exact values from prompt) -->
-      <div class="mod" onclick="launchApp()">
-        <div class="mod-head">
-          <div class="mod-icon" style="color:var(--red);border-color:rgba(255,51,95,.3);background:rgba(255,51,95,.1)"><i class="fa-solid fa-eye"></i></div>
-          <div class="mod-title">Watchlist</div>
-          <div class="mod-cat">Trading</div>
-        </div>
-        <div class="mod-preview">
-          <div class="mini-wl">
-            <div class="mini-wl-head"><span class="sym">SOL</span><span class="trig" id="modWlTrig">2/4 TRIG</span></div>
-            <div class="mini-wl-metric"><span class="lbl">PRC</span><div class="mini-wl-bar"><div class="mini-wl-fill hot" data-mwf="prc" style="width:76%"></div></div><span class="val hot" data-mwv="prc">76%</span></div>
-            <div class="mini-wl-metric"><span class="lbl">VOL</span><div class="mini-wl-bar"><div class="mini-wl-fill hot" data-mwf="vol" style="width:82%"></div></div><span class="val hot" data-mwv="vol">82%</span></div>
-            <div class="mini-wl-metric"><span class="lbl">OI</span><div class="mini-wl-bar"><div class="mini-wl-fill hot" data-mwf="oi" style="width:92%"></div></div><span class="val hot" data-mwv="oi">92%</span></div>
-            <div class="mini-wl-metric"><span class="lbl">LIQ</span><div class="mini-wl-bar"><div class="mini-wl-fill" data-mwf="liq" style="width:64%"></div></div><span class="val" data-mwv="liq">$390K</span></div>
-          </div>
-        </div>
-        <p class="mod-cap">4 metrics per coin: price, volume, OI, liquidations. Pinged when 2+ spike together.</p>
-      </div>
-
-      <!-- 5. Signals & Snaps -->
-      <div class="mod" onclick="launchApp()">
-        <div class="mod-head">
-          <div class="mod-icon" style="color:var(--blue);border-color:rgba(56,189,248,.3);background:rgba(56,189,248,.1)"><i class="fa-brands fa-telegram"></i></div>
-          <div class="mod-title">Signals & Snaps</div>
-          <div class="mod-cat">Alerts</div>
-        </div>
-        <div class="mod-preview" style="gap:6px;" id="modSignals">
-          <div class="sig-row">
-            <span style="color:var(--up);font-weight:800;">↑</span>
-            <div><div style="color:#fff;font-weight:700;">BTC · Breakout</div><div style="color:var(--muted);font-size:8.5px;">OI +4.2% · 15M Snap</div></div>
-            <span style="color:var(--up);font-weight:800;">+3.1%</span>
-          </div>
-          <div class="sig-row">
-            <span style="color:var(--purple);font-weight:800;">↓</span>
-            <div><div style="color:#fff;font-weight:700;">ETH · Liq Cluster</div><div style="color:var(--muted);font-size:8.5px;">$4.2M wiped · 5M</div></div>
-            <span style="color:var(--purple);font-weight:800;">-1.9%</span>
-          </div>
-        </div>
-        <p class="mod-cap">OI spikes and liquidation sweeps with instant headless chart snapshots straight to Telegram.</p>
-      </div>
-
-      <!-- 6. Bio-Sync (Exact values from prompt) -->
-      <div class="mod" onclick="launchApp()">
-        <div class="mod-head">
-          <div class="mod-icon"><i class="fa-solid fa-dna"></i></div>
-          <div class="mod-title">Bio-Sync</div>
-          <div class="mod-cat">Productivity</div>
-        </div>
-        <div class="mod-preview">
-          <div class="mini-bio" id="modBio">
-            <div class="bio-tags-row">
-              <span class="bio-chip active">Creatine</span><span class="bio-chip active">Omega-3</span><span class="bio-chip">Mg</span><span class="bio-chip">D3</span><span class="bio-chip">L-Theanine</span>
-            </div>
-            <div class="mini-bar"><div class="mini-bar-lbl"><span>Focus</span><b data-mbv="0">89%</b></div><div class="mini-bar-track"><div class="mini-bar-fill" data-mbf="0" style="width:89%"></div></div></div>
-            <div class="mini-bar"><div class="mini-bar-lbl"><span>Energy</span><b data-mbv="1">78%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt2" data-mbf="1" style="width:78%"></div></div></div>
-            <div class="mini-bar"><div class="mini-bar-lbl"><span>Sleep Recovery</span><b data-mbv="2">88%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt1" data-mbf="2" style="width:88%"></div></div></div>
-          </div>
-        </div>
-        <p class="mod-cap">Supplement stack builder, focus & sleep recovery tracking, circadian readiness.</p>
-      </div>
-
-      <!-- 7. Modular Widgets -->
-      <div class="mod" onclick="launchApp()">
-        <div class="mod-head">
-          <div class="mod-icon"><i class="fa-solid fa-shapes"></i></div>
-          <div class="mod-title">Modular Widgets</div>
-          <div class="mod-cat">Workspace</div>
-        </div>
-        <div class="mod-preview">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;flex:1;" id="modWidgets">
-            <div class="mw-tile active">CHART</div>
-            <div class="mw-tile">SIGNALS</div>
-            <div class="mw-tile">WATCHLIST</div>
-            <div class="mw-tile">ALERTS</div>
-          </div>
-        </div>
-        <p class="mod-cap">Drag, resize, save presets. Layout synced automatically across all devices.</p>
-      </div>
-
-      <!-- 8. Academy -->
-      <div class="mod" onclick="launchApp()">
-        <div class="mod-head">
-          <div class="mod-icon"><i class="fa-solid fa-graduation-cap"></i></div>
-          <div class="mod-title">Academy</div>
-          <div class="mod-cat">Beyond Crypto</div>
-        </div>
-        <div class="mod-preview" style="gap:9px;" id="modAcademy">
-          <div class="mini-bar"><div class="mini-bar-lbl"><span>Trading Setups</span><b data-acv="0">88%</b></div><div class="mini-bar-track"><div class="mini-bar-fill" data-acf="0" style="width:88%"></div></div></div>
-          <div class="mini-bar"><div class="mini-bar-lbl"><span>Social Media Algorithms</span><b data-acv="1">64%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt1" data-acf="1" style="width:64%"></div></div></div>
-          <div class="mini-bar"><div class="mini-bar-lbl"><span>Business Systems</span><b data-acv="2">76%</b></div><div class="mini-bar-track"><div class="mini-bar-fill alt2" data-acf="2" style="width:76%"></div></div></div>
-        </div>
-        <p class="mod-cap">Trading setups, social media growth, and online business execution roadmaps.</p>
-      </div>
-
-      <!-- 9. Crypto Onramp -->
-      <div class="mod" onclick="openBuyCryptoGuide()">
-        <div class="mod-head">
-          <div class="mod-icon"><i class="fa-solid fa-credit-card"></i></div>
-          <div class="mod-title">Crypto Onramp</div>
-          <div class="mod-cat" id="onrampModeTag">BUY</div>
-        </div>
-        <div class="mod-preview" style="gap:6px;font-size:10px;" id="modOnramp">
-          <div class="onramp-box" id="onrampTop" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
-            <span id="onrampTopLbl" style="color:var(--muted);">CARD / BANK</span><b id="onrampTopVal" style="color:#fff;">USD · EUR</b>
-          </div>
-          <div style="text-align:center;color:var(--accent);font-size:10px;line-height:1;" id="onrampArrow">
-            <i class="fa-solid fa-arrow-down-up-across-line"></i>
-          </div>
-          <div class="onramp-box" id="onrampBot" style="background:rgba(0,245,184,0.08);border:1px solid rgba(0,245,184,0.22);">
-            <span id="onrampBotLbl" style="color:var(--accent);">WALLET</span><b id="onrampBotVal" style="color:var(--accent);">USDT · USDC</b>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);padding-top:2px;">
-            <span><span class="onramp-net active">TRC20</span> · <span class="onramp-net">ARB</span> · <span class="onramp-net">SOL</span></span>
-            <span>INSTANT BRIDGE</span>
-          </div>
-        </div>
-        <p class="mod-cap">Built-in fiat-to-crypto onboarding guide & direct wallet funding routes.</p>
-      </div>
-
-      <!-- 10. ImChat P2P -->
-      <div class="mod" onclick="launchApp()">
-        <div class="mod-head">
-          <div class="mod-icon"><i class="fa-solid fa-comments"></i></div>
-          <div class="mod-title">ImChat P2P</div>
-          <div class="mod-cat">Encrypted</div>
-        </div>
-        <div class="mod-preview" style="gap:6px;justify-content:flex-end;" id="modChat">
-          <div class="chat-bubble them">Setup confirmed?</div>
-          <div class="chat-bubble me">Locked BTC long @ 67,400 🔒</div>
-          <div class="chat-bubble them">OI + vol aligned on 5m</div>
-        </div>
-        <p class="mod-cap">Zero centralized servers. Your Web3 wallet is your ID. Direct encrypted P2P chat.</p>
-      </div>
-
-    </div>
-  </div>
-</section>
 
 <!-- ════════ FINAL LAUNCH GATE ════════ -->
 <section id="gate">
